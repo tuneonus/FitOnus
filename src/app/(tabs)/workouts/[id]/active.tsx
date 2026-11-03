@@ -29,7 +29,7 @@ export default function ActiveWorkoutScreen() {
   const [activeRest, setActiveRest] = useState<number | null>(null);
   const [isFinished, setIsFinished] = useState(false);
 
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
   useEffect(() => {
     if (!id) return;

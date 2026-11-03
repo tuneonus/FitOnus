@@ -1,3 +1,5 @@
+import { apiClient } from '@/services/api-client';
+
 export interface DailySummary {
   recoveryScore: number;
   sleepScore: number;
@@ -125,7 +127,6 @@ const MOCK_DASHBOARD_DATA: DashboardData = {
   ]
 };
 
-import { apiClient } from '@/services/api-client';
 
 export const DashboardRepository = {
   getDashboardData: async (): Promise<DashboardData> => {

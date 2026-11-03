@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/shared/screen-container';
 import { useTheme } from '@/hooks/use-theme';
@@ -10,7 +10,6 @@ import { useChat } from '@/features/coach/hooks/use-chat';
 import { Spacing } from '@/constants/theme';
 import { Text } from '@/components/ui/text';
 import { History, Sparkles } from 'lucide-react-native';
-import { Pressable } from 'react-native';
 
 export default function CoachScreen() {
   const { colors } = useTheme();
@@ -69,10 +68,10 @@ export default function CoachScreen() {
                   Ready to crush your goals?
                 </Text>
                 <Text variant="bodyLarge" style={{ color: colors.textSecondary, textAlign: 'center' }}>
-                  I'm your personal AI Coach. Ask me about workouts, nutrition, or anything health related!
+                  I&apos;m your personal AI Coach. Ask me about workouts, nutrition, or anything health related!
                 </Text>
               </View>
-            ) : null
+            ) : <></>
           }
         />
         

@@ -14,7 +14,8 @@ function RootLayoutNav() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    AuthService.initialize().then(() => setIsReady(true));
+    Promise.all([AuthService.initialize(), useAppStore.persist.rehydrate()])
+      .finally(() => setIsReady(true));
   }, []);
 
   useEffect(() => {

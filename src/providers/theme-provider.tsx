@@ -23,29 +23,27 @@ interface ThemeProviderProps {
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const deviceColorScheme = useDeviceColorScheme();
   const [mode, setModeState] = useState<ThemeMode>('system');
-  const [isDark, setIsDark] = useState<boolean>(deviceColorScheme === 'dark');
+  const [isHydrated, setIsHydrated] = useState(false);
+  const isDark = mode === 'system' ? deviceColorScheme === 'dark' : mode === 'dark';
 
-  // Load saved theme on mount
   useEffect(() => {
-    const savedMode = StorageService.getItem(THEME_STORAGE_KEY) as ThemeMode | undefined;
-    if (savedMode && ['system', 'light', 'dark'].includes(savedMode)) {
-      setModeState(savedMode);
-    }
+    let mounted = true;
+    void StorageService.getItem(THEME_STORAGE_KEY).then((savedMode) => {
+      if (!mounted) return;
+      if (savedMode === 'system' || savedMode === 'light' || savedMode === 'dark') {
+        setModeState(savedMode);
+      }
+      setIsHydrated(true);
+    });
+    return () => { mounted = false; };
   }, []);
-
-  // Update effective theme when mode or device scheme changes
-  useEffect(() => {
-    if (mode === 'system') {
-      setIsDark(deviceColorScheme === 'dark');
-    } else {
-      setIsDark(mode === 'dark');
-    }
-  }, [mode, deviceColorScheme]);
 
   const setThemeMode = (newMode: ThemeMode) => {
     setModeState(newMode);
-    StorageService.setItem(THEME_STORAGE_KEY, newMode);
+    void StorageService.setItem(THEME_STORAGE_KEY, newMode);
   };
+
+  if (!isHydrated) return null;
 
   const colors = isDark ? Colors.dark : Colors.light;
 

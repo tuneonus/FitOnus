@@ -2,7 +2,6 @@ import { SecureStorageService } from '@/services/secure-storage';
 import { AuthRepository, LoginRequest, RegisterRequest } from '../api/auth-repository';
 import { useAuthStore } from '../stores/auth-store';
 import { logger } from '@/utils/logger';
-import { storage as MMKVStorage } from '@/services/storage';
 
 const ACCESS_TOKEN_KEY = 'auth.access_token';
 const REFRESH_TOKEN_KEY = 'auth.refresh_token';
@@ -73,9 +72,9 @@ export const AuthService = {
       await SecureStorageService.removeItem(ACCESS_TOKEN_KEY);
       await SecureStorageService.removeItem(REFRESH_TOKEN_KEY);
       
-      // Clear MMKV cache (e.g. any cached API responses if needed)
-      // Note: we don't clear all MMKV because onboarding state is there
-      // MMKVStorage.remove('some-cache-key');
+      // Clear preference cache (e.g. any cached API responses if needed)
+      // Note: we don't clear all preferences because onboarding state is there
+      // StorageService.removeItem('some-cache-key');
       
       // Clear store
       useAuthStore.getState().clearAuth();

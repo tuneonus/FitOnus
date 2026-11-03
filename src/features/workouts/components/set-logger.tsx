@@ -8,10 +8,10 @@ import { Check, Edit2 } from 'lucide-react-native';
 
 interface SetLoggerProps {
   setNumber: number;
-  previousWeight?: number;
-  previousReps?: number;
+  previousWeight?: number | undefined;
+  previousReps?: number | undefined;
   onLog: (weight: number, reps: number) => void;
-  loggedSet?: LoggedSet;
+  loggedSet?: LoggedSet | undefined;
 }
 
 export const SetLogger = ({ setNumber, previousWeight, previousReps, onLog, loggedSet }: SetLoggerProps) => {

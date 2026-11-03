@@ -1,57 +1,47 @@
-import { createMMKV } from 'react-native-mmkv';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../utils/logger';
 
-export const storage = createMMKV();
+// AsyncStorage is included in Expo Go. Tokens remain in SecureStore.
+export const storage = AsyncStorage;
 
 export const StorageService = {
-  setItem: (key: string, value: string | number | boolean) => {
+  async setItem(key: string, value: string | number | boolean): Promise<void> {
     try {
-      storage.set(key, value);
+      await storage.setItem(key, String(value));
     } catch (error) {
-      logger.error(`Error setting item in storage for key ${key}`, error);
+      logger.error(`Error saving preference ${key}`, error);
     }
   },
-
-  getItem: (key: string): string | undefined => {
+  async getItem(key: string): Promise<string | undefined> {
     try {
-      return storage.getString(key);
+      return (await storage.getItem(key)) ?? undefined;
     } catch (error) {
-      logger.error(`Error getting item from storage for key ${key}`, error);
+      logger.error(`Error reading preference ${key}`, error);
       return undefined;
     }
   },
-
-  getBoolean: (key: string): boolean | undefined => {
+  async getBoolean(key: string): Promise<boolean | undefined> {
+    const value = await StorageService.getItem(key);
+    return value === 'true' ? true : value === 'false' ? false : undefined;
+  },
+  async getNumber(key: string): Promise<number | undefined> {
+    const value = await StorageService.getItem(key);
+    if (value === undefined) return undefined;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : undefined;
+  },
+  async removeItem(key: string): Promise<void> {
     try {
-      return storage.getBoolean(key);
+      await storage.removeItem(key);
     } catch (error) {
-      logger.error(`Error getting boolean from storage for key ${key}`, error);
-      return undefined;
+      logger.error(`Error removing preference ${key}`, error);
     }
   },
-
-  getNumber: (key: string): number | undefined => {
+  async clearAll(): Promise<void> {
     try {
-      return storage.getNumber(key);
+      await storage.clear();
     } catch (error) {
-      logger.error(`Error getting number from storage for key ${key}`, error);
-      return undefined;
-    }
-  },
-
-  removeItem: (key: string) => {
-    try {
-      storage.remove(key);
-    } catch (error) {
-      logger.error(`Error removing item from storage for key ${key}`, error);
-    }
-  },
-
-  clearAll: () => {
-    try {
-      storage.clearAll();
-    } catch (error) {
-      logger.error('Error clearing storage', error);
+      logger.error('Error clearing preferences', error);
     }
   },
 };

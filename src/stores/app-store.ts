@@ -1,20 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { storage } from '../services/storage';
-
-// Custom storage adapter for Zustand to use MMKV
-const zustandStorage: StateStorage = {
-  setItem: (name, value) => {
-    return storage.set(name, value);
-  },
-  getItem: (name) => {
-    const value = storage.getString(name);
-    return value ?? null;
-  },
-  removeItem: (name) => {
-    return storage.remove(name);
-  },
-};
 
 interface AppState {
   hasCompletedOnboarding: boolean;
@@ -29,7 +15,8 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'app-storage',
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => storage),
+      skipHydration: true,
     }
   )
 );

@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { type BottomTabBarProps } from 'expo-router/js-tabs';
 import { Activity, House, ListOrdered, Plus, User, Zap } from 'lucide-react-native';
@@ -93,6 +93,8 @@ const TabItem = React.memo(({ icon: Icon, index, label, followerX, pillOpacity, 
   );
 });
 
+TabItem.displayName = 'TabItem';
+
 interface AnimatedFABProps {
   onPress: () => void;
   fabBg: string;
@@ -124,7 +126,7 @@ const AnimatedFAB = React.memo(({ onPress, fabBg, fabIconColor, glowColor }: Ani
       -1,
       false,
     );
-  }, []);
+  }, [glowOpacity, glowScale]);
 
   const glowStyle = useAnimatedStyle(() => ({
     position: 'absolute',
@@ -212,7 +214,9 @@ const AnimatedFAB = React.memo(({ onPress, fabBg, fabIconColor, glowColor }: Ani
   );
 });
 
-export default function LiquidTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+AnimatedFAB.displayName = 'AnimatedFAB';
+
+export default function LiquidTabBar({ state, navigateToTab }: BottomTabBarProps) {
   const currentRoute = state.routes[state.index];
 
   const VISUAL_TABS = useMemo(() => [
@@ -241,11 +245,9 @@ export default function LiquidTabBar({ state, descriptors, navigation }: BottomT
   const activeIndex = state.index;
   const activeVisualIndex = activeIndex >= 2 ? activeIndex + 1 : activeIndex;
 
-  const lastValidIndex = useRef(activeVisualIndex === -1 ? 0 : activeVisualIndex);
-  if (activeVisualIndex !== -1) lastValidIndex.current = activeVisualIndex;
-
-  const leaderX = useSharedValue(lastValidIndex.current);
-  const followerX = useSharedValue(lastValidIndex.current);
+  const initialVisualIndex = activeVisualIndex === -1 ? 0 : activeVisualIndex;
+  const leaderX = useSharedValue(initialVisualIndex);
+  const followerX = useSharedValue(initialVisualIndex);
   const pillOpacity = useSharedValue(activeIndex === -1 ? 0 : 1);
 
   useEffect(() => {
@@ -264,9 +266,9 @@ export default function LiquidTabBar({ state, descriptors, navigation }: BottomT
     const route = state.routes[rIndex];
     if (route) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-      navigation.navigate(route.name);
+      navigateToTab(route.key);
     }
-  }, [state.routes, navigation]);
+  }, [state.routes, navigateToTab]);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width } = e.nativeEvent.layout;

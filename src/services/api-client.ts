@@ -1,11 +1,11 @@
-import axios, { InternalAxiosRequestConfig } from 'axios';
+import { create, InternalAxiosRequestConfig } from 'axios';
 import { Config } from '../constants/config';
 import { logger } from '../utils/logger';
 import { SecureStorageService } from './secure-storage';
 import { AuthRepository } from '../features/auth/api/auth-repository';
 import { useAuthStore } from '../features/auth/stores/auth-store';
 
-export const apiClient = axios.create({
+export const apiClient = create({
   baseURL: Config.API_BASE_URL,
   timeout: 10000,
   headers: {
