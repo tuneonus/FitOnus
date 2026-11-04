@@ -40,7 +40,7 @@ export default function ActiveWorkoutScreen() {
         
         // Initialize empty sets
         const initialSets: Record<string, LoggedSet[]> = {};
-        data.exercises.forEach(we => {
+        data.exercises.forEach((we: any) => {
           initialSets[we.id] = [];
         });
         setLoggedSets(initialSets);
@@ -64,6 +64,7 @@ export default function ActiveWorkoutScreen() {
       exerciseSets[setNumber - 1] = {
         id: `set-${Date.now()}`,
         setNumber,
+        weight,
         weightKg: weight,
         reps,
         isCompleted: true
@@ -122,7 +123,7 @@ export default function ActiveWorkoutScreen() {
 
       {/* Pagination Dots */}
       <View style={styles.pagination}>
-        {workout.exercises.map((_, idx) => (
+        {workout.exercises.map((_: any, idx: number) => (
           <View 
             key={idx} 
             style={[
@@ -146,7 +147,7 @@ export default function ActiveWorkoutScreen() {
           onMomentumScrollEnd={handleScroll}
           style={{ flex: 1 }}
         >
-          {workout.exercises.map((we, index) => {
+          {workout.exercises.map((we: any, index: number) => {
             const exerciseSets = loggedSets[we.id] || [];
             
             return (
@@ -173,7 +174,7 @@ export default function ActiveWorkoutScreen() {
                         key={`${we.id}-set-${setNum}`}
                         setNumber={setNum}
                         loggedSet={loggedSet}
-                        previousWeight={setIdx > 0 ? exerciseSets[setIdx - 1]?.weightKg : undefined}
+                        previousWeight={setIdx > 0 ? (exerciseSets[setIdx - 1]?.weightKg ?? exerciseSets[setIdx - 1]?.weight) : undefined}
                         previousReps={setIdx > 0 ? exerciseSets[setIdx - 1]?.reps : undefined}
                         onLog={(w, r) => handleLogSet(we.id, setNum, w, r, we.restSeconds)}
                       />

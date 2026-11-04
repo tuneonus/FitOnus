@@ -1,5 +1,11 @@
-import { Redirect } from 'expo-router';
+import React from 'react';
+import { NavigationProvider } from './navigation/NavigationContext';
+import { AppShell } from './AppShell';
 
 export default function Index() {
-  return <Redirect href="/(tabs)/dashboard" />;
+  return (
+    <NavigationProvider initialRoute="home">
+      <AppShell />
+    </NavigationProvider>
+  );
 }

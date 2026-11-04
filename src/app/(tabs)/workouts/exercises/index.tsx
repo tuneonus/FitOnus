@@ -33,12 +33,12 @@ export default function ExerciseLibraryScreen() {
       <View style={styles.cardInfo}>
         <Text variant="bodyLarge" style={{ color: colors.text, fontWeight: 'bold' }}>{item.name}</Text>
         <Text variant="labelSmall" style={{ color: colors.textSecondary }}>
-          {item.primaryMuscles.join(', ')} • {item.equipment}
+          {(item.primaryMuscles ?? [item.muscle ?? 'General']).join(', ')} • {item.equipment}
         </Text>
       </View>
       <View style={[styles.badge, { backgroundColor: colors.backgroundSelected }]}>
         <Text variant="labelSmall" style={{ color: colors.primary, textTransform: 'capitalize' }}>
-          {item.difficulty}
+          {item.difficulty ?? item.level ?? 'All levels'}
         </Text>
       </View>
     </Pressable>

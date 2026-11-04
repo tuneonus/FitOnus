@@ -50,7 +50,7 @@ export const SetLogger = ({ setNumber, previousWeight, previousReps, onLog, logg
               isLogged && { opacity: 0.5 }
             ]}
             keyboardType="decimal-pad"
-            value={isLogged ? loggedSet.weightKg?.toString() : weight}
+            value={isLogged ? ((loggedSet.weightKg ?? loggedSet.weight) || 0).toString() : weight}
             onChangeText={setWeight}
             editable={!isLogged}
             placeholder="0"

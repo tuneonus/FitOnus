@@ -1,40 +1,80 @@
-export interface WorkoutTemplate {
+export type Exercise = {
   id: string;
   name: string;
-  description: string;
-  estimatedDuration: number;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  tags: string[];
-  exercisesCount: number;
-  isAiGenerated?: boolean;
-}
+  muscle?: 'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Arms' | 'Core' | 'Full body' | 'Cardio';
+  equipment: 'Barbell' | 'Dumbbell' | 'Cable' | 'Machine' | 'Bodyweight' | 'Kettlebell' | string;
+  level?: 'Beginner' | 'Intermediate' | 'Advanced';
+  secondary?: string[];
+  instructions?: string[];
+  cues?: string[];
+  image?: string;
+  primaryMuscles?: string[];
+  difficulty?: string;
+};
 
-export interface Exercise {
+export type PlannedExercise = {
+  exerciseId: string;
+  sets: number;
+  reps: string;
+  weight: number; // kg, 0 = bodyweight
+  restSec: number;
+};
+
+export type WorkoutSession = {
   id: string;
-  name: string;
-  primaryMuscles: string[];
-  equipment: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  imageUrl?: string;
-}
+  title: string;
+  focus: string;
+  durationMin: number;
+  intensity: string;
+  exercises: PlannedExercise[];
+};
 
-export interface WorkoutExercise {
-  id: string;
-  exercise: Exercise;
-  targetSets: number;
-  targetReps: number | string; // e.g., 10 or '8-12'
-  restSeconds: number;
-}
-
-export interface WorkoutDetail extends WorkoutTemplate {
-  exercises: WorkoutExercise[];
-}
-
-export interface LoggedSet {
-  id: string;
-  setNumber: number;
+export type SetLog = {
+  id?: string;
+  setNumber?: number;
+  weight: number;
+  reps: number;
+  done?: boolean;
+  isCompleted?: boolean;
   weightKg?: number;
-  reps?: number;
-  isCompleted: boolean;
-  isPR?: boolean;
-}
+};
+
+export type ActiveExercise = {
+  exerciseId: string;
+  restSec: number;
+  targetReps: string;
+  sets: SetLog[];
+  skipped: boolean;
+};
+
+export type WorkoutLog = {
+  id: string;
+  date: string;
+  title: string;
+  durationMin: number;
+  volumeKg: number;
+  sets: number;
+  prs: number;
+  calories: number;
+  avgHr?: number;
+  source: 'FitOnus' | 'Apple Watch' | 'Manual';
+  exercises: { name: string; best: string }[];
+};
+
+export type WorkoutCategory =
+  | 'Fat Loss'
+  | 'Muscle Gain'
+  | 'Strength'
+  | 'Home Workout'
+  | 'Gym Workout'
+  | 'Push Pull Legs'
+  | 'Upper Lower Split'
+  | 'Full Body'
+  | 'Custom Plans';
+
+// Legacy compatibility types
+export type LoggedSet = SetLog;
+export type WorkoutExercise = any;
+export type WorkoutDetail = any;
+export type WorkoutTemplate = any;
+

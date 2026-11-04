@@ -85,7 +85,7 @@ export default function WorkoutDetailScreen() {
         </Text>
 
         <View style={[styles.exerciseList, { borderColor: colors.border }]}>
-          {workout.exercises.map((we, index) => (
+          {workout.exercises.map((we: any, index: number) => (
             <View 
               key={we.id} 
               style={[

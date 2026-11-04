@@ -1,0 +1,166 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useNavigation } from '@/app/navigation/NavigationContext';
+import { Screen } from '@/shared/components/ui/Screen';
+import { Button } from '@/shared/components/ui/Button';
+import { Chip } from '@/shared/components/ui/Chip';
+import { Stepper } from '@/shared/components/ui/Stepper';
+import { showToast } from '@/shared/stores/toastStore';
+import { useProfileSetupStore } from '../../onboarding/store/profileSetupStore';
+import {
+  durationOptions,
+  equipmentOptions,
+  experienceLevels,
+  fitnessGoals,
+  workoutPlaces,
+} from '../../onboarding/constants/options';
+import { useTheme } from '@/hooks/use-theme';
+
+export function FitnessPreferencesScreen() {
+  const { colors } = useTheme();
+  const { goBack } = useNavigation();
+  const store = useProfileSetupStore();
+  const [d, setD] = useState({
+    goal: store.goal,
+    experience: store.experience,
+    place: store.place,
+    daysPerWeek: store.daysPerWeek,
+    durationMin: store.durationMin,
+    equipment: store.equipment,
+  });
+
+  const toggleEq = (e: string) =>
+    setD({
+      ...d,
+      equipment: d.equipment.includes(e)
+        ? d.equipment.filter((x) => x !== e)
+        : [...d.equipment, e],
+    });
+
+  const save = () => {
+    store.update(d);
+    showToast({ message: 'Preferences saved · next plan will reflect them' });
+    goBack();
+  };
+
+  const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <View style={styles.groupContainer}>
+      <Text style={[styles.groupTitle, { color: colors.muted }]}>{title}</Text>
+      <View style={styles.chipsRow}>{children}</View>
+    </View>
+  );
+
+  return (
+    <Screen
+      title="Fitness preferences"
+      footer={
+        <Button size="lg" fullWidth onPress={save}>
+          Save preferences
+        </Button>
+      }
+    >
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <Group title="Main goal">
+          {fitnessGoals.map((g) => (
+            <Chip
+              key={g.value}
+              label={g.label}
+              selected={d.goal === g.value}
+              onPress={() => setD({ ...d, goal: g.value })}
+            />
+          ))}
+        </Group>
+
+        <Group title="Experience">
+          {experienceLevels.map((e) => (
+            <Chip
+              key={e.value}
+              label={e.label}
+              selected={d.experience === e.value}
+              onPress={() => setD({ ...d, experience: e.value })}
+            />
+          ))}
+        </Group>
+
+        <Group title="Where you train">
+          {workoutPlaces.map((w) => (
+            <Chip
+              key={w.value}
+              label={w.label}
+              selected={d.place === w.value}
+              onPress={() => setD({ ...d, place: w.value })}
+            />
+          ))}
+        </Group>
+
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <Text style={[styles.cardSubLabel, { color: colors.muted }]}>
+            Training days per week
+          </Text>
+          <View style={{ marginTop: 8 }}>
+            <Stepper
+              label="Days per week"
+              value={d.daysPerWeek}
+              onChange={(v) => setD({ ...d, daysPerWeek: v })}
+              min={1}
+              max={7}
+              unit="days"
+            />
+          </View>
+        </View>
+
+        <Group title="Session length">
+          {durationOptions.map((m) => (
+            <Chip
+              key={m}
+              label={`${m} min`}
+              selected={d.durationMin === m}
+              onPress={() => setD({ ...d, durationMin: m })}
+            />
+          ))}
+        </Group>
+
+        <Group title="Available equipment">
+          {equipmentOptions.map((e) => (
+            <Chip
+              key={e}
+              label={e}
+              selected={d.equipment.includes(e)}
+              onPress={() => toggleEq(e)}
+            />
+          ))}
+        </Group>
+      </ScrollView>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+    gap: 18,
+  },
+  groupContainer: {
+    gap: 8,
+  },
+  groupTitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    paddingHorizontal: 4,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  card: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 16,
+  },
+  cardSubLabel: {
+    fontSize: 13,
+  },
+});
+

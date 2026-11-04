@@ -36,7 +36,7 @@ export const WorkoutCard = ({ workout, onPress }: WorkoutCardProps) => {
       </Text>
 
       <View style={styles.tagsContainer}>
-        {workout.tags.map(tag => (
+        {workout.tags?.map((tag: string) => (
           <View key={tag} style={[styles.tag, { backgroundColor: colors.backgroundSelected }]}>
             <Text variant="labelSmall" style={{ color: colors.primary }}>{tag}</Text>
           </View>
