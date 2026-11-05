@@ -1,0 +1,64 @@
+=====================================
+FITONUS — THIRD-PARTY INTEGRATIONS
+Document: 23-third-party-integrations.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document outlines all external APIs, SDKs, and third-party services integrated into FitOnus. It serves as a central reference for API keys, usage limits, fallback strategies, and integration architectures.
+
+=====================================
+2. CORE INTEGRATIONS
+=====================================
+
+  2.1 Supabase
+    - Purpose: PostgreSQL database, Auth, Storage, and Edge Functions.
+    - Usage: Primary backend infrastructure.
+    - Integration: @supabase/supabase-js (client) and server-side client with Service Role Key.
+    - Limits: Dependent on the Supabase Pro plan (no hard connection limits when using PgBouncer).
+
+  2.2 OpenAI
+    - Purpose: Core intelligence for the AI Coach, Memory extraction, RAG embeddings.
+    - Services Used:
+      - Responses API (gpt-4o) for chat and reasoning.
+      - Embeddings API (text-embedding-3-small) for memory and RAG.
+    - Integration: Server-side only (never expose API keys on the client).
+    - Fallback: Graceful degradation with fallback responses if API is down or rate-limited.
+
+  2.3 Health Connect / Apple HealthKit
+    - Purpose: Passive data ingestion (steps, heart rate, sleep).
+    - Integration: expo-health-connect (Android) / expo-apple-healthkit (iOS).
+    - Fallback: Manual entry if permission denied or unavailable.
+
+  2.4 Expo Services
+    - Purpose: OTA updates, Push Notifications, Application builds (EAS).
+    - Integration: expo-updates, expo-notifications, EAS Build.
+
+=====================================
+3. SECONDARY INTEGRATIONS
+=====================================
+
+  3.1 RevenueCat (Planned for V2)
+    - Purpose: Subscription management and in-app purchases.
+    - Integration: react-native-purchases.
+
+  3.2 OpenFoodFacts (Planned for V2)
+    - Purpose: Fallback barcode scanning database for international food items.
+    - Integration: Server-side REST API calls.
+
+=====================================
+4. SECURITY & CONFIGURATION
+=====================================
+
+  - All API keys must be stored in `.env` files and managed via standard secrets management (e.g., EAS Secrets for mobile, Vercel/Supabase Vault for backend).
+  - Client-side code must NEVER contain secret keys (e.g., OpenAI keys).
+  - Third-party API calls should always include timeout configurations and retry mechanisms with exponential backoff.
+
+=====================================
+END OF DOCUMENT
+=====================================

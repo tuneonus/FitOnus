@@ -1,0 +1,59 @@
+=====================================
+FITONUS — SECURITY & PRIVACY
+Document: 26-security-privacy.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document outlines the security and privacy protocols for FitOnus. Given that the app collects sensitive health and biometric data, maintaining user trust through rigorous security practices and privacy compliance is paramount.
+
+=====================================
+2. DATA PRIVACY & COMPLIANCE
+=====================================
+
+  2.1 GDPR & CCPA Compliance
+    - Right to Access: Users can export their complete data profile as JSON via the Settings menu.
+    - Right to be Forgotten: Account deletion permanently removes or anonymizes all user data within a 30-day grace period.
+    - Explicit Consent: Health Connect/HealthKit permissions are requested with clear explanations of how the data will be used.
+
+  2.2 Data Minimization
+    - Only collect data strictly necessary for providing the service.
+    - Analytics data is anonymized and aggregated.
+
+=====================================
+3. DATA SECURITY
+=====================================
+
+  3.1 Encryption
+    - In Transit: All API and database connections must use TLS 1.2 or higher.
+    - At Rest: Database volumes are encrypted by the cloud provider (AWS/GCP via Supabase). Passwords are hashed using bcrypt.
+
+  3.2 Authentication & Authorization
+    - JWT tokens have a short lifespan (1 hour) and require secure refresh token rotation.
+    - Refresh tokens are stored in the platform-native secure keychain (Expo Secure Store), never in plaintext or standard AsyncStorage.
+    - Row-Level Security (RLS) is enabled on every Supabase table to guarantee tenant isolation.
+
+=====================================
+4. AI SECURITY & SAFETY
+=====================================
+
+  - PII Scrubbing: The AI Context Builder should avoid passing highly sensitive PII (like real phone numbers or exact home addresses) to the OpenAI API, focusing only on health metrics necessary for coaching.
+  - Prompt Injection Defense: System prompts include strict instructions to ignore attempts to override constraints or extract the system prompt itself.
+  - Medical Disclaimer: The AI is explicitly programmed to never provide medical diagnoses and to recommend consulting a doctor for any pain, injury, or medical condition.
+
+=====================================
+5. APPLICATION SECURITY
+=====================================
+
+  - API Rate Limiting: Strict rate limits on authentication and AI endpoints to prevent brute-force attacks and abuse.
+  - Dependency Auditing: Regular audits using `npm audit` and Dependabot to identify and patch vulnerable dependencies.
+  - No Hardcoded Secrets: All API keys and environment variables are injected at build/runtime.
+
+=====================================
+END OF DOCUMENT
+=====================================

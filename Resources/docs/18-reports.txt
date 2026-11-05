@@ -1,0 +1,360 @@
+=====================================
+FITONUS — REPORTS
+Document: 18-reports.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the reporting system for FitOnus, covering automated weekly and monthly health reports, AI-generated narrative insights, data visualization within reports, PDF export, and sharing capabilities. Reports transform raw health data into polished, comprehensive summaries that users can review, share with trainers, or archive for long-term reference.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The reporting system generates periodic health summaries that aggregate data from all FitOnus subsystems. Weekly reports provide a quick health check, while monthly reports offer deeper analysis with trend identification and progress assessment. Reports are generated asynchronously via background jobs and include AI-generated narrative commentary that explains what the data means and provides actionable recommendations. Users can view reports in-app, export them as PDF, or share them directly.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Automatically generate weekly and monthly health reports.
+  - Provide AI-generated narrative insights that contextualize raw data.
+  - Enable PDF export for sharing with healthcare providers or trainers.
+  - Present data in visually compelling, easy-to-understand formats.
+  - Track report history for long-term progress comparison.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Weekly reports: generated every Monday for the previous week (Monday-Sunday).
+  - Monthly reports: generated on the 1st of each month for the previous month.
+  - Report content: workout summary, nutrition summary, weight change, sleep summary, recovery trends, AI insights.
+  - In-app report viewer with sections and charts.
+  - PDF export with branded layout.
+  - Share via native share sheet (email, messaging, etc.).
+  - Notification when a new report is available.
+  - On-demand report generation for custom date ranges.
+  - Report history list with all past reports.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Report generation (background job) must complete within 30 seconds.
+  - Report viewing must load within 2 seconds.
+  - PDF generation must complete within 10 seconds.
+  - Reports must be stored and accessible for at least 1 year.
+  - PDF file size must not exceed 5MB.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  1. Every Monday, a background job generates the weekly report for each user.
+  2. Push notification sent: "Your weekly health report is ready! 📊"
+  3. User taps notification → navigates to report detail.
+  4. User reads through sections: overview, workouts, nutrition, weight, sleep, recovery, AI insights.
+  5. User taps "Export PDF" → PDF generated and saved to device or shared.
+  6. User can browse past reports from the reports list screen.
+  7. User can request a custom report: select date range → report generates → displayed.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Report Data Model
+
+    Report:
+      - id: UUID
+      - user_id: UUID
+      - report_type: 'weekly' | 'monthly' | 'custom'
+      - period_start: date
+      - period_end: date
+      - title: string (e.g., "Weekly Report: Jul 7-13, 2026")
+      - summary: string (AI-generated narrative overview)
+      - data: ReportData (JSON)
+      - ai_insights: string[] (list of AI-generated insights)
+      - is_read: boolean
+      - generated_at: timestamp
+
+    ReportData:
+      workouts:
+        - total_sessions: number
+        - total_volume_kg: number
+        - total_duration_minutes: number
+        - favorite_muscle_groups: string[]
+        - personal_records: PR[]
+      nutrition:
+        - average_daily_calories: number
+        - average_macros: { protein, carbs, fat }
+        - adherence_rate: number (% of days within target)
+        - top_foods: string[]
+      weight:
+        - start_weight_kg: number
+        - end_weight_kg: number
+        - change_kg: number
+        - trend_direction: 'losing' | 'gaining' | 'maintaining'
+      sleep:
+        - average_duration_hours: number
+        - average_score: number
+        - consistency_score: number
+      recovery:
+        - average_score: number
+        - days_below_threshold: number
+      health:
+        - average_steps: number
+        - average_active_minutes: number
+        - average_resting_hr: number | null
+
+  7.2 Report Generation Pipeline
+
+    1. Cron job triggers (Monday 6 AM UTC for weekly, 1st of month for monthly).
+    2. For each active user:
+       a. Query all relevant data for the period.
+       b. Compute aggregations (averages, totals, trends).
+       c. Generate AI narrative by sending aggregated data to OpenAI with a report prompt.
+       d. Store the report in the reports table.
+       e. Send push notification to the user.
+    3. Use BullMQ job queue to process users in parallel with rate limiting.
+    4. Retry failed report generations up to 3 times.
+
+  7.3 PDF Generation
+
+    - Server-side PDF generation using a library like Puppeteer, PDFKit, or jsPDF.
+    - PDF layout: branded header with FitOnus logo, report title, sections with mini-charts (rendered as images), AI narrative text, footer with generation date.
+    - PDF generated on demand when user requests export (not pre-generated).
+    - PDF served as a signed URL from Supabase Storage.
+    - Alternative: generate PDF on the client using react-native-html-to-pdf.
+
+  7.4 AI Report Narrative
+
+    Prompt template:
+      "Generate a comprehensive health report narrative for the following data period: {period}.
+       User profile: {profile}. Data: {reportData}.
+       Include: overall assessment, highlights, areas of improvement, and specific recommendations.
+       Tone: encouraging, professional, specific. Reference actual numbers from the data.
+       Format: structured paragraphs with section headers."
+
+    The AI generates a 300-500 word narrative covering:
+      - Overall health assessment.
+      - Workout highlights and progress.
+      - Nutrition adherence and macro balance.
+      - Weight trend analysis.
+      - Sleep quality assessment.
+      - Recovery and training load balance.
+      - Specific recommendations for the next period.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/reports/
+  ├── components/
+  │   ├── report-card.tsx
+  │   ├── report-list.tsx
+  │   ├── report-detail-view.tsx
+  │   ├── report-section.tsx
+  │   ├── report-share-sheet.tsx
+  │   ├── report-summary-card.tsx
+  │   └── report-chart.tsx
+  ├── hooks/
+  │   ├── use-reports.ts
+  │   ├── use-report-detail.ts
+  │   ├── use-generate-report.ts
+  │   └── use-export-pdf.ts
+  ├── services/
+  │   └── report-api.ts
+  ├── types/
+  │   └── report.ts
+  └── index.ts
+
+  backend/src/jobs/schedulers/weekly-report.ts
+  backend/src/jobs/workers/report-generation.ts
+  backend/src/services/report-service.ts
+  backend/src/repositories/report-repository.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  ReportCard:
+    - Report title with period dates.
+    - Report type badge (weekly, monthly).
+    - AI summary preview (first 100 characters).
+    - Read/unread indicator.
+    - Press: navigate to detail.
+
+  ReportDetailView:
+    - Scrollable view with sections.
+    - Each section: header, summary text, mini-chart.
+    - AI narrative section at the bottom.
+    - FAB: "Export PDF" or "Share."
+
+  ReportSection:
+    - Section title (e.g., "Workout Summary").
+    - Key metrics in a grid (cards).
+    - Optional chart.
+    - AI commentary text.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Reports List (src/app/(tabs)/profile/reports/index.tsx):
+    - FlatList of ReportCards grouped by month.
+    - "Generate Custom Report" button at top.
+    - Pull to refresh for latest reports.
+    - Empty state: "Your first report will be generated next Monday."
+
+  Report Detail (src/app/(tabs)/profile/reports/[id].tsx):
+    - ReportDetailView with all sections.
+    - Share and export buttons in header.
+    - Scroll indicator for long reports.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/reports
+    Query: page, limit, type (weekly, monthly, custom)
+    Response: { data: Report[], pagination }
+
+  GET /api/v1/reports/:id
+    Response: { data: Report }
+
+  POST /api/v1/reports/generate
+    Request: { startDate, endDate }
+    Response: { data: { reportId, status: 'generating' } }
+    Notes: Enqueues a background job. Client polls for completion.
+
+  GET /api/v1/reports/:id/pdf
+    Response: { data: { pdfUrl: string, expiresAt: string } }
+
+  PATCH /api/v1/reports/:id/read
+    Response: 200
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  reports:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - report_type: TEXT (not null, CHECK IN ('weekly', 'monthly', 'custom'))
+    - period_start: DATE (not null)
+    - period_end: DATE (not null)
+    - title: TEXT (not null)
+    - summary: TEXT (AI-generated narrative)
+    - data: JSONB (not null — complete report data)
+    - ai_insights: TEXT[] (list of insight strings)
+    - is_read: BOOLEAN (default false)
+    - pdf_url: TEXT (nullable)
+    - generated_at: TIMESTAMPTZ (not null)
+    - created_at: TIMESTAMPTZ (default now())
+
+    Indexes: idx_reports_user_date (user_id, generated_at DESC)
+    Unique: (user_id, report_type, period_start)
+    RLS: auth.uid() = user_id
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI generates comprehensive, personalized narratives for each report.
+  - Narratives must reference specific data points and metrics.
+  - AI must compare current period to previous period for trend identification.
+  - AI recommendations must be actionable and specific.
+  - AI tone must be encouraging and professional.
+  - AI must handle periods with minimal data gracefully (acknowledge limited data, still provide insights).
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Report generation fails: retry up to 3 times, notify user of failure if all retries exhausted.
+  - AI narrative generation fails: generate report without narrative, add "AI insights unavailable" placeholder.
+  - PDF generation fails: display error with retry option.
+  - Insufficient data for a report: generate abbreviated report with available data, note missing sections.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User registered mid-week: first weekly report covers partial week with appropriate labeling.
+  - No data for an entire category: omit that section, note in the summary.
+  - User has data in only one category: generate report with available data only.
+  - Custom report spanning 6+ months: limit to 6 months maximum, suggest monthly reports.
+  - Report generated but user deletes account within 30-day grace period: include in data export.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Interactive reports with drill-down charts.
+  - Coach commentary: AI Coach video or audio summary.
+  - Comparative reports: "vs. last month" side-by-side.
+  - Report templates: user can customize which sections appear.
+  - Report sharing to social media with branded graphics.
+  - Integration with healthcare provider portals.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Generate reports during off-peak hours (early morning UTC).
+  - Cache report data in the reports table — never recompute on view.
+  - Use background jobs for all report generation to avoid blocking API responses.
+  - Keep AI narratives concise but specific — avoid generic filler text.
+  - Include the generation date and disclaimer in PDF exports.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] reports table created with constraints.
+  [ ] Report generation background job.
+  [ ] Weekly report cron scheduler.
+  [ ] Monthly report cron scheduler.
+  [ ] AI narrative generation prompt.
+  [ ] Report data aggregation service.
+  [ ] Reports list screen.
+  [ ] Report detail screen with sections.
+  [ ] PDF export functionality.
+  [ ] Push notification for new reports.
+  [ ] Custom report generation endpoint.
+  [ ] Report read tracking.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Weekly report generates with correct data aggregations.
+  [ ] Monthly report generates correctly.
+  [ ] AI narrative is specific and references actual data.
+  [ ] PDF export produces a valid, readable document.
+  [ ] Report notification links to correct report.
+  [ ] Custom report generates for arbitrary date ranges.
+  [ ] Reports handle missing data categories gracefully.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - Weekly reports are automatically generated every Monday.
+  - Monthly reports are automatically generated on the 1st of each month.
+  - Reports contain accurate, aggregated data from all health categories.
+  - AI-generated narratives are personalized, specific, and actionable.
+  - Reports can be exported as PDF with professional layout.
+  - Users receive push notifications when new reports are available.
+  - Report history is accessible and organized chronologically.
+  - Custom reports can be generated for user-specified date ranges.
+
+=====================================
+END OF DOCUMENT
+=====================================

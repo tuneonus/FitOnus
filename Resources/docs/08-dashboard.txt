@@ -1,0 +1,415 @@
+=====================================
+FITONUS — DASHBOARD
+Document: 08-dashboard.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the Dashboard feature — the primary landing screen users see every time they open FitOnus. The Dashboard serves as the command center of the application, presenting a personalized daily health overview, actionable insights from the AI Coach, quick-access actions, and real-time data from Health Connect / HealthKit. It must feel dynamic, informative, and motivating while avoiding information overload.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The Dashboard aggregates data from every subsystem in FitOnus and presents it as a cohesive daily summary. It displays metric cards for calories, steps, workouts, sleep, weight, and water intake. An AI insight banner delivers personalized recommendations based on the user's recent activity and progress. Quick action buttons provide one-tap access to the most common operations: logging a meal, starting a workout, and chatting with the AI Coach.
+
+The Dashboard implements a pull-to-refresh pattern for data synchronization and supports both grid-based and list-based layout sections. Data loads asynchronously with skeleton loaders ensuring the screen feels responsive immediately.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Provide a comprehensive daily health overview at a single glance.
+  - Motivate users with streak indicators, progress highlights, and AI-generated encouragement.
+  - Enable quick access to the most frequent actions without navigating through the app.
+  - Display real-time or near-real-time data from Health Connect / HealthKit.
+  - Adapt the dashboard content based on the user's goals and preferences.
+  - Load the dashboard within 1 second of navigation, using cached data if offline.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  4.1 Daily Summary Section
+    - Calorie progress ring showing consumed vs. target with remaining count.
+    - Macro breakdown (protein, carbs, fat) as horizontal progress bars.
+    - Step count with progress toward daily goal.
+    - Active minutes or calories burned from workouts.
+    - Water intake progress.
+
+  4.2 Metric Cards Grid
+    - Two-column grid of metric cards.
+    - Default cards: Calories, Steps, Workouts (today), Sleep (last night), Weight (latest), Water.
+    - Each card shows: icon, label, current value, unit, trend arrow (up/down/neutral), and mini sparkline.
+    - Tapping a card navigates to the detailed metric view.
+    - Cards can be reordered or hidden in future iterations.
+
+  4.3 AI Insight Banner
+    - Prominent card at the top of the dashboard (below summary, above metric grid).
+    - Displays a personalized AI-generated insight or recommendation.
+    - Examples: "Great workout yesterday! Your bench press is up 5% this month."
+    - Tapping the banner opens the AI Coach chat with the insight as context.
+    - Refreshes once per session or on pull-to-refresh.
+
+  4.4 Quick Actions Bar
+    - Horizontal row of circular icon buttons.
+    - Actions: Log Meal, Start Workout, Log Weight, Log Water, Chat with Coach.
+    - Each button navigates to the appropriate screen or opens a quick-entry modal.
+
+  4.5 Activity Feed
+    - Chronological feed of today's logged activities.
+    - Entries: completed workouts, logged meals, weight entries, sleep logs.
+    - Each entry shows type icon, description, time, and relevant metric.
+    - Tapping navigates to the detail view.
+
+  4.6 Streak and Motivation
+    - Current streak indicator (consecutive days with activity).
+    - Weekly completion grid (7 dots, filled for active days).
+    - Motivational message or quote (rotated daily).
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Dashboard must render within 1 second using cached data.
+  - Fresh data must load within 2 seconds on Wi-Fi.
+  - Skeleton loaders must display during data loading.
+  - Pull-to-refresh must trigger a complete data sync.
+  - The dashboard must be fully functional offline using cached data.
+  - Animations must not cause frame drops on mid-range devices.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  1. User opens FitOnus and passes auth gate.
+  2. Dashboard screen mounts. Cached data renders immediately via MMKV hydration.
+  3. TanStack Query fetches fresh dashboard summary from API in the background.
+  4. If fresh data differs from cache, UI updates with number-tick animations.
+  5. User scrolls through daily summary, metric cards, AI insight, and activity feed.
+  6. User taps a metric card → navigates to metric detail screen with charts and history.
+  7. User taps a quick action → navigates to the corresponding feature or opens a modal.
+  8. User pulls to refresh → fresh data synced from Health Connect and backend.
+  9. User taps AI insight → opens AI Coach with the insight as conversation context.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Dashboard Data Aggregation
+
+    The backend endpoint GET /api/v1/dashboard/summary computes and returns:
+
+    DashboardSummary:
+      - date: string (ISO date, today)
+      - calories: { consumed: number, target: number, burned: number }
+      - macros: { protein: { consumed: number, target: number }, carbs: {...}, fat: {...} }
+      - steps: { count: number, goal: number }
+      - activeMinutes: number
+      - water: { consumed_ml: number, target_ml: number }
+      - sleep: { duration_hours: number, quality: string, bedtime: string, wakeTime: string } | null
+      - weight: { current_kg: number, previous_kg: number, trend: 'up' | 'down' | 'stable' } | null
+      - workouts: { completedToday: number, plannedToday: number }
+      - streak: { current: number, best: number }
+      - weekActivity: boolean[] (7 elements, Mon-Sun, true if activity logged)
+      - aiInsight: { id: string, message: string, category: string } | null
+
+    The service aggregates from multiple tables:
+      - meals (today's entries) → calories and macros.
+      - health_data (today) → steps, active minutes.
+      - water_intake (today) → water consumed.
+      - sleep_logs (last night) → sleep data.
+      - weight_logs (latest) → weight data.
+      - workout_sessions (today) → workout count.
+      - Streak calculated from activity logs across tables.
+
+  7.2 Caching Strategy
+
+    - TanStack Query key: ['dashboard', 'summary', dateString].
+    - Stale time: 2 minutes (dashboard data changes frequently).
+    - Refetch on focus: enabled.
+    - Refetch on reconnect: enabled.
+    - Background refetch interval: 5 minutes when app is foregrounded.
+    - MMKV cache: last dashboard summary stored for instant render on next launch.
+
+  7.3 AI Insight Generation
+
+    - Generated as a background job when the user's daily data reaches a threshold (e.g., workout completed, meal logged).
+    - Uses the AI Coach service with a specific insight-generation prompt.
+    - Insight is stored in the database and served with the dashboard summary.
+    - Insight categories: motivation, progress, recommendation, warning, achievement.
+    - One insight per day, refreshed on significant events.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/dashboard/
+  ├── components/
+  │   ├── daily-summary.tsx           # Calorie ring and macro bars
+  │   ├── metric-cards-grid.tsx       # Two-column metric cards layout
+  │   ├── quick-actions.tsx           # Quick action button row
+  │   ├── ai-insight-card.tsx         # AI insight banner
+  │   ├── activity-feed.tsx           # Today's activity list
+  │   ├── activity-feed-item.tsx      # Individual activity entry
+  │   ├── streak-card.tsx             # Streak indicator
+  │   ├── weekly-activity.tsx         # 7-day activity dots
+  │   ├── health-overview.tsx         # Health Connect data summary
+  │   └── greeting-header.tsx         # "Good morning, [Name]" header
+  ├── hooks/
+  │   ├── use-dashboard-data.ts       # Dashboard summary query
+  │   ├── use-daily-summary.ts        # Calorie/macro data
+  │   ├── use-ai-insights.ts          # AI insight query
+  │   ├── use-activity-feed.ts        # Activity feed query
+  │   └── use-streak.ts               # Streak data
+  ├── services/
+  │   └── dashboard-api.ts            # Dashboard API calls
+  ├── types/
+  │   └── dashboard.ts                # Dashboard types
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  GreetingHeader:
+    - Time-based greeting: "Good morning / afternoon / evening, [Name]"
+    - Today's date formatted: "Tuesday, July 15"
+    - Notification bell icon with unread badge (top right).
+
+  DailySummary:
+    - Large calorie progress ring (ProgressRing component, 120x120).
+    - Center of ring: consumed calories count (animated number).
+    - Below ring: "[remaining] kcal remaining" text.
+    - Three horizontal macro bars (protein, carbs, fat) below the ring.
+    - Each bar shows: label, consumed/target grams, percentage fill.
+    - Colors: protein red (#FF6B6B), carbs teal (#4ECDC4), fat yellow (#FFE66D).
+
+  MetricCardsGrid:
+    - FlatList or map rendering of MetricCard components in a 2-column grid.
+    - Cards: Steps, Active Minutes, Water, Sleep, Weight, Workouts.
+    - Each card uses the shared MetricCard component from src/components/shared/.
+
+  QuickActions:
+    - Horizontal ScrollView with 5 circular icon buttons.
+    - Each button: 56x56, backgroundElement, centered icon (24pt), label below (labelSmall).
+    - Actions: Log Meal, Start Workout, Log Weight, Log Water, Ask Coach.
+
+  AIInsightCard:
+    - Background: gradient from primaryLight to secondaryLight.
+    - AI avatar icon (24pt) + "AI Coach" label.
+    - Insight text (bodyLarge).
+    - "Chat with Coach →" link at bottom.
+    - Press animation (scale 0.98).
+
+  ActivityFeed:
+    - SectionHeader: "Today's Activity".
+    - FlatList of ActivityFeedItem components.
+    - If empty: "No activity logged yet today" with suggestion.
+
+  ActivityFeedItem:
+    - Type icon (20pt, colored by category: workout=primary, meal=success, weight=info).
+    - Title: activity description ("Completed Upper Body Workout", "Logged Lunch").
+    - Subtitle: relevant metric ("45 min, 320 kcal burned", "650 kcal").
+    - Time: relative or absolute (caption, textTertiary).
+    - Press: navigate to detail.
+
+  StreakCard:
+    - Flame icon with current streak count (displaySmall).
+    - "day streak" label.
+    - WeeklyActivity dots below.
+    - If streak is 0: "Start your streak today!" message.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Dashboard Home Screen (src/app/(tabs)/dashboard/index.tsx):
+    - ScrollView with pull-to-refresh.
+    - Order: GreetingHeader → AIInsightCard → DailySummary → QuickActions → MetricCardsGrid → StreakCard → ActivityFeed.
+    - Background: background color.
+    - Horizontal padding: 16.
+    - Sections separated by 24pt vertical spacing.
+
+  Metric Detail Screen (src/app/(tabs)/dashboard/metric/[type].tsx):
+    - Dynamic screen based on metric type (steps, calories, sleep, weight, etc.).
+    - Full-width chart (TrendChart) with time range selector (Day, Week, Month, Year).
+    - Statistics summary: average, min, max, total for the period.
+    - History list of individual entries.
+    - "Log [Metric]" button at bottom if applicable.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/dashboard/summary
+    Query params: date (optional, defaults to today)
+    Response: { data: DashboardSummary }
+    Requires: authentication.
+    Performance: must respond in under 200ms (uses precomputed/cached aggregations).
+
+  GET /api/v1/dashboard/activity-feed
+    Query params: date (optional, defaults to today)
+    Response: { data: ActivityFeedItem[] }
+
+  GET /api/v1/dashboard/metric/:type
+    Query params: period ('day' | 'week' | 'month' | 'year'), startDate, endDate
+    Response: { data: { dataPoints: MetricDataPoint[], stats: MetricStats } }
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  The dashboard does not have its own tables. It aggregates data from:
+    - meals and meal_items (calories, macros)
+    - health_data (steps, active minutes, heart rate)
+    - water_intake (water consumed)
+    - sleep_logs (sleep duration, quality)
+    - weight_logs (weight, trend)
+    - workout_sessions (workout count, calories burned)
+
+  For performance, consider a materialized view or precomputed daily_summaries table:
+
+  daily_summaries (optional, performance optimization):
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id)
+    - date: DATE (not null)
+    - calories_consumed: INTEGER (default 0)
+    - calories_burned: INTEGER (default 0)
+    - protein_g: INTEGER (default 0)
+    - carbs_g: INTEGER (default 0)
+    - fat_g: INTEGER (default 0)
+    - steps: INTEGER (default 0)
+    - active_minutes: INTEGER (default 0)
+    - water_ml: INTEGER (default 0)
+    - sleep_hours: DECIMAL(3,1) (nullable)
+    - workouts_completed: INTEGER (default 0)
+    - created_at: TIMESTAMPTZ (default now())
+    - updated_at: TIMESTAMPTZ
+
+    Unique constraint: (user_id, date)
+    Updated via triggers or background jobs when source data changes.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI insight generation runs as a background job triggered by significant events:
+    - Workout completion.
+    - Meal logging exceeding 80% of daily target.
+    - Weight log that shows notable trend.
+    - Achievement milestone (streak, personal record).
+  - Insight prompt includes the user's full daily summary data and recent history.
+  - Insights must be encouraging, specific, and actionable.
+  - Insight categories and their triggers:
+    - "motivation": streak milestones, consistent activity.
+    - "progress": weight trend, strength improvements.
+    - "recommendation": incomplete daily goals, skipped meals.
+    - "warning": over-training signs, caloric extremes.
+    - "achievement": personal records, goal completions.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Dashboard summary API fails: display cached data with "Last updated X minutes ago" indicator.
+  - Health Connect data unavailable: display affected metric cards with "Sync required" message.
+  - AI insight generation fails: hide the insight card silently (not critical).
+  - Individual metric data fails: show error state per card, not whole dashboard.
+  - Offline: display fully from MMKV cache with offline banner.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - First day (no data): display all metric cards at zero with encouraging "Start your journey" messages.
+  - User with no goals set: display basic health metrics without goal progress.
+  - Timezone change: recalculate "today" based on device timezone.
+  - Data from future dates (clock skew): filter to show only today and past data.
+  - Very high values (marathon runner with 50,000 steps): ensure number formatting doesn't overflow card layout.
+  - Multiple meals logged in rapid succession: aggregate correctly, avoid race conditions.
+  - Health Connect returns zero for all metrics: display zero gracefully, prompt Health Connect re-sync.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Customizable dashboard layout (drag-and-drop card reordering).
+  - Widget support for iOS and Android home screens.
+  - Weekly and monthly dashboard views.
+  - Social feed integration (friends' activity).
+  - Personalized daily challenges generated by AI.
+  - Voice assistant integration ("Hey FitOnus, how am I doing today?").
+  - Comparative analytics ("You're more active than 80% of users with similar goals").
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Use skeleton loaders for every data section during loading.
+  - Cache the last dashboard summary in MMKV for instant render on app launch.
+  - Use animated number transitions when values change (not instant jumps).
+  - Keep the greeting time-aware and personal.
+  - Ensure all metric cards are accessible with proper labels.
+  - Use memoization on ActivityFeedItem components to prevent unnecessary re-renders.
+  - Pull-to-refresh should trigger both local Health Connect sync and backend data refresh.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Dashboard summary API endpoint implemented and tested.
+  [ ] GreetingHeader component with time-based greeting.
+  [ ] DailySummary component with calorie ring and macro bars.
+  [ ] MetricCardsGrid with all six default cards.
+  [ ] QuickActions bar with navigation to all target screens.
+  [ ] AIInsightCard component with press-to-chat navigation.
+  [ ] ActivityFeed with today's logged activities.
+  [ ] StreakCard with current streak and weekly dots.
+  [ ] Pull-to-refresh implemented.
+  [ ] Skeleton loading states for all sections.
+  [ ] MMKV caching for offline dashboard.
+  [ ] Metric detail screen with chart and history.
+  [ ] Dashboard data refreshes on app foreground.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Dashboard renders with all sections populated when data exists.
+  [ ] Dashboard renders gracefully with zero data (first day).
+  [ ] Dashboard renders from cache when offline.
+  [ ] Pull-to-refresh triggers data update.
+  [ ] Metric card tap navigates to detail screen.
+  [ ] Quick action buttons navigate to correct screens.
+  [ ] AI insight card navigates to coach chat.
+  [ ] Streak calculation is correct across different scenarios.
+  [ ] Calorie ring accurately represents consumed vs. target.
+  [ ] Macro bars accurately represent macros.
+  [ ] Activity feed displays today's entries in chronological order.
+  [ ] Dashboard summary API returns correct aggregated data.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - The Dashboard renders within 1 second on app launch using cached data.
+  - All metric cards display accurate, current values.
+  - The calorie progress ring accurately shows consumed vs. target calories.
+  - The AI insight banner displays a relevant, personalized message.
+  - Quick action buttons navigate to the correct features.
+  - The activity feed shows all activities logged today.
+  - The streak indicator accurately reflects consecutive active days.
+  - Pull-to-refresh updates all data sections.
+  - The dashboard is fully functional offline with cached data.
+  - Metric card taps navigate to detailed views with charts and history.
+  - The dashboard adapts to the user's theme preference (dark/light mode).
+
+=====================================
+END OF DOCUMENT
+=====================================

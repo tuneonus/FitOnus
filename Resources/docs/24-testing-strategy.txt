@@ -1,0 +1,70 @@
+=====================================
+FITONUS — TESTING STRATEGY
+Document: 24-testing-strategy.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document outlines the testing methodologies, tools, and coverage requirements for both the mobile application and backend services of FitOnus to ensure a stable, bug-free production environment.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+FitOnus employs a multi-tiered testing strategy:
+  1. Static Analysis (TypeScript, ESLint)
+  2. Unit Testing (Jest)
+  3. Integration Testing (React Native Testing Library, Supertest)
+  4. End-to-End Testing (Maestro / Detox)
+  5. Manual QA & Beta Testing
+
+=====================================
+3. MOBILE TESTING
+=====================================
+
+  3.1 Unit & Component Testing
+    - Framework: Jest + React Native Testing Library.
+    - Scope: Complex UI components, utility functions (e.g., calorie calculators, unit converters), and custom hooks.
+    - Requirement: 80% coverage for utility functions; 60% coverage for UI components.
+    - Mocking: Mock API calls, navigation, and native modules (like expo-secure-store).
+
+  3.2 End-to-End (E2E) Testing
+    - Framework: Maestro (preferred for YAML-based simplicity) or Detox.
+    - Scope: Critical user flows.
+    - Key Flows to Test:
+      - Registration and Onboarding.
+      - Login and Token Refresh.
+      - Logging a workout (including PR detection).
+      - Logging a meal.
+      - AI Coach conversation.
+
+=====================================
+4. BACKEND TESTING
+=====================================
+
+  4.1 Unit & Integration Testing
+    - Framework: Jest + Supertest.
+    - Scope: All API endpoints, middleware, and business logic services.
+    - Requirement: 85% overall coverage.
+    - Database: Use a separate test database or transactions that rollback after each test to ensure test isolation.
+
+  4.2 AI Component Testing
+    - Challenge: LLM outputs are non-deterministic.
+    - Strategy: Test the prompt construction, context injection (RAG/Memory), and function calling structure rather than exact string matching of the output. Use deterministic mock responses for the LLM when testing the integration pipeline.
+
+=====================================
+5. CI/CD INTEGRATION
+=====================================
+
+  - All PRs must pass the test suite before merging.
+  - GitHub Actions runs ESLint, TypeScript compilation, and Jest tests on every push to `main` or PR.
+  - E2E tests run on nightly builds.
+
+=====================================
+END OF DOCUMENT
+=====================================

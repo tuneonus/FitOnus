@@ -1,0 +1,607 @@
+=====================================
+FITONUS — AUTHENTICATION
+Document: 06-authentication.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the complete authentication system for FitOnus, covering user registration, login, session management, token lifecycle, social authentication, password recovery, and security controls. Authentication is the foundation of every user interaction — every API call, every data access, and every AI conversation depends on a properly authenticated session. This document guides the implementation of a secure, seamless, and resilient authentication experience.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+FitOnus uses Supabase Auth as the authentication backend, providing JWT-based authentication with support for email/password, Google Sign-In, and Apple Sign-In. The mobile application stores tokens securely using Expo Secure Store and automatically manages token refresh, session persistence, and authentication state across app launches.
+
+The authentication flow follows this pattern:
+  1. User authenticates via Supabase Auth (email/password or social provider).
+  2. Supabase returns a JWT access token (short-lived, 1 hour) and a refresh token (long-lived, 30 days).
+  3. The mobile app stores both tokens in Expo Secure Store (encrypted, platform-native keychain).
+  4. Every API request includes the access token in the Authorization header.
+  5. The backend NestJS AuthGuard verifies the token via Supabase's JWT verification.
+  6. When the access token expires, the app uses the refresh token to obtain a new access token transparently.
+  7. If the refresh token expires, the user is redirected to the login screen.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Provide a frictionless authentication experience with minimal steps between app launch and dashboard access.
+  - Support multiple authentication methods (email/password, Google, Apple) with a unified user experience.
+  - Implement secure token management that protects against token theft, replay attacks, and session hijacking.
+  - Ensure seamless session persistence across app restarts, background kills, and device reboots.
+  - Handle token refresh transparently without interrupting the user experience.
+  - Enable account recovery through secure password reset flows.
+  - Comply with Apple and Google requirements for App Store and Play Store approval (including Apple Sign-In mandate for iOS).
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  4.1 Registration
+    - Email/password registration with validation (valid email format, minimum 8 characters, at least one uppercase, one lowercase, one digit).
+    - Email verification via Supabase (verification email with magic link).
+    - Social registration via Google Sign-In and Apple Sign-In.
+    - On successful registration, create a user row in the users table and redirect to the onboarding wizard.
+    - Prevent duplicate registrations with the same email address.
+
+  4.2 Login
+    - Email/password login.
+    - Social login via Google and Apple.
+    - "Remember Me" functionality (enabled by default — tokens persisted in Expo Secure Store).
+    - Biometric authentication (Face ID / Fingerprint) for returning users on supported devices.
+    - Login attempt rate limiting (5 attempts per 15 minutes per email).
+    - Account lockout after 10 consecutive failed attempts (30-minute lockout).
+
+  4.3 Session Management
+    - Access token lifetime: 1 hour.
+    - Refresh token lifetime: 30 days.
+    - Automatic token refresh when access token is within 5 minutes of expiry.
+    - Concurrent session support (user can be logged in on multiple devices).
+    - Session invalidation on password change (all sessions except current).
+    - Manual logout (clears tokens, clears cache, redirects to login).
+
+  4.4 Password Recovery
+    - "Forgot Password" flow: user enters email, receives reset link via email.
+    - Password reset link valid for 1 hour.
+    - New password must meet the same complexity requirements as registration.
+    - Password change available from Settings for authenticated users.
+
+  4.5 Account Deletion
+    - User can request account deletion from Settings.
+    - Confirmation dialog with re-authentication required.
+    - Soft delete with 30-day grace period before permanent deletion.
+    - All user data anonymized/deleted in compliance with GDPR.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Login flow must complete in under 3 seconds (from button press to dashboard render).
+  - Token refresh must complete in under 1 second and be invisible to the user.
+  - Authentication state must be determined within 500ms on app launch.
+  - All tokens must be stored encrypted using platform-native keychain (Expo Secure Store).
+  - All authentication API calls must use HTTPS.
+  - Password hashing uses bcrypt with a minimum of 12 salt rounds.
+  - No sensitive data (passwords, tokens) in application logs.
+  - Session management must work correctly when the device clock is incorrect (use server timestamps).
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 First-Time Registration Flow
+    1. User opens FitOnus → Welcome screen displays.
+    2. User taps "Create Account."
+    3. Registration screen: user enters name, email, password, confirms password.
+    4. User accepts Terms of Service and Privacy Policy.
+    5. User taps "Sign Up."
+    6. Loading indicator displays while API call processes.
+    7. If successful: Supabase creates user, returns tokens. App stores tokens, navigates to onboarding.
+    8. If email already exists: display error "An account with this email already exists."
+    9. If validation error: display inline field-level errors.
+    10. Email verification link sent. App shows "Check your email" prompt (but allows proceeding to onboarding — verification enforced later for sensitive operations).
+
+  6.2 Returning User Login Flow
+    1. User opens FitOnus.
+    2. App checks Expo Secure Store for stored refresh token.
+    3. If valid refresh token exists: attempt silent token refresh.
+       a. If refresh succeeds: navigate directly to Dashboard (skip login screen).
+       b. If refresh fails (token expired/revoked): navigate to Login screen.
+    4. If no refresh token: navigate to Login screen.
+    5. User enters email and password, taps "Sign In."
+    6. If biometric is enabled: prompt for Face ID / Fingerprint before proceeding.
+    7. On success: store new tokens, navigate to Dashboard.
+    8. On failure: display error message, track failed attempt count.
+
+  6.3 Social Authentication Flow
+    1. User taps "Continue with Google" or "Continue with Apple."
+    2. System browser / native auth UI opens with the provider's login page.
+    3. User authenticates with the provider.
+    4. Provider redirects back to the app with an authorization code.
+    5. App exchanges the code with Supabase Auth for tokens.
+    6. If this is the first social login: create user record, navigate to onboarding.
+    7. If returning social user: navigate to Dashboard.
+
+  6.4 Token Refresh Flow
+    1. API client interceptor detects access token is about to expire (within 5 minutes) or receives a 401 response.
+    2. Interceptor pauses all pending requests.
+    3. Refresh token is sent to Supabase's /auth/v1/token?grant_type=refresh_token endpoint.
+    4. If refresh succeeds: new access token and refresh token stored, pending requests replayed with new token.
+    5. If refresh fails: all pending requests rejected, user navigated to Login screen, local data cleared.
+    6. A mutex/lock prevents multiple concurrent refresh attempts.
+
+  6.5 Password Reset Flow
+    1. User taps "Forgot Password?" on Login screen.
+    2. Forgot Password screen: user enters email.
+    3. App calls Supabase's resetPasswordForEmail.
+    4. Success message displayed: "If an account exists with this email, you'll receive a reset link."
+    5. User receives email with a reset link.
+    6. User taps link → opens FitOnus app via deep link (fitonus://reset-password?token=...).
+    7. Reset Password screen: user enters new password and confirms.
+    8. App calls Supabase's updateUser with the new password.
+    9. On success: navigate to Login screen with "Password updated" toast.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Supabase Auth Configuration
+    - Provider: Supabase hosted auth.
+    - JWT secret: managed by Supabase (never exposed to the client).
+    - JWT algorithm: HS256.
+    - Access token claims: { sub: userId, email, role, aud, exp, iat }.
+    - Refresh token: opaque token stored in Supabase's auth.refresh_tokens table.
+    - Email templates: customized with FitOnus branding.
+
+  7.2 Mobile Auth Implementation
+
+    Token Storage:
+      - expo-secure-store for access token, refresh token, and user ID.
+      - Keys: "auth.accessToken", "auth.refreshToken", "auth.userId".
+      - MMKV for non-sensitive auth metadata: "auth.isOnboarded", "auth.lastLoginAt".
+
+    Auth Store (Zustand):
+      type AuthState = {
+        isAuthenticated: boolean;
+        isLoading: boolean;
+        userId: string | null;
+        email: string | null;
+        isOnboarded: boolean;
+        isEmailVerified: boolean;
+
+        // Actions
+        setAuthenticated: (userId: string, email: string) => void;
+        setLoading: (loading: boolean) => void;
+        setOnboarded: (onboarded: boolean) => void;
+        logout: () => void;
+      };
+
+    Auth Hook (use-auth.ts):
+      - Exposes: isAuthenticated, isLoading, userId, login, register, logout, refreshSession.
+      - On mount: checks Expo Secure Store for tokens, attempts refresh if found.
+      - Provides loading state during initial auth check.
+
+    API Client Integration:
+      - Request interceptor:
+        1. Reads access token from Expo Secure Store.
+        2. Attaches as "Authorization: Bearer <token>" header.
+      - Response interceptor:
+        1. On 401 response: triggers token refresh.
+        2. If refresh succeeds: retries the original request with the new token.
+        3. If refresh fails: calls authStore.logout(), navigates to Login.
+      - Refresh lock: a Promise-based mutex ensures only one refresh is in flight at a time.
+
+  7.3 Backend Auth Middleware
+
+    auth.ts middleware:
+      1. Extract Bearer token from Authorization header.
+      2. Verify token using Supabase's getUser(token) method.
+      3. If valid: attach user object to request (request.user = { id, email, role }).
+      4. If invalid/expired: return 401 { error: { code: "UNAUTHORIZED", message: "Invalid or expired token" } }.
+      5. For protected routes: apply this guard via @UseGuards(AuthGuard).
+
+    Rate Limiting:
+      - Login endpoint: 5 requests per 15 minutes per IP + email combination.
+      - Registration endpoint: 3 requests per hour per IP.
+      - Password reset: 3 requests per hour per email.
+      - Implemented via NestJS ThrottlerGuard with Redis backing.
+
+  7.4 Row-Level Security (RLS)
+
+    All database tables enforce RLS policies that scope data access to the authenticated user:
+
+      CREATE POLICY "Users can view own data" ON users
+        FOR SELECT USING (auth.uid() = id);
+
+      CREATE POLICY "Users can update own data" ON users
+        FOR UPDATE USING (auth.uid() = id);
+
+    This ensures that even if a malicious request bypasses application logic, the database itself prevents unauthorized data access.
+
+  7.5 Social Auth Configuration
+
+    Google Sign-In:
+      - Expo AuthSession with Google provider.
+      - Scopes: openid, email, profile.
+      - ID token exchanged with Supabase for session.
+
+    Apple Sign-In:
+      - expo-apple-authentication (iOS).
+      - Scopes: fullName, email.
+      - Identity token exchanged with Supabase for session.
+      - Note: Apple only provides name on first sign-in. Cache it immediately.
+
+  7.6 Biometric Authentication
+    - Implemented using expo-local-authentication (future dependency).
+    - Enabled after first successful login if device supports biometrics.
+    - Biometric auth verifies the user locally, then retrieves the stored refresh token to create a session.
+    - This does not replace server-side authentication — it gates access to stored credentials.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/auth/
+  ├── components/
+  │   ├── login-form.tsx              # Email/password login form
+  │   ├── register-form.tsx           # Registration form
+  │   ├── social-auth-buttons.tsx     # Google/Apple sign-in buttons
+  │   ├── forgot-password-form.tsx    # Password reset request form
+  │   ├── reset-password-form.tsx     # New password form
+  │   ├── onboarding-step.tsx         # Onboarding wizard step wrapper
+  │   ├── onboarding-progress.tsx     # Step indicator
+  │   └── auth-guard.tsx              # Route protection component
+  ├── hooks/
+  │   ├── use-login.ts                # Login mutation hook
+  │   ├── use-register.ts             # Registration mutation hook
+  │   ├── use-logout.ts               # Logout action hook
+  │   ├── use-auth-state.ts           # Auth state initialization hook
+  │   ├── use-onboarding.ts           # Onboarding wizard state hook
+  │   ├── use-social-auth.ts          # Social auth flow hook
+  │   ├── use-forgot-password.ts      # Password reset request hook
+  │   ├── use-biometric-auth.ts       # Biometric authentication hook
+  │   └── use-token-refresh.ts        # Token refresh logic hook
+  ├── services/
+  │   ├── auth-api.ts                 # Supabase auth API calls
+  │   ├── auth-validator.ts           # Input validation rules
+  │   └── token-manager.ts            # Token storage and retrieval
+  ├── stores/
+  │   └── auth-store.ts               # Zustand auth state
+  ├── types/
+  │   └── auth.ts                     # Auth-related types
+  ├── constants/
+  │   └── auth-config.ts              # Auth configuration constants
+  └── index.ts                        # Public API exports
+
+  mobile/src/app/(auth)/
+  ├── _layout.tsx                     # Auth stack navigator
+  ├── welcome.tsx                     # Welcome screen
+  ├── login.tsx                       # Login screen
+  ├── register.tsx                    # Registration screen
+  ├── forgot-password.tsx             # Forgot password screen
+  ├── reset-password.tsx              # Reset password screen
+  └── onboarding/
+      ├── _layout.tsx                 # Onboarding navigation
+      ├── index.tsx                   # Onboarding entry
+      ├── personal-info.tsx           # Step 1
+      ├── body-metrics.tsx            # Step 2
+      ├── fitness-goals.tsx           # Step 3
+      ├── activity-level.tsx          # Step 4
+      ├── diet-preferences.tsx        # Step 5
+      ├── health-permissions.tsx      # Step 6
+      └── complete.tsx                # Completion screen
+
+  backend/src/routes/v1/auth.ts       # Auth route handlers
+  backend/src/services/auth-service.ts # Auth business logic
+  backend/src/common/guards/auth.guard.ts       # JWT verification guard
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  LoginForm:
+    - Email input with email keyboard type and validation.
+    - Password input with secure text entry and toggle visibility.
+    - "Sign In" primary button with loading state.
+    - "Forgot Password?" ghost button.
+    - Form validation: email required and valid format, password required.
+
+  RegisterForm:
+    - Full name input.
+    - Email input with validation.
+    - Password input with strength indicator (weak/medium/strong).
+    - Confirm password input with match validation.
+    - Terms of Service checkbox with link to terms.
+    - "Create Account" primary button with loading state.
+
+  SocialAuthButtons:
+    - "Continue with Google" button with Google logo.
+    - "Continue with Apple" button with Apple logo (iOS only, required by App Store).
+    - Divider with "or" text between social and email auth.
+    - Each button handles the full OAuth flow internally.
+
+  AuthGuard:
+    - Wraps authenticated route groups.
+    - Checks auth state from Zustand store.
+    - Shows splash screen during auth state initialization.
+    - Redirects to (auth)/welcome if not authenticated.
+    - Redirects to (auth)/onboarding if authenticated but not onboarded.
+    - Renders children if authenticated and onboarded.
+
+  OnboardingStep:
+    - Container with title, subtitle, and content slot.
+    - "Continue" primary button at bottom.
+    - "Back" ghost button (hidden on first step).
+    - Progress indicator at top showing current step.
+    - Keyboard-aware scrolling for steps with input fields.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Welcome Screen:
+    - App logo animation (Lottie).
+    - Tagline: "Your AI-Powered Wellness Companion."
+    - "Get Started" primary button.
+    - "I already have an account" ghost button.
+    - Optional: feature highlights carousel.
+
+  Login Screen:
+    - Header: "Welcome Back" title.
+    - LoginForm component.
+    - SocialAuthButtons component.
+    - Footer: "Don't have an account? Sign Up" link.
+
+  Register Screen:
+    - Header: "Create Account" title.
+    - RegisterForm component.
+    - SocialAuthButtons component.
+    - Footer: "Already have an account? Sign In" link.
+
+  Forgot Password Screen:
+    - Header: "Reset Password" title.
+    - Description text explaining the flow.
+    - Email input.
+    - "Send Reset Link" primary button.
+    - Success state: "Check your email" message with email icon.
+
+  Onboarding Screens (6 steps):
+    - Each step collects specific profile data.
+    - Animated transitions between steps.
+    - Data persisted progressively (each step saves to backend independently).
+    - "Skip" option for non-essential steps (diet preferences, health permissions).
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  POST /api/v1/auth/register
+    Request: { email: string, password: string, fullName: string }
+    Response: { data: { user: User, session: Session } }
+    Errors: 400 (validation), 409 (email exists)
+
+  POST /api/v1/auth/login
+    Request: { email: string, password: string }
+    Response: { data: { user: User, session: Session } }
+    Errors: 401 (invalid credentials), 429 (rate limited)
+
+  POST /api/v1/auth/refresh
+    Request: { refreshToken: string }
+    Response: { data: { accessToken: string, refreshToken: string } }
+    Errors: 401 (invalid/expired refresh token)
+
+  POST /api/v1/auth/logout
+    Request: (empty, uses Bearer token)
+    Response: 204 No Content
+    Side effects: Invalidates the refresh token on the server.
+
+  POST /api/v1/auth/forgot-password
+    Request: { email: string }
+    Response: 200 { data: { message: "If an account exists..." } }
+    Note: Always returns success to prevent email enumeration.
+
+  POST /api/v1/auth/reset-password
+    Request: { token: string, newPassword: string }
+    Response: 200 { data: { message: "Password updated" } }
+    Errors: 400 (invalid/expired token), 422 (password too weak)
+
+  POST /api/v1/auth/social
+    Request: { provider: 'google' | 'apple', idToken: string }
+    Response: { data: { user: User, session: Session, isNewUser: boolean } }
+
+  DELETE /api/v1/auth/account
+    Request: { confirmPassword: string }
+    Response: 200 { data: { message: "Account deletion scheduled" } }
+    Side effects: Soft deletes user, schedules permanent deletion in 30 days.
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  users (managed by Supabase Auth):
+    - id: UUID (primary key)
+    - email: TEXT (unique, not null)
+    - encrypted_password: TEXT
+    - email_confirmed_at: TIMESTAMPTZ
+    - created_at: TIMESTAMPTZ (default now())
+    - updated_at: TIMESTAMPTZ
+    - deleted_at: TIMESTAMPTZ (soft delete)
+    - raw_user_meta_data: JSONB (contains full_name, avatar_url from social providers)
+
+  user_sessions (managed by Supabase Auth):
+    - id: UUID (primary key)
+    - user_id: UUID (FK → users.id)
+    - factor_id: UUID
+    - created_at: TIMESTAMPTZ
+    - updated_at: TIMESTAMPTZ
+    - not_after: TIMESTAMPTZ (session expiry)
+
+  user_onboarding:
+    - id: UUID (primary key)
+    - user_id: UUID (FK → users.id, unique)
+    - is_completed: BOOLEAN (default false)
+    - current_step: INTEGER (default 1)
+    - personal_info: JSONB (name, age, gender)
+    - body_metrics: JSONB (height, weight, goal_weight)
+    - fitness_goals: TEXT[] (array of goal identifiers)
+    - activity_level: TEXT
+    - diet_preferences: JSONB (diet_type, allergies, restrictions)
+    - health_permissions_granted: BOOLEAN (default false)
+    - notification_permissions_granted: BOOLEAN (default false)
+    - completed_at: TIMESTAMPTZ
+    - created_at: TIMESTAMPTZ (default now())
+    - updated_at: TIMESTAMPTZ
+
+  RLS Policies:
+    - users: SELECT/UPDATE own row only (auth.uid() = id).
+    - user_onboarding: SELECT/INSERT/UPDATE own row only (auth.uid() = user_id).
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - The AI Coach must be aware of the user's authentication status and profile completeness.
+  - On first interaction after onboarding, the AI Coach should introduce itself and reference the user's stated goals.
+  - The AI Coach must never expose authentication tokens or session details in conversation.
+  - If the user asks about their account or data privacy, the AI Coach should provide accurate, helpful responses and direct them to the appropriate Settings screens.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  Registration Errors:
+    - "Email already registered" → suggest login or password reset.
+    - "Password too weak" → display specific requirement not met.
+    - "Network error" → display retry option with offline message.
+
+  Login Errors:
+    - "Invalid email or password" → generic message (prevent credential enumeration).
+    - "Account locked" → display lockout duration and suggest password reset.
+    - "Too many attempts" → display cooldown timer.
+    - "Network error" → display retry option.
+
+  Token Refresh Errors:
+    - Refresh fails silently → redirect to login with "Session expired" toast.
+    - Multiple concurrent refresh attempts → use mutex to prevent race conditions.
+
+  Social Auth Errors:
+    - User cancels OAuth flow → return to login screen silently.
+    - Provider returns error → display "Unable to sign in with [provider]. Please try again."
+    - Account merge conflict (social email matches existing email account) → prompt user to link accounts or sign in with password.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User force-kills app during registration → on next launch, check for partially created account and resume or cleanup.
+  - User changes email through Supabase dashboard → update local cached user data on next token refresh.
+  - Token stored in Expo Secure Store becomes inaccessible (device factory reset without backup) → treat as new login.
+  - User's device clock is significantly wrong → use server-provided timestamps for token expiry checks.
+  - Concurrent login from two devices → both sessions valid (Supabase supports multiple sessions).
+  - User signs up with email, then later tries social login with same email → link the accounts or inform the user.
+  - Apple Sign-In on Android → not available, show only Google Sign-In.
+  - Email verification link expired → provide "Resend verification" option.
+  - User deletes account and tries to re-register with same email within 30-day grace period → inform them the account is pending deletion and offer to restore it.
+  - Deep link for password reset opened on a device where the app is not installed → redirect to web fallback page.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Magic link login (passwordless email authentication).
+  - Phone number authentication via OTP.
+  - Multi-factor authentication (TOTP via authenticator app).
+  - Passkey support (WebAuthn/FIDO2).
+  - Device trust and new device login notifications.
+  - Session management UI (view and revoke active sessions).
+  - IP-based suspicious login detection.
+  - Gradual account verification (enforce email verification for premium features).
+  - Single Sign-On (SSO) for enterprise clients.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Never store tokens in MMKV, AsyncStorage, or any non-encrypted storage. Always use Expo Secure Store.
+  - Never log authentication tokens, passwords, or user credentials.
+  - Always use HTTPS for authentication requests.
+  - Always hash passwords server-side with bcrypt (12+ rounds). Never hash on the client.
+  - Always return generic error messages for login failures ("Invalid email or password") to prevent credential enumeration.
+  - Always validate password complexity on both client and server.
+  - Always use the same response format for "email exists" and "email not found" on password reset to prevent email enumeration.
+  - Always clear all local data (tokens, cache, stores) on logout.
+  - Always lock the refresh token rotation: when a refresh token is used, the old one is invalidated.
+  - Always implement exponential backoff for token refresh retries.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Supabase Auth configured with email/password provider.
+  [ ] Supabase Auth configured with Google OAuth provider.
+  [ ] Supabase Auth configured with Apple OAuth provider.
+  [ ] Expo Secure Store integration for token storage.
+  [ ] Auth Zustand store implemented with MMKV persistence (non-sensitive metadata only).
+  [ ] Login flow end-to-end (UI → Supabase → token storage → navigation).
+  [ ] Registration flow end-to-end.
+  [ ] Token refresh interceptor in API client.
+  [ ] Refresh mutex implemented to prevent concurrent refreshes.
+  [ ] AuthGuard on NestJS backend.
+  [ ] RLS policies for users and user_onboarding tables.
+  [ ] Rate limiting on auth endpoints.
+  [ ] Onboarding wizard screens implemented.
+  [ ] Social auth flows implemented (Google, Apple).
+  [ ] Forgot/reset password flow implemented.
+  [ ] Logout flow (clear tokens, cache, redirect).
+  [ ] Auth guard component wrapping authenticated routes.
+  [ ] Deep link handling for password reset.
+  [ ] Email templates customized with FitOnus branding in Supabase.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Registration with valid data creates user and returns tokens.
+  [ ] Registration with existing email returns appropriate error.
+  [ ] Registration with weak password returns validation errors.
+  [ ] Login with valid credentials returns tokens.
+  [ ] Login with invalid credentials returns generic error.
+  [ ] Login rate limiting triggers after 5 failed attempts.
+  [ ] Token refresh returns new valid tokens.
+  [ ] Token refresh with expired refresh token returns 401.
+  [ ] Concurrent refresh attempts are serialized (only one request made).
+  [ ] Logout clears all tokens and local data.
+  [ ] Social auth creates user on first login.
+  [ ] Social auth returns existing user on subsequent logins.
+  [ ] Password reset email sent successfully.
+  [ ] Password reset with valid token updates password.
+  [ ] Password reset with expired token returns error.
+  [ ] Auth guard redirects unauthenticated users.
+  [ ] Auth guard redirects un-onboarded users.
+  [ ] RLS policies prevent cross-user data access.
+  [ ] Account deletion soft deletes and clears session.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - A new user can register, complete onboarding, and reach the dashboard in under 3 minutes.
+  - A returning user with a valid session opens the app directly to the dashboard (no login screen).
+  - Token refresh occurs transparently — the user never sees a "session expired" error during normal use.
+  - Social authentication works on both iOS (Google + Apple) and Android (Google).
+  - Password reset emails are delivered within 1 minute.
+  - Rate limiting prevents brute-force login attempts.
+  - All tokens are stored encrypted in the platform-native keychain.
+  - Logout completely clears all user data from the device.
+  - RLS policies are verified — no API can access another user's data.
+  - The authentication flow is fully functional offline-to-online (queued mutations for sign-up and profile creation).
+
+=====================================
+END OF DOCUMENT
+=====================================

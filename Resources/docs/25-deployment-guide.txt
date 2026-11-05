@@ -1,0 +1,71 @@
+=====================================
+FITONUS — DEPLOYMENT GUIDE
+Document: 25-deployment-guide.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document outlines the procedures for deploying the FitOnus backend, mobile application, and database schema changes across staging and production environments.
+
+=====================================
+2. ENVIRONMENTS
+=====================================
+
+  - Development: Local developer machines (using local Supabase instance or dev project).
+  - Staging: Beta testing environment that mirrors production. Uses a separate Supabase project.
+  - Production: Live environment for end users.
+
+=====================================
+3. BACKEND DEPLOYMENT
+=====================================
+
+  3.1 Hosting
+    - The NestJS Node.js server is containerized using Docker.
+    - Deployed to a managed container service (e.g., Google Cloud Run, AWS App Runner, or Render) for auto-scaling.
+
+  3.2 CI/CD Pipeline (GitHub Actions)
+    1. Push to `main` branch.
+    2. Run tests and linting.
+    3. Build Docker image.
+    4. Push to Container Registry.
+    5. Trigger deployment on the hosting provider.
+
+=====================================
+4. DATABASE MIGRATIONS
+=====================================
+
+  - Managed via Supabase CLI.
+  - All schema changes must be written as sequential SQL migration files (`supabase/migrations/`).
+  - Migrations are applied to staging automatically via CI/CD.
+  - Production migrations are applied via a manual approval step in CI/CD.
+
+=====================================
+5. MOBILE DEPLOYMENT
+=====================================
+
+  5.1 EAS Build (Expo Application Services)
+    - Production builds are generated using EAS Build.
+    - iOS: Submitted to TestFlight (Staging) or App Store Connect (Production).
+    - Android: Submitted to Google Play Console Internal Track (Staging) or Production Track.
+
+  5.2 OTA Updates (Expo Updates)
+    - Minor bug fixes and UI tweaks are deployed over-the-air using Expo Updates without requiring app store approval.
+    - Process: `eas update --branch production --message "Fix padding issue"`
+    - Note: Native module changes require a new App Store / Play Store binary release.
+
+=====================================
+6. ROLLBACK STRATEGY
+=====================================
+
+  - Backend: Revert Docker image to the previous version tag.
+  - Mobile OTA: Publish an update that points to the previous stable git commit.
+  - Database: Write `down` migrations if a breaking change occurs, though additive-only schema changes are strongly preferred to avoid data loss.
+
+=====================================
+END OF DOCUMENT
+=====================================

@@ -1,0 +1,354 @@
+=====================================
+FITONUS — SLEEP TRACKING
+Document: 14-sleep-tracking.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the sleep tracking system for FitOnus, covering manual sleep logging, Health Connect sleep data import, sleep quality analysis, pattern visualization, and AI-driven sleep recommendations. Sleep is a critical pillar of fitness and recovery, and this system ensures users understand their sleep patterns and receive actionable guidance for improvement.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The sleep tracking system captures sleep data from two sources: manual user entries (bedtime, wake time, quality rating) and automatic imports from Health Connect / HealthKit (sleep sessions with stage data). The system analyzes sleep patterns over time, identifies trends, calculates sleep quality scores, and provides recommendations through the AI Coach.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Enable easy manual sleep logging with minimal friction.
+  - Import detailed sleep data from Health Connect including sleep stages.
+  - Visualize sleep patterns and trends over weeks and months.
+  - Calculate a meaningful sleep quality score.
+  - Provide AI-driven recommendations for improving sleep quality.
+  - Correlate sleep data with workout performance and recovery.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Manual sleep log entry: bedtime, wake time, quality rating (1-5 stars), notes.
+  - Automatic import of sleep sessions from Health Connect / HealthKit.
+  - Sleep stage breakdown: awake, light, deep, REM (from Health Connect data).
+  - Daily sleep summary: total duration, time in bed, sleep efficiency.
+  - Sleep quality score (0-100) based on duration, consistency, and efficiency.
+  - Weekly and monthly sleep charts showing duration and quality trends.
+  - Bedtime and wake time consistency analysis.
+  - Sleep recommendations based on patterns and goals.
+  - Sleep goal setting: target sleep duration (default 8 hours).
+  - Bedtime reminder notification.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Sleep logging must complete in under 15 seconds.
+  - Sleep chart must load within 1 second.
+  - Sleep data must sync with Health Connect within 5 seconds.
+  - Sleep quality score must compute in under 50ms on the client.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Manual Sleep Logging
+    1. User navigates to Profile → Sleep or taps "Log Sleep" from dashboard.
+    2. Sleep entry form opens.
+    3. User sets bedtime using time picker (defaults to previous night's typical time).
+    4. User sets wake time using time picker (defaults to current time if morning).
+    5. User rates sleep quality (1-5 stars with descriptors: terrible, poor, fair, good, excellent).
+    6. Optional: add notes ("Woke up twice", "Had caffeine late").
+    7. User taps "Save."
+    8. Sleep dashboard updates with new entry.
+
+  6.2 Viewing Sleep Analytics
+    1. User navigates to Profile → Sleep.
+    2. Last night's summary card shows: duration, bedtime, wake time, quality, stages (if available).
+    3. Weekly chart shows sleep duration bars with quality color coding.
+    4. Monthly trend line shows average sleep duration.
+    5. Consistency metric: standard deviation of bedtime and wake time.
+    6. AI sleep insight card with personalized recommendation.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Sleep Quality Score Algorithm
+
+    Score = weighted sum of factors (0-100):
+
+    Duration Factor (40% weight):
+      - Optimal: 7-9 hours → 100 points.
+      - 6-7 hours or 9-10 hours → 75 points.
+      - 5-6 hours or 10-11 hours → 50 points.
+      - <5 hours or >11 hours → 25 points.
+
+    Consistency Factor (30% weight):
+      - Based on standard deviation of bedtime over the last 7 days.
+      - StdDev < 30 min → 100 points (very consistent).
+      - StdDev 30-60 min → 75 points.
+      - StdDev 60-90 min → 50 points.
+      - StdDev > 90 min → 25 points.
+
+    User Rating Factor (20% weight):
+      - Direct mapping: 5 stars → 100, 4 → 80, 3 → 60, 2 → 40, 1 → 20.
+
+    Efficiency Factor (10% weight):
+      - Sleep efficiency = time asleep / time in bed × 100.
+      - >90% → 100 points.
+      - 80-90% → 75 points.
+      - 70-80% → 50 points.
+      - <70% → 25 points.
+
+    Final Score = (Duration × 0.4) + (Consistency × 0.3) + (Rating × 0.2) + (Efficiency × 0.1)
+
+  7.2 Sleep Data Model
+
+    SleepLog:
+      - id: UUID
+      - user_id: UUID
+      - date: date (the date of the night — e.g., "2026-07-15" for the night of July 15)
+      - bedtime: timestamp
+      - wake_time: timestamp
+      - duration_minutes: number (computed)
+      - quality_rating: number (1-5)
+      - sleep_score: number (0-100, computed)
+      - stages: SleepStages | null (from Health Connect)
+      - notes: string | null
+      - source: 'manual' | 'health_connect'
+
+    SleepStages:
+      - awake_minutes: number
+      - light_minutes: number
+      - deep_minutes: number
+      - rem_minutes: number
+
+  7.3 Health Connect Sleep Integration
+    - Read sleep sessions with stage data.
+    - Map Health Connect sleep stages to FitOnus stages.
+    - If both manual entry and HC data exist for same night: merge (use HC stages with manual quality rating).
+    - Calculate duration from stage data if HC provides precise stages.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/sleep/
+  ├── components/
+  │   ├── sleep-chart.tsx
+  │   ├── sleep-entry-form.tsx
+  │   ├── sleep-quality-rating.tsx
+  │   ├── sleep-log-item.tsx
+  │   ├── sleep-insight-card.tsx
+  │   ├── sleep-stages-bar.tsx
+  │   ├── sleep-score-ring.tsx
+  │   ├── sleep-consistency-card.tsx
+  │   └── bedtime-picker.tsx
+  ├── hooks/
+  │   ├── use-sleep-log.ts
+  │   ├── use-log-sleep.ts
+  │   ├── use-sleep-analysis.ts
+  │   └── use-sleep-score.ts
+  ├── services/
+  │   ├── sleep-api.ts
+  │   └── sleep-analyzer.ts
+  ├── types/
+  │   └── sleep.ts
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  SleepScoreRing:
+    - Circular progress ring showing score 0-100.
+    - Color: excellent (80+) green, good (60-79) blue, moderate (40-59) yellow, poor (<40) red.
+    - Center: score number (displayMedium).
+
+  SleepStagesBar:
+    - Horizontal stacked bar showing stage proportions.
+    - Colors: awake (red), light (light blue), deep (dark blue), REM (purple).
+    - Legend below with time per stage.
+
+  SleepChart:
+    - Bar chart: each bar = one night's duration, colored by quality score.
+    - Average duration line overlaid.
+    - Time range: 7 days, 30 days.
+    - Tappable bars for detail drill-down.
+
+  SleepQualityRating:
+    - 5 star icons with labels (terrible to excellent).
+    - Press animation on star selection.
+    - Selected stars filled with primary color.
+
+  BedtimePicker:
+    - Clock-style time picker or drum-roller time selector.
+    - Separate pickers for bedtime and wake time.
+    - Duration calculated and displayed in real time.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Sleep Dashboard (src/app/(tabs)/profile/sleep/index.tsx):
+    - Last night's sleep card: SleepScoreRing, duration, bedtime, wake time.
+    - SleepStagesBar (if stage data available).
+    - SleepChart (weekly view).
+    - SleepConsistencyCard: average bedtime, wake time, variability.
+    - Sleep insight from AI Coach.
+    - Sleep log history list.
+    - FAB: "Log Sleep."
+
+  Sleep Entry (src/app/(tabs)/profile/sleep/log.tsx):
+    - BedtimePicker for bedtime.
+    - BedtimePicker for wake time.
+    - Duration display (auto-calculated).
+    - SleepQualityRating.
+    - Notes text area.
+    - "Save" primary button.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/sleep
+    Query: startDate, endDate, page, limit
+    Response: { data: SleepLog[] }
+
+  POST /api/v1/sleep
+    Request: { bedtime, wakeTime, qualityRating, notes? }
+    Response: { data: SleepLog }
+
+  PUT /api/v1/sleep/:id
+    Request: Updated sleep data.
+    Response: { data: SleepLog }
+
+  DELETE /api/v1/sleep/:id
+    Response: 204
+
+  GET /api/v1/sleep/analytics
+    Query: period ('week' | 'month')
+    Response: { data: { averageDuration, averageScore, consistency, stageBreakdown, trends } }
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  sleep_logs:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - date: DATE (not null)
+    - bedtime: TIMESTAMPTZ (not null)
+    - wake_time: TIMESTAMPTZ (not null)
+    - duration_minutes: INTEGER (computed)
+    - quality_rating: INTEGER (1-5, nullable)
+    - sleep_score: INTEGER (0-100, computed)
+    - awake_minutes: INTEGER (nullable)
+    - light_minutes: INTEGER (nullable)
+    - deep_minutes: INTEGER (nullable)
+    - rem_minutes: INTEGER (nullable)
+    - notes: TEXT
+    - source: TEXT (default 'manual')
+    - created_at: TIMESTAMPTZ
+    - updated_at: TIMESTAMPTZ
+    - deleted_at: TIMESTAMPTZ
+
+    Unique: (user_id, date)
+    Indexes: idx_sleep_logs_user_date (user_id, date DESC)
+    RLS: auth.uid() = user_id
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI Coach uses sleep data to correlate with workout performance and recovery.
+  - AI provides sleep hygiene recommendations based on patterns: "Your bedtime varied by 2 hours this week. Try to keep it within a 30-minute window for better sleep quality."
+  - AI uses sleep data in recovery score calculation.
+  - AI suggests bedtime based on target wake time and recommended duration.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Wake time before bedtime: validate and show error ("Wake time must be after bedtime").
+  - Sleep duration over 24 hours: reject as invalid.
+  - Missing quality rating: allow save without rating, don't include in score calculation.
+  - Health Connect sleep data conflicts with manual: merge — use HC stages, manual quality.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - Overnight sleep crossing midnight: handle correctly (bedtime 11 PM → wake time 7 AM = 8 hours).
+  - Naps: allow multiple entries per day, categorize as "nap" if duration < 3 hours.
+  - User forgets to log sleep: prompt via notification the next morning.
+  - Very short sleep (<3 hours): allow but flag in AI analysis.
+  - Very long sleep (>12 hours): allow but flag as unusual.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Smart alarm: wake user during light sleep phase within a window.
+  - Sleep environment analysis: room temperature, ambient noise.
+  - Dream journaling feature.
+  - Correlation analysis: sleep vs. workout performance, diet, caffeine intake.
+  - Sleep disorder screening questionnaire (Pittsburgh Sleep Quality Index).
+  - Circadian rhythm optimization recommendations.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Default bedtime and wake time to previous entry's values for speed.
+  - Display duration as hours and minutes (e.g., "7h 42m"), not just minutes.
+  - Use the "date" field as the night identifier (the date when the user went to bed).
+  - Show sleep data relative to the target (e.g., "30 minutes short of your 8-hour goal").
+  - Color-code sleep quality consistently across the app.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] sleep_logs table created.
+  [ ] Sleep entry form with time pickers.
+  [ ] Sleep quality rating component.
+  [ ] Sleep score calculation implemented.
+  [ ] Sleep dashboard with chart and statistics.
+  [ ] Sleep stages bar (when data available from HC).
+  [ ] Health Connect sleep data import.
+  [ ] Sleep analytics API endpoint.
+  [ ] Bedtime reminder notification.
+  [ ] AI Coach sleep integration.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Sleep entry saves correctly with duration calculation.
+  [ ] Overnight sleep (crossing midnight) calculates correct duration.
+  [ ] Sleep score formula produces expected results.
+  [ ] Sleep chart renders correctly for 7 and 30 day views.
+  [ ] Health Connect sleep data imports and merges correctly.
+  [ ] Consistency analysis identifies irregular sleep patterns.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - Users can log sleep in under 15 seconds.
+  - Sleep quality score accurately reflects duration, consistency, and user rating.
+  - Sleep charts display meaningful trends over time.
+  - Health Connect sleep data (including stages) is imported and displayed.
+  - AI Coach provides personalized sleep recommendations based on patterns.
+  - Bedtime reminders fire at the configured time.
+
+=====================================
+END OF DOCUMENT
+=====================================

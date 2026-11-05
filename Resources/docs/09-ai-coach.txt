@@ -1,0 +1,645 @@
+=====================================
+FITONUS — AI COACH
+Document: 09-ai-coach.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the AI Coach feature — the central intelligence of FitOnus. The AI Coach is a conversational AI assistant that serves as a personal trainer, nutritionist, sleep advisor, and wellness guide. It remembers user history, understands goals, generates personalized plans, analyzes health data, and provides evidence-based recommendations through natural, empathetic conversation. This document covers the chat interface, conversation management, prompt engineering, function calling, streaming responses, and the integration between the mobile client and the AI backend.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The AI Coach is powered by OpenAI's Responses API (GPT-4o) with function calling capabilities. It combines multiple knowledge sources to deliver contextually rich, personalized responses:
+
+  1. User Profile — Goals, metrics, preferences, dietary restrictions.
+  2. Conversation History — Recent messages in the current conversation.
+  3. AI Memory — Long-term extracted facts about the user across sessions.
+  4. RAG Knowledge Base — Curated exercise science, nutrition, and wellness content.
+  5. Live Data — Current workout history, nutrition logs, sleep data, and progress metrics accessed via function calling.
+
+The AI Coach is not a generic chatbot. It is a domain-specific health and fitness expert that maintains continuity across conversations, references specific user data, and takes actions within the app (generating workouts, logging meals, scheduling reminders) through OpenAI function calling.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Deliver responses that feel as natural and helpful as a conversation with a knowledgeable human coach.
+  - Remember user preferences, goals, and past interactions across all conversations.
+  - Provide evidence-based, personalized advice for workouts, nutrition, sleep, and recovery.
+  - Execute in-app actions through function calling (generate workouts, log meals, analyze progress).
+  - Stream responses in real time for a responsive chat experience.
+  - Handle ambiguous, vague, or complex health queries gracefully with clarifying questions.
+  - Never provide medical diagnoses or advice that could be harmful.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  4.1 Chat Interface
+    - Real-time chat UI with user messages (right-aligned) and AI messages (left-aligned with avatar).
+    - Text input with send button and suggested prompt chips.
+    - Typing indicator while AI is generating a response.
+    - Streaming text display (words appear as they are generated).
+    - Function call result cards displayed inline in the chat.
+    - Conversation history scroll with pagination for long conversations.
+    - New conversation creation and conversation list.
+    - Message timestamps.
+    - Copy message text on long-press.
+
+  4.2 Conversation Management
+    - Create new conversation.
+    - List past conversations with preview and date.
+    - Resume a past conversation.
+    - Delete a conversation.
+    - Automatic conversation titling (AI-generated based on first few messages).
+
+  4.3 Suggested Prompts
+    - Context-aware prompt suggestions displayed below the chat input.
+    - Suggestions adapt based on time of day, recent activity, and user goals.
+    - Morning: "What should I eat for breakfast?", "Generate today's workout."
+    - After workout: "How was my workout?", "What should I eat for recovery?"
+    - Evening: "How did I do today?", "What time should I sleep tonight?"
+    - General: "Create a meal plan for this week", "Analyze my progress this month."
+
+  4.4 Function Calling Actions
+    - generate_workout: Create a personalized workout plan.
+    - log_meal: Record a meal from natural language description.
+    - get_progress: Fetch and analyze progress data.
+    - set_reminder: Schedule a notification.
+    - get_nutrition_summary: Fetch nutrition data for a date range.
+    - analyze_workout_history: Analyze workout patterns and progress.
+    - calculate_recovery: Assess current recovery status.
+    - get_recommendations: Provide specific recommendations for a health domain.
+
+  4.5 AI Behavior
+    - Respond conversationally and empathetically.
+    - Reference specific user data when relevant ("Your bench press has improved 15% this month!").
+    - Ask clarifying questions when the user's request is ambiguous.
+    - Proactively suggest actions ("Would you like me to generate a workout based on this?").
+    - Decline to provide medical diagnoses or prescriptions.
+    - Provide scientific references when making health claims.
+    - Adapt tone to the user's communication style over time.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - First token of AI response must appear within 1.5 seconds of message send.
+  - Complete response generation must complete within 10 seconds for standard queries.
+  - Function call execution must complete within 5 seconds.
+  - Chat history must load within 1 second.
+  - The AI must handle conversations of up to 100 messages without degradation.
+  - Streaming must be smooth with no visible stuttering.
+  - The AI must not hallucinate user data — it must always use function calls to access real data.
+  - Token usage must be tracked and budgeted to control costs.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Starting a Conversation
+    1. User navigates to the Coach tab.
+    2. Chat screen loads with a greeting and suggested prompts.
+    3. User types a message or taps a suggested prompt.
+    4. Message appears in the chat as a user bubble.
+    5. Typing indicator appears while AI processes.
+    6. AI response streams into the chat word by word.
+    7. If the AI calls a function, a loading card appears ("Generating your workout...").
+    8. Function result renders as an inline card.
+    9. AI provides a natural language summary of the function result.
+
+  6.2 Multi-Turn Conversation
+    1. User asks: "I want to build muscle. What workout should I do?"
+    2. AI asks clarifying questions: "How many days per week can you work out? What equipment do you have access to?"
+    3. User responds: "4 days, I go to a full gym."
+    4. AI calls generate_workout with parameters and presents the plan.
+    5. User asks: "Can you make it harder?"
+    6. AI adjusts the plan based on the conversation context.
+
+  6.3 Resuming a Conversation
+    1. User taps "History" on the Coach screen.
+    2. Conversation list displays past conversations with titles and dates.
+    3. User taps a conversation.
+    4. Full conversation loads with scroll position at the bottom.
+    5. User continues the conversation with full context preserved.
+
+  6.4 Function Call Flow
+    1. User: "Log that I had a grilled chicken salad for lunch."
+    2. AI calls log_meal({ description: "grilled chicken salad", meal_type: "lunch", date: "2026-07-15" }).
+    3. Backend processes: parses description, matches foods, estimates portions and macros.
+    4. Function result card appears: "Logged: Grilled Chicken Salad — 450 kcal, 42g protein, 18g carbs, 22g fat."
+    5. AI responds: "I've logged your grilled chicken salad for lunch. You're at 1,200 of your 2,100 kcal target so far today. 🎯"
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 System Prompt Architecture
+
+    The system prompt is constructed dynamically for each request:
+
+    [SYSTEM INSTRUCTIONS]
+    You are FitOnus Coach, an expert AI fitness and wellness coach within the FitOnus app.
+    Your role is to help users achieve their health and fitness goals through personalized,
+    evidence-based guidance across exercise, nutrition, sleep, and recovery.
+
+    BEHAVIORAL GUIDELINES:
+    - Be conversational, warm, and encouraging. Use the user's name naturally.
+    - Reference specific data from the user's profile and history when relevant.
+    - When uncertain, ask clarifying questions rather than guessing.
+    - Provide actionable advice, not just information.
+    - Use function calls to access real-time data. Never fabricate metrics.
+    - Decline medical diagnosis requests. Recommend consulting a healthcare provider.
+    - When making health claims, briefly note the scientific basis.
+    - Keep responses concise unless the user asks for detailed explanations.
+    - Use emojis sparingly for warmth (1-2 per message maximum).
+
+    [USER PROFILE CONTEXT]
+    Name: {fullName}
+    Age: {age}, Gender: {gender}
+    Height: {height}cm, Weight: {weight}kg, BMI: {bmi}
+    Goals: {fitnessGoals}
+    Activity Level: {activityLevel}
+    Diet: {dietType}, Allergies: {allergies}
+    Daily Targets: {calories}kcal, {protein}g protein, {carbs}g carbs, {fat}g fat
+    Member Since: {joinDate}
+
+    [USER MEMORIES]
+    {relevantMemories}
+    (e.g., "User prefers morning workouts", "User dislikes running",
+    "User's right shoulder has recurring pain", "User is training for a 5K in September")
+
+    [RAG CONTEXT]
+    {relevantKnowledgeDocuments}
+    (Retrieved via semantic search based on the user's current query)
+
+    [CONVERSATION HISTORY]
+    {recentMessages}
+
+  7.2 Context Window Management
+
+    Total context budget: 128,000 tokens (GPT-4o).
+    Allocation:
+      - System instructions: ~500 tokens (fixed).
+      - User profile: ~200 tokens (fixed).
+      - User memories: ~1,000 tokens (variable, top-K most relevant).
+      - RAG context: ~2,000 tokens (variable, top-K most relevant documents).
+      - Conversation history: ~4,000 tokens (variable, most recent messages).
+      - Function definitions: ~1,500 tokens (fixed).
+      - User's current message: ~500 tokens (variable).
+      - Reserved for response: ~4,000 tokens.
+
+    Total prompt budget: ~10,000 tokens per request.
+
+    Truncation Strategy:
+      1. If conversation history exceeds budget, remove oldest messages first.
+      2. Preserve the system prompt, user profile, and the last 10 messages always.
+      3. If a single message is very long (user pasted text), summarize it before including.
+      4. Memories are ranked by relevance (semantic similarity to current query) and recency.
+      5. RAG documents are ranked by similarity score with a minimum threshold of 0.7.
+
+  7.3 Streaming Implementation
+
+    Mobile Client:
+      - HTTP streaming via fetch with ReadableStream or SSE (Server-Sent Events).
+      - Chunks are appended to the AI message bubble as they arrive.
+      - The typing indicator transitions to text display on first chunk.
+      - Message is marked as complete when the stream ends.
+      - If the stream is interrupted (network loss), display partial message with "Response interrupted" indicator and retry button.
+
+    Backend:
+      - The NestJS Controller uses SSE (returning Observable<MessageEvent>) for streaming.
+      - OpenAI Responses API is called with stream: true.
+      - Each chunk is forwarded to the client as an SSE event.
+      - Function calls are detected mid-stream, executed, and the result is sent back to OpenAI as a tool result.
+      - The final SSE event signals stream completion.
+
+    SSE Event Format:
+      event: message
+      data: {"type": "text_delta", "content": "Here's your"}
+
+      event: message
+      data: {"type": "function_call", "name": "generate_workout", "arguments": "..."}
+
+      event: message
+      data: {"type": "function_result", "name": "generate_workout", "result": "..."}
+
+      event: message
+      data: {"type": "text_delta", "content": "I've created a workout plan"}
+
+      event: done
+      data: {"type": "done", "messageId": "uuid", "usage": {"prompt_tokens": 2500, "completion_tokens": 350}}
+
+  7.4 Function Calling Implementation
+
+    Function Definitions (OpenAI format):
+
+    generate_workout:
+      description: "Generate a personalized workout plan for the user."
+      parameters:
+        goal: { type: string, enum: [strength, hypertrophy, endurance, flexibility, general] }
+        duration_minutes: { type: integer, minimum: 15, maximum: 120 }
+        equipment: { type: array, items: { type: string } }
+        muscle_groups: { type: array, items: { type: string } }
+        difficulty: { type: string, enum: [beginner, intermediate, advanced] }
+
+    log_meal:
+      description: "Log a meal from a natural language description."
+      parameters:
+        description: { type: string }
+        meal_type: { type: string, enum: [breakfast, lunch, dinner, snack] }
+        date: { type: string, format: date }
+
+    get_progress:
+      description: "Retrieve and analyze the user's progress for a specific metric."
+      parameters:
+        metric: { type: string, enum: [weight, strength, nutrition, sleep, recovery, overall] }
+        period: { type: string, enum: [week, month, quarter, year] }
+
+    set_reminder:
+      description: "Schedule a notification reminder for the user."
+      parameters:
+        type: { type: string, enum: [workout, meal, water, sleep, custom] }
+        time: { type: string, format: time }
+        message: { type: string }
+        recurring: { type: boolean }
+
+    get_nutrition_summary:
+      description: "Get nutrition intake summary for a date range."
+      parameters:
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+
+    analyze_workout_history:
+      description: "Analyze the user's workout history for patterns and progress."
+      parameters:
+        period: { type: string, enum: [week, month, quarter, year] }
+        focus: { type: string, enum: [volume, frequency, intensity, all] }
+
+    calculate_recovery:
+      description: "Calculate the user's current recovery score."
+      parameters:
+        date: { type: string, format: date }
+
+    get_recommendations:
+      description: "Get personalized recommendations for a specific health domain."
+      parameters:
+        domain: { type: string, enum: [workout, nutrition, sleep, recovery, general] }
+        context: { type: string }
+
+    Function Execution Flow:
+      1. OpenAI returns a tool_call in the streamed response.
+      2. Backend pauses streaming, sends a function_call event to the client.
+      3. Backend validates function name and parameters.
+      4. Backend calls the corresponding service method.
+      5. Service method executes (e.g., creates a workout in the database).
+      6. Result is serialized and sent back to OpenAI as a tool result.
+      7. OpenAI generates a natural language response incorporating the result.
+      8. Streaming resumes with the AI's summary of the function result.
+
+  7.5 Conversation Storage
+
+    Each conversation is stored as:
+      - ai_conversations record with metadata.
+      - ai_messages records for each turn (user messages and AI responses).
+      - Function calls and results stored as structured data within message records.
+
+    Conversation Lifecycle:
+      1. New conversation created on first message.
+      2. Title auto-generated after the second AI response using a summarization prompt.
+      3. Messages appended as the conversation progresses.
+      4. Conversation summary generated after every 20 messages for long-term reference.
+      5. Inactive conversations (no activity for 7 days) are auto-archived.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/coach/
+  ├── components/
+  │   ├── chat-message.tsx            # Individual message bubble
+  │   ├── chat-message-list.tsx       # Scrollable message list
+  │   ├── chat-input-bar.tsx          # Text input with send button
+  │   ├── typing-indicator.tsx        # Animated typing dots
+  │   ├── suggested-prompts.tsx       # Prompt chip row
+  │   ├── function-call-card.tsx      # Inline function result display
+  │   ├── conversation-list-item.tsx  # Past conversation list entry
+  │   ├── ai-avatar.tsx              # AI Coach avatar icon
+  │   ├── streaming-text.tsx          # Animated streaming text display
+  │   └── chat-empty-state.tsx        # First conversation empty state
+  ├── hooks/
+  │   ├── use-chat.ts                 # Main chat hook (send, receive, stream)
+  │   ├── use-send-message.ts         # Message send mutation
+  │   ├── use-conversation-history.ts # Conversation list query
+  │   ├── use-suggested-prompts.ts    # Context-aware prompts
+  │   └── use-streaming.ts           # SSE streaming handler
+  ├── services/
+  │   ├── coach-api.ts                # API calls for chat
+  │   ├── message-formatter.ts        # Message parsing and formatting
+  │   └── streaming-client.ts         # SSE streaming client
+  ├── stores/
+  │   └── chat-store.ts               # Active chat state (current message, streaming)
+  ├── types/
+  │   └── coach.ts                    # Chat message and conversation types
+  ├── utils/
+  │   └── chat-utils.ts               # Message formatting utilities
+  └── index.ts
+
+  backend/src/ai/
+  ├── coach.ts                        # AI Coach orchestrator
+  ├── context-builder.ts              # Builds complete prompt context
+  ├── memory.ts                       # Memory management
+  ├── memory-extractor.ts             # Extract memories from conversations
+  ├── rag.ts                          # RAG pipeline
+  ├── embeddings.ts                   # Embedding generation
+  ├── token-counter.ts                # Token budget management
+  ├── functions/
+  │   ├── index.ts                    # Function registry
+  │   ├── workout-functions.ts
+  │   ├── nutrition-functions.ts
+  │   ├── health-functions.ts
+  │   ├── progress-functions.ts
+  │   └── general-functions.ts
+  └── prompts/
+      ├── system.ts                   # Base system prompt
+      ├── workout.ts                  # Workout generation prompts
+      ├── nutrition.ts                # Nutrition prompts
+      ├── analysis.ts                 # Analysis prompts
+      ├── recovery.ts                 # Recovery prompts
+      └── summary.ts                  # Conversation summary prompts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  ChatMessage:
+    - Props: message (type, content, timestamp, role, functionCall).
+    - User message: right-aligned, primary background, white text.
+    - AI message: left-aligned, backgroundElement, text color, with AI avatar.
+    - Function call message: inline FunctionCallCard component.
+    - Timestamp: caption, textTertiary, below the bubble.
+    - Long press: copy text to clipboard.
+
+  ChatInputBar:
+    - TextInput with auto-growing height (max 4 lines).
+    - Send button (icon button, primary color) on the right.
+    - Send button disabled when input is empty.
+    - Keyboard-aware positioning (sticks above keyboard).
+    - Haptic feedback on send.
+
+  TypingIndicator:
+    - Three dots inside an AI-style bubble.
+    - Sequential bounce animation (scale 1 → 1.4, 200ms stagger).
+    - Displayed when isStreaming is true and no content has arrived yet.
+
+  SuggestedPrompts:
+    - Horizontal ScrollView of Chip components.
+    - Context-aware: different prompts for morning, post-workout, evening.
+    - On tap: populate input and optionally auto-send.
+    - Hidden when the user is typing.
+
+  FunctionCallCard:
+    - Compact card with icon, title, and status.
+    - States: loading ("Generating workout..."), success (shows summary), error ("Failed to generate").
+    - Pressable: navigates to the created resource (e.g., workout detail).
+    - Background: primaryLight.
+
+  StreamingText:
+    - Renders text progressively as chunks arrive.
+    - Supports markdown rendering (bold, italic, lists, code blocks).
+    - Cursor blink animation at the end of the current text.
+
+=====================================
+10. SCREENS
+=====================================
+
+  AI Coach Chat Screen (src/app/(tabs)/coach/index.tsx):
+    - Full-screen chat layout.
+    - ChatMessageList: reverse FlatList for messages (newest at bottom).
+    - SuggestedPrompts: below the message list, above the input.
+    - ChatInputBar: fixed at bottom, keyboard-aware.
+    - Empty state: AI Coach introduction with greeting and suggested first prompts.
+    - Header: "AI Coach" title with history button (top right).
+
+  Conversation History Screen (src/app/(tabs)/coach/history.tsx):
+    - FlatList of past conversations.
+    - Each item: title, preview of last message, date.
+    - Swipe to delete.
+    - "New Conversation" button at top.
+    - Tap to resume conversation.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  POST /api/v1/coach/chat
+    Request: { conversationId?: string, message: string }
+    Response: SSE stream (text/event-stream)
+    Events: text_delta, function_call, function_result, done
+    Notes: Creates a new conversation if conversationId is not provided.
+
+  GET /api/v1/coach/conversations
+    Response: { data: Conversation[], pagination: {...} }
+    Returns list of user's conversations ordered by last activity.
+
+  GET /api/v1/coach/conversations/:id
+    Response: { data: { conversation: Conversation, messages: Message[] } }
+    Returns full conversation with all messages.
+
+  DELETE /api/v1/coach/conversations/:id
+    Response: 204 No Content
+
+  GET /api/v1/coach/suggested-prompts
+    Query params: context (time_of_day, last_activity)
+    Response: { data: string[] }
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  ai_conversations:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - title: TEXT (nullable, auto-generated)
+    - summary: TEXT (nullable, generated after 20 messages)
+    - message_count: INTEGER (default 0)
+    - last_message_at: TIMESTAMPTZ
+    - is_archived: BOOLEAN (default false)
+    - created_at: TIMESTAMPTZ (default now())
+    - updated_at: TIMESTAMPTZ
+    - deleted_at: TIMESTAMPTZ
+
+    Indexes:
+      - idx_ai_conversations_user_id ON (user_id)
+      - idx_ai_conversations_user_id_last_message ON (user_id, last_message_at DESC)
+
+  ai_messages:
+    - id: UUID (PK)
+    - conversation_id: UUID (FK → ai_conversations.id, not null)
+    - role: TEXT (not null, CHECK IN ('user', 'assistant', 'system', 'tool'))
+    - content: TEXT (nullable, null for function calls)
+    - function_call: JSONB (nullable, { name, arguments, result })
+    - token_count: INTEGER (nullable)
+    - model: TEXT (nullable, e.g., 'gpt-4o')
+    - created_at: TIMESTAMPTZ (default now())
+
+    Indexes:
+      - idx_ai_messages_conversation_id ON (conversation_id)
+      - idx_ai_messages_conversation_created ON (conversation_id, created_at)
+
+  RLS Policies:
+    - ai_conversations: all operations restricted to auth.uid() = user_id.
+    - ai_messages: all operations restricted via JOIN to conversation owner.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  Model Configuration:
+    - Model: gpt-4o (latest via OpenAI Responses API).
+    - Temperature: 0.7 (conversational warmth with factual grounding).
+    - Max response tokens: 1024 (standard chat), 2048 (workout/plan generation), 4096 (reports).
+    - Streaming: enabled for all chat responses.
+    - Function calling: enabled with strict parameter validation.
+
+  Prompt Engineering Principles:
+    - System prompt is constructed dynamically per request (Section 7.1).
+    - User profile is always included for personalization.
+    - Relevant memories are retrieved via semantic search and included.
+    - RAG context is retrieved for knowledge-intensive queries.
+    - Conversation history provides continuity.
+    - Function definitions are always included.
+
+  Safety Guardrails:
+    - The AI must never provide medical diagnoses.
+    - The AI must recommend consulting a healthcare provider for medical concerns.
+    - The AI must not suggest extreme caloric deficits (below 1200kcal for women, 1500kcal for men).
+    - The AI must not encourage overtraining.
+    - The AI must flag if the user describes symptoms of disordered eating.
+    - Content moderation: filter inputs for harmful or inappropriate content.
+
+  Response Quality:
+    - Responses must be specific to the user, not generic.
+    - Data claims must be backed by function calls (never fabricated).
+    - Recommendations must consider the user's full profile (goals, restrictions, history).
+    - Multi-step plans should be structured with clear formatting (numbered lists, headers).
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - OpenAI API unavailable: return a fallback message ("I'm having trouble thinking right now. Please try again in a moment.") and log the error.
+  - OpenAI rate limited: queue the request with a delay and display "AI Coach is busy. Your message will be processed shortly."
+  - Function call fails: inform the AI via tool result that the function failed, let it respond gracefully.
+  - Streaming interrupted (network): display partial message with "Response interrupted" and a "Retry" button.
+  - Token limit exceeded: truncate conversation history from oldest messages and retry.
+  - Malformed function call from AI: log the error, skip the function call, and let the AI respond without it.
+  - Content moderation triggered: return "I'm not able to help with that request. Let's focus on your health and fitness goals!"
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - Very long user message (exceeds 2000 tokens): truncate and inform the user to be more concise.
+  - User sends multiple messages before AI responds: queue messages and process sequentially.
+  - User switches conversations while streaming: cancel the current stream, load the new conversation.
+  - Conversation exceeds 100 messages: summarize older messages and archive them.
+  - User asks the same question repeatedly: AI should not repeat the same answer verbatim, but vary the response.
+  - Function call returns empty results: AI should acknowledge the absence of data and suggest logging.
+  - User sends only emojis or very short messages ("ok", "thanks"): AI should respond naturally without over-explaining.
+  - AI response contains markdown formatting: render markdown (bold, italic, lists) in the chat bubble.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Voice input and voice response (text-to-speech).
+  - Image analysis: user sends a photo of food, AI estimates nutritional content.
+  - Workout video analysis: AI provides form feedback from exercise videos.
+  - Proactive coaching: AI initiates conversations based on inactivity or missed goals.
+  - Multi-modal responses: AI returns charts, images, and interactive elements.
+  - Group coaching: AI moderates group challenges and discussions.
+  - Personalized AI persona: user can customize the AI's personality and communication style.
+  - Offline AI with on-device model for basic queries when offline.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Always stream AI responses for a responsive experience.
+  - Always include the user's profile in the context for personalization.
+  - Always validate function call parameters before execution.
+  - Always log token usage for cost monitoring and optimization.
+  - Never fabricate user data — always use function calls to access real metrics.
+  - Never expose system prompts, function definitions, or internal instructions to the user.
+  - Test the AI with adversarial inputs (prompt injection, off-topic queries, harmful requests).
+  - Monitor AI response quality through user feedback and periodic review.
+  - Keep system prompts version-controlled and documented.
+  - Implement a feedback mechanism (thumbs up/down on AI responses) for quality improvement.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Chat UI implemented (message list, input bar, typing indicator).
+  [ ] Streaming response display implemented (SSE client).
+  [ ] System prompt template defined with dynamic context injection.
+  [ ] OpenAI Responses API integration with streaming.
+  [ ] Function calling definitions created for all 8 functions.
+  [ ] Function execution pipeline implemented (validate → execute → return).
+  [ ] Conversation CRUD API endpoints implemented.
+  [ ] Message persistence in database.
+  [ ] Suggested prompts service implemented.
+  [ ] Context builder assembling profile, memories, RAG, and history.
+  [ ] Token counting and budget management implemented.
+  [ ] Error handling for API failures, streaming interruptions.
+  [ ] Safety guardrails implemented (content moderation, medical disclaimer).
+  [ ] Conversation history screen implemented.
+  [ ] Auto-titling for conversations.
+  [ ] Conversation summarization for long conversations.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] User can send a message and receive a streamed response.
+  [ ] AI response references user profile data accurately.
+  [ ] Function calls execute correctly and return valid results.
+  [ ] Function call cards display inline in the chat.
+  [ ] Conversation history loads and displays correctly.
+  [ ] Resuming a past conversation maintains context.
+  [ ] Suggested prompts change based on time of day and context.
+  [ ] Token budget prevents context overflow.
+  [ ] Streaming handles network interruption gracefully.
+  [ ] Safety guardrails block inappropriate content.
+  [ ] OpenAI API failure shows fallback message.
+  [ ] Long conversations are summarized correctly.
+  [ ] Auto-generated titles are relevant to conversation content.
+  [ ] Copy message functionality works.
+  [ ] Multiple rapid messages are processed sequentially.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - The AI Coach responds to user queries within 1.5 seconds (first token).
+  - Responses are personalized, referencing the user's name, goals, and history.
+  - Function calls execute correctly and produce visible results in the app (e.g., a generated workout appears in the Workouts tab).
+  - The AI remembers context within a conversation (multi-turn coherence).
+  - The AI remembers user preferences across conversations (via AI Memory).
+  - Streaming text appears smoothly without visible lag or jitter.
+  - The AI declines to provide medical diagnoses and recommends healthcare providers.
+  - Past conversations can be resumed with full context preserved.
+  - Suggested prompts are contextually relevant and helpful.
+  - The chat interface is accessible (screen reader compatible, keyboard navigable).
+
+=====================================
+END OF DOCUMENT
+=====================================

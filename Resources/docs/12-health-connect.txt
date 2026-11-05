@@ -1,0 +1,394 @@
+=====================================
+FITONUS — HEALTH CONNECT INTEGRATION
+Document: 12-health-connect.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the Health Connect integration for FitOnus, covering bidirectional data synchronization with Android Health Connect and Apple HealthKit, permission management, background sync, data transformation, and conflict resolution. Health Connect provides access to device sensor data and other health apps' data, enabling FitOnus to present a comprehensive health overview without requiring users to manually input steps, heart rate, and other passively collected metrics.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+Health Connect (Android) and HealthKit (iOS) are platform-native health data repositories that aggregate data from various sources: built-in device sensors (accelerometer for steps, heart rate from smartwatches), and third-party health apps. FitOnus reads data from these platforms to populate the dashboard and enrich AI Coach context, and writes workout and nutrition data back so other apps can benefit from FitOnus data.
+
+The integration uses a platform-abstracted service layer that presents a unified API regardless of whether the underlying platform is Health Connect (Android) or HealthKit (iOS). Data is synced on app launch, on-demand via pull-to-refresh, and periodically via background tasks.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Provide seamless, automatic ingestion of steps, heart rate, blood pressure, blood oxygen, and sleep data from device sensors.
+  - Write FitOnus workout and nutrition data back to Health Connect / HealthKit so other apps can access it.
+  - Abstract platform differences so the rest of the app uses a single health data interface.
+  - Handle permissions gracefully with clear explanations of why each data type is needed.
+  - Sync data efficiently with minimal battery impact.
+  - Handle conflicts when the same metric is available from multiple sources.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  4.1 Data Read (from Health Connect / HealthKit)
+    - Steps: daily step count, hourly step distribution.
+    - Heart rate: resting heart rate, average heart rate, heart rate during workouts.
+    - Blood pressure: systolic and diastolic readings.
+    - Blood oxygen (SpO2): latest reading.
+    - Sleep: sleep sessions with stages (awake, light, deep, REM).
+    - Active calories burned (exercise energy expenditure).
+    - Distance walked/run.
+    - Flights of stairs climbed.
+    - Body weight (from smart scales).
+    - Body fat percentage (from smart scales).
+
+  4.2 Data Write (to Health Connect / HealthKit)
+    - Workout sessions: exercise type, duration, calories burned.
+    - Nutrition: caloric intake, macronutrient breakdown.
+    - Weight logs: body weight entries.
+    - Sleep logs: user-entered sleep data.
+
+  4.3 Permission Management
+    - Request permissions during onboarding (step 6).
+    - Request specific permissions when a feature needs them.
+    - Display clear, user-friendly explanations for each permission.
+    - Handle permission denial gracefully without breaking app functionality.
+    - Provide settings link to re-authorize permissions.
+    - Track which permissions are granted and adapt the UI accordingly.
+
+  4.4 Sync Behavior
+    - Initial sync: on first authorization, sync the last 30 days of data.
+    - Ongoing sync: on each app launch, sync data since last sync timestamp.
+    - On-demand sync: triggered by pull-to-refresh on the dashboard.
+    - Background sync: periodic sync via background task (if platform supports).
+    - Sync status indicator: shows last sync time and current sync state.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Sync must complete within 5 seconds for a single day's data.
+  - Initial 30-day sync must complete within 30 seconds.
+  - Battery impact from background sync must be negligible.
+  - Data must be processed and stored efficiently (aggregated, not raw sensor data).
+  - All health data must be encrypted at rest and in transit.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Onboarding Permission Flow
+    1. During onboarding step 6, user sees "Connect Your Health Data" screen.
+    2. Explanation cards describe each data type and why FitOnus needs it.
+    3. User taps "Connect" to trigger the platform permission dialog.
+    4. Android: Health Connect permission activity opens with checkboxes per data type.
+    5. iOS: HealthKit authorization sheet opens with toggles per data type.
+    6. User selects desired permissions and confirms.
+    7. App records granted permissions and initiates initial sync.
+    8. Sync progress indicator displays while importing historical data.
+
+  6.2 Dashboard Sync Flow
+    1. User opens FitOnus → auth gate passes → dashboard loads.
+    2. Background sync triggered: reads new data since last sync.
+    3. Data displayed in metric cards (steps, heart rate, sleep).
+    4. User pulls to refresh → manual sync triggered.
+    5. Sync status shows "Last synced: 2 minutes ago" in settings.
+
+  6.3 Permission Revoked Flow
+    1. User revokes a Health Connect permission via device settings.
+    2. On next app launch, FitOnus detects the revoked permission.
+    3. Affected metric cards show "Permission required" state.
+    4. User taps card → settings screen with "Re-authorize" button.
+    5. Re-authorization flow triggers the platform permission dialog.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Platform Abstraction Layer
+
+    Interface HealthDataService:
+      - requestPermissions(dataTypes: HealthDataType[]): Promise<PermissionResult>
+      - checkPermissions(dataTypes: HealthDataType[]): Promise<PermissionStatus[]>
+      - readSteps(startDate, endDate): Promise<StepData[]>
+      - readHeartRate(startDate, endDate): Promise<HeartRateData[]>
+      - readBloodPressure(startDate, endDate): Promise<BloodPressureData[]>
+      - readBloodOxygen(startDate, endDate): Promise<BloodOxygenData[]>
+      - readSleep(startDate, endDate): Promise<SleepData[]>
+      - readActiveCalories(startDate, endDate): Promise<CalorieData[]>
+      - readDistance(startDate, endDate): Promise<DistanceData[]>
+      - readWeight(startDate, endDate): Promise<WeightData[]>
+      - writeWorkout(session: WorkoutSession): Promise<void>
+      - writeNutrition(meal: Meal): Promise<void>
+      - writeWeight(entry: WeightLog): Promise<void>
+      - writeSleep(entry: SleepLog): Promise<void>
+      - getLastSyncTimestamp(): Promise<Date | null>
+      - setLastSyncTimestamp(timestamp: Date): Promise<void>
+
+    Implementation:
+      - health-connect-service.android.ts: Android Health Connect implementation.
+      - health-connect-service.ios.ts: Apple HealthKit implementation.
+      - health-connect-service.ts: Default export that delegates to platform-specific implementation.
+
+  7.2 Data Transformation
+
+    Raw sensor data from Health Connect is transformed into FitOnus's internal data format:
+
+    Steps:
+      Input: array of step count records with start/end timestamps.
+      Output: daily aggregate with hourly breakdown.
+      Storage: health_data table with metric_type='steps'.
+
+    Heart Rate:
+      Input: array of heart rate samples (bpm + timestamp).
+      Output: resting HR (lowest 5-minute average during sleep), average HR, max HR.
+      Storage: health_data table with metric_type='heart_rate'.
+
+    Sleep:
+      Input: sleep session with stage intervals (awake, light, deep, REM).
+      Output: total duration, stage breakdown, quality score.
+      Storage: sleep_logs table (merged with user-entered data).
+
+    Weight:
+      Input: weight measurement + timestamp.
+      Output: weight in kg with source attribution.
+      Storage: weight_logs table (with source='health_connect').
+
+  7.3 Sync Engine
+
+    SyncManager:
+      1. Read lastSyncTimestamp from MMKV.
+      2. For each granted data type:
+         a. Read data from Health Connect since lastSyncTimestamp.
+         b. Transform into internal format.
+         c. Detect conflicts (same metric, same timestamp from different sources).
+         d. Resolve conflicts (prefer FitOnus manual entries over passive sensor data).
+         e. Upsert into local cache (MMKV) and queue for backend sync.
+      3. Send aggregated data to backend: POST /api/v1/health/sync.
+      4. Update lastSyncTimestamp.
+      5. Invalidate TanStack Query caches for affected data types.
+
+    Conflict Resolution:
+      - If FitOnus has a manual entry for the same metric and date, prefer the manual entry.
+      - If Health Connect has data and FitOnus does not, use Health Connect data.
+      - If both have data and timestamps overlap, prefer the most recent entry.
+      - Weight: Health Connect data creates new entries only if no manual entry exists within 1 hour.
+
+  7.4 Background Sync
+
+    Android: WorkManager for periodic background sync (minimum interval: 15 minutes).
+    iOS: Background App Refresh with opportunistic execution.
+    Both platforms: sync triggered on app launch and on push notification receipt.
+    Background sync is lightweight: only reads data since last sync, no heavy processing.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/health-connect/
+  ├── components/
+  │   ├── health-permission-card.tsx    # Permission request card with explanation
+  │   ├── health-data-card.tsx          # Data display card for a specific metric
+  │   ├── sync-status-indicator.tsx     # Last sync time and status
+  │   ├── permission-list.tsx           # List of data type permissions
+  │   └── health-metric-row.tsx         # Row displaying a health metric
+  ├── hooks/
+  │   ├── use-health-connect.ts         # Main hook for health data access
+  │   ├── use-health-permissions.ts     # Permission check and request
+  │   ├── use-health-sync.ts            # Sync trigger and status
+  │   └── use-health-data.ts            # Read specific data types
+  ├── services/
+  │   ├── health-connect-api.ts         # Backend sync API calls
+  │   ├── health-connect-service.ts     # Platform-abstracted service (default)
+  │   ├── health-connect-service.android.ts # Android HC implementation
+  │   ├── health-connect-service.ios.ts # iOS HealthKit implementation
+  │   ├── health-data-mapper.ts         # Raw → internal data transformation
+  │   └── sync-engine.ts               # Sync orchestration logic
+  ├── types/
+  │   └── health.ts                     # Health data types
+  ├── constants/
+  │   └── health-metrics.ts             # Data type definitions and descriptions
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  HealthPermissionCard:
+    - Icon for data type (heart for heart rate, footprint for steps).
+    - Data type name and description.
+    - Permission status badge (granted, denied, not requested).
+    - "Enable" button if not granted.
+
+  SyncStatusIndicator:
+    - "Last synced: [relative time]" text.
+    - Spinning icon during active sync.
+    - Tap to trigger manual sync.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Health Connect Settings (src/app/(tabs)/profile/settings/health-connect.tsx):
+    - List of data types with permission status.
+    - Toggle switches for read/write permissions per type.
+    - "Sync Now" button.
+    - Last sync timestamp.
+    - "Open Health Connect / Health Settings" link.
+
+  Onboarding Health Permissions (src/app/(auth)/onboarding/health-permissions.tsx):
+    - List of data types FitOnus wants to access.
+    - Each with an explanation card.
+    - "Connect" primary button.
+    - "Skip" ghost button.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  POST /api/v1/health/sync
+    Request: { dataType: string, data: HealthDataPoint[], syncedAt: string }
+    Response: { data: { processed: number, conflicts: number } }
+    Notes: Bulk upsert of health data from device sensors.
+
+  GET /api/v1/health/data
+    Query: type (steps, heart_rate, blood_pressure, etc.), startDate, endDate
+    Response: { data: HealthDataPoint[] }
+
+  GET /api/v1/health/summary
+    Query: date
+    Response: { data: HealthSummary }
+    Returns aggregated health metrics for a single day.
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  health_data:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - metric_type: TEXT (not null, CHECK IN ('steps', 'heart_rate', 'blood_pressure', 'blood_oxygen', 'active_calories', 'distance', 'flights_climbed'))
+    - date: DATE (not null)
+    - value: DECIMAL(10,2) (primary value — steps count, heart rate bpm, etc.)
+    - value_secondary: DECIMAL(10,2) (secondary value — diastolic blood pressure, etc.)
+    - unit: TEXT (not null — 'count', 'bpm', 'mmHg', '%', 'kcal', 'm')
+    - source: TEXT (default 'health_connect' — 'health_connect', 'apple_healthkit', 'manual')
+    - hourly_breakdown: JSONB (nullable — hourly values for step distribution)
+    - metadata: JSONB (nullable — additional data like heart rate zones)
+    - synced_at: TIMESTAMPTZ
+    - created_at: TIMESTAMPTZ (default now())
+    - updated_at: TIMESTAMPTZ
+
+    Indexes:
+      - idx_health_data_user_type_date (user_id, metric_type, date) UNIQUE
+      - idx_health_data_user_date (user_id, date)
+
+    RLS: SELECT/INSERT/UPDATE where auth.uid() = user_id.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI Coach must have access to health data for context-aware advice.
+  - AI function get_health_data retrieves specific metrics for the conversation.
+  - AI should proactively reference health data: "Your resting heart rate has been trending down — great sign of improving fitness!"
+  - AI should correlate health data with other metrics: "Your poor sleep last night (5.2 hours) might explain your lower workout performance."
+  - AI should alert on anomalies: "Your blood pressure reading today is higher than usual. Consider monitoring it and consulting your doctor if it persists."
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Health Connect not installed (Android): prompt user to install Health Connect from Play Store.
+  - Permission denied: display affected metric cards with "Permission required" message and link to settings.
+  - Sync fails: retry with exponential backoff, display "Sync failed" with retry button.
+  - Corrupt or invalid data from Health Connect: skip invalid records, log warning, continue with valid data.
+  - Platform not supported (web): gracefully degrade, hide health data features.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User grants permissions, then revokes in system settings: detect on next access, update UI.
+  - Health Connect returns zero steps for a day the user was active: display zero, don't assume data is missing.
+  - Multiple smart scales syncing weight: use most recent reading within a day.
+  - Heart rate data during sleep vs. exercise: differentiate by timestamp and activity context.
+  - Time zone changes: convert all timestamps to UTC for storage, display in local time.
+  - Health Connect API version differences across Android versions: use compatible API subset.
+  - HealthKit not available on Android, Health Connect not available on iOS: platform checks.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Real-time heart rate monitoring during workouts via wearable connection.
+  - ECG data import and display.
+  - Menstrual cycle tracking integration.
+  - Temperature monitoring.
+  - Blood glucose monitoring for diabetic users.
+  - Integration with specific wearables (Apple Watch, Fitbit, Garmin) for richer data.
+  - Continuous background monitoring with anomaly detection.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Abstract all platform-specific code behind the HealthDataService interface.
+  - Store the last sync timestamp per data type for granular sync control.
+  - Aggregate raw sensor data before sending to backend (reduce payload size).
+  - Never store raw sensor data locally — only store aggregated daily metrics.
+  - Always handle the "Health Connect not available" case gracefully.
+  - Display health data with source attribution ("via Health Connect" or "manually logged").
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Platform-abstracted HealthDataService interface defined.
+  [ ] Android Health Connect implementation (read + write).
+  [ ] iOS HealthKit implementation (read + write).
+  [ ] Permission request flow during onboarding.
+  [ ] Health Connect settings screen with permission management.
+  [ ] Sync engine with conflict resolution.
+  [ ] Data transformation from raw to aggregated format.
+  [ ] health_data table created with indexes.
+  [ ] Backend sync endpoint implemented.
+  [ ] Dashboard metric cards displaying health data.
+  [ ] Sync status indicator.
+  [ ] Background sync configured.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Permissions request and grant flow works on both platforms.
+  [ ] Permission revocation is detected and handled.
+  [ ] Step data syncs and displays correctly.
+  [ ] Heart rate data syncs and displays correctly.
+  [ ] Sleep data syncs and merges with manual entries.
+  [ ] Weight data from smart scales creates appropriate entries.
+  [ ] FitOnus workout data writes back to Health Connect.
+  [ ] Conflict resolution prefers manual entries over sensor data.
+  [ ] Sync handles network failures gracefully.
+  [ ] Background sync runs without excessive battery drain.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - Health data from device sensors appears on the dashboard within 5 seconds of sync.
+  - Users can grant and manage health data permissions from onboarding and settings.
+  - The app functions fully without Health Connect permissions (metrics show manual-only data).
+  - FitOnus workout and nutrition data is written back to Health Connect / HealthKit.
+  - Health data is available to the AI Coach for contextual advice.
+  - Sync conflicts are resolved correctly (manual entries prioritized).
+  - The integration works on both Android (Health Connect) and iOS (HealthKit).
+
+=====================================
+END OF DOCUMENT
+=====================================

@@ -1,0 +1,1023 @@
+=====================================
+FITONUS — FOLDER STRUCTURE
+Document: 04-folder-structure.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document provides the definitive, authoritative folder structure for the FitOnus platform. Every file created by an engineer or AI coding agent must reside in the correct location as defined here. This structure enforces Clean Architecture, Feature-First module organization, and strict separation of concerns. Deviation from this structure is prohibited without an architectural review and explicit approval.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+FitOnus uses a monorepo structure with four top-level projects: mobile, backend, admin, and web. This document focuses on the mobile and backend projects, which are the primary development targets. The folder structure implements Feature-First Architecture where each application feature is a self-contained module with its own components, hooks, services, stores, types, and utilities.
+
+The key organizational principle is: "If you need to add or modify a feature, you should only need to touch files within that feature's directory and the route definition."
+
+=====================================
+3. GOALS
+=====================================
+
+  - Every engineer should be able to locate any file in under five seconds by following the naming conventions.
+  - Every new feature should follow the exact same internal structure, enabling muscle memory and reducing cognitive load.
+  - Cross-feature dependencies should be immediately visible through import paths.
+  - The folder structure should support independent feature development, testing, and deployment.
+  - Global/shared code should be minimal and only contain truly cross-cutting concerns.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - The mobile project must use Expo Router's file-based routing convention in src/app/.
+  - Feature modules must be completely self-contained in src/features/.
+  - Shared UI components must reside in src/components/ui/ (atomic) and src/components/shared/ (composite).
+  - Global services, stores, hooks, types, and utilities must be separate from feature-specific ones.
+  - The backend must separate routes, services, repositories, middleware, AI, and database concerns into distinct directories.
+  - Configuration files (ESLint, Prettier, TypeScript, etc.) reside at the project root.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - No directory should contain more than twenty files. If it exceeds this, introduce subdirectories.
+  - File names must use kebab-case.
+  - Directory names must use kebab-case.
+  - Index files (index.ts) may only be used as barrel exports for feature modules, never for logic.
+  - Test files reside alongside the files they test with a .test.ts(x) suffix.
+  - Platform-specific files use the .ios.tsx, .android.tsx, or .web.tsx extension.
+
+=====================================
+6. USER FLOW
+=====================================
+
+6.1 Developer Finding a File
+
+  Question: "Where is the workout card component?"
+  Answer: src/features/workouts/components/workout-card.tsx
+
+  Question: "Where is the API call for logging a meal?"
+  Answer: src/features/nutrition/services/nutrition-api.ts
+
+  Question: "Where is the Zustand store for authentication?"
+  Answer: src/features/auth/stores/auth-store.ts
+
+  Question: "Where is the base Button component?"
+  Answer: src/components/ui/button.tsx
+
+  Question: "Where is the workout list screen?"
+  Answer: src/app/(tabs)/workouts/index.tsx
+
+  Question: "Where is the AI Coach service on the backend?"
+  Answer: backend/src/ai/coach.ts
+
+  Question: "Where is the database migration for the users table?"
+  Answer: backend/src/database/migrations/001_create_users.sql
+
+6.2 Developer Creating a New Feature
+
+  1. Create a new directory under src/features/ with the feature name.
+  2. Create subdirectories: components/, hooks/, services/, stores/, types/, utils/, constants/.
+  3. Create the route file(s) under src/app/ in the appropriate route group.
+  4. Create an index.ts barrel file in the feature root exporting the public API.
+  5. Create corresponding backend files: route, service, repository.
+  6. Create database migration if new tables are needed.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+7.1 Complete Mobile Folder Structure
+---------------------------------------
+
+mobile/
+├── .expo/                               # Expo generated files (gitignored)
+├── .vscode/
+│   └── settings.json                    # Editor configuration
+├── assets/                              # Static assets
+│   ├── images/
+│   │   ├── icon.png                     # App icon
+│   │   ├── splash-icon.png             # Splash screen icon
+│   │   ├── android-icon-foreground.png  # Android adaptive icon foreground
+│   │   ├── android-icon-background.png  # Android adaptive icon background
+│   │   ├── android-icon-monochrome.png  # Android monochrome icon
+│   │   ├── favicon.png                  # Web favicon
+│   │   ├── onboarding/                  # Onboarding illustrations
+│   │   │   ├── step-1.png
+│   │   │   ├── step-2.png
+│   │   │   ├── step-3.png
+│   │   │   └── step-4.png
+│   │   ├── empty-states/               # Empty state illustrations
+│   │   │   ├── no-workouts.png
+│   │   │   ├── no-meals.png
+│   │   │   ├── no-progress.png
+│   │   │   └── no-conversations.png
+│   │   └── icons/                       # Custom icon assets (if not using icon library)
+│   ├── fonts/                           # Custom fonts (if not using system fonts)
+│   │   ├── inter-regular.ttf
+│   │   ├── inter-medium.ttf
+│   │   ├── inter-semibold.ttf
+│   │   └── inter-bold.ttf
+│   └── animations/                      # Lottie animation files
+│       ├── loading.json
+│       ├── success.json
+│       ├── error.json
+│       ├── empty.json
+│       ├── workout-complete.json
+│       ├── streak.json
+│       └── ai-thinking.json
+│
+├── src/
+│   ├── app/                             # Expo Router file-based routes
+│   │   ├── _layout.tsx                  # Root layout (providers, error boundary, splash)
+│   │   ├── index.tsx                    # Entry point (redirect based on auth)
+│   │   │
+│   │   ├── (auth)/                      # Authentication route group
+│   │   │   ├── _layout.tsx              # Auth stack navigator
+│   │   │   ├── welcome.tsx              # Welcome/landing screen
+│   │   │   ├── login.tsx                # Login screen
+│   │   │   ├── register.tsx             # Registration screen
+│   │   │   ├── forgot-password.tsx      # Password reset request
+│   │   │   ├── reset-password.tsx       # Password reset confirmation
+│   │   │   └── onboarding/              # Onboarding wizard
+│   │   │       ├── _layout.tsx          # Onboarding navigation
+│   │   │       ├── index.tsx            # Onboarding entry/redirect
+│   │   │       ├── personal-info.tsx    # Step 1: Name, age, gender
+│   │   │       ├── body-metrics.tsx     # Step 2: Height, weight, body type
+│   │   │       ├── fitness-goals.tsx    # Step 3: Goal selection
+│   │   │       ├── activity-level.tsx   # Step 4: Activity level
+│   │   │       ├── diet-preferences.tsx # Step 5: Dietary preferences
+│   │   │       ├── health-permissions.tsx # Step 6: Health Connect permissions
+│   │   │       └── complete.tsx         # Onboarding complete confirmation
+│   │   │
+│   │   ├── (tabs)/                      # Authenticated tab navigation
+│   │   │   ├── _layout.tsx              # Tab navigator with custom tab bar
+│   │   │   │
+│   │   │   ├── dashboard/               # Dashboard tab
+│   │   │   │   ├── _layout.tsx          # Dashboard stack navigator
+│   │   │   │   ├── index.tsx            # Dashboard home screen
+│   │   │   │   └── metric/
+│   │   │   │       └── [type].tsx       # Metric detail screen (steps, calories, etc.)
+│   │   │   │
+│   │   │   ├── workouts/                # Workouts tab
+│   │   │   │   ├── _layout.tsx          # Workouts stack navigator
+│   │   │   │   ├── index.tsx            # Workout plans list
+│   │   │   │   ├── create.tsx           # Workout creation form
+│   │   │   │   ├── [id]/
+│   │   │   │   │   ├── index.tsx        # Workout detail view
+│   │   │   │   │   ├── edit.tsx         # Edit workout
+│   │   │   │   │   └── active.tsx       # Active workout session
+│   │   │   │   ├── history/
+│   │   │   │   │   ├── index.tsx        # Workout history list
+│   │   │   │   │   └── [sessionId].tsx  # Session detail view
+│   │   │   │   └── exercises/
+│   │   │   │       ├── index.tsx        # Exercise library browser
+│   │   │   │       └── [id].tsx         # Exercise detail
+│   │   │   │
+│   │   │   ├── nutrition/               # Nutrition tab
+│   │   │   │   ├── _layout.tsx          # Nutrition stack navigator
+│   │   │   │   ├── index.tsx            # Daily nutrition dashboard
+│   │   │   │   ├── log/
+│   │   │   │   │   ├── index.tsx        # Meal logging screen
+│   │   │   │   │   ├── scan.tsx         # Barcode scanner
+│   │   │   │   │   └── search.tsx       # Food search
+│   │   │   │   ├── meals/
+│   │   │   │   │   └── [id].tsx         # Meal detail view
+│   │   │   │   └── plans/
+│   │   │   │       ├── index.tsx        # Meal plan list
+│   │   │   │       └── [id].tsx         # Meal plan detail
+│   │   │   │
+│   │   │   ├── coach/                   # AI Coach tab
+│   │   │   │   ├── _layout.tsx          # Coach stack navigator
+│   │   │   │   ├── index.tsx            # AI Coach chat screen
+│   │   │   │   └── history.tsx          # Past conversations list
+│   │   │   │
+│   │   │   └── profile/                 # Profile tab
+│   │   │       ├── _layout.tsx          # Profile stack navigator
+│   │   │       ├── index.tsx            # Profile overview
+│   │   │       ├── edit.tsx             # Edit profile
+│   │   │       ├── settings/
+│   │   │       │   ├── index.tsx        # Settings home
+│   │   │       │   ├── notifications.tsx # Notification preferences
+│   │   │       │   ├── health-connect.tsx # Health Connect settings
+│   │   │       │   ├── units.tsx        # Unit system preferences
+│   │   │       │   ├── appearance.tsx   # Theme and display settings
+│   │   │       │   ├── privacy.tsx      # Privacy settings
+│   │   │       │   └── account.tsx      # Account management (delete, export)
+│   │   │       ├── weight/
+│   │   │       │   ├── index.tsx        # Weight tracking dashboard
+│   │   │       │   └── log.tsx          # Weight entry form
+│   │   │       ├── sleep/
+│   │   │       │   ├── index.tsx        # Sleep tracking dashboard
+│   │   │       │   └── log.tsx          # Sleep entry form
+│   │   │       ├── recovery/
+│   │   │       │   └── index.tsx        # Recovery dashboard
+│   │   │       ├── progress/
+│   │   │       │   ├── index.tsx        # Progress analytics dashboard
+│   │   │       │   ├── photos.tsx       # Progress photos
+│   │   │       │   └── measurements.tsx # Body measurements
+│   │   │       └── reports/
+│   │   │           ├── index.tsx        # Reports list
+│   │   │           └── [id].tsx         # Report detail view
+│   │   │
+│   │   └── (modals)/                    # Modal route group
+│   │       ├── _layout.tsx              # Modal presentation config
+│   │       ├── quick-weight.tsx         # Quick weight entry modal
+│   │       ├── quick-meal.tsx           # Quick meal entry modal
+│   │       ├── quick-water.tsx          # Quick water intake modal
+│   │       ├── exercise-picker.tsx      # Exercise selection modal
+│   │       ├── food-picker.tsx          # Food selection modal
+│   │       ├── date-picker.tsx          # Date selection modal
+│   │       ├── photo-capture.tsx        # Progress photo capture
+│   │       └── ai-suggestion.tsx        # AI suggestion review modal
+│   │
+│   ├── components/                      # Shared UI components
+│   │   ├── ui/                          # Atomic design system components
+│   │   │   ├── button.tsx               # Button with variants
+│   │   │   ├── icon-button.tsx          # Icon-only button
+│   │   │   ├── fab.tsx                  # Floating action button
+│   │   │   ├── input.tsx               # Text input with validation
+│   │   │   ├── text-area.tsx           # Multi-line text input
+│   │   │   ├── search-input.tsx        # Search-specific input
+│   │   │   ├── password-input.tsx      # Password input with toggle
+│   │   │   ├── number-input.tsx        # Numeric input with stepper
+│   │   │   ├── select.tsx              # Dropdown select
+│   │   │   ├── date-input.tsx          # Date picker input
+│   │   │   ├── time-input.tsx          # Time picker input
+│   │   │   ├── slider.tsx              # Range slider
+│   │   │   ├── switch.tsx              # Toggle switch
+│   │   │   ├── checkbox.tsx            # Checkbox
+│   │   │   ├── radio-group.tsx         # Radio button group
+│   │   │   ├── card.tsx               # Card container
+│   │   │   ├── text.tsx               # Typography component
+│   │   │   ├── avatar.tsx             # Avatar with fallback
+│   │   │   ├── badge.tsx              # Status/count badge
+│   │   │   ├── chip.tsx               # Selectable chip/tag
+│   │   │   ├── divider.tsx            # Horizontal/vertical divider
+│   │   │   ├── icon.tsx               # Icon wrapper
+│   │   │   ├── image.tsx              # Optimized image (expo-image)
+│   │   │   ├── bottom-sheet.tsx        # Bottom sheet modal
+│   │   │   ├── modal.tsx              # Center modal
+│   │   │   ├── toast.tsx              # Toast notification
+│   │   │   ├── loading.tsx            # Loading spinner
+│   │   │   ├── skeleton.tsx           # Skeleton loader
+│   │   │   ├── progress-bar.tsx        # Progress indicator
+│   │   │   ├── progress-ring.tsx       # Circular progress
+│   │   │   ├── tab-bar.tsx            # Custom tab bar
+│   │   │   ├── segmented-control.tsx   # Segmented control
+│   │   │   ├── list-item.tsx          # Standard list item
+│   │   │   ├── section-header.tsx     # Section header for lists
+│   │   │   └── separator.tsx          # List separator
+│   │   │
+│   │   └── shared/                     # Composite shared components
+│   │       ├── metric-card.tsx         # Metric display card
+│   │       ├── metric-card-large.tsx   # Large metric card with chart
+│   │       ├── trend-chart.tsx         # Trend visualization
+│   │       ├── sparkline.tsx           # Mini inline chart
+│   │       ├── ring-chart.tsx          # Macro ring chart
+│   │       ├── stat-row.tsx            # Key-value stat display
+│   │       ├── empty-state.tsx         # Empty state with illustration
+│   │       ├── error-state.tsx         # Error state with retry
+│   │       ├── error-boundary.tsx      # React error boundary
+│   │       ├── offline-banner.tsx      # Network offline indicator
+│   │       ├── header.tsx             # Screen header
+│   │       ├── screen-container.tsx    # Base screen wrapper
+│   │       ├── pull-to-refresh.tsx     # Pull-to-refresh wrapper
+│   │       ├── animated-number.tsx     # Animated number transition
+│   │       ├── gradient-background.tsx  # Gradient background
+│   │       ├── confirmation-dialog.tsx  # Confirmation modal
+│   │       └── streak-indicator.tsx    # Streak display
+│   │
+│   ├── features/                       # Feature modules
+│   │   │
+│   │   ├── auth/                       # Authentication feature
+│   │   │   ├── components/
+│   │   │   │   ├── login-form.tsx
+│   │   │   │   ├── register-form.tsx
+│   │   │   │   ├── social-auth-buttons.tsx
+│   │   │   │   ├── onboarding-step.tsx
+│   │   │   │   ├── onboarding-progress.tsx
+│   │   │   │   └── auth-guard.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-login.ts
+│   │   │   │   ├── use-register.ts
+│   │   │   │   ├── use-logout.ts
+│   │   │   │   ├── use-auth-state.ts
+│   │   │   │   ├── use-onboarding.ts
+│   │   │   │   └── use-social-auth.ts
+│   │   │   ├── services/
+│   │   │   │   ├── auth-api.ts
+│   │   │   │   └── auth-validator.ts
+│   │   │   ├── stores/
+│   │   │   │   └── auth-store.ts
+│   │   │   ├── types/
+│   │   │   │   └── auth.ts
+│   │   │   ├── utils/
+│   │   │   │   └── token-manager.ts
+│   │   │   ├── constants/
+│   │   │   │   └── auth-config.ts
+│   │   │   └── index.ts                # Public API barrel export
+│   │   │
+│   │   ├── dashboard/                  # Dashboard feature
+│   │   │   ├── components/
+│   │   │   │   ├── daily-summary.tsx
+│   │   │   │   ├── quick-actions.tsx
+│   │   │   │   ├── ai-insight-card.tsx
+│   │   │   │   ├── activity-feed.tsx
+│   │   │   │   ├── streak-card.tsx
+│   │   │   │   ├── health-overview.tsx
+│   │   │   │   └── weekly-chart.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-dashboard-data.ts
+│   │   │   │   ├── use-daily-summary.ts
+│   │   │   │   └── use-ai-insights.ts
+│   │   │   ├── services/
+│   │   │   │   └── dashboard-api.ts
+│   │   │   ├── types/
+│   │   │   │   └── dashboard.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── workouts/                   # Workout feature
+│   │   │   ├── components/
+│   │   │   │   ├── workout-card.tsx
+│   │   │   │   ├── workout-list.tsx
+│   │   │   │   ├── exercise-card.tsx
+│   │   │   │   ├── exercise-list.tsx
+│   │   │   │   ├── set-row.tsx
+│   │   │   │   ├── set-logger.tsx
+│   │   │   │   ├── rest-timer.tsx
+│   │   │   │   ├── workout-builder.tsx
+│   │   │   │   ├── exercise-picker-sheet.tsx
+│   │   │   │   ├── active-workout-header.tsx
+│   │   │   │   ├── workout-summary.tsx
+│   │   │   │   ├── personal-record-badge.tsx
+│   │   │   │   └── muscle-group-filter.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-workout-list.ts
+│   │   │   │   ├── use-workout-detail.ts
+│   │   │   │   ├── use-create-workout.ts
+│   │   │   │   ├── use-active-workout.ts
+│   │   │   │   ├── use-exercise-library.ts
+│   │   │   │   ├── use-workout-history.ts
+│   │   │   │   └── use-personal-records.ts
+│   │   │   ├── services/
+│   │   │   │   ├── workout-api.ts
+│   │   │   │   ├── workout-calculator.ts
+│   │   │   │   └── workout-validator.ts
+│   │   │   ├── stores/
+│   │   │   │   └── active-workout-store.ts
+│   │   │   ├── types/
+│   │   │   │   └── workout.ts
+│   │   │   ├── utils/
+│   │   │   │   └── workout-utils.ts
+│   │   │   ├── constants/
+│   │   │   │   ├── muscle-groups.ts
+│   │   │   │   └── exercise-categories.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── nutrition/                  # Nutrition feature
+│   │   │   ├── components/
+│   │   │   │   ├── meal-card.tsx
+│   │   │   │   ├── meal-list.tsx
+│   │   │   │   ├── food-item-row.tsx
+│   │   │   │   ├── macro-rings.tsx
+│   │   │   │   ├── calorie-bar.tsx
+│   │   │   │   ├── water-tracker.tsx
+│   │   │   │   ├── food-search-results.tsx
+│   │   │   │   ├── barcode-scanner-view.tsx
+│   │   │   │   ├── portion-slider.tsx
+│   │   │   │   ├── meal-type-selector.tsx
+│   │   │   │   └── nutrition-summary.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-daily-nutrition.ts
+│   │   │   │   ├── use-log-meal.ts
+│   │   │   │   ├── use-food-search.ts
+│   │   │   │   ├── use-barcode-scan.ts
+│   │   │   │   ├── use-meal-plans.ts
+│   │   │   │   └── use-water-intake.ts
+│   │   │   ├── services/
+│   │   │   │   ├── nutrition-api.ts
+│   │   │   │   ├── food-database.ts
+│   │   │   │   └── macro-calculator.ts
+│   │   │   ├── stores/
+│   │   │   │   └── nutrition-store.ts
+│   │   │   ├── types/
+│   │   │   │   └── nutrition.ts
+│   │   │   ├── utils/
+│   │   │   │   └── nutrition-utils.ts
+│   │   │   ├── constants/
+│   │   │   │   ├── meal-types.ts
+│   │   │   │   └── dietary-categories.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── coach/                      # AI Coach feature
+│   │   │   ├── components/
+│   │   │   │   ├── chat-message.tsx
+│   │   │   │   ├── chat-message-list.tsx
+│   │   │   │   ├── chat-input-bar.tsx
+│   │   │   │   ├── typing-indicator.tsx
+│   │   │   │   ├── suggested-prompts.tsx
+│   │   │   │   ├── function-call-card.tsx
+│   │   │   │   ├── conversation-list-item.tsx
+│   │   │   │   └── ai-avatar.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-chat.ts
+│   │   │   │   ├── use-send-message.ts
+│   │   │   │   ├── use-conversation-history.ts
+│   │   │   │   └── use-suggested-prompts.ts
+│   │   │   ├── services/
+│   │   │   │   ├── coach-api.ts
+│   │   │   │   └── message-formatter.ts
+│   │   │   ├── stores/
+│   │   │   │   └── chat-store.ts
+│   │   │   ├── types/
+│   │   │   │   └── coach.ts
+│   │   │   ├── utils/
+│   │   │   │   └── chat-utils.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── health-connect/             # Health Connect integration
+│   │   │   ├── components/
+│   │   │   │   ├── health-permission-card.tsx
+│   │   │   │   ├── health-data-card.tsx
+│   │   │   │   └── sync-status-indicator.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-health-connect.ts
+│   │   │   │   ├── use-health-permissions.ts
+│   │   │   │   └── use-health-sync.ts
+│   │   │   ├── services/
+│   │   │   │   ├── health-connect-api.ts
+│   │   │   │   └── health-data-mapper.ts
+│   │   │   ├── types/
+│   │   │   │   └── health.ts
+│   │   │   ├── constants/
+│   │   │   │   └── health-metrics.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── weight/                     # Weight management feature
+│   │   │   ├── components/
+│   │   │   │   ├── weight-chart.tsx
+│   │   │   │   ├── weight-entry-form.tsx
+│   │   │   │   ├── weight-log-item.tsx
+│   │   │   │   ├── bmi-indicator.tsx
+│   │   │   │   └── weight-goal-card.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-weight-log.ts
+│   │   │   │   ├── use-log-weight.ts
+│   │   │   │   └── use-weight-trend.ts
+│   │   │   ├── services/
+│   │   │   │   ├── weight-api.ts
+│   │   │   │   └── weight-calculator.ts
+│   │   │   ├── types/
+│   │   │   │   └── weight.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── sleep/                      # Sleep tracking feature
+│   │   │   ├── components/
+│   │   │   │   ├── sleep-chart.tsx
+│   │   │   │   ├── sleep-entry-form.tsx
+│   │   │   │   ├── sleep-quality-rating.tsx
+│   │   │   │   ├── sleep-log-item.tsx
+│   │   │   │   └── sleep-insight-card.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-sleep-log.ts
+│   │   │   │   ├── use-log-sleep.ts
+│   │   │   │   └── use-sleep-analysis.ts
+│   │   │   ├── services/
+│   │   │   │   ├── sleep-api.ts
+│   │   │   │   └── sleep-analyzer.ts
+│   │   │   ├── types/
+│   │   │   │   └── sleep.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── recovery/                   # Recovery system feature
+│   │   │   ├── components/
+│   │   │   │   ├── recovery-score-card.tsx
+│   │   │   │   ├── recovery-chart.tsx
+│   │   │   │   ├── recovery-factors.tsx
+│   │   │   │   └── recovery-recommendation.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-recovery-score.ts
+│   │   │   │   └── use-recovery-history.ts
+│   │   │   ├── services/
+│   │   │   │   ├── recovery-api.ts
+│   │   │   │   └── recovery-calculator.ts
+│   │   │   ├── types/
+│   │   │   │   └── recovery.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── progress/                   # Progress analytics feature
+│   │   │   ├── components/
+│   │   │   │   ├── progress-chart.tsx
+│   │   │   │   ├── progress-photo-grid.tsx
+│   │   │   │   ├── progress-photo-comparison.tsx
+│   │   │   │   ├── measurement-form.tsx
+│   │   │   │   ├── measurement-list.tsx
+│   │   │   │   ├── strength-progression.tsx
+│   │   │   │   └── analytics-card.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-progress-analytics.ts
+│   │   │   │   ├── use-progress-photos.ts
+│   │   │   │   ├── use-body-measurements.ts
+│   │   │   │   └── use-strength-progression.ts
+│   │   │   ├── services/
+│   │   │   │   ├── progress-api.ts
+│   │   │   │   └── analytics-calculator.ts
+│   │   │   ├── types/
+│   │   │   │   └── progress.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── notifications/              # Notifications feature
+│   │   │   ├── components/
+│   │   │   │   ├── notification-item.tsx
+│   │   │   │   ├── notification-list.tsx
+│   │   │   │   └── notification-badge.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-notifications.ts
+│   │   │   │   ├── use-push-permissions.ts
+│   │   │   │   └── use-notification-preferences.ts
+│   │   │   ├── services/
+│   │   │   │   ├── notification-api.ts
+│   │   │   │   └── push-token-manager.ts
+│   │   │   ├── types/
+│   │   │   │   └── notification.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── reports/                    # Reports feature
+│   │   │   ├── components/
+│   │   │   │   ├── report-card.tsx
+│   │   │   │   ├── report-list.tsx
+│   │   │   │   ├── report-detail-view.tsx
+│   │   │   │   └── report-share-sheet.tsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── use-reports.ts
+│   │   │   │   └── use-generate-report.ts
+│   │   │   ├── services/
+│   │   │   │   └── report-api.ts
+│   │   │   ├── types/
+│   │   │   │   └── report.ts
+│   │   │   └── index.ts
+│   │   │
+│   │   └── profile/                    # Profile feature
+│   │       ├── components/
+│   │       │   ├── profile-header.tsx
+│   │       │   ├── profile-stats.tsx
+│   │       │   ├── profile-form.tsx
+│   │       │   ├── settings-section.tsx
+│   │       │   ├── settings-row.tsx
+│   │       │   └── unit-selector.tsx
+│   │       ├── hooks/
+│   │       │   ├── use-profile.ts
+│   │       │   ├── use-update-profile.ts
+│   │       │   └── use-settings.ts
+│   │       ├── services/
+│   │       │   ├── profile-api.ts
+│   │       │   └── settings-manager.ts
+│   │       ├── stores/
+│   │       │   └── settings-store.ts
+│   │       ├── types/
+│   │       │   └── profile.ts
+│   │       └── index.ts
+│   │
+│   ├── constants/                      # Global constants
+│   │   ├── theme.ts                    # Colors, fonts, spacing (already exists)
+│   │   ├── api.ts                      # API base URL, endpoints
+│   │   ├── config.ts                   # App configuration constants
+│   │   ├── query-keys.ts              # Global TanStack Query key factories
+│   │   └── routes.ts                  # Route path constants
+│   │
+│   ├── hooks/                          # Global custom hooks
+│   │   ├── use-color-scheme.ts         # System color scheme (already exists)
+│   │   ├── use-color-scheme.web.ts     # Web color scheme (already exists)
+│   │   ├── use-theme.ts               # Theme hook (already exists)
+│   │   ├── use-auth.ts                # Auth state shortcut hook
+│   │   ├── use-network.ts             # Network connectivity hook
+│   │   ├── use-app-state.ts           # App foreground/background hook
+│   │   ├── use-keyboard.ts            # Keyboard visibility hook
+│   │   ├── use-debounce.ts            # Debounced value hook
+│   │   ├── use-dimensions.ts          # Screen dimensions hook
+│   │   └── use-haptics.ts             # Haptic feedback hook
+│   │
+│   ├── services/                       # Global services
+│   │   ├── api-client.ts              # Configured Axios instance
+│   │   ├── storage.ts                 # MMKV storage wrapper
+│   │   ├── secure-storage.ts          # Expo Secure Store wrapper
+│   │   ├── analytics.ts              # Analytics service
+│   │   ├── crash-reporting.ts         # Sentry integration
+│   │   └── sync-manager.ts           # Offline sync manager
+│   │
+│   ├── stores/                         # Global Zustand stores
+│   │   ├── app-store.ts               # App-level state (first launch, version)
+│   │   └── theme-store.ts             # Theme preference state
+│   │
+│   ├── types/                          # Global TypeScript types
+│   │   ├── api.ts                     # API response/request types
+│   │   ├── common.ts                  # Shared utility types
+│   │   ├── navigation.ts             # Navigation parameter types
+│   │   └── env.d.ts                   # Environment variable types
+│   │
+│   ├── utils/                          # Global utility functions
+│   │   ├── format.ts                  # Number, currency, percentage formatting
+│   │   ├── date.ts                    # Date formatting and manipulation
+│   │   ├── validation.ts             # Input validation functions
+│   │   ├── math.ts                    # Math utility functions
+│   │   ├── string.ts                  # String manipulation utilities
+│   │   ├── array.ts                   # Array utility functions
+│   │   ├── platform.ts               # Platform detection utilities
+│   │   └── units.ts                   # Unit conversion (metric/imperial)
+│   │
+│   ├── providers/                      # React context providers
+│   │   ├── app-providers.tsx           # Provider composition wrapper
+│   │   ├── query-provider.tsx          # TanStack Query provider
+│   │   ├── theme-provider.tsx          # Theme context provider
+│   │   └── auth-provider.tsx           # Authentication context provider
+│   │
+│   └── global.css                      # Global CSS styles (already exists)
+│
+├── app.json                            # Expo configuration
+├── tsconfig.json                       # TypeScript configuration
+├── package.json                        # Dependencies and scripts
+├── .eslintrc.js                        # ESLint configuration
+├── .prettierrc                         # Prettier configuration
+├── babel.config.js                     # Babel configuration (if needed)
+├── metro.config.js                     # Metro bundler configuration (if needed)
+├── .gitignore                          # Git ignore rules
+├── .env.example                        # Environment variable template
+└── README.md                           # Mobile project documentation
+
+
+7.2 Complete Backend Folder Structure
+---------------------------------------
+
+backend/
+├── src/
+│   ├── main.ts                         # NestJS application bootstrap
+│   ├── app.ts                          # Application setup (plugins, routes, hooks)
+│   │
+│   ├── config/                         # Configuration
+│   │   ├── env.ts                      # Environment variable validation (Zod)
+│   │   ├── database.ts                 # Database connection config
+│   │   ├── openai.ts                   # OpenAI client configuration
+│   │   ├── redis.ts                    # Redis/BullMQ configuration
+│   │   ├── cors.ts                     # CORS configuration
+│   │   └── constants.ts               # Application constants
+│   │
+│   ├── routes/                         # HTTP route definitions
+│   │   └── v1/
+│   │       ├── index.ts               # Route registration
+│   │       ├── auth.ts                # POST /auth/register, login, refresh, logout
+│   │       ├── users.ts              # GET/PATCH/DELETE /users/me
+│   │       ├── onboarding.ts         # POST/GET /onboarding
+│   │       ├── workouts.ts           # CRUD /workouts, /workouts/:id/sessions
+│   │       ├── exercises.ts          # GET /exercises
+│   │       ├── nutrition.ts          # CRUD /nutrition/meals, /nutrition/foods
+│   │       ├── coach.ts              # POST /coach/chat, GET /coach/history
+│   │       ├── health.ts             # POST /health/sync, GET /health/data
+│   │       ├── weight.ts             # CRUD /weight
+│   │       ├── sleep.ts              # CRUD /sleep
+│   │       ├── recovery.ts           # GET /recovery/score, /recovery/history
+│   │       ├── progress.ts           # GET /progress/analytics, /progress/photos
+│   │       ├── measurements.ts       # CRUD /measurements
+│   │       ├── notifications.ts      # GET/PATCH /notifications
+│   │       ├── reports.ts            # GET /reports, POST /reports/generate
+│   │       └── dashboard.ts          # GET /dashboard/summary
+│   │
+│   ├── services/                      # Business logic layer
+│   │   ├── auth-service.ts
+│   │   ├── user-service.ts
+│   │   ├── onboarding-service.ts
+│   │   ├── workout-service.ts
+│   │   ├── exercise-service.ts
+│   │   ├── nutrition-service.ts
+│   │   ├── coach-service.ts
+│   │   ├── health-service.ts
+│   │   ├── weight-service.ts
+│   │   ├── sleep-service.ts
+│   │   ├── recovery-service.ts
+│   │   ├── progress-service.ts
+│   │   ├── measurement-service.ts
+│   │   ├── notification-service.ts
+│   │   ├── report-service.ts
+│   │   └── dashboard-service.ts
+│   │
+│   ├── repositories/                  # Data access layer
+│   │   ├── user-repository.ts
+│   │   ├── workout-repository.ts
+│   │   ├── exercise-repository.ts
+│   │   ├── nutrition-repository.ts
+│   │   ├── health-repository.ts
+│   │   ├── weight-repository.ts
+│   │   ├── sleep-repository.ts
+│   │   ├── recovery-repository.ts
+│   │   ├── progress-repository.ts
+│   │   ├── measurement-repository.ts
+│   │   ├── notification-repository.ts
+│   │   ├── report-repository.ts
+│   │   └── ai-repository.ts
+│   │
+│   ├── ai/                            # AI subsystem
+│   │   ├── coach.ts                   # AI Coach orchestrator
+│   │   ├── memory.ts                  # Memory management (CRUD, retrieval)
+│   │   ├── memory-extractor.ts        # Extract long-term memories from conversations
+│   │   ├── rag.ts                     # RAG pipeline orchestrator
+│   │   ├── embeddings.ts             # Embedding generation and vector operations
+│   │   ├── context-builder.ts         # Builds complete LLM context from components
+│   │   ├── token-counter.ts           # Token estimation and budget management
+│   │   ├── functions/                 # OpenAI function call definitions
+│   │   │   ├── index.ts              # Function registry
+│   │   │   ├── workout-functions.ts   # Workout-related function definitions
+│   │   │   ├── nutrition-functions.ts # Nutrition-related function definitions
+│   │   │   ├── health-functions.ts    # Health data function definitions
+│   │   │   ├── progress-functions.ts  # Progress analysis functions
+│   │   │   └── general-functions.ts   # General utility functions
+│   │   ├── prompts/                   # Prompt templates
+│   │   │   ├── system.ts             # Base system prompt
+│   │   │   ├── workout.ts            # Workout generation prompts
+│   │   │   ├── nutrition.ts          # Nutrition planning prompts
+│   │   │   ├── analysis.ts           # Data analysis prompts
+│   │   │   ├── recovery.ts           # Recovery advice prompts
+│   │   │   └── summary.ts            # Conversation summary prompts
+│   │   └── knowledge/                 # RAG knowledge base source documents
+│   │       ├── exercise-science/
+│   │       ├── nutrition/
+│   │       ├── sleep/
+│   │       └── recovery/
+│   │
+│   ├── common/                         # NestJS guards, interceptors, pipes
+│   │   ├── auth.ts                    # JWT verification
+│   │   ├── rate-limit.ts             # Rate limiting
+│   │   ├── validation.ts            # Request schema validation
+│   │   ├── error-handler.ts          # Global error handler
+│   │   ├── request-id.ts            # Request ID generation
+│   │   ├── logger.ts                # Request/response logging
+│   │   └── cors.ts                   # CORS handling
+│   │
+│   ├── database/                      # Database management
+│   │   ├── client.ts                 # Supabase client initialization
+│   │   ├── migrations/              # Schema migration files
+│   │   │   ├── 001_create_users.sql
+│   │   │   ├── 002_create_user_profiles.sql
+│   │   │   ├── 003_create_workouts.sql
+│   │   │   ├── 004_create_exercises.sql
+│   │   │   ├── 005_create_nutrition.sql
+│   │   │   ├── 006_create_health_data.sql
+│   │   │   ├── 007_create_weight_logs.sql
+│   │   │   ├── 008_create_sleep_logs.sql
+│   │   │   ├── 009_create_recovery.sql
+│   │   │   ├── 010_create_ai_tables.sql
+│   │   │   ├── 011_create_notifications.sql
+│   │   │   ├── 012_create_progress.sql
+│   │   │   ├── 013_create_reports.sql
+│   │   │   ├── 014_enable_pgvector.sql
+│   │   │   └── 015_create_rls_policies.sql
+│   │   └── seeds/                    # Development seed data
+│   │       ├── exercises.sql         # Exercise library seed data
+│   │       ├── foods.sql             # Food database seed data
+│   │       └── test-users.sql        # Test user accounts
+│   │
+│   ├── types/                         # Backend TypeScript types
+│   │   ├── express.d.ts              # Express/Nest type augmentations
+│   │   ├── models.ts                 # Database model types
+│   │   ├── api.ts                    # API request/response types
+│   │   ├── ai.ts                     # AI subsystem types
+│   │   └── common.ts                 # Shared utility types
+│   │
+│   ├── utils/                         # Utility functions
+│   │   ├── errors.ts                 # Custom error classes
+│   │   ├── logger.ts                 # Logger utility (pino)
+│   │   ├── crypto.ts                 # Hashing and encryption
+│   │   ├── validation.ts            # Shared Zod schemas
+│   │   ├── pagination.ts            # Cursor pagination helpers
+│   │   ├── date.ts                   # Date utility functions
+│   │   └── helpers.ts               # General helpers
+│   │
+│   └── jobs/                          # Background job processors
+│       ├── queue.ts                  # BullMQ queue setup
+│       ├── workers/
+│       │   ├── memory-extraction.ts  # Extract memories from conversations
+│       │   ├── report-generation.ts  # Generate weekly/monthly reports
+│       │   ├── health-sync.ts        # Process health data imports
+│       │   ├── embedding-generation.ts # Generate/update embeddings
+│       │   └── notification-sender.ts # Send push notifications
+│       └── schedulers/
+│           ├── daily-summary.ts      # Daily summary generation
+│           ├── weekly-report.ts      # Weekly report trigger
+│           └── cleanup.ts            # Data cleanup and archival
+│
+├── tests/                             # Test files
+│   ├── unit/
+│   │   ├── services/
+│   │   ├── repositories/
+│   │   ├── utils/
+│   │   └── ai/
+│   ├── integration/
+│   │   ├── routes/
+│   │   ├── database/
+│   │   └── ai/
+│   ├── fixtures/                     # Test data fixtures
+│   ├── helpers/                      # Test helper functions
+│   └── setup.ts                     # Test environment setup
+│
+├── tsconfig.json                      # TypeScript configuration
+├── package.json                       # Dependencies and scripts
+├── .eslintrc.js                       # ESLint configuration
+├── .prettierrc                        # Prettier configuration
+├── .env.example                       # Environment variable template
+├── Dockerfile                         # Docker container configuration
+├── docker-compose.yml                 # Local development services
+└── README.md                          # Backend documentation
+
+
+7.3 Root Repository Structure
+-------------------------------
+
+FitOnus/
+├── mobile/                            # React Native Expo app (detailed above)
+├── backend/                           # NestJS Node.js server (detailed above)
+├── admin/                             # Admin dashboard (future phase)
+│   └── README.md                      # Placeholder documentation
+├── web/                               # Marketing website (future phase)
+│   └── README.md                      # Placeholder documentation
+├── docs/                              # Project documentation
+│   ├── 01-project-overview.txt
+│   ├── 02-architecture.txt
+│   ├── 03-coding-standards.txt
+│   ├── 04-folder-structure.txt
+│   ├── ... (all 27 documentation files)
+│   └── 27-roadmap.txt
+├── .github/                           # GitHub configurations
+│   ├── workflows/
+│   │   ├── mobile-ci.yml             # Mobile CI pipeline
+│   │   ├── backend-ci.yml            # Backend CI pipeline
+│   │   └── deploy.yml                # Deployment pipeline
+│   ├── PULL_REQUEST_TEMPLATE.md      # PR template
+│   └── CODEOWNERS                    # Code ownership definitions
+├── .gitignore                         # Root gitignore
+├── README.md                          # Root repository documentation
+└── LICENSE                            # License file
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+This entire document IS the folder structure reference. See Section 7 for the complete directory trees.
+
+=====================================
+9. COMPONENTS
+=====================================
+
+Component placement rules:
+
+  - Atomic UI components (button, input, card) → src/components/ui/
+  - Composite shared components (metric-card, trend-chart) → src/components/shared/
+  - Feature-specific components → src/features/[feature]/components/
+  - A component is "shared" if it is used by two or more features.
+  - A component is "feature-specific" if it is used by only one feature.
+  - If a feature-specific component later becomes shared, move it to src/components/shared/ and update all imports.
+
+=====================================
+10. SCREENS
+=====================================
+
+Screen placement rules:
+
+  - All screens are route files in src/app/.
+  - Screens are grouped by authentication state: (auth)/ for unauthenticated, (tabs)/ for authenticated.
+  - Modal screens reside in (modals)/.
+  - Each tab has its own directory with a _layout.tsx for stack navigation.
+  - Dynamic routes use [param].tsx naming convention.
+  - Screen files should be thin — they compose feature components and connect hooks.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+API file placement rules:
+
+  - Route definitions → backend/src/routes/v1/[resource].ts
+  - Business logic → backend/src/services/[domain]-service.ts
+  - Database access → backend/src/repositories/[domain]-repository.ts
+  - Request/response types → backend/src/types/api.ts
+  - Validation schemas → inline in route files or in backend/src/utils/validation.ts
+  - Each route file registers all CRUD operations for a single resource.
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+Database file placement rules:
+
+  - Migration files → backend/src/database/migrations/[NNN]_[description].sql
+  - Seed files → backend/src/database/seeds/[domain].sql
+  - Database client → backend/src/database/client.ts
+  - Model types → backend/src/types/models.ts
+  - Migrations are numbered sequentially and never renamed or reordered after deployment.
+  - Each migration file contains both the UP and DOWN SQL separated by a comment marker.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+AI file placement rules:
+
+  - Core AI logic → backend/src/ai/ (coach.ts, memory.ts, rag.ts, embeddings.ts)
+  - Function definitions → backend/src/ai/functions/
+  - Prompt templates → backend/src/ai/prompts/
+  - Knowledge base documents → backend/src/ai/knowledge/[category]/
+  - AI-related types → backend/src/types/ai.ts
+  - Background AI jobs → backend/src/jobs/workers/
+  - AI repository (memory, embeddings CRUD) → backend/src/repositories/ai-repository.ts
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Error class definitions → backend/src/utils/errors.ts
+  - Error handler middleware → backend/src/middleware/error-handler.ts
+  - Mobile error boundary → src/components/shared/error-boundary.tsx
+  - Mobile error state component → src/components/shared/error-state.tsx
+  - Crash reporting service → src/services/crash-reporting.ts
+  - Feature-specific error handling lives within the feature's hooks and services.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - Circular dependencies between features: prohibited. If Feature A needs data from Feature B, both should depend on a shared type defined in src/types/.
+  - Deep nesting: no directory should be nested more than five levels deep from src/.
+  - Large feature modules: if a feature's components/ directory exceeds fifteen files, introduce subdirectories by concern (e.g., components/forms/, components/cards/, components/charts/).
+  - Platform-specific files: use .ios.tsx, .android.tsx, .web.tsx extensions. The generic .tsx file serves as the default.
+  - Test co-location: test files live next to the files they test (e.g., workout-api.ts and workout-api.test.ts in the same directory), EXCEPT for integration tests which live in backend/tests/integration/.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Implement a monorepo management tool (Turborepo or Nx) when admin and web projects become active.
+  - Create shared packages (types, validation schemas) between mobile and backend.
+  - Add a packages/ directory for shared code:
+    packages/
+    ├── shared-types/    # Shared TypeScript types
+    ├── shared-utils/    # Shared utility functions
+    └── shared-validation/ # Shared validation schemas
+  - Implement automatic folder structure validation in CI.
+  - Create a CLI tool for scaffolding new features with the correct directory structure.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - When in doubt about where a file goes, consult this document.
+  - Prefer creating a new feature module over adding to an existing one if the functionality is distinct.
+  - Keep barrel exports (index.ts) limited to the feature's public API. Do not re-export internal implementation details.
+  - Never place logic files directly in src/. Every file must be in a subdirectory.
+  - Assets must be organized by type (images/, fonts/, animations/), not by feature.
+  - Configuration files (.eslintrc, .prettierrc, tsconfig) belong at the project root, not in src/.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] All top-level directories created (mobile/, backend/, admin/, web/, docs/).
+  [ ] Mobile src/ directory structure created with all subdirectories.
+  [ ] All feature module directories created with internal subdirectories.
+  [ ] Backend src/ directory structure created with all subdirectories.
+  [ ] Path aliases configured in tsconfig.json for @/ imports.
+  [ ] Index barrel files created for each feature module.
+  [ ] .gitkeep files placed in empty directories to preserve structure in Git.
+  [ ] README.md files created for each feature module.
+  [ ] .env.example files created for both mobile and backend projects.
+  [ ] Directory structure matches this document exactly.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Test files are co-located with source files (unit tests).
+  [ ] Integration test directory structure mirrors the route structure.
+  [ ] Test fixtures are organized by domain in tests/fixtures/.
+  [ ] No test files exist in src/app/ (route files are tested via integration tests).
+  [ ] All feature test helpers are in tests/helpers/ or feature-local.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - The folder structure matches this document exactly for all existing directories and files.
+  - Every file in the project can be located by following the naming conventions defined here.
+  - No file exists outside of its designated directory.
+  - No feature module imports internal modules from another feature (only through barrel exports).
+  - Path aliases (@/) are used for all imports outside the current feature.
+  - Relative imports are used only within the same feature module or adjacent files.
+  - No directory contains more than twenty files.
+  - No directory nesting exceeds five levels from src/.
+  - All empty directories contain a .gitkeep file.
+
+=====================================
+END OF DOCUMENT
+=====================================

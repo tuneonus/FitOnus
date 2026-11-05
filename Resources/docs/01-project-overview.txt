@@ -1,0 +1,820 @@
+=====================================
+FITONUS — PROJECT OVERVIEW
+Document: 01-project-overview.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document serves as the definitive reference for the FitOnus platform. It establishes the product vision, technical boundaries, architectural philosophy, and operational principles that govern all engineering decisions across the mobile application, backend services, and AI subsystems. Every engineer, AI coding agent, designer, and stakeholder should read this document before contributing to the codebase. This document is the single source of truth for what FitOnus is, why it exists, and how it will be built.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+FitOnus is a comprehensive AI-powered fitness, health, nutrition, and wellness platform developed by TuneOnus. The platform delivers a deeply personalized health experience through an intelligent AI Coach that learns from user behavior, adapts recommendations in real time, and provides evidence-based guidance across every dimension of physical wellness.
+
+The platform consists of four primary subsystems:
+
+  1. Mobile Application — A cross-platform React Native (Expo) application targeting iOS and Android, serving as the primary user interface.
+
+  2. Backend API — A robust Node.js server built with NestJS, responsible for business logic, data orchestration, and API management.
+
+  3. Database Layer — PostgreSQL with Supabase for relational data, real-time subscriptions, and authentication, extended with pgvector for AI embedding storage and semantic search.
+
+  4. AI Engine — Powered by OpenAI's Responses API with function calling, Retrieval-Augmented Generation (RAG), and persistent AI memory to deliver contextual, conversational, and adaptive coaching.
+
+The product targets health-conscious individuals ranging from beginners to advanced athletes who want a unified platform that replaces fragmented fitness apps, meal trackers, sleep monitors, and wellness journals with a single intelligent companion.
+
+Product Tagline: "Your AI-Powered Wellness Companion"
+
+=====================================
+3. GOALS
+=====================================
+
+3.1 Product Goals
+-----------------
+  - Deliver a premium, Apple Health / Google Fit quality mobile experience with fluid animations, dark/light mode support, and accessibility compliance.
+  - Provide an AI Coach that feels as natural and helpful as a human personal trainer, nutritionist, and wellness advisor combined.
+  - Unify workout tracking, nutrition logging, sleep analysis, weight management, recovery monitoring, and health data aggregation into a single coherent experience.
+  - Enable users to achieve measurable health outcomes through personalized, adaptive, and science-backed recommendations.
+  - Build a platform that scales from thousands to millions of users without architectural rework.
+
+3.2 Engineering Goals
+---------------------
+  - Implement Clean Architecture with strict separation of concerns across presentation, domain, and data layers.
+  - Adopt Feature-First Architecture where each feature is a self-contained module with its own components, hooks, services, types, and tests.
+  - Enforce SOLID principles, DRY (Don't Repeat Yourself), and KISS (Keep It Simple, Stupid) across every module.
+  - Achieve greater than ninety-five percent type safety through rigorous TypeScript usage with strict mode enabled.
+  - Maintain sub-two-second cold start times on mobile and sub-two-hundred-millisecond API response times for standard endpoints.
+  - Design the AI subsystem for extensibility — new capabilities (e.g., mental wellness, hydration tracking) should plug in without modifying core AI infrastructure.
+
+3.3 Business Goals
+------------------
+  - Launch a minimum viable product within sixteen weeks of active development.
+  - Achieve a four-point-five or higher App Store and Play Store rating within the first quarter post-launch.
+  - Support a freemium model with premium AI features gated behind a subscription tier.
+  - Enable white-label licensing of the platform for corporate wellness programs.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+4.1 User Management
+  - Email/password registration and login.
+  - Social authentication via Google and Apple Sign-In.
+  - Profile creation with personal health metrics (age, height, weight, gender, activity level, goals).
+  - Profile editing and account deletion (GDPR compliance).
+  - Onboarding wizard for new users collecting baseline health data.
+
+4.2 Dashboard
+  - Personalized home screen displaying daily summary cards (calories, steps, workouts, sleep, weight).
+  - Real-time data from Health Connect / Apple HealthKit.
+  - Quick-action buttons for logging meals, starting workouts, and chatting with AI Coach.
+  - Weekly and monthly trend mini-charts.
+  - Motivational insights and streaks.
+
+4.3 AI Coach
+  - Conversational AI interface with chat-style interaction.
+  - Persistent memory of user goals, preferences, history, and context.
+  - Function calling to trigger in-app actions (create workout, log meal, set reminder).
+  - RAG-powered knowledge base for exercise science, nutrition, and wellness.
+  - Natural language understanding for interpreting vague or complex health queries.
+  - Multi-turn conversation support with context window management.
+
+4.4 Workout System
+  - Exercise library with categorized exercises (strength, cardio, flexibility, HIIT).
+  - Custom workout builder with drag-and-drop set/rep configuration.
+  - AI-generated workout plans based on user goals, equipment, and fitness level.
+  - Active workout tracking with rest timers, set logging, and rep counting.
+  - Workout history and personal records tracking.
+  - Progressive overload recommendations.
+
+4.5 Nutrition System
+  - Food database with nutritional information.
+  - Barcode scanning for packaged foods.
+  - Manual meal logging with macro/micronutrient breakdown.
+  - AI-generated meal plans respecting dietary preferences, allergies, and caloric targets.
+  - Daily and weekly nutrition summaries.
+  - Water intake tracking.
+
+4.6 Health Connect Integration
+  - Bidirectional data sync with Android Health Connect.
+  - Apple HealthKit integration for iOS.
+  - Step counting, heart rate, blood pressure, and blood oxygen data ingestion.
+  - Background data synchronization.
+
+4.7 Weight Management
+  - Daily weight logging with trend visualization.
+  - Goal weight setting and progress tracking.
+  - BMI calculation and body composition estimation.
+  - Caloric deficit/surplus recommendations aligned with weight goals.
+
+4.8 Sleep Tracking
+  - Manual sleep logging (bedtime, wake time, quality rating).
+  - Health Connect sleep data import.
+  - Sleep quality analysis and recommendations.
+  - Sleep pattern trend visualization.
+
+4.9 Recovery System
+  - Recovery score calculation based on sleep, heart rate variability, workout intensity, and stress indicators.
+  - Active recovery day recommendations.
+  - Stretching and mobility routines.
+  - Rest day guidance.
+
+4.10 Progress and Analytics
+  - Comprehensive dashboards with charts for all tracked metrics.
+  - Before/after photo comparisons.
+  - Strength progression graphs.
+  - Body measurement tracking.
+  - AI-generated progress reports and insights.
+
+4.11 Notifications
+  - Push notifications for workout reminders, meal logging prompts, and hydration reminders.
+  - In-app notification center.
+  - Customizable notification preferences.
+  - AI-driven smart notification timing.
+
+4.12 Reports
+  - Weekly and monthly health reports.
+  - PDF export capability.
+  - Shareable progress summaries.
+  - AI-generated narrative insights.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+5.1 Performance
+  - Mobile app cold start: less than two seconds.
+  - API response time (P95): less than two hundred milliseconds for standard endpoints.
+  - AI response time (P95): less than three seconds for conversational responses.
+  - Offline capability for core features (workout logging, meal logging).
+  - Image loading: lazy loading with progressive rendering and caching.
+
+5.2 Scalability
+  - Horizontal scaling of backend services behind a load balancer.
+  - Database connection pooling via Supabase.
+  - Rate limiting on all public endpoints.
+  - AI request queuing for high-traffic periods.
+
+5.3 Security
+  - JWT-based authentication with short-lived access tokens and long-lived refresh tokens.
+  - Row-Level Security (RLS) on all Supabase tables.
+  - Input validation and sanitization on every endpoint.
+  - HTTPS-only communication.
+  - Encrypted storage of sensitive data (tokens, health data) using expo-secure-store and MMKV encryption.
+  - OWASP Top Ten compliance.
+
+5.4 Reliability
+  - Ninety-nine-point-nine percent uptime target.
+  - Automatic retries with exponential backoff for transient failures.
+  - Circuit breaker pattern for external service calls (OpenAI, Health Connect).
+  - Comprehensive error logging and monitoring.
+
+5.5 Accessibility
+  - WCAG 2.1 AA compliance.
+  - Screen reader support with proper accessibility labels.
+  - Minimum touch target size of forty-four by forty-four points.
+  - Color contrast ratios meeting AA standards.
+  - Support for dynamic font scaling.
+
+5.6 Internationalization
+  - Architecture prepared for multi-language support (i18n).
+  - Date, time, and number formatting based on user locale.
+  - Metric and imperial unit system support.
+
+=====================================
+6. USER FLOW
+=====================================
+
+6.1 First-Time User Journey
+  1. User downloads FitOnus from App Store or Play Store.
+  2. Splash screen displays with brand animation.
+  3. Onboarding carousel introduces key features (three to four screens).
+  4. User selects "Get Started" and chooses authentication method.
+  5. Registration form collects email and password (or social auth).
+  6. Onboarding wizard begins:
+     a. Personal information (name, age, gender).
+     b. Body metrics (height, current weight, goal weight).
+     c. Activity level selection (sedentary, lightly active, active, very active).
+     d. Fitness goals (lose weight, build muscle, improve endurance, general wellness).
+     e. Dietary preferences (omnivore, vegetarian, vegan, keto, allergies).
+     f. Health Connect / HealthKit permission request.
+     g. Notification permission request.
+  7. AI Coach introduces itself and summarizes the user's profile.
+  8. User lands on the personalized Dashboard.
+
+6.2 Returning User Journey
+  1. User opens FitOnus.
+  2. Biometric or PIN authentication (if enabled).
+  3. Dashboard loads with today's summary, synced health data, and AI insights.
+  4. User navigates to desired feature via bottom tab navigation.
+
+6.3 Core Interaction Loops
+  - Workout Loop: Browse/search exercises → Select or generate workout → Start workout → Log sets/reps → Complete workout → View summary → AI feedback.
+  - Nutrition Loop: Scan barcode or search food → Log meal → View daily totals → AI recommendations.
+  - AI Coach Loop: Open chat → Ask question or request plan → AI responds with context-aware advice → User acts on recommendation → AI remembers and adapts.
+  - Progress Loop: View dashboard → Drill into specific metric → Analyze trends → Read AI insights → Adjust goals.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+7.1 Technology Stack
+--------------------
+
+  Mobile Application:
+    - React Native 0.86
+    - Expo SDK 57
+    - Expo Router (file-based routing with typed routes)
+    - TypeScript 6.x (strict mode)
+    - React 19.x
+    - Zustand 5.x (global state management)
+    - React Query / TanStack Query 5.x (server state management)
+    - MMKV (high-performance local key-value storage)
+    - Axios (HTTP client)
+    - React Native Reanimated 4.x (animations)
+    - React Native Gesture Handler 2.x (gesture management)
+    - React Native Keyboard Controller (keyboard-aware layouts)
+    - Lottie React Native (complex animations)
+    - Expo Image (optimized image rendering)
+    - Expo Secure Store (encrypted credential storage)
+    - Expo Notifications (push notifications)
+    - Expo Camera and Barcode Scanner (food scanning)
+    - Expo Location (location-based features)
+    - Day.js (date/time manipulation)
+    - Bottom Sheet (modal interactions)
+
+  Backend:
+    - Node.js (latest LTS)
+    - NestJS (HTTP framework)
+    - TypeScript (strict mode)
+    - PostgreSQL 16
+    - Supabase (BaaS — auth, database, storage, real-time)
+    - pgvector (vector similarity search for AI embeddings)
+    - OpenAI Responses API (AI inference)
+    - Bull / BullMQ (job queues for async processing)
+
+  Infrastructure:
+    - Supabase Cloud (database, auth, storage)
+    - Vercel or Railway (backend deployment)
+    - EAS Build and EAS Submit (mobile CI/CD)
+    - GitHub Actions (CI pipeline)
+    - Sentry (error monitoring)
+    - PostHog or Mixpanel (product analytics)
+
+7.2 Architecture Patterns
+--------------------------
+
+  Clean Architecture Layers:
+    1. Presentation Layer — React Native components, screens, and navigation. Contains no business logic.
+    2. Domain Layer — Use cases, entities, and business rules. Framework-agnostic. Pure TypeScript.
+    3. Data Layer — Repositories, API clients, local storage adapters. Implements domain interfaces.
+
+  Feature-First Organization:
+    Each feature (auth, workout, nutrition, etc.) is a self-contained module with its own:
+      - components/ (UI elements specific to the feature)
+      - screens/ (screen-level components)
+      - hooks/ (custom React hooks)
+      - services/ (API and business logic)
+      - stores/ (Zustand slices)
+      - types/ (TypeScript interfaces and types)
+      - utils/ (feature-specific utility functions)
+      - constants/ (feature-specific constants)
+
+  State Management Strategy:
+    - Server State: TanStack Query for all API data (caching, background refetching, optimistic updates).
+    - Client State: Zustand for UI state, user preferences, and ephemeral application state.
+    - Persistent State: MMKV for offline data, cached preferences, and non-sensitive local storage.
+    - Secure State: Expo Secure Store for tokens, credentials, and sensitive health data.
+
+7.3 API Design
+--------------
+  - RESTful API with consistent resource naming.
+  - Versioned endpoints (e.g., /api/v1/).
+  - JSON request and response bodies.
+  - Standardized error response format: { error: { code: string, message: string, details?: object } }.
+  - Pagination via cursor-based pagination for large datasets.
+  - Rate limiting with token bucket algorithm.
+  - Request validation using JSON Schema or Zod on the server.
+
+7.4 Database Design
+-------------------
+  - PostgreSQL with Supabase-managed infrastructure.
+  - Normalized schema design with strategic denormalization for read-heavy tables.
+  - Row-Level Security policies on every table.
+  - UUID primary keys generated server-side.
+  - Soft deletes with deleted_at timestamp columns.
+  - Audit columns (created_at, updated_at) on every table.
+  - pgvector extension for AI embedding storage and similarity search.
+  - Database migrations managed via Supabase CLI.
+
+7.5 AI Architecture
+-------------------
+  - OpenAI Responses API as the primary inference engine.
+  - Function calling for structured actions (create workout, log meal, query data).
+  - RAG pipeline: user query → embedding generation → pgvector similarity search → context injection → LLM response.
+  - AI Memory: conversation history stored per user, summarized at configurable intervals, with long-term preference extraction.
+  - Context Window Management: sliding window with priority-based message selection (recent messages, relevant memories, user profile).
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+FitOnus/
+├── mobile/                          # React Native Expo application
+│   ├── assets/                      # Static assets (images, fonts, animations)
+│   │   ├── images/
+│   │   ├── fonts/
+│   │   └── animations/              # Lottie animation JSON files
+│   ├── src/
+│   │   ├── app/                     # Expo Router file-based routes
+│   │   │   ├── _layout.tsx          # Root layout
+│   │   │   ├── index.tsx            # Entry redirect
+│   │   │   ├── (auth)/              # Authentication route group
+│   │   │   │   ├── _layout.tsx
+│   │   │   │   ├── login.tsx
+│   │   │   │   ├── register.tsx
+│   │   │   │   ├── forgot-password.tsx
+│   │   │   │   └── onboarding.tsx
+│   │   │   ├── (tabs)/              # Main tab navigation group
+│   │   │   │   ├── _layout.tsx
+│   │   │   │   ├── dashboard.tsx
+│   │   │   │   ├── workouts.tsx
+│   │   │   │   ├── nutrition.tsx
+│   │   │   │   ├── coach.tsx
+│   │   │   │   └── profile.tsx
+│   │   │   └── (modals)/            # Modal route group
+│   │   │       ├── workout-detail.tsx
+│   │   │       ├── meal-detail.tsx
+│   │   │       └── settings.tsx
+│   │   ├── components/              # Shared UI components
+│   │   │   ├── ui/                  # Base design system components
+│   │   │   │   ├── button.tsx
+│   │   │   │   ├── input.tsx
+│   │   │   │   ├── card.tsx
+│   │   │   │   ├── text.tsx
+│   │   │   │   ├── avatar.tsx
+│   │   │   │   ├── badge.tsx
+│   │   │   │   ├── bottom-sheet.tsx
+│   │   │   │   ├── chart.tsx
+│   │   │   │   ├── divider.tsx
+│   │   │   │   ├── icon.tsx
+│   │   │   │   ├── loading.tsx
+│   │   │   │   ├── modal.tsx
+│   │   │   │   ├── progress-bar.tsx
+│   │   │   │   ├── skeleton.tsx
+│   │   │   │   ├── switch.tsx
+│   │   │   │   ├── tab-bar.tsx
+│   │   │   │   └── toast.tsx
+│   │   │   └── shared/              # Shared composite components
+│   │   │       ├── metric-card.tsx
+│   │   │       ├── trend-chart.tsx
+│   │   │       ├── empty-state.tsx
+│   │   │       ├── error-boundary.tsx
+│   │   │       └── header.tsx
+│   │   ├── features/                # Feature modules
+│   │   │   ├── auth/
+│   │   │   │   ├── components/
+│   │   │   │   ├── hooks/
+│   │   │   │   ├── services/
+│   │   │   │   ├── stores/
+│   │   │   │   ├── types/
+│   │   │   │   └── utils/
+│   │   │   ├── dashboard/
+│   │   │   ├── workouts/
+│   │   │   ├── nutrition/
+│   │   │   ├── coach/
+│   │   │   ├── health-connect/
+│   │   │   ├── weight/
+│   │   │   ├── sleep/
+│   │   │   ├── recovery/
+│   │   │   ├── progress/
+│   │   │   ├── notifications/
+│   │   │   ├── reports/
+│   │   │   └── profile/
+│   │   ├── constants/               # Global constants and theme
+│   │   │   ├── theme.ts
+│   │   │   ├── api.ts
+│   │   │   └── config.ts
+│   │   ├── hooks/                   # Global custom hooks
+│   │   │   ├── use-color-scheme.ts
+│   │   │   ├── use-theme.ts
+│   │   │   ├── use-auth.ts
+│   │   │   └── use-network.ts
+│   │   ├── services/                # Global services
+│   │   │   ├── api-client.ts
+│   │   │   ├── storage.ts
+│   │   │   └── analytics.ts
+│   │   ├── stores/                  # Global Zustand stores
+│   │   │   ├── auth-store.ts
+│   │   │   ├── theme-store.ts
+│   │   │   └── app-store.ts
+│   │   ├── types/                   # Global TypeScript types
+│   │   │   ├── api.ts
+│   │   │   ├── navigation.ts
+│   │   │   └── common.ts
+│   │   ├── utils/                   # Global utility functions
+│   │   │   ├── format.ts
+│   │   │   ├── validation.ts
+│   │   │   ├── date.ts
+│   │   │   └── math.ts
+│   │   └── global.css               # Global styles
+│   ├── app.json                     # Expo configuration
+│   ├── tsconfig.json                # TypeScript configuration
+│   ├── package.json                 # Dependencies
+│   └── README.md                    # Mobile-specific documentation
+│
+├── backend/                         # NestJS backend server
+│   ├── src/
+│   │   ├── main.ts                # NestJS server bootstrap
+│   │   ├── app.ts                   # Application configuration
+│   │   ├── routes/                  # Route handlers
+│   │   │   ├── v1/
+│   │   │   │   ├── auth.ts
+│   │   │   │   ├── users.ts
+│   │   │   │   ├── workouts.ts
+│   │   │   │   ├── nutrition.ts
+│   │   │   │   ├── coach.ts
+│   │   │   │   ├── health.ts
+│   │   │   │   ├── weight.ts
+│   │   │   │   ├── sleep.ts
+│   │   │   │   ├── recovery.ts
+│   │   │   │   ├── progress.ts
+│   │   │   │   ├── notifications.ts
+│   │   │   │   └── reports.ts
+│   │   ├── services/                # Business logic services
+│   │   ├── repositories/            # Data access layer
+│   │   ├── common/                  # NestJS common guards/interceptors
+│   │   │   ├── auth.ts
+│   │   │   ├── rate-limit.ts
+│   │   │   ├── validation.ts
+│   │   │   └── error-handler.ts
+│   │   ├── ai/                      # AI subsystem
+│   │   │   ├── coach.ts
+│   │   │   ├── memory.ts
+│   │   │   ├── rag.ts
+│   │   │   ├── embeddings.ts
+│   │   │   ├── functions/           # OpenAI function definitions
+│   │   │   └── prompts/             # System and template prompts
+│   │   ├── database/                # Database utilities
+│   │   │   ├── client.ts
+│   │   │   ├── migrations/
+│   │   │   └── seeds/
+│   │   ├── types/                   # Backend TypeScript types
+│   │   ├── utils/                   # Utility functions
+│   │   └── config/                  # Environment configuration
+│   ├── tests/                       # Test files
+│   ├── tsconfig.json
+│   ├── package.json
+│   └── README.md
+│
+├── admin/                           # Admin dashboard (future)
+├── web/                             # Marketing website (future)
+├── docs/                            # Project documentation
+│   ├── 01-project-overview.txt
+│   ├── 02-architecture.txt
+│   ├── ... (all documentation files)
+│   └── 27-roadmap.txt
+└── README.md                        # Root repository README
+
+=====================================
+9. COMPONENTS
+=====================================
+
+9.1 Base UI Components (Design System)
+  - Button: Primary, secondary, outline, ghost, and destructive variants. Supports loading state, disabled state, icon placement (left/right), and size variants (sm, md, lg).
+  - Input: Text input with label, helper text, error state, prefix/suffix icons, and secure text entry mode. Integrates with React Native Keyboard Controller.
+  - Card: Elevated container with configurable padding, border radius, shadow, and press animation. Supports header, body, and footer slots.
+  - Text: Typography component with preset variants (h1, h2, h3, body, caption, label) that automatically apply theme fonts and colors.
+  - Avatar: Circular image component with fallback initials, size variants, and online status indicator.
+  - Badge: Small label component for counts, status indicators, and category tags.
+  - BottomSheet: Modal sheet component wrapping @gorhom/bottom-sheet with standardized snap points and backdrop behavior.
+  - Chart: Wrapper around charting library supporting line, bar, pie, and area charts with theme-aware colors.
+  - Loading: Skeleton loader and spinner components for loading states.
+  - Toast: Non-intrusive notification component with success, error, warning, and info variants.
+
+9.2 Shared Composite Components
+  - MetricCard: Displays a single metric (e.g., steps, calories) with value, unit, trend arrow, and mini sparkline chart.
+  - TrendChart: Full-width chart component for displaying metric trends over configurable time periods (day, week, month, year).
+  - EmptyState: Illustrated placeholder for screens with no data, including action button and descriptive text.
+  - ErrorBoundary: Catches and gracefully handles React component errors with retry functionality.
+  - Header: Screen header with back navigation, title, and optional action buttons.
+
+=====================================
+10. SCREENS
+=====================================
+
+10.1 Authentication Screens
+  - Login Screen: Email/password fields, social auth buttons, "Forgot Password" link, "Create Account" link.
+  - Register Screen: Name, email, password, confirm password fields, terms acceptance checkbox.
+  - Forgot Password Screen: Email input with reset link sending.
+  - Onboarding Screen: Multi-step wizard with progress indicator.
+
+10.2 Main Tab Screens
+  - Dashboard: Daily summary with metric cards, AI insight banner, quick actions, and recent activity.
+  - Workouts: Workout plan list, exercise library access, workout history, and "Start Workout" FAB.
+  - Nutrition: Daily meal log, macro summary ring charts, water intake tracker, and "Log Meal" FAB.
+  - Coach: Chat interface with AI Coach, suggested prompts, and conversation history.
+  - Profile: User profile, settings, preferences, account management, and app configuration.
+
+10.3 Detail and Modal Screens
+  - Workout Detail: Exercise list, set/rep configuration, rest timers, and completion tracking.
+  - Active Workout: Full-screen workout execution with timer, set logging, and exercise guidance.
+  - Meal Detail: Nutritional breakdown, ingredient list, and portion adjustment.
+  - Exercise Detail: Exercise description, muscle groups, video demonstration placeholder, and history.
+  - Progress Detail: Full-screen chart with time range selection and data point details.
+  - Settings: Theme selection, notification preferences, unit system, Health Connect configuration, and account actions.
+  - Weight Log: Weight entry with optional notes and body measurement fields.
+  - Sleep Log: Bedtime/wake time selection, quality rating, and notes.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+11.1 API Standards
+  - Base URL: /api/v1
+  - Authentication: Bearer token in Authorization header.
+  - Content-Type: application/json for all requests and responses.
+  - HTTP Methods: GET (read), POST (create), PUT (full update), PATCH (partial update), DELETE (remove).
+  - Status Codes: 200 (success), 201 (created), 204 (no content), 400 (bad request), 401 (unauthorized), 403 (forbidden), 404 (not found), 422 (validation error), 429 (rate limited), 500 (internal server error).
+
+11.2 Core Endpoints
+  - POST   /api/v1/auth/register
+  - POST   /api/v1/auth/login
+  - POST   /api/v1/auth/refresh
+  - POST   /api/v1/auth/logout
+  - POST   /api/v1/auth/forgot-password
+  - GET    /api/v1/users/me
+  - PATCH  /api/v1/users/me
+  - DELETE /api/v1/users/me
+  - GET    /api/v1/dashboard/summary
+  - POST   /api/v1/coach/chat
+  - GET    /api/v1/coach/history
+  - GET    /api/v1/workouts
+  - POST   /api/v1/workouts
+  - GET    /api/v1/workouts/:id
+  - POST   /api/v1/workouts/:id/sessions
+  - GET    /api/v1/exercises
+  - GET    /api/v1/nutrition/meals
+  - POST   /api/v1/nutrition/meals
+  - GET    /api/v1/nutrition/foods/search
+  - POST   /api/v1/nutrition/foods/barcode
+  - GET    /api/v1/weight
+  - POST   /api/v1/weight
+  - GET    /api/v1/sleep
+  - POST   /api/v1/sleep
+  - GET    /api/v1/recovery/score
+  - GET    /api/v1/progress/analytics
+  - GET    /api/v1/reports
+  - POST   /api/v1/reports/generate
+  - GET    /api/v1/notifications
+  - PATCH  /api/v1/notifications/preferences
+  - POST   /api/v1/health/sync
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+Core tables (detailed schemas in 20-database-design.txt):
+
+  - users: User accounts and authentication data.
+  - user_profiles: Extended user information (metrics, goals, preferences).
+  - user_onboarding: Onboarding completion status and collected data.
+  - workouts: Workout plan definitions.
+  - workout_exercises: Exercises within a workout plan.
+  - workout_sessions: Completed workout instances.
+  - workout_session_sets: Individual set logs within a session.
+  - exercises: Master exercise library.
+  - meals: Meal log entries.
+  - meal_items: Individual food items within a meal.
+  - foods: Food database with nutritional information.
+  - weight_logs: Daily weight entries.
+  - sleep_logs: Sleep session records.
+  - recovery_scores: Daily recovery assessments.
+  - health_data: Aggregated health metric snapshots from Health Connect.
+  - ai_conversations: AI Coach conversation threads.
+  - ai_messages: Individual messages within conversations.
+  - ai_memories: Long-term AI memory entries per user.
+  - ai_embeddings: Vector embeddings for RAG knowledge base.
+  - notifications: User notification records.
+  - user_settings: User preference key-value pairs.
+  - body_measurements: Body dimension tracking entries.
+  - water_intake: Daily water consumption logs.
+  - progress_photos: User-uploaded progress images.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+13.1 AI Coach Capabilities
+  - Conversational interaction with natural language understanding.
+  - Context-aware responses drawing from user profile, health data, workout history, nutrition logs, and previous conversations.
+  - Function calling to execute structured actions within the application:
+    - generate_workout: Create a personalized workout plan.
+    - log_meal: Record a meal from natural language description.
+    - analyze_progress: Generate progress analysis for a given time period.
+    - set_reminder: Schedule a notification.
+    - get_recommendations: Fetch personalized recommendations for a specific health domain.
+  - Streaming responses for real-time text display in the chat interface.
+
+13.2 AI Memory System
+  - Short-term memory: Current conversation context (last N messages).
+  - Medium-term memory: Conversation summaries stored per session.
+  - Long-term memory: Extracted user preferences, goals, patterns, and important facts persisted across sessions.
+  - Memory retrieval: Semantic similarity search using pgvector embeddings to surface relevant memories.
+
+13.3 RAG System
+  - Knowledge base containing curated exercise science, nutrition, sleep hygiene, and recovery content.
+  - Document chunking with overlapping windows for context preservation.
+  - Embedding generation using OpenAI text-embedding-3-small model.
+  - Vector similarity search with configurable top-K retrieval.
+  - Context injection into LLM prompts with source attribution.
+
+13.4 AI Model Configuration
+  - Primary model: GPT-4o via OpenAI Responses API.
+  - Embedding model: text-embedding-3-small (1536 dimensions).
+  - Temperature: 0.7 for conversational responses, 0.3 for structured data generation.
+  - Max tokens: configurable per request type (chat: 1024, workout generation: 2048, report: 4096).
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+14.1 Mobile Error Handling
+  - Global ErrorBoundary component wrapping the application root.
+  - Per-screen error boundaries for isolated failure containment.
+  - TanStack Query error states with retry buttons on data fetch failures.
+  - Network connectivity detection using @react-native-community/netinfo with offline banners.
+  - Form validation errors displayed inline beneath input fields.
+  - Toast notifications for transient errors (network timeouts, rate limits).
+  - Crash reporting via Sentry with user context and breadcrumbs.
+
+14.2 Backend Error Handling
+  - Centralized exception filter in NestJS.
+  - Custom error classes extending a base AppError class with code, statusCode, and isOperational properties.
+  - Structured error logging with request ID correlation.
+  - Graceful degradation when external services (OpenAI, Health Connect) are unavailable.
+  - Circuit breaker pattern preventing cascading failures.
+  - Request validation errors returning 422 with field-level error details.
+
+14.3 AI Error Handling
+  - Fallback responses when OpenAI API is unavailable.
+  - Token limit exceeded handling with conversation truncation.
+  - Function calling validation to prevent malformed tool calls.
+  - Rate limit backoff with user-facing "AI is busy" messaging.
+  - Content moderation filtering for inappropriate queries.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User logs workout with zero sets or reps — validate minimum input requirements.
+  - User deletes account with active subscription — handle subscription cancellation flow.
+  - Health Connect permission revoked mid-session — gracefully degrade and prompt re-authorization.
+  - User logs future-dated entries — allow with warning, do not display in "today" views.
+  - Extremely large conversation histories — implement automatic summarization and archival.
+  - User switches between metric and imperial units — recalculate and re-display all stored values.
+  - Concurrent modifications from multiple devices — implement optimistic locking with conflict resolution.
+  - User uploads corrupt or oversized progress photos — validate file type, dimensions, and size before upload.
+  - AI Coach receives ambiguous or nonsensical input — respond with clarifying questions rather than hallucinated answers.
+  - App killed during active workout — persist workout state to MMKV for recovery on next launch.
+  - Network restored after extended offline period — queue and batch-sync accumulated local changes.
+  - User's timezone changes (travel) — adjust all time-based calculations and display.
+  - Barcode scan returns no results — fallback to manual food search with helpful messaging.
+  - Push notification token refresh — handle token rotation and server-side registration update.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Social features: friends, challenges, leaderboards, and shared workouts.
+  - Wearable device integration: direct sync with Apple Watch, Fitbit, Garmin, and Whoop.
+  - Video exercise demonstrations: embedded exercise tutorial videos.
+  - Mental wellness module: meditation, stress tracking, and mindfulness exercises.
+  - Hydration tracking with smart water bottle integration.
+  - Supplement tracking and recommendation engine.
+  - Gym equipment recognition via camera (machine learning).
+  - Voice-activated AI Coach for hands-free workout guidance.
+  - Group workout sessions with real-time synchronization.
+  - Personal trainer marketplace connecting users with certified trainers.
+  - Advanced body composition analysis using device sensors or smart scale integration.
+  - Multi-language support with localized AI Coach responses.
+  - Apple Watch and Wear OS companion apps.
+  - Corporate wellness dashboard for enterprise clients.
+  - Integration with electronic health records (EHR) systems.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+17.1 Code Quality
+  - Write TypeScript with strict mode. Never use the "any" type unless interfacing with an untyped external library, and even then, create proper type wrappers.
+  - Every function, hook, and component must have a clear, single responsibility.
+  - Prefer composition over inheritance in component design.
+  - Use named exports exclusively. Default exports are prohibited.
+  - Keep files under three hundred lines. If a file exceeds this, decompose it.
+  - Write self-documenting code with descriptive variable and function names. Comments should explain "why," not "what."
+
+17.2 React Native Specific
+  - Use React Native Reanimated for all animations. Never use the Animated API from React Native core.
+  - Memoize expensive components with React.memo and expensive computations with useMemo.
+  - Use useCallback for all callback functions passed as props.
+  - Avoid inline styles. Use StyleSheet.create or the theme system for all styling.
+  - Handle keyboard avoidance consistently using react-native-keyboard-controller.
+  - Test on both iOS and Android simulators before merging any PR.
+
+17.3 State Management
+  - Server state (API data) must live in TanStack Query. Never duplicate server state in Zustand.
+  - Zustand stores must be small and focused. One store per domain concern.
+  - MMKV is for persistence only. Always hydrate Zustand from MMKV on app launch, not during renders.
+  - Never store derived state. Compute it from source state using selectors.
+
+17.4 API Design
+  - Every endpoint must validate request body, query parameters, and path parameters.
+  - Never expose internal IDs or implementation details in API responses.
+  - Use consistent naming: plural nouns for resource collections, singular for individual resources.
+  - Always include request ID in responses for debugging and support.
+
+17.5 Security
+  - Never log sensitive data (passwords, tokens, health data).
+  - Always use parameterized queries. Never interpolate user input into SQL.
+  - Validate and sanitize all user input on the server, regardless of client-side validation.
+  - Implement rate limiting on all authentication endpoints.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Repository initialized with monorepo structure (mobile/, backend/, admin/, web/, docs/).
+  [ ] Expo SDK 57 project bootstrapped with TypeScript template.
+  [ ] NestJS backend project bootstrapped with TypeScript.
+  [ ] Supabase project created and configured.
+  [ ] Environment variables defined and documented (.env.example files).
+  [ ] ESLint and Prettier configured for both mobile and backend projects.
+  [ ] Git hooks configured with Husky for pre-commit linting and type checking.
+  [ ] CI/CD pipeline configured with GitHub Actions.
+  [ ] Sentry integration configured for crash reporting.
+  [ ] Base design system components implemented (Button, Input, Card, Text).
+  [ ] Theme system implemented with dark/light mode support.
+  [ ] Authentication flow implemented end-to-end.
+  [ ] Navigation structure configured with Expo Router.
+  [ ] TanStack Query provider configured with global defaults.
+  [ ] Zustand stores initialized with MMKV persistence.
+  [ ] API client (Axios) configured with interceptors for auth and error handling.
+  [ ] Database schema designed and initial migration created.
+  [ ] Row-Level Security policies defined for all tables.
+  [ ] OpenAI integration configured and tested.
+  [ ] AI Coach basic chat functionality working end-to-end.
+  [ ] Push notification infrastructure configured.
+  [ ] Health Connect / HealthKit integration scaffolded.
+  [ ] All documentation files reviewed and approved.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Unit tests for all utility functions (format, validation, date, math).
+  [ ] Unit tests for all Zustand stores (state transitions, selectors).
+  [ ] Unit tests for all custom hooks (mocking dependencies appropriately).
+  [ ] Component tests for all base UI components (render, interaction, accessibility).
+  [ ] Integration tests for authentication flow (register, login, refresh, logout).
+  [ ] Integration tests for API client (interceptors, error handling, retry logic).
+  [ ] API endpoint tests for all routes (happy path, validation errors, authorization).
+  [ ] AI Coach tests (conversation flow, function calling, memory retrieval).
+  [ ] Database tests (migrations, RLS policies, CRUD operations).
+  [ ] End-to-end tests for critical user flows (onboarding, workout logging, meal logging).
+  [ ] Performance tests (API response times, app startup time, animation frame rates).
+  [ ] Accessibility tests (screen reader navigation, contrast ratios, touch targets).
+  [ ] Offline mode tests (data persistence, sync on reconnect, conflict resolution).
+  [ ] Security tests (SQL injection, XSS, CSRF, authentication bypass attempts).
+  [ ] Load tests (concurrent users, rate limiting, database connection pooling).
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - The application installs and launches on both iOS and Android without crashes.
+  - A new user can complete the full onboarding flow (registration through dashboard) in under three minutes.
+  - The AI Coach responds to user queries with contextually relevant, personalized advice within three seconds.
+  - Users can log a complete workout (select exercises, log sets/reps, complete workout) without navigation confusion.
+  - Users can log a meal via barcode scan or manual search and see updated daily nutrition totals immediately.
+  - The dashboard displays accurate, real-time health data synced from Health Connect or HealthKit.
+  - Dark mode and light mode transitions are seamless with no visual artifacts.
+  - The application remains responsive and functional when the device is offline, with data syncing automatically when connectivity is restored.
+  - All interactive elements meet the forty-four-by-forty-four point minimum touch target size.
+  - The API returns consistent, well-structured error responses for all failure scenarios.
+  - Database queries execute within fifty milliseconds for standard operations.
+  - The AI Coach remembers user preferences and goals across conversation sessions.
+  - Push notifications are delivered reliably for scheduled reminders.
+  - The application achieves a Lighthouse accessibility score of ninety or higher.
+  - All TypeScript files compile with zero errors under strict mode.
+
+=====================================
+END OF DOCUMENT
+=====================================

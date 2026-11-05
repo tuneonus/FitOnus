@@ -1,0 +1,823 @@
+=====================================
+FITONUS — ARCHITECTURE
+Document: 02-architecture.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the architectural foundation of the FitOnus platform. It establishes the layered architecture, module boundaries, communication patterns, data flow pipelines, and integration strategies that all engineers and AI coding agents must follow. Every technical decision — from folder placement to dependency direction — must align with the principles documented here. This architecture is designed to support two or more years of continuous development without requiring fundamental restructuring.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+FitOnus employs a multi-tier architecture composed of four primary systems:
+
+  1. Mobile Client: React Native (Expo) application using Clean Architecture with Feature-First module organization.
+  2. Backend API: NestJS-based Node.js server following a layered service architecture with strict separation between routes, services, and repositories.
+  3. Database: PostgreSQL managed via Supabase with Row-Level Security, vector extensions, and migration-controlled schema evolution.
+  4. AI Engine: OpenAI-powered subsystem with function calling, RAG pipelines, and persistent memory, integrated as a backend service layer.
+
+The architecture enforces unidirectional dependency flow: Presentation depends on Domain, Domain depends on nothing, and Data implements Domain interfaces. No layer may reach upward in the dependency chain.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Enforce strict separation of concerns so that UI changes never require business logic modifications, and business logic changes never require database restructuring.
+  - Enable independent feature development where multiple engineers or AI agents can work on different features simultaneously without merge conflicts or integration issues.
+  - Support offline-first operation where critical features (workout logging, meal logging) function without network connectivity.
+  - Design for testability by ensuring every layer can be tested in isolation through dependency injection and interface-based programming.
+  - Minimize coupling between the mobile client and backend API so that either can evolve independently as long as the API contract is maintained.
+  - Enable horizontal scaling of the backend without client-side changes.
+  - Allow the AI subsystem to evolve (model upgrades, new capabilities) without affecting the core application architecture.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - The mobile application must implement Clean Architecture with three distinct layers: Presentation, Domain, and Data.
+  - Each feature module must be self-contained with its own components, hooks, services, stores, types, and utilities.
+  - The backend must separate route handling, business logic, and data access into distinct layers.
+  - The AI subsystem must be isolated behind a service interface so that the AI provider (OpenAI) can be swapped without modifying consumer code.
+  - All cross-feature communication must occur through well-defined interfaces, never through direct imports from another feature's internal modules.
+  - The state management strategy must clearly delineate server state (TanStack Query), client state (Zustand), persistent state (MMKV), and secure state (Expo Secure Store).
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Module boundaries must be enforced through import path conventions and, where possible, linting rules.
+  - The architecture must support code splitting and lazy loading of feature modules for performance optimization.
+  - All data flow must be traceable from UI interaction through to database mutation and back.
+  - The system must gracefully degrade when any external dependency (OpenAI, Health Connect, push notification service) is unavailable.
+  - Backend services must be stateless to enable horizontal scaling without session affinity.
+  - Database access must go through the repository pattern exclusively — no raw SQL in service or route layers.
+
+=====================================
+6. USER FLOW
+=====================================
+
+6.1 Data Flow: User Logs a Workout
+  1. User taps "Complete Workout" on the Active Workout screen (Presentation Layer).
+  2. The screen calls the useCompleteWorkout hook (Presentation Layer).
+  3. The hook invokes a TanStack Query mutation (Data Layer interface).
+  4. The mutation calls WorkoutService.completeWorkout() (Domain Layer).
+  5. The service validates the workout data against business rules (Domain Layer).
+  6. The service calls WorkoutRepository.save() (Data Layer interface).
+  7. The repository sends a POST request via the API client to /api/v1/workouts/:id/sessions (Data Layer).
+  8. The NestJS controller receives the request (Backend Route Layer).
+  9. The handler calls WorkoutService.createSession() (Backend Service Layer).
+  10. The service validates, computes derived metrics, and calls WorkoutRepository.insertSession() (Backend Repository Layer).
+  11. The repository executes a parameterized INSERT query against PostgreSQL (Database Layer).
+  12. The response propagates back through all layers.
+  13. TanStack Query invalidates related queries (workout history, dashboard summary, progress analytics).
+  14. The UI updates reactively.
+
+6.2 Data Flow: AI Coach Conversation
+  1. User sends a message in the Coach chat (Presentation Layer).
+  2. The screen calls the useSendMessage hook, which triggers a mutation.
+  3. The API client sends POST /api/v1/coach/chat with the message and conversation ID.
+  4. The backend route handler delegates to CoachService.processMessage().
+  5. The CoachService:
+     a. Retrieves conversation history from the database.
+     b. Retrieves relevant AI memories via semantic search (pgvector).
+     c. Retrieves relevant knowledge base documents via RAG pipeline.
+     d. Constructs the prompt with system instructions, user profile, memories, RAG context, and conversation history.
+     e. Calls OpenAI Responses API with function definitions.
+     f. If the response includes function calls, executes them (e.g., generate workout, log meal).
+     g. Stores the conversation turn in the database.
+     h. Triggers asynchronous memory extraction (background job).
+  6. The response streams back to the client.
+  7. The client displays the response incrementally in the chat UI.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+7.1 Mobile Application Architecture
+-------------------------------------
+
+7.1.1 Clean Architecture Layers
+
+  PRESENTATION LAYER (src/app/, src/components/, src/features/*/components/, src/features/*/screens/)
+  ├── Screens: Full-page components corresponding to routes. Compose feature components and manage screen-level state.
+  ├── Components: Reusable UI elements. Must be pure — no direct API calls or business logic.
+  ├── Hooks: Custom hooks that bridge Presentation and Domain layers. Expose data and actions to components.
+  └── Navigation: Expo Router file-based routing configuration.
+
+  DOMAIN LAYER (src/features/*/services/, src/features/*/types/, src/features/*/utils/)
+  ├── Services: Business logic functions. Pure TypeScript with no framework dependencies.
+  ├── Types: Domain entities and value objects. Represent business concepts.
+  ├── Interfaces: Contracts that the Data layer must implement (repository interfaces).
+  └── Utils: Domain-specific pure functions (calculations, transformations, validations).
+
+  DATA LAYER (src/services/, src/features/*/services/*-api.ts, src/stores/)
+  ├── API Client: Configured Axios instance with interceptors for authentication, error handling, and retry logic.
+  ├── Repositories: Implementations of domain interfaces. Make HTTP calls, read from local storage.
+  ├── Stores: Zustand stores for client-side state. Persist critical state to MMKV.
+  └── Local Storage: MMKV adapters for offline data caching and user preferences.
+
+  Dependency Rule:
+    - Presentation → Domain → (nothing)
+    - Presentation → Data (only through hooks and TanStack Query)
+    - Data → Domain (implements interfaces defined in Domain)
+    - Domain NEVER depends on Presentation or Data
+
+7.1.2 State Management Architecture
+
+  ┌─────────────────────────────────────────────────────────┐
+  │                    PRESENTATION LAYER                    │
+  │                                                         │
+  │  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐  │
+  │  │  Components  │  │   Screens    │  │    Hooks      │  │
+  │  └──────┬───────┘  └──────┬───────┘  └──────┬────────┘  │
+  │         │                 │                  │           │
+  │         └────────────────┬┘                  │           │
+  │                          │                   │           │
+  │  ┌───────────────────────▼───────────────────▼────────┐ │
+  │  │              STATE MANAGEMENT LAYER                 │ │
+  │  │                                                     │ │
+  │  │  ┌──────────────┐  ┌───────────┐  ┌─────────────┐  │ │
+  │  │  │ TanStack     │  │  Zustand   │  │   React     │  │ │
+  │  │  │ Query        │  │  Stores    │  │   Context   │  │ │
+  │  │  │              │  │            │  │             │  │ │
+  │  │  │ Server State │  │ Client     │  │ Theme,      │  │ │
+  │  │  │ API Cache    │  │ State      │  │ Auth Status │  │ │
+  │  │  │ Background   │  │ UI State   │  │             │  │ │
+  │  │  │ Refetching   │  │ User Prefs │  │             │  │ │
+  │  │  └──────┬───────┘  └─────┬──────┘  └─────────────┘  │ │
+  │  │         │                │                           │ │
+  │  └─────────┼────────────────┼───────────────────────────┘ │
+  │            │                │                             │
+  └────────────┼────────────────┼─────────────────────────────┘
+               │                │
+  ┌────────────▼────────────────▼─────────────────────────────┐
+  │                      DATA LAYER                           │
+  │                                                           │
+  │  ┌──────────────┐  ┌───────────┐  ┌───────────────────┐   │
+  │  │  API Client   │  │   MMKV    │  │  Expo Secure      │   │
+  │  │  (Axios)      │  │  Storage  │  │  Store            │   │
+  │  │               │  │           │  │                   │   │
+  │  │  HTTP Calls   │  │ Offline   │  │  Tokens,          │   │
+  │  │  to Backend   │  │ Cache     │  │  Credentials      │   │
+  │  └───────────────┘  └───────────┘  └───────────────────┘   │
+  └────────────────────────────────────────────────────────────┘
+
+  State Categories and Their Homes:
+
+    Server State (TanStack Query):
+      - All data fetched from the backend API.
+      - Workout plans, exercise library, meal logs, user profile, dashboard data.
+      - Manages caching, background refetching, optimistic updates, and pagination.
+      - Query keys follow a hierarchical convention: ['workouts', 'list'], ['workouts', 'detail', id].
+
+    Client State (Zustand):
+      - UI state: active tab, modal visibility, form state, selection state.
+      - User preferences: theme mode, unit system, notification preferences.
+      - Ephemeral state: active workout progress, current chat message draft.
+      - Stores are small and domain-specific. One store per concern, never a monolithic global store.
+
+    Persistent State (MMKV):
+      - Offline-cached data for core features.
+      - User preferences that must survive app restarts.
+      - Queued mutations created while offline.
+      - Hydrated into Zustand on app launch.
+
+    Secure State (Expo Secure Store):
+      - Authentication tokens (access token, refresh token).
+      - API keys if any are client-side.
+      - Sensitive health data identifiers.
+      - Never cached in MMKV or plain storage.
+
+7.1.3 Navigation Architecture
+
+  Expo Router File-Based Routing:
+
+    src/app/
+    ├── _layout.tsx              # Root layout: providers, global error boundary, splash screen
+    ├── index.tsx                # Entry: redirect based on auth state
+    ├── (auth)/                  # Unauthenticated routes (no tab bar)
+    │   ├── _layout.tsx          # Stack navigator for auth screens
+    │   ├── welcome.tsx          # Welcome/landing screen
+    │   ├── login.tsx            # Login screen
+    │   ├── register.tsx         # Registration screen
+    │   ├── forgot-password.tsx  # Password reset screen
+    │   └── onboarding/          # Onboarding wizard
+    │       ├── _layout.tsx      # Onboarding stack
+    │       ├── personal.tsx     # Step 1: Personal info
+    │       ├── metrics.tsx      # Step 2: Body metrics
+    │       ├── goals.tsx        # Step 3: Fitness goals
+    │       ├── preferences.tsx  # Step 4: Diet/exercise preferences
+    │       └── permissions.tsx  # Step 5: Health Connect, notifications
+    ├── (tabs)/                  # Authenticated routes (with tab bar)
+    │   ├── _layout.tsx          # Tab navigator configuration
+    │   ├── dashboard/
+    │   │   ├── index.tsx        # Dashboard home
+    │   │   └── [metric].tsx     # Metric detail drill-down
+    │   ├── workouts/
+    │   │   ├── index.tsx        # Workout list
+    │   │   ├── [id].tsx         # Workout detail
+    │   │   ├── active.tsx       # Active workout session
+    │   │   └── exercises/
+    │   │       ├── index.tsx    # Exercise library
+    │   │       └── [id].tsx     # Exercise detail
+    │   ├── nutrition/
+    │   │   ├── index.tsx        # Nutrition dashboard
+    │   │   ├── log.tsx          # Meal logging
+    │   │   └── [mealId].tsx     # Meal detail
+    │   ├── coach/
+    │   │   ├── index.tsx        # AI Coach chat
+    │   │   └── history.tsx      # Conversation history
+    │   └── profile/
+    │       ├── index.tsx        # Profile overview
+    │       ├── settings.tsx     # App settings
+    │       ├── weight.tsx       # Weight tracking
+    │       ├── sleep.tsx        # Sleep tracking
+    │       ├── recovery.tsx     # Recovery dashboard
+    │       └── progress.tsx     # Progress analytics
+    └── (modals)/                # Modal overlays
+        ├── _layout.tsx          # Modal presentation config
+        ├── weight-entry.tsx     # Quick weight log
+        ├── meal-entry.tsx       # Quick meal log
+        ├── exercise-picker.tsx  # Exercise selection
+        └── photo-capture.tsx    # Progress photo
+
+  Route Guards:
+    - The root _layout.tsx checks authentication state and redirects unauthenticated users to (auth)/welcome.
+    - The (tabs)/_layout.tsx verifies onboarding completion and redirects incomplete users to (auth)/onboarding.
+    - Deep linking is supported via the "fitonus://" URL scheme defined in app.json.
+
+7.2 Backend Architecture
+--------------------------
+
+7.2.1 Layered Service Architecture
+
+  ┌─────────────────────────────────────────────┐
+  │              CLIENT (Mobile App)             │
+  └────────────────────┬────────────────────────┘
+                       │ HTTPS
+  ┌────────────────────▼────────────────────────┐
+  │              ROUTE LAYER                     │
+  │  (NestJS controllers)                        │
+  │  - Request parsing and validation            │
+  │  - Authentication middleware                 │
+  │  - Response serialization                    │
+  │  - Rate limiting                             │
+  └────────────────────┬────────────────────────┘
+                       │
+  ┌────────────────────▼────────────────────────┐
+  │              SERVICE LAYER                   │
+  │  (Business logic)                            │
+  │  - Domain rules and validation               │
+  │  - Cross-entity orchestration                │
+  │  - External service integration              │
+  │  - AI subsystem coordination                 │
+  └───────┬────────────┬────────────────────────┘
+          │            │
+  ┌───────▼──────┐ ┌───▼──────────────────────┐
+  │  REPOSITORY  │ │  AI SERVICE LAYER        │
+  │  LAYER       │ │                          │
+  │              │ │  - OpenAI integration     │
+  │  - SQL       │ │  - RAG pipeline          │
+  │  queries     │ │  - Memory management     │
+  │  - Supabase  │ │  - Function execution    │
+  │  client      │ │  - Embedding generation  │
+  └───────┬──────┘ └───┬──────────────────────┘
+          │            │
+  ┌───────▼────────────▼────────────────────────┐
+  │              DATABASE LAYER                  │
+  │  (PostgreSQL via Supabase)                   │
+  │  - Tables with RLS                           │
+  │  - pgvector for embeddings                   │
+  │  - Migrations                                │
+  │  - Connection pooling                        │
+  └──────────────────────────────────────────────┘
+
+7.2.2 Backend Module Structure
+
+  backend/src/
+  ├── main.ts                # NestJS instance creation and bootstrap
+  ├── app.ts                 # Plugin registration, middleware, route mounting
+  ├── config/
+  │   ├── env.ts             # Environment variable validation and typing
+  │   ├── database.ts        # Database connection configuration
+  │   ├── openai.ts          # OpenAI client configuration
+  │   └── constants.ts       # Application-wide constants
+  ├── routes/
+  │   └── v1/
+  │       ├── index.ts       # Route registration
+  │       ├── auth.ts        # Authentication routes
+  │       ├── users.ts       # User management routes
+  │       ├── workouts.ts    # Workout routes
+  │       ├── nutrition.ts   # Nutrition routes
+  │       ├── coach.ts       # AI Coach routes
+  │       ├── health.ts      # Health data sync routes
+  │       ├── weight.ts      # Weight tracking routes
+  │       ├── sleep.ts       # Sleep tracking routes
+  │       ├── recovery.ts    # Recovery routes
+  │       ├── progress.ts    # Progress analytics routes
+  │       ├── notifications.ts # Notification routes
+  │       └── reports.ts     # Report generation routes
+  ├── services/
+  │   ├── auth-service.ts
+  │   ├── user-service.ts
+  │   ├── workout-service.ts
+  │   ├── nutrition-service.ts
+  │   ├── coach-service.ts
+  │   ├── health-service.ts
+  │   ├── weight-service.ts
+  │   ├── sleep-service.ts
+  │   ├── recovery-service.ts
+  │   ├── progress-service.ts
+  │   ├── notification-service.ts
+  │   └── report-service.ts
+  ├── repositories/
+  │   ├── user-repository.ts
+  │   ├── workout-repository.ts
+  │   ├── nutrition-repository.ts
+  │   ├── health-repository.ts
+  │   ├── weight-repository.ts
+  │   ├── sleep-repository.ts
+  │   ├── recovery-repository.ts
+  │   ├── progress-repository.ts
+  │   ├── notification-repository.ts
+  │   └── ai-repository.ts
+  ├── ai/
+  │   ├── coach.ts           # AI Coach orchestrator
+  │   ├── memory.ts          # Memory management
+  │   ├── rag.ts             # RAG pipeline
+  │   ├── embeddings.ts      # Embedding generation and storage
+  │   ├── functions/         # OpenAI function call definitions
+  │   │   ├── index.ts       # Function registry
+  │   │   ├── workout-functions.ts
+  │   │   ├── nutrition-functions.ts
+  │   │   ├── health-functions.ts
+  │   │   └── general-functions.ts
+  │   └── prompts/           # System and template prompts
+  │       ├── system.ts      # Base system prompt
+  │       ├── workout.ts     # Workout generation prompts
+  │       ├── nutrition.ts   # Nutrition planning prompts
+  │       └── analysis.ts    # Progress analysis prompts
+  ├── middleware/
+  │   ├── auth.ts            # JWT verification and user injection
+  │   ├── rate-limit.ts      # Rate limiting configuration
+  │   ├── validation.ts      # Request validation middleware
+  │   ├── error-handler.ts   # Global error handling
+  │   ├── request-id.ts      # Request ID generation
+  │   └── logger.ts          # Request/response logging
+  ├── database/
+  │   ├── client.ts          # Supabase client initialization
+  │   ├── migrations/        # Schema migrations
+  │   └── seeds/             # Development seed data
+  ├── types/
+  │   ├── express.d.ts       # Express type augmentations
+  │   ├── models.ts          # Database model types
+  │   ├── api.ts             # API request/response types
+  │   └── ai.ts              # AI subsystem types
+  ├── utils/
+  │   ├── errors.ts          # Custom error classes
+  │   ├── logger.ts          # Logger utility
+  │   ├── crypto.ts          # Hashing and encryption utilities
+  │   ├── validation.ts      # Shared validation schemas
+  │   └── helpers.ts         # General utility functions
+  └── jobs/
+      ├── queue.ts           # BullMQ queue configuration
+      ├── memory-extraction.ts  # Background AI memory extraction
+      ├── report-generation.ts  # Async report generation
+      └── health-sync.ts       # Background health data processing
+
+7.3 AI Subsystem Architecture
+-------------------------------
+
+7.3.1 AI Pipeline Architecture
+
+  ┌───────────────────────────────────────────────────────┐
+  │                    USER MESSAGE                        │
+  └───────────────────────┬───────────────────────────────┘
+                          │
+  ┌───────────────────────▼───────────────────────────────┐
+  │               CONTEXT ASSEMBLY                         │
+  │                                                        │
+  │  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  │
+  │  │ User Profile │  │ Conversation │  │  AI Memories │  │
+  │  │ (goals,      │  │ History      │  │  (semantic   │  │
+  │  │  metrics,    │  │ (recent N    │  │   search)    │  │
+  │  │  preferences)│  │  messages)   │  │              │  │
+  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
+  │         └─────────────────┼─────────────────┘          │
+  │                           │                            │
+  │  ┌────────────────────────▼─────────────────────────┐  │
+  │  │            RAG CONTEXT RETRIEVAL                  │  │
+  │  │  Query → Embed → pgvector search → Top-K docs    │  │
+  │  └────────────────────────┬─────────────────────────┘  │
+  │                           │                            │
+  └───────────────────────────┼────────────────────────────┘
+                              │
+  ┌───────────────────────────▼────────────────────────────┐
+  │                 PROMPT CONSTRUCTION                     │
+  │                                                        │
+  │  System Prompt + User Profile + Memories +             │
+  │  RAG Context + Conversation History + User Message     │
+  │  + Function Definitions                                │
+  └───────────────────────────┬────────────────────────────┘
+                              │
+  ┌───────────────────────────▼────────────────────────────┐
+  │              OPENAI RESPONSES API                      │
+  │  (model: gpt-4o, streaming enabled)                    │
+  └───────────┬─────────────────────────┬──────────────────┘
+              │                         │
+      ┌───────▼───────┐        ┌────────▼──────────┐
+      │  TEXT RESPONSE │        │  FUNCTION CALLS   │
+      │  (stream to   │        │  (execute and      │
+      │   client)     │        │   return results)  │
+      └───────┬───────┘        └────────┬──────────┘
+              │                         │
+              └────────────┬────────────┘
+                           │
+  ┌────────────────────────▼───────────────────────────────┐
+  │               POST-PROCESSING                          │
+  │                                                        │
+  │  - Store conversation turn in database                 │
+  │  - Queue memory extraction job (background)            │
+  │  - Update conversation summary if threshold reached    │
+  │  - Log usage metrics                                   │
+  └────────────────────────────────────────────────────────┘
+
+7.3.2 Function Calling Architecture
+
+  The AI Coach uses OpenAI function calling to perform structured actions within the application. Each function is defined with a JSON Schema specification and mapped to a backend service method.
+
+  Function Registry:
+    - generate_workout(params: { goal, duration, equipment, muscle_groups, difficulty })
+      Maps to: WorkoutService.generateAIWorkout()
+    - log_meal(params: { description, meal_type, date })
+      Maps to: NutritionService.logMealFromDescription()
+    - get_progress(params: { metric, period })
+      Maps to: ProgressService.getAnalytics()
+    - set_reminder(params: { type, time, message })
+      Maps to: NotificationService.scheduleReminder()
+    - get_recommendations(params: { domain, context })
+      Maps to: CoachService.getRecommendations()
+    - analyze_workout_history(params: { period, focus })
+      Maps to: WorkoutService.analyzeHistory()
+    - get_nutrition_summary(params: { date_range })
+      Maps to: NutritionService.getSummary()
+    - calculate_recovery(params: { date })
+      Maps to: RecoveryService.calculateScore()
+
+  Execution Flow:
+    1. OpenAI returns a function call in the response.
+    2. The CoachService validates the function name and parameters.
+    3. The corresponding service method is invoked.
+    4. The result is serialized and sent back to OpenAI as a tool result.
+    5. OpenAI generates a natural language response incorporating the function result.
+    6. The final response is streamed to the client.
+
+7.4 Cross-Cutting Concerns
+-----------------------------
+
+7.4.1 Authentication Flow
+
+  ┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐
+  │   Client   │────▶│  Supabase  │────▶│  Backend   │────▶│ PostgreSQL │
+  │   (Expo)   │     │   Auth     │     │  (NestJS)  │     │            │
+  │            │◀────│            │◀────│            │◀────│            │
+  └────────────┘     └────────────┘     └────────────┘     └────────────┘
+
+  1. Client sends credentials to Supabase Auth.
+  2. Supabase validates credentials, returns JWT access token and refresh token.
+  3. Client stores tokens in Expo Secure Store.
+  4. Client includes access token in Authorization header for all API requests.
+  5. Backend middleware verifies the JWT via Supabase.
+  6. Backend extracts user ID from the token and injects it into the request context.
+  7. All database queries are scoped to the authenticated user via RLS.
+
+7.4.2 Error Propagation
+
+  Database Error → Repository catches and wraps in domain error →
+  Service catches, logs, and re-throws as AppError →
+  Route handler catches via error handler middleware →
+  Standardized error response returned to client →
+  Client API interceptor parses error →
+  TanStack Query exposes error to component →
+  Component renders appropriate error UI
+
+7.4.3 Offline Synchronization
+
+  1. Network status monitored via @react-native-community/netinfo.
+  2. When offline:
+     a. Mutations are queued in MMKV with timestamps and operation details.
+     b. TanStack Query's offline mutation support persists pending mutations.
+     c. Read operations serve from TanStack Query cache.
+  3. When network restored:
+     a. Queued mutations are replayed in chronological order.
+     b. Conflict detection compares timestamps with server state.
+     c. Conflicts are resolved with a "last-write-wins" strategy or prompted to user for critical data.
+     d. Cache is invalidated and refetched for stale data.
+
+7.4.4 Caching Strategy
+
+  Layer 1 — TanStack Query Cache (in-memory):
+    - Stale time: 5 minutes for frequently changing data (dashboard, recent workouts).
+    - Stale time: 30 minutes for slowly changing data (exercise library, food database).
+    - Cache time: 1 hour default.
+    - Background refetch on window focus and network reconnect.
+
+  Layer 2 — MMKV Persistent Cache:
+    - User profile and preferences.
+    - Recent workout plans (last 10).
+    - Recent meal logs (last 7 days).
+    - Dashboard summary data.
+    - Hydrated on app launch before first API call.
+
+  Layer 3 — API Response Cache (Backend):
+    - HTTP cache headers for static resources (exercise library, food database).
+    - Redis or in-memory cache for computed aggregations (dashboard summary, weekly stats).
+    - Cache invalidation on write operations.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+Refer to the comprehensive folder structure defined in 01-project-overview.txt, Section 8. The architecture-specific structural principles are:
+
+  Mobile Application:
+    - src/app/ contains ONLY route files. No business logic, no utility functions.
+    - src/components/ui/ contains ONLY atomic design system components. No feature-specific logic.
+    - src/components/shared/ contains ONLY composite components used across two or more features.
+    - src/features/ contains feature modules. Each feature is self-contained.
+    - src/services/ contains ONLY global services (API client, storage, analytics).
+    - src/stores/ contains ONLY global Zustand stores. Feature-specific stores live in src/features/*/stores/.
+    - src/types/ contains ONLY types shared across three or more features. Feature-specific types live in src/features/*/types/.
+
+  Backend:
+    - src/routes/ contains ONLY HTTP route definitions. No business logic.
+    - src/services/ contains business logic. Services may call other services and repositories.
+    - src/repositories/ contains ONLY database access logic. No business rules.
+    - src/ai/ is self-contained. It exposes a clean interface to the service layer.
+    - src/common/ contains ONLY NestJS guards, interceptors, and pipes.
+
+=====================================
+9. COMPONENTS
+=====================================
+
+9.1 Architecture Components (Structural)
+
+  Mobile Client:
+    - AppProviders: Wraps the application with all required providers (QueryClientProvider, ThemeProvider, AuthProvider, GestureHandlerRootView, KeyboardProvider).
+    - AuthGate: Checks authentication state and routes accordingly. Renders splash screen during initialization.
+    - ErrorBoundary: Catches React rendering errors. Displays fallback UI with retry option. Reports to Sentry.
+    - OfflineBanner: Monitors network state. Displays persistent banner when offline. Hides with animation when connectivity restores.
+    - SyncManager: Manages offline mutation queue. Replays queued operations on reconnect.
+
+  Backend:
+    - NestJSServer: Configured with CORS, helmet, rate limiting, request logging, and error handling.
+    - AuthGuard: NestJS guard that verifies JWT and decorates requests with user context.
+    - ValidationPipe: NestJS pipe that validates request schemas using Zod.
+    - ErrorHandlerPlugin: Catches all unhandled errors and returns standardized error responses.
+
+9.2 Infrastructure Components
+
+  - APIClient: Axios instance configured with:
+    - Base URL from environment configuration.
+    - Request interceptor: attaches Bearer token from Expo Secure Store.
+    - Response interceptor: handles 401 by attempting token refresh, handles network errors.
+    - Retry interceptor: exponential backoff for 5xx and network errors (max 3 retries).
+
+  - QueryClient: TanStack Query client configured with:
+    - Default stale time: 5 minutes.
+    - Default cache time: 1 hour.
+    - Retry: 3 attempts for queries, 0 for mutations.
+    - Refetch on window focus: enabled.
+    - Refetch on reconnect: enabled.
+    - Online manager integration with netinfo.
+
+  - StorageAdapter: MMKV wrapper providing:
+    - Typed get/set methods.
+    - JSON serialization/deserialization.
+    - Namespace prefixing for feature isolation.
+    - Migration support for schema changes.
+
+=====================================
+10. SCREENS
+=====================================
+
+Screens are organized by route groups as defined in Section 7.1.3 (Navigation Architecture). Each screen follows a consistent pattern:
+
+  Screen Structure:
+    1. Import dependencies (components, hooks, types).
+    2. Define the screen component as a named export.
+    3. Use custom hooks for data fetching and mutations.
+    4. Handle loading, error, and empty states explicitly.
+    5. Compose UI from design system and feature components.
+    6. Apply theme-aware styling via the useTheme hook.
+
+  Screen Responsibilities:
+    - Orchestrate data flow between hooks and components.
+    - Manage screen-level state (e.g., which tab is active, scroll position).
+    - Handle navigation events (back, push, replace).
+    - Display appropriate loading, error, and empty states.
+    - NEVER contain business logic or direct API calls.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+11.1 API Architecture Principles
+  - All endpoints are versioned under /api/v1/.
+  - Route handlers are thin — they parse input, call a service, and format output.
+  - Services contain all business logic and are unit-testable without HTTP.
+  - Repositories are the only layer that interacts with the database.
+  - Every request is assigned a unique request ID (UUID v4) for tracing.
+  - All responses include a "requestId" field for debugging.
+
+11.2 Request/Response Contracts
+
+  Standard Success Response:
+    {
+      "data": { ... },
+      "meta": {
+        "requestId": "uuid",
+        "timestamp": "ISO8601"
+      }
+    }
+
+  Standard Error Response:
+    {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Human-readable error message",
+        "details": { ... }
+      },
+      "meta": {
+        "requestId": "uuid",
+        "timestamp": "ISO8601"
+      }
+    }
+
+  Paginated Response:
+    {
+      "data": [ ... ],
+      "pagination": {
+        "cursor": "next_cursor_value",
+        "hasMore": true,
+        "total": 150
+      },
+      "meta": {
+        "requestId": "uuid",
+        "timestamp": "ISO8601"
+      }
+    }
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+Architecture-relevant database considerations:
+
+  - All tables use UUID primary keys generated by the database (gen_random_uuid()).
+  - All tables include created_at (timestamptz, default now()) and updated_at (timestamptz, auto-updated via trigger).
+  - Soft deletes use a deleted_at (timestamptz, nullable) column. Queries must filter WHERE deleted_at IS NULL.
+  - Row-Level Security is enabled on every table. Policies ensure users can only access their own data.
+  - Foreign keys use ON DELETE CASCADE for dependent records or ON DELETE SET NULL for optional references.
+  - Indexes are created for all foreign key columns and frequently queried fields.
+  - The ai_embeddings table uses the pgvector extension with a vector(1536) column for OpenAI embeddings.
+  - Composite indexes are created for multi-column query patterns (e.g., user_id + date for daily logs).
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+Architecture-level AI requirements:
+
+  - The AI subsystem must be fully encapsulated in backend/src/ai/ with a clean public interface.
+  - The CoachService is the only entry point for AI functionality from the route layer.
+  - All AI operations that take longer than two seconds must be handled asynchronously with progress indication.
+  - The RAG pipeline must support dynamic knowledge base updates without system restart.
+  - AI memory extraction runs as a background job via BullMQ, not in the request path.
+  - Embedding generation must be batched when processing multiple documents to minimize API calls.
+  - The AI subsystem must implement circuit breaker pattern for OpenAI API calls.
+  - Function calling results must be validated before being returned to the LLM.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+Architectural error handling patterns:
+
+  Mobile:
+    - React ErrorBoundary at the root and per-screen level.
+    - TanStack Query error retry with exponential backoff.
+    - Axios interceptors for HTTP error classification and token refresh.
+    - Global error reporting to Sentry with user context.
+
+  Backend:
+    - Custom AppError class hierarchy:
+      - AppError (base)
+        - ValidationError (400/422)
+        - AuthenticationError (401)
+        - AuthorizationError (403)
+        - NotFoundError (404)
+        - RateLimitError (429)
+        - ExternalServiceError (502)
+        - InternalError (500)
+    - NestJS exception filter catches all errors and maps to standardized responses.
+    - Unhandled promise rejections are caught and logged.
+    - External service errors (OpenAI, Health Connect) are wrapped in ExternalServiceError with retry metadata.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - Database connection pool exhaustion: Implement connection pool monitoring with alerts. Queue requests when pool is at capacity.
+  - Token refresh race condition: Implement a token refresh lock so that only one refresh request is in flight at a time. Queue subsequent requests until the refresh completes.
+  - Large AI context windows: Implement token counting before API calls. Truncate conversation history from oldest messages when approaching limits.
+  - Concurrent Zustand store updates: Zustand handles this natively with immer-based updates, but complex multi-store transactions should use a coordinator pattern.
+  - Supabase real-time disconnection: Implement reconnection logic with exponential backoff and state reconciliation.
+  - Mobile app state restoration after OS kills the process: Persist critical state to MMKV and restore on next launch.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Implement a GraphQL gateway layer for more flexible client queries.
+  - Adopt a micro-frontends architecture if the admin and web projects grow significantly.
+  - Implement event sourcing for health data to support full audit trails and time-travel debugging.
+  - Add WebSocket support for real-time AI Coach responses instead of HTTP streaming.
+  - Implement a plugin architecture for third-party integrations (wearables, gym equipment).
+  - Consider adopting a CQRS (Command Query Responsibility Segregation) pattern for the backend if read and write workloads diverge significantly.
+  - Evaluate edge computing for AI inference to reduce latency.
+  - Implement a feature flag system for gradual rollouts and A/B testing.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Follow the Dependency Rule: dependencies only point inward. Presentation → Domain → Data.
+  - Feature modules must be independently deletable. If removing a feature requires changes in other features, the coupling is too tight.
+  - Use TypeScript interfaces for all cross-layer contracts. Concrete implementations stay within their layer.
+  - Every new feature must include a README.md in its feature directory documenting its purpose, public API, and dependencies.
+  - Prefer explicit over implicit. If a component needs data, pass it as props. If a service needs a dependency, inject it through the constructor or function parameters.
+  - Never import from "../features/other-feature/internal-module". Cross-feature imports must go through a feature's public index.ts barrel file.
+  - Database migrations must be backward-compatible. New columns should be nullable or have defaults. Never drop columns in the same release they become unused.
+  - All environment-specific values must come from configuration, never hardcoded.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Clean Architecture layers established in mobile project with example feature.
+  [ ] Feature-First folder structure created with template feature module.
+  [ ] TanStack Query configured with global defaults and custom hooks pattern.
+  [ ] Zustand store pattern established with MMKV persistence example.
+  [ ] Axios API client configured with interceptors.
+  [ ] Expo Router navigation structure configured with all route groups.
+  [ ] Auth gate and route guards implemented.
+  [ ] NestJS server bootstrapped with all modules.
+  [ ] Backend layered architecture established (routes → services → repositories).
+  [ ] Supabase client initialized with RLS verification.
+  [ ] AI subsystem scaffolded with CoachService interface.
+  [ ] Error handling infrastructure in place (mobile and backend).
+  [ ] Offline synchronization manager implemented.
+  [ ] Type definitions shared between layers via interface contracts.
+  [ ] Feature module template documented and available for scaffolding new features.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Architecture layer isolation verified — no imports violating the dependency rule.
+  [ ] Feature module independence verified — each module can be built and tested in isolation.
+  [ ] State management boundaries verified — server state in Query, client state in Zustand, persistent in MMKV.
+  [ ] API contract tests pass for all endpoints.
+  [ ] Offline mode tested — mutations queue and replay correctly.
+  [ ] Error propagation tested from database through to UI error display.
+  [ ] Auth flow tested — login, token refresh, session expiry, and logout.
+  [ ] AI pipeline tested — context assembly, function calling, and memory retrieval.
+  [ ] Performance benchmarks established for API response times and app startup.
+  [ ] Security audit conducted on authentication, RLS policies, and input validation.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - The mobile application follows Clean Architecture with no layer violations detectable by import analysis.
+  - Each feature module contains its own components, hooks, services, stores, types, and utils directories.
+  - Server state is exclusively managed by TanStack Query. No API data is duplicated in Zustand stores.
+  - The backend strictly separates routes, services, and repositories with no logic leakage between layers.
+  - The AI subsystem is fully encapsulated and accessible only through the CoachService public interface.
+  - All database access goes through repositories. No raw SQL exists outside the repository layer.
+  - The application functions offline for workout logging and meal logging, with automatic sync on reconnect.
+  - Error handling produces user-friendly messages on the client and structured logs on the server.
+  - The architecture supports adding a new feature (new tab, new data type) without modifying existing feature modules.
+  - Authentication state changes (login, logout, token refresh) are handled transparently without user-facing errors.
+
+=====================================
+END OF DOCUMENT
+=====================================

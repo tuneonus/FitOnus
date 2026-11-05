@@ -1,0 +1,551 @@
+=====================================
+FITONUS — NUTRITION SYSTEM
+Document: 11-nutrition-system.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the complete nutrition tracking and management system for FitOnus, covering meal logging, food database, barcode scanning, macro/micronutrient tracking, water intake monitoring, AI-generated meal plans, and nutritional analytics. The nutrition system works in concert with the user's profile targets to provide real-time feedback on dietary adherence and help users achieve their caloric and macronutrient goals.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The nutrition system enables users to log meals through three methods: manual food search, barcode scanning, and AI-assisted natural language entry. Each logged meal is broken down into its constituent food items with detailed macro and micronutrient data. The system tracks daily caloric intake against the user's personalized target, displays macro breakdowns (protein, carbohydrates, fat), and monitors water intake. The AI Coach can generate meal plans, suggest foods to meet remaining macro targets, and analyze long-term dietary trends.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Enable fast, frictionless meal logging (under 30 seconds per meal).
+  - Provide accurate nutritional data from a comprehensive food database.
+  - Display real-time progress toward daily caloric and macro targets.
+  - Support barcode scanning for packaged foods.
+  - Enable AI-generated meal plans aligned with dietary preferences and restrictions.
+  - Track water intake with smart reminders.
+  - Provide weekly and monthly nutritional analytics and trends.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  4.1 Meal Logging
+    - Log meals categorized by type: breakfast, lunch, dinner, snack.
+    - Add multiple food items per meal.
+    - Search food database by name with autocomplete.
+    - Scan barcode for packaged foods (expo-barcode-scanner).
+    - Adjust portion size (serving multiplier, weight in grams, or volume in ml).
+    - Quick re-log: duplicate a previous meal with one tap.
+    - AI-assisted logging: describe meal in natural language, AI parses into structured food items.
+    - Edit or delete logged meals.
+    - Copy meals from a previous day.
+
+  4.2 Food Database
+    - Comprehensive database with common foods, branded items, and restaurant dishes.
+    - Nutritional data per serving: calories, protein, carbohydrates, fat, fiber, sugar, sodium, cholesterol.
+    - Serving size variations (small, medium, large, or by weight).
+    - Custom food creation for items not in the database.
+    - Recent and favorite foods for quick access.
+    - Database searchable by name with fuzzy matching.
+
+  4.3 Macro and Calorie Tracking
+    - Daily calorie counter: consumed vs. target, displayed as progress ring.
+    - Macro breakdown: protein, carbs, fat as horizontal bars and ring charts.
+    - Remaining macros calculated and displayed.
+    - Meal-by-meal breakdown for the day.
+    - Color-coded feedback: green (on track), yellow (approaching limit), red (exceeded).
+
+  4.4 Water Intake Tracking
+    - Quick-add buttons: 250ml glass, 500ml bottle, custom amount.
+    - Daily progress toward water target (default: 2500ml, adjustable).
+    - Visual progress (fill animation on a glass/bottle illustration or progress bar).
+    - Reminder notifications at configurable intervals.
+
+  4.5 Meal Plans
+    - AI-generated meal plans for a day or week.
+    - Plans respect dietary preferences, allergies, caloric targets, and macro ratios.
+    - Plans include specific foods with portions and preparation notes.
+    - Users can swap individual meals within a plan.
+    - Grocery list generation from a meal plan.
+
+  4.6 Nutritional Analytics
+    - Daily nutrition summary: total calories, macros, water.
+    - Weekly average: calories, macros, adherence percentage.
+    - Monthly trend charts: calorie intake over time, macro distribution.
+    - Nutrient deficiency alerts: low protein, low fiber, excessive sugar.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Food search must return results within 300ms.
+  - Barcode scan must identify a food within 2 seconds.
+  - Meal logging (from tap to saved) must complete within 30 seconds.
+  - Nutrition dashboard must load within 1 second.
+  - Water intake logging must be a single tap.
+  - Offline meal logging: meals saved to MMKV and synced on reconnect.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Logging a Meal
+    1. User navigates to Nutrition tab or taps "Log Meal" quick action.
+    2. User selects meal type (breakfast, lunch, dinner, snack).
+    3. User searches for food or scans barcode.
+    4. Search results display with calorie preview.
+    5. User taps a food → portion selection screen.
+    6. User adjusts portion size.
+    7. User taps "Add to Meal."
+    8. Repeats for additional items.
+    9. User taps "Save Meal."
+    10. Daily totals update with animation.
+
+  6.2 Barcode Scanning
+    1. User taps barcode icon on the meal logging screen.
+    2. Camera opens with barcode overlay.
+    3. User points camera at barcode.
+    4. Food identified → nutritional info displayed.
+    5. User confirms and adjusts portion.
+    6. Food added to meal.
+
+  6.3 AI Meal Plan Generation
+    1. User asks AI Coach: "Create a meal plan for this week."
+    2. AI calls generate_meal_plan function with user's profile, preferences, and targets.
+    3. AI returns a structured 7-day meal plan.
+    4. Plan displayed with each day's meals, calories, and macros.
+    5. User can swap individual meals.
+    6. User can log meals directly from the plan.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Food Data Model
+
+    Food:
+      - id: UUID
+      - name: string
+      - brand: string | null
+      - barcode: string | null
+      - serving_size: number (grams)
+      - serving_unit: string ('g', 'ml', 'piece', 'cup', 'tbsp')
+      - calories: number (per serving)
+      - protein_g: number
+      - carbohydrates_g: number
+      - fat_g: number
+      - fiber_g: number
+      - sugar_g: number
+      - sodium_mg: number
+      - cholesterol_mg: number
+      - is_custom: boolean
+      - created_by: UUID | null
+
+  7.2 Meal Data Model
+
+    Meal:
+      - id: UUID
+      - user_id: UUID
+      - meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+      - date: date
+      - total_calories: number (computed from items)
+      - total_protein_g: number
+      - total_carbs_g: number
+      - total_fat_g: number
+      - notes: string | null
+      - created_at: timestamp
+
+    MealItem:
+      - id: UUID
+      - meal_id: UUID
+      - food_id: UUID
+      - serving_multiplier: number (e.g., 1.5 for 1.5 servings)
+      - calories: number (food.calories × multiplier)
+      - protein_g: number
+      - carbs_g: number
+      - fat_g: number
+      - created_at: timestamp
+
+  7.3 Water Intake Model
+
+    WaterIntake:
+      - id: UUID
+      - user_id: UUID
+      - date: date
+      - amount_ml: number
+      - logged_at: timestamp
+
+  7.4 Barcode Scanning Integration
+
+    - expo-barcode-scanner for camera-based barcode reading.
+    - Scanned barcode sent to backend: POST /api/v1/nutrition/foods/barcode
+    - Backend queries food database by barcode.
+    - If found: return food with nutritional data.
+    - If not found: return a "not found" response with option to add manually.
+    - Consider integrating OpenFoodFacts API as fallback for barcode lookups.
+
+  7.5 AI Meal Logging
+
+    When the AI Coach receives a natural language meal description:
+    1. AI calls log_meal function with the raw description.
+    2. Backend parses the description using an AI prompt:
+       "Parse this meal description into individual food items with estimated portions:
+        'I had a grilled chicken breast with brown rice and steamed broccoli'"
+    3. AI returns structured items: [{food: "grilled chicken breast", portion: "200g"}, ...].
+    4. Backend matches items to the food database.
+    5. If a match is found, use database nutritional data.
+    6. If no match, estimate nutritional values using AI.
+    7. Create meal and meal items records.
+    8. Return the logged meal summary.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/nutrition/
+  ├── components/
+  │   ├── meal-card.tsx
+  │   ├── meal-list.tsx
+  │   ├── food-item-row.tsx
+  │   ├── macro-rings.tsx
+  │   ├── calorie-bar.tsx
+  │   ├── water-tracker.tsx
+  │   ├── food-search-results.tsx
+  │   ├── barcode-scanner-view.tsx
+  │   ├── portion-slider.tsx
+  │   ├── meal-type-selector.tsx
+  │   ├── nutrition-summary.tsx
+  │   ├── daily-meals-list.tsx
+  │   ├── food-detail-card.tsx
+  │   └── water-quick-add.tsx
+  ├── hooks/
+  │   ├── use-daily-nutrition.ts
+  │   ├── use-log-meal.ts
+  │   ├── use-food-search.ts
+  │   ├── use-barcode-scan.ts
+  │   ├── use-meal-plans.ts
+  │   ├── use-water-intake.ts
+  │   ├── use-log-water.ts
+  │   └── use-nutrition-analytics.ts
+  ├── services/
+  │   ├── nutrition-api.ts
+  │   ├── food-database.ts
+  │   └── macro-calculator.ts
+  ├── stores/
+  │   └── nutrition-store.ts
+  ├── types/
+  │   └── nutrition.ts
+  ├── utils/
+  │   └── nutrition-utils.ts
+  ├── constants/
+  │   ├── meal-types.ts
+  │   └── dietary-categories.ts
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  MacroRings:
+    - Three concentric rings: protein (outermost), carbs (middle), fat (innermost).
+    - Each ring shows percentage filled of daily target.
+    - Center: total calories consumed / target.
+    - Below: three rows with macro name, consumed/target grams, percentage.
+    - Colors: protein (#FF6B6B), carbs (#4ECDC4), fat (#FFE66D).
+
+  MealCard:
+    - Meal type icon + label (e.g., "🍳 Breakfast").
+    - Time logged.
+    - Food item previews (first 3 items with "and X more").
+    - Total calories for the meal.
+    - Press: expand to show all items or navigate to detail.
+
+  WaterTracker:
+    - Visual progress indicator (animated fill or progress bar).
+    - Current intake / target display.
+    - Quick-add buttons: 250ml, 500ml, custom.
+    - Haptic feedback on each add.
+
+  PortionSlider:
+    - Slider from 0.25 to 5.0 servings with step 0.25.
+    - Nutritional values update in real time as slider moves.
+    - Alternate input: direct gram/ml input field.
+
+  FoodSearchResults:
+    - Virtualized list of matching foods.
+    - Each row: food name, brand (if applicable), calories per serving, serving size.
+    - Recent foods section at top.
+    - Favorite foods section below recent.
+    - Search results below favorites.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Nutrition Dashboard (src/app/(tabs)/nutrition/index.tsx):
+    - MacroRings at top.
+    - DailyMealsList below: grouped by meal type with total per meal.
+    - WaterTracker card.
+    - FAB: "Log Meal" button.
+    - Date selector to view past days.
+
+  Meal Logging Screen (src/app/(tabs)/nutrition/log/index.tsx):
+    - Meal type selector at top.
+    - Search bar for food database.
+    - Recent foods list.
+    - Barcode scan button.
+    - Selected items list with portion and calories.
+    - Total calories and macros for the meal.
+    - "Save Meal" primary button.
+
+  Food Search Screen (src/app/(tabs)/nutrition/log/search.tsx):
+    - Full-screen search with auto-complete.
+    - Results grouped: recent, favorites, database results.
+
+  Barcode Scanner Screen (src/app/(tabs)/nutrition/log/scan.tsx):
+    - Camera view with barcode overlay.
+    - Scanned food result sheet from bottom.
+
+  Meal Detail Screen (src/app/(tabs)/nutrition/meals/[id].tsx):
+    - Complete food item list with nutritional breakdown per item.
+    - Total meal nutrition.
+    - Edit and delete options.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/nutrition/daily
+    Query: date (ISO date)
+    Response: { data: { meals: Meal[], macros: MacroSummary, water: WaterSummary, targets: Targets } }
+
+  POST /api/v1/nutrition/meals
+    Request: { mealType, date, items: [{ foodId, servingMultiplier }] }
+    Response: { data: Meal }
+
+  PUT /api/v1/nutrition/meals/:id
+    Request: Updated meal items.
+    Response: { data: Meal }
+
+  DELETE /api/v1/nutrition/meals/:id
+    Response: 204
+
+  GET /api/v1/nutrition/foods/search
+    Query: q (search term), page, limit
+    Response: { data: Food[], pagination }
+
+  POST /api/v1/nutrition/foods/barcode
+    Request: { barcode: string }
+    Response: { data: Food | null }
+
+  POST /api/v1/nutrition/foods
+    Request: Custom food data.
+    Response: { data: Food }
+
+  GET /api/v1/nutrition/foods/recent
+    Response: { data: Food[] }
+
+  GET /api/v1/nutrition/foods/favorites
+    Response: { data: Food[] }
+
+  POST /api/v1/nutrition/foods/:id/favorite
+    Response: 200
+
+  DELETE /api/v1/nutrition/foods/:id/favorite
+    Response: 204
+
+  POST /api/v1/nutrition/water
+    Request: { amount_ml: number, date: string }
+    Response: { data: WaterIntake }
+
+  GET /api/v1/nutrition/water
+    Query: date
+    Response: { data: { entries: WaterIntake[], total_ml: number, target_ml: number } }
+
+  GET /api/v1/nutrition/analytics
+    Query: period ('week' | 'month'), startDate, endDate
+    Response: { data: NutritionAnalytics }
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  foods:
+    - id: UUID (PK)
+    - name: TEXT (not null)
+    - brand: TEXT
+    - barcode: TEXT (unique, nullable)
+    - serving_size: DECIMAL(8,2) (not null)
+    - serving_unit: TEXT (not null)
+    - calories: DECIMAL(8,2) (not null)
+    - protein_g: DECIMAL(6,2)
+    - carbohydrates_g: DECIMAL(6,2)
+    - fat_g: DECIMAL(6,2)
+    - fiber_g: DECIMAL(6,2)
+    - sugar_g: DECIMAL(6,2)
+    - sodium_mg: DECIMAL(8,2)
+    - cholesterol_mg: DECIMAL(6,2)
+    - is_custom: BOOLEAN (default false)
+    - created_by: UUID (FK → users.id, nullable)
+    - is_verified: BOOLEAN (default false)
+    - created_at: TIMESTAMPTZ
+    - updated_at: TIMESTAMPTZ
+
+    Indexes: idx_foods_barcode, idx_foods_name_search (GIN with pg_trgm), idx_foods_created_by
+
+  meals:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - meal_type: TEXT (not null, CHECK IN ('breakfast', 'lunch', 'dinner', 'snack'))
+    - date: DATE (not null)
+    - total_calories: DECIMAL(8,2)
+    - total_protein_g: DECIMAL(6,2)
+    - total_carbs_g: DECIMAL(6,2)
+    - total_fat_g: DECIMAL(6,2)
+    - notes: TEXT
+    - created_at: TIMESTAMPTZ
+    - updated_at: TIMESTAMPTZ
+    - deleted_at: TIMESTAMPTZ
+
+    Indexes: idx_meals_user_date (user_id, date), idx_meals_user_type_date (user_id, meal_type, date)
+
+  meal_items:
+    - id: UUID (PK)
+    - meal_id: UUID (FK → meals.id, ON DELETE CASCADE)
+    - food_id: UUID (FK → foods.id)
+    - serving_multiplier: DECIMAL(4,2) (not null, default 1.0)
+    - calories: DECIMAL(8,2)
+    - protein_g: DECIMAL(6,2)
+    - carbs_g: DECIMAL(6,2)
+    - fat_g: DECIMAL(6,2)
+    - created_at: TIMESTAMPTZ
+
+  water_intake:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - date: DATE (not null)
+    - amount_ml: INTEGER (not null)
+    - logged_at: TIMESTAMPTZ (not null)
+    - created_at: TIMESTAMPTZ
+
+    Indexes: idx_water_intake_user_date (user_id, date)
+
+  food_favorites:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id)
+    - food_id: UUID (FK → foods.id)
+    - created_at: TIMESTAMPTZ
+    Unique: (user_id, food_id)
+
+  RLS: All tables filtered by user_id. foods table allows SELECT for all authenticated users on non-custom foods.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI meal logging: parse natural language descriptions into structured food items with estimated portions and match against the food database.
+  - AI meal plan generation: create day or week plans respecting dietary preferences, allergies, caloric targets, and macro ratios.
+  - AI nutrition analysis: analyze dietary patterns, identify deficiencies, and suggest improvements.
+  - AI should answer nutrition questions using RAG knowledge base (e.g., "Is creatine safe?", "How much protein do I need?").
+  - AI function get_nutrition_summary must return accurate data from the database.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Barcode not found: display "Food not found. Add it manually?" with a pre-filled form.
+  - Food search returns no results: suggest checking spelling or creating a custom food.
+  - Meal save fails: queue in MMKV for retry.
+  - Nutrition data missing for a food: display "Nutritional data unavailable" and allow manual entry.
+  - Camera permission denied: show settings deep link to enable camera.
+  - Offline meal logging: save locally with visual indicator, sync when online.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User logs more than 10,000 calories in a day: allow but show a gentle warning.
+  - User logs a meal for a past date: allow and update that day's totals.
+  - User scans the same barcode twice in one meal: increment serving count.
+  - Food database has multiple entries for the same food: show verified entries first.
+  - User creates a custom food with missing macro data: warn but allow.
+  - Serving multiplier of 0: reject (minimum 0.25).
+  - Very long food name: truncate with ellipsis in list views, show full name in detail.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Photo-based food recognition: user snaps a photo, AI identifies foods and estimates portions.
+  - Restaurant menu integration: scan a menu and get nutritional estimates.
+  - Grocery store integration: suggest foods while shopping based on meal plan.
+  - Recipe creation and nutritional analysis.
+  - Micronutrient tracking: vitamins, minerals beyond basic macros.
+  - Meal sharing and social dining features.
+  - Integration with food delivery apps for automatic logging.
+  - Allergen alerts when logging potentially dangerous foods.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Pre-fill the most common serving size. Most users won't adjust.
+  - Show recent and favorite foods first in search to minimize typing.
+  - Display calorie impact in real time as the user adjusts portions.
+  - Use debounced search to avoid excessive API calls during typing.
+  - Compute meal totals on the client for instant feedback, verify on the server.
+  - Cache food search results for offline browsing.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] foods table created and seeded with initial food database.
+  [ ] Food search API with fuzzy matching implemented.
+  [ ] Barcode scanning integrated with food database lookup.
+  [ ] Meal logging flow (search → portion → save) implemented.
+  [ ] Daily nutrition dashboard with macro rings.
+  [ ] Water intake tracking with quick-add buttons.
+  [ ] Meal history and editing.
+  [ ] AI meal logging via natural language.
+  [ ] Nutritional analytics (weekly/monthly trends).
+  [ ] Recent and favorite foods functionality.
+  [ ] Custom food creation.
+  [ ] Offline meal logging with sync.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Food search returns relevant results with fuzzy matching.
+  [ ] Barcode scan identifies known products.
+  [ ] Meal creation with multiple items calculates correct totals.
+  [ ] Portion adjustment updates nutritional values correctly.
+  [ ] Daily nutrition summary aggregates all meals accurately.
+  [ ] Water intake logs and displays correctly.
+  [ ] Macro rings accurately represent consumed vs. target.
+  [ ] Offline meal logging works and syncs on reconnect.
+  [ ] AI meal logging parses natural language correctly.
+  [ ] Custom food creation and usage in meals works.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - Users can log a meal in under 30 seconds using search or barcode scan.
+  - Daily caloric and macro totals are accurate and update in real time.
+  - Water intake tracking provides a simple, one-tap logging experience.
+  - Barcode scanning identifies common packaged foods.
+  - AI-generated meal plans respect dietary preferences and caloric targets.
+  - The nutrition dashboard provides a clear daily overview with goal progress.
+  - Nutritional analytics show meaningful trends over weeks and months.
+  - Offline meal logging works reliably with automatic sync.
+
+=====================================
+END OF DOCUMENT
+=====================================

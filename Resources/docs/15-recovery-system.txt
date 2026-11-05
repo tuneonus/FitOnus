@@ -1,0 +1,348 @@
+=====================================
+FITONUS — RECOVERY SYSTEM
+Document: 15-recovery-system.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the recovery system for FitOnus, covering recovery score calculation, rest day recommendations, active recovery routines, muscle group recovery tracking, and AI-driven recovery guidance. Recovery is essential for sustained fitness progress, and this system ensures users understand when to push harder and when to rest.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The recovery system synthesizes data from multiple sources — sleep quality, workout intensity, heart rate variability (HRV), training load, and subjective readiness — to produce a daily recovery score (0-100). This score guides training decisions: high scores suggest readiness for intense training, while low scores recommend lighter activity or rest. The system tracks per-muscle-group recovery to prevent overtraining.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Provide a daily recovery score that guides training intensity decisions.
+  - Track recovery per muscle group to prevent overtraining.
+  - Recommend rest days and active recovery routines.
+  - Integrate sleep, heart rate, and workout data into a holistic recovery assessment.
+  - Enable the AI Coach to provide recovery-aware workout recommendations.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Daily recovery score (0-100) calculated from available data.
+  - Recovery score breakdown showing contribution of each factor.
+  - Muscle group recovery status (recovered, recovering, fatigued) based on last training date and intensity.
+  - Active recovery routine suggestions (stretching, mobility, light cardio).
+  - Recovery trend chart over time.
+  - Training load analysis: acute vs. chronic load ratio.
+  - Subjective readiness survey (optional daily check-in).
+  - Rest day recommendations based on recovery score and training history.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Recovery score must compute within 500ms.
+  - Recovery dashboard must load within 1 second.
+  - Muscle group recovery status must reflect the most recent workout data.
+  - Recovery score must update automatically when new data arrives (sleep logged, workout completed).
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Viewing Recovery Status
+    1. User navigates to Profile → Recovery.
+    2. Recovery score ring displays today's score with color (green/yellow/red).
+    3. Score breakdown shows factor contributions (sleep, training load, HRV, readiness).
+    4. Muscle group recovery map shows which muscles are ready vs. recovering.
+    5. AI recommendation card: "Your recovery score is 72. A moderate intensity workout is recommended today."
+    6. Recovery trend chart shows scores over the past 14 days.
+    7. If score is below 40: "Rest Day Recommended" banner with active recovery suggestions.
+
+  6.2 Subjective Readiness Check-In
+    1. Optional morning notification: "How are you feeling today?"
+    2. Quick survey: energy level (1-5), muscle soreness (1-5), motivation (1-5), stress level (1-5).
+    3. Takes 15 seconds to complete.
+    4. Results feed into recovery score calculation.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Recovery Score Algorithm
+
+    Score = weighted sum of factors (0-100):
+
+    Sleep Factor (35% weight):
+      - Sleep quality score from the sleep tracking system.
+      - Directly uses the sleep score (0-100).
+
+    Training Load Factor (30% weight):
+      - Acute:Chronic Workload Ratio (ACWR).
+      - Acute load: sum of workout volume × RPE over the last 7 days.
+      - Chronic load: average weekly load over the last 28 days.
+      - ACWR = Acute / Chronic.
+      - Optimal range: 0.8-1.3 → 100 points.
+      - 1.3-1.5 → 70 points.
+      - 0.5-0.8 or 1.5-2.0 → 40 points.
+      - <0.5 or >2.0 → 20 points (detraining or high injury risk).
+      - If no workout data: 80 points (neutral).
+
+    Heart Rate Factor (20% weight):
+      - Resting heart rate compared to user's baseline (7-day average).
+      - HR within 5% of baseline → 100 points.
+      - HR 5-10% above baseline → 70 points.
+      - HR >10% above baseline → 40 points (possible overtraining or illness).
+      - If no HR data: 70 points (neutral).
+
+    Subjective Readiness Factor (15% weight):
+      - Average of energy, soreness (inverted), motivation, stress (inverted) ratings.
+      - Mapped to 0-100 scale.
+      - If no readiness data: 70 points (neutral).
+
+    Final Score = (Sleep × 0.35) + (Training × 0.30) + (HR × 0.20) + (Readiness × 0.15)
+
+  7.2 Muscle Group Recovery Tracking
+
+    After each workout, mark trained muscle groups with the workout date and intensity.
+    Recovery estimation by intensity:
+      - Light intensity: 24-48 hours recovery.
+      - Moderate intensity: 48-72 hours recovery.
+      - High intensity: 72-96 hours recovery.
+      - Very high intensity: 96-120 hours recovery.
+
+    Status Categories:
+      - Recovered: time since last training > estimated recovery time.
+      - Recovering: time since last training is 50-100% of estimated recovery time.
+      - Fatigued: time since last training is <50% of estimated recovery time.
+
+    Display as a body map or grid showing muscle group status with color coding (green, yellow, red).
+
+  7.3 Acute:Chronic Workload Ratio
+
+    Weekly Training Load = Σ (session_duration_minutes × session_RPE) for all sessions in the week.
+    Acute Load = sum of training load for the last 7 days.
+    Chronic Load = average weekly training load over the last 28 days (rolling).
+    ACWR = Acute Load / Chronic Load.
+
+    Interpretation:
+      - ACWR 0.8-1.3: "Sweet spot" — optimal training zone.
+      - ACWR < 0.8: Detraining — training too little relative to capacity.
+      - ACWR > 1.5: Danger zone — significantly higher than usual, injury risk elevated.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/recovery/
+  ├── components/
+  │   ├── recovery-score-card.tsx
+  │   ├── recovery-chart.tsx
+  │   ├── recovery-factors.tsx
+  │   ├── recovery-recommendation.tsx
+  │   ├── muscle-recovery-map.tsx
+  │   ├── training-load-chart.tsx
+  │   ├── readiness-survey.tsx
+  │   └── active-recovery-card.tsx
+  ├── hooks/
+  │   ├── use-recovery-score.ts
+  │   ├── use-recovery-history.ts
+  │   ├── use-muscle-recovery.ts
+  │   ├── use-training-load.ts
+  │   └── use-readiness-survey.ts
+  ├── services/
+  │   ├── recovery-api.ts
+  │   └── recovery-calculator.ts
+  ├── types/
+  │   └── recovery.ts
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  RecoveryScoreCard:
+    - Large ProgressRing (120x120) with score.
+    - Color: excellent (80+) green, good (60-79) blue, moderate (40-59) yellow, poor (<40) red.
+    - Label: "Recovery Score" and descriptor ("Excellent", "Good", "Moderate", "Low").
+    - Recommended action text below.
+
+  RecoveryFactors:
+    - Four factor rows: Sleep, Training Load, Heart Rate, Readiness.
+    - Each row: icon, label, sub-score, contributing points.
+    - Mini progress bars for each factor.
+
+  MuscleRecoveryMap:
+    - Grid or body silhouette showing muscle groups.
+    - Color-coded: green (recovered), yellow (recovering), red (fatigued).
+    - Tap on a muscle group for detail (last trained, estimated recovery time, exercises that target it).
+
+  ReadinessSurvey:
+    - Four slider or Likert scale questions.
+    - Quick to complete (15 seconds).
+    - "Submit" button.
+    - Displayed as a card on the recovery dashboard or via morning notification.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Recovery Dashboard (src/app/(tabs)/profile/recovery/index.tsx):
+    - RecoveryScoreCard at top.
+    - RecoveryFactors breakdown.
+    - MuscleRecoveryMap.
+    - RecoveryChart (14-day trend).
+    - TrainingLoadChart (ACWR visualization).
+    - Active recovery suggestions (stretching routines, light walks).
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/recovery/score
+    Query: date (optional, defaults to today)
+    Response: { data: { score, factors: { sleep, trainingLoad, heartRate, readiness }, muscleStatus: [...] } }
+
+  GET /api/v1/recovery/history
+    Query: startDate, endDate
+    Response: { data: RecoveryScore[] }
+
+  POST /api/v1/recovery/readiness
+    Request: { energy, soreness, motivation, stress, date }
+    Response: { data: ReadinessSurvey }
+
+  GET /api/v1/recovery/training-load
+    Query: period (28 days default)
+    Response: { data: { acuteLoad, chronicLoad, acwr, weeklyLoads: [...] } }
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  recovery_scores:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - date: DATE (not null)
+    - overall_score: INTEGER (0-100)
+    - sleep_score: INTEGER (0-100)
+    - training_load_score: INTEGER (0-100)
+    - heart_rate_score: INTEGER (0-100)
+    - readiness_score: INTEGER (0-100)
+    - acute_load: DECIMAL(8,2)
+    - chronic_load: DECIMAL(8,2)
+    - acwr: DECIMAL(4,2)
+    - created_at: TIMESTAMPTZ
+    - updated_at: TIMESTAMPTZ
+
+    Unique: (user_id, date)
+    Indexes: idx_recovery_user_date (user_id, date DESC)
+    RLS: auth.uid() = user_id
+
+  readiness_surveys:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - date: DATE (not null)
+    - energy_level: INTEGER (1-5)
+    - muscle_soreness: INTEGER (1-5)
+    - motivation: INTEGER (1-5)
+    - stress_level: INTEGER (1-5)
+    - created_at: TIMESTAMPTZ
+
+    Unique: (user_id, date)
+    RLS: auth.uid() = user_id
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI Coach uses recovery score to modulate workout recommendations.
+  - Low recovery: AI suggests lighter workouts, rest, or active recovery.
+  - High recovery: AI may suggest more challenging workouts.
+  - AI considers muscle group recovery status when generating workouts (avoid fatigued muscles).
+  - AI monitors ACWR trends and warns about injury risk when ratio exceeds 1.5.
+  - AI function calculate_recovery returns the current recovery score with breakdown.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Missing data for a factor: use neutral default (70) and indicate "estimated" in the UI.
+  - No workout data for ACWR calculation: skip training load factor, redistribute weight.
+  - Heart rate data unavailable: skip HR factor, redistribute weight.
+  - All factors missing: display "Insufficient data" instead of a misleading score.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User who only does cardio: adjust muscle recovery tracking for cardiovascular system.
+  - User takes a week off: ACWR drops below 0.5 (detraining warning).
+  - Very high training volume for advanced athletes: ensure ACWR baseline is calibrated to their level.
+  - User completes readiness survey multiple times in a day: use most recent entry.
+  - First-time user with no historical data: display introductory message, accumulate data before showing ACWR.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - HRV integration from wearables (Whoop, Apple Watch, Garmin).
+  - Sleep quality deep analysis (awakenings, sleep latency).
+  - Stress tracking via HRV-derived metrics.
+  - Recovery protocol library (ice baths, foam rolling, stretching routines).
+  - Injury prevention scoring based on movement patterns and training imbalances.
+  - Periodization recommendations (deload weeks, taper phases).
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Compute recovery score on the backend with all available data.
+  - Cache the score for the day (recompute only when new data arrives).
+  - Always show factor breakdown so users understand what affects their recovery.
+  - Use conservative estimates when data is missing (not overly optimistic).
+  - Display muscle recovery relative to the next planned workout.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Recovery score calculation algorithm implemented.
+  [ ] recovery_scores table created.
+  [ ] readiness_surveys table created.
+  [ ] Recovery dashboard screen with score ring and factors.
+  [ ] Muscle recovery map/grid.
+  [ ] Training load (ACWR) calculation and chart.
+  [ ] Readiness survey component and flow.
+  [ ] Recovery history chart.
+  [ ] AI Coach recovery integration.
+  [ ] Recovery score API endpoint.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Recovery score calculation produces expected results with known inputs.
+  [ ] ACWR calculation is correct for various training loads.
+  [ ] Muscle group recovery status updates after workouts.
+  [ ] Recovery score updates when sleep or workout data changes.
+  [ ] Missing data factors use neutral defaults.
+  [ ] Readiness survey saves and factors into score.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - A daily recovery score is calculated and displayed based on available data.
+  - The score breakdown shows the contribution of each factor (sleep, training, HR, readiness).
+  - Muscle group recovery status accurately reflects time since last training.
+  - The ACWR ratio is calculated and displayed with clear interpretation.
+  - The AI Coach adjusts workout recommendations based on recovery score.
+  - Active recovery suggestions are provided on low recovery days.
+
+=====================================
+END OF DOCUMENT
+=====================================

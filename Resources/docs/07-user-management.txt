@@ -1,0 +1,524 @@
+=====================================
+FITONUS — USER MANAGEMENT
+Document: 07-user-management.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the user management system for FitOnus, encompassing user profiles, onboarding data collection, profile editing, settings management, user preferences, unit system handling, and account lifecycle operations. User management is the data backbone that personalizes every experience in the application — workouts are calibrated to the user's fitness level, nutrition targets derive from their body metrics and goals, and the AI Coach tailors advice based on the user's comprehensive profile.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The user management system spans three primary data domains:
+
+  1. User Profile — Personal information (name, age, gender), body metrics (height, weight, body type), fitness goals, activity level, and dietary preferences collected during onboarding and editable afterward.
+
+  2. User Settings — Application preferences including theme mode, unit system (metric/imperial), notification preferences, Health Connect configuration, and privacy settings.
+
+  3. Account Lifecycle — Profile updates, email changes, password changes, data export, and account deletion with GDPR compliance.
+
+The profile data feeds into every subsystem: the workout generator uses fitness level and goals, the nutrition system uses dietary preferences and caloric targets, the AI Coach references the complete profile for personalized advice, and the dashboard prioritizes metrics relevant to the user's goals.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Collect comprehensive user data during onboarding to enable personalization from the first interaction.
+  - Allow users to update any profile information at any time with immediate effect across all subsystems.
+  - Support both metric (kg, cm) and imperial (lbs, ft/in) unit systems with seamless conversion.
+  - Provide granular settings control so users can customize their experience.
+  - Ensure GDPR compliance with data export and deletion capabilities.
+  - Store user data efficiently and securely with proper access controls.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  4.1 Profile Data Collection (Onboarding)
+    Step 1 — Personal Information:
+      - Full name (required, 2-50 characters).
+      - Date of birth (required, used to calculate age; must be 13+ years old).
+      - Gender (required: male, female, non-binary, prefer not to say).
+
+    Step 2 — Body Metrics:
+      - Height (required, in cm or ft/in based on unit system).
+      - Current weight (required, in kg or lbs).
+      - Goal weight (optional, in kg or lbs).
+      - Body type (optional: ectomorph, mesomorph, endomorph).
+
+    Step 3 — Fitness Goals (select one or more):
+      - Lose weight.
+      - Build muscle.
+      - Improve endurance.
+      - Increase flexibility.
+      - General wellness.
+      - Maintain current fitness.
+
+    Step 4 — Activity Level:
+      - Sedentary (little to no exercise).
+      - Lightly active (1-3 days/week).
+      - Moderately active (3-5 days/week).
+      - Very active (6-7 days/week).
+      - Extremely active (twice daily or physical job).
+
+    Step 5 — Dietary Preferences:
+      - Diet type (omnivore, vegetarian, vegan, pescatarian, keto, paleo, other).
+      - Food allergies (multi-select: nuts, dairy, gluten, shellfish, soy, eggs, other).
+      - Food restrictions (multi-select: halal, kosher, low-sodium, sugar-free, other).
+
+    Step 6 — Permissions:
+      - Health Connect / HealthKit permission request.
+      - Push notification permission request.
+      - Both are optional but encouraged with explanatory text.
+
+  4.2 Profile Viewing and Editing
+    - View complete profile on the Profile screen.
+    - Edit any field from the Edit Profile screen.
+    - Changes saved to the backend immediately on submission.
+    - Unit system changes trigger recalculation of all displayed values.
+    - Profile photo upload and management.
+
+  4.3 User Settings
+    - Theme: System, Light, Dark.
+    - Unit system: Metric, Imperial.
+    - Notification preferences: per-type toggle (workout reminders, meal logging, hydration, AI insights, weekly reports).
+    - Health Connect: enable/disable, re-authorize permissions.
+    - Privacy: data sharing preferences, analytics opt-in/out.
+    - Account: change email, change password, export data, delete account.
+
+  4.4 Calculated User Metrics
+    - Age: derived from date of birth.
+    - BMI: calculated from height and weight.
+    - BMR (Basal Metabolic Rate): calculated using Mifflin-St Jeor equation.
+    - TDEE (Total Daily Energy Expenditure): BMR multiplied by activity level multiplier.
+    - Daily caloric target: TDEE adjusted for goal (deficit for weight loss, surplus for muscle gain).
+    - Daily macro targets: calculated from caloric target and macro ratio for goal type.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Profile data must load within 1 second on the Profile screen.
+  - Profile updates must propagate to all subsystems within 5 seconds.
+  - Unit conversions must be accurate to 1 decimal place.
+  - All user data must be encrypted at rest in the database.
+  - Profile images must be compressed to under 500KB before upload.
+  - Onboarding data must be persisted incrementally (each step saved independently).
+  - Data export must generate a complete JSON file within 30 seconds.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Onboarding Flow
+    1. After registration, user enters onboarding wizard.
+    2. Progress bar shows 6 steps.
+    3. Each step has a "Continue" button and "Back" button (except step 1).
+    4. Steps 5 and 6 have a "Skip" option.
+    5. Data is saved to the backend after each step.
+    6. On completion, the AI Coach introduces itself with a summary of the user's profile.
+    7. User is navigated to the Dashboard.
+
+  6.2 Profile Edit Flow
+    1. User navigates to Profile tab → taps "Edit Profile."
+    2. Edit Profile screen displays all editable fields pre-filled with current values.
+    3. User modifies desired fields.
+    4. User taps "Save."
+    5. Optimistic update applied immediately.
+    6. Backend validates and persists changes.
+    7. Relevant caches invalidated (dashboard summary, AI Coach context).
+    8. Success toast displayed.
+
+  6.3 Settings Flow
+    1. User navigates to Profile tab → Settings.
+    2. Settings screen displays categorized options.
+    3. Toggle switches update immediately (optimistic).
+    4. Selection options (theme, units) apply immediately with visual transition.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Caloric and Macro Calculations
+
+    BMR (Mifflin-St Jeor):
+      Male:   10 × weight(kg) + 6.25 × height(cm) - 5 × age(years) + 5
+      Female: 10 × weight(kg) + 6.25 × height(cm) - 5 × age(years) - 161
+
+    Activity Level Multipliers:
+      Sedentary:        1.2
+      Lightly active:   1.375
+      Moderately active: 1.55
+      Very active:       1.725
+      Extremely active:  1.9
+
+    TDEE = BMR × Activity Multiplier
+
+    Goal Adjustments:
+      Lose weight:     TDEE - 500 (moderate deficit)
+      Build muscle:    TDEE + 300 (lean bulk surplus)
+      Maintain:        TDEE (no adjustment)
+
+    Macro Ratios (default, adjustable):
+      Weight loss:   Protein 40%, Carbs 30%, Fat 30%
+      Muscle gain:   Protein 30%, Carbs 45%, Fat 25%
+      Maintenance:   Protein 30%, Carbs 40%, Fat 30%
+      Keto:          Protein 25%, Carbs 5%, Fat 70%
+
+    Grams Calculation:
+      Protein grams = (daily calories × protein%) / 4
+      Carb grams    = (daily calories × carb%) / 4
+      Fat grams     = (daily calories × fat%) / 9
+
+  7.2 Unit Conversion System
+
+    Weight:
+      kg → lbs: value × 2.20462
+      lbs → kg: value / 2.20462
+
+    Height:
+      cm → feet/inches: feet = floor(value / 30.48), inches = (value - feet × 30.48) / 2.54
+      feet/inches → cm: (feet × 30.48) + (inches × 2.54)
+
+    Storage Convention:
+      - All values stored in metric units (kg, cm) in the database.
+      - Conversion to imperial happens at the presentation layer only.
+      - The user's unit preference is stored in settings and used by the display layer.
+
+  7.3 Profile Image Handling
+    - Upload to Supabase Storage bucket: "profile-images".
+    - File naming: {user_id}/avatar.{extension}.
+    - Accepted formats: JPEG, PNG, WebP.
+    - Maximum file size: 5MB (compressed to under 500KB before upload).
+    - Image processing: resize to 400x400 max, compress to 80% quality.
+    - Signed URL generated for display with 1-hour expiry, cached in MMKV.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/profile/
+  ├── components/
+  │   ├── profile-header.tsx          # Avatar, name, stats summary
+  │   ├── profile-stats.tsx           # Key metrics grid (BMI, TDEE, etc.)
+  │   ├── profile-form.tsx            # Edit profile form
+  │   ├── settings-section.tsx        # Settings category group
+  │   ├── settings-row.tsx            # Individual setting row
+  │   ├── unit-selector.tsx           # Metric/Imperial toggle
+  │   ├── avatar-picker.tsx           # Avatar image picker
+  │   ├── goal-selector.tsx           # Fitness goal selection
+  │   └── activity-level-selector.tsx # Activity level selection
+  ├── hooks/
+  │   ├── use-profile.ts              # Profile data query
+  │   ├── use-update-profile.ts       # Profile update mutation
+  │   ├── use-settings.ts             # Settings query and mutations
+  │   ├── use-avatar-upload.ts        # Avatar image upload
+  │   ├── use-caloric-targets.ts      # Calculated caloric/macro targets
+  │   └── use-unit-conversion.ts      # Unit conversion utilities
+  ├── services/
+  │   ├── profile-api.ts              # Profile CRUD API calls
+  │   ├── settings-manager.ts         # Settings persistence
+  │   ├── calorie-calculator.ts       # BMR, TDEE, macro calculations
+  │   └── unit-converter.ts           # Unit conversion functions
+  ├── stores/
+  │   └── settings-store.ts           # User settings Zustand store
+  ├── types/
+  │   └── profile.ts                  # Profile and settings types
+  ├── constants/
+  │   ├── activity-levels.ts          # Activity level definitions
+  │   ├── fitness-goals.ts            # Goal type definitions
+  │   └── diet-types.ts               # Diet type definitions
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  ProfileHeader:
+    - Avatar (xl size: 80x80) with edit icon overlay.
+    - User's full name (displaySmall).
+    - Member since date (caption, textSecondary).
+    - Tap on avatar opens image picker.
+
+  ProfileStats:
+    - Grid of 4 metric cards: BMI, Daily Calories, Weight Progress, Active Days.
+    - Each card shows current value, label, and trend arrow.
+
+  ProfileForm:
+    - Sections: Personal Info, Body Metrics, Fitness Goals, Activity Level, Dietary Preferences.
+    - Each section expandable/collapsible.
+    - Real-time validation on field changes.
+    - "Save Changes" button at bottom.
+
+  SettingsRow:
+    - Icon (24pt) + Label + Value/Toggle + Chevron (if navigable).
+    - For toggles: Switch component with immediate effect.
+    - For selections: chevron indicating navigation to detail screen.
+
+  UnitSelector:
+    - SegmentedControl with "Metric" and "Imperial" options.
+    - On change: recalculates and redisplays all values across the app.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Profile Overview Screen:
+    - ProfileHeader component.
+    - ProfileStats grid.
+    - Quick access buttons: Edit Profile, Weight, Sleep, Recovery, Progress.
+    - Settings link.
+    - Sign Out button at bottom.
+
+  Edit Profile Screen:
+    - ProfileForm component with pre-filled data.
+    - Keyboard-aware scrolling.
+    - "Save Changes" primary button.
+    - "Cancel" ghost button.
+
+  Settings Screen:
+    - Sections with SettingsRow components:
+      Appearance: Theme mode selector.
+      Units: Unit system selector.
+      Notifications: Per-type toggle list.
+      Health Data: Health Connect settings link.
+      Privacy: Analytics toggle, data sharing toggle.
+      Account: Change email, change password, export data, delete account.
+    - Each row navigates to detail or toggles in-place.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/users/me
+    Response: { data: { user: UserProfile } }
+    Returns complete user profile including onboarding data and calculated metrics.
+
+  PATCH /api/v1/users/me
+    Request: Partial<UserProfile>
+    Response: { data: { user: UserProfile } }
+    Updates only provided fields. Recalculates derived values.
+
+  DELETE /api/v1/users/me
+    Request: { confirmPassword: string }
+    Response: 200 { data: { message: "Account scheduled for deletion" } }
+
+  POST /api/v1/users/me/avatar
+    Request: multipart/form-data with image file.
+    Response: { data: { avatarUrl: string } }
+
+  GET /api/v1/users/me/settings
+    Response: { data: { settings: UserSettings } }
+
+  PATCH /api/v1/users/me/settings
+    Request: Partial<UserSettings>
+    Response: { data: { settings: UserSettings } }
+
+  POST /api/v1/users/me/export
+    Response: { data: { exportUrl: string, expiresAt: string } }
+    Generates a comprehensive JSON export of all user data.
+
+  POST /api/v1/onboarding
+    Request: { step: number, data: OnboardingStepData }
+    Response: { data: { onboarding: UserOnboarding } }
+
+  POST /api/v1/onboarding/complete
+    Request: (empty)
+    Response: { data: { message: "Onboarding completed" } }
+    Marks onboarding as complete and triggers initial AI Coach greeting.
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  user_profiles:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, unique, not null)
+    - full_name: TEXT (not null)
+    - date_of_birth: DATE (not null)
+    - gender: TEXT (CHECK IN ('male', 'female', 'non_binary', 'prefer_not_to_say'))
+    - height_cm: DECIMAL(5,1) (not null)
+    - current_weight_kg: DECIMAL(5,1) (not null)
+    - goal_weight_kg: DECIMAL(5,1) (nullable)
+    - body_type: TEXT (nullable, CHECK IN ('ectomorph', 'mesomorph', 'endomorph'))
+    - fitness_goals: TEXT[] (not null, array of goal identifiers)
+    - activity_level: TEXT (not null, CHECK IN ('sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active'))
+    - diet_type: TEXT (default 'omnivore')
+    - food_allergies: TEXT[] (default '{}')
+    - food_restrictions: TEXT[] (default '{}')
+    - avatar_url: TEXT (nullable)
+    - daily_calorie_target: INTEGER (computed, stored)
+    - daily_protein_g: INTEGER (computed, stored)
+    - daily_carbs_g: INTEGER (computed, stored)
+    - daily_fat_g: INTEGER (computed, stored)
+    - bmr: DECIMAL(6,1) (computed, stored)
+    - tdee: DECIMAL(6,1) (computed, stored)
+    - bmi: DECIMAL(4,1) (computed, stored)
+    - created_at: TIMESTAMPTZ (default now())
+    - updated_at: TIMESTAMPTZ
+
+    Indexes:
+      - idx_user_profiles_user_id ON user_profiles(user_id)
+
+    RLS:
+      - SELECT: auth.uid() = user_id
+      - UPDATE: auth.uid() = user_id
+      - INSERT: auth.uid() = user_id
+
+  user_settings:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, unique, not null)
+    - theme_mode: TEXT (default 'system', CHECK IN ('system', 'light', 'dark'))
+    - unit_system: TEXT (default 'metric', CHECK IN ('metric', 'imperial'))
+    - notification_workout_reminders: BOOLEAN (default true)
+    - notification_meal_logging: BOOLEAN (default true)
+    - notification_hydration: BOOLEAN (default true)
+    - notification_ai_insights: BOOLEAN (default true)
+    - notification_weekly_reports: BOOLEAN (default true)
+    - notification_quiet_hours_start: TIME (nullable)
+    - notification_quiet_hours_end: TIME (nullable)
+    - health_connect_enabled: BOOLEAN (default false)
+    - analytics_enabled: BOOLEAN (default true)
+    - data_sharing_enabled: BOOLEAN (default false)
+    - reduce_motion: BOOLEAN (default false)
+    - haptic_feedback: BOOLEAN (default true)
+    - font_scale: DECIMAL(3,2) (default 1.00)
+    - push_token: TEXT (nullable)
+    - push_token_updated_at: TIMESTAMPTZ (nullable)
+    - created_at: TIMESTAMPTZ (default now())
+    - updated_at: TIMESTAMPTZ
+
+    Indexes:
+      - idx_user_settings_user_id ON user_settings(user_id)
+
+    RLS:
+      - SELECT/UPDATE: auth.uid() = user_id
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  The user profile is injected into every AI Coach context as part of the system prompt:
+
+  User Profile Context Template:
+    "The user is [name], a [age]-year-old [gender]. They are [height_cm]cm tall and weigh
+    [current_weight_kg]kg (BMI: [bmi]). Their fitness goals are: [fitness_goals]. They are
+    [activity_level]. Their diet is [diet_type] with allergies to [allergies]. Their daily
+    caloric target is [daily_calorie_target]kcal ([protein_g]g protein, [carbs_g]g carbs,
+    [fat_g]g fat)."
+
+  When the user updates their profile, the AI Coach context must be refreshed in the next conversation.
+
+  The AI Coach should proactively acknowledge profile changes: "I see you've updated your goal to build muscle. Let me adjust your workout recommendations accordingly."
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Profile update fails: revert optimistic update, display error toast with retry.
+  - Avatar upload fails: display "Failed to upload photo" error with retry.
+  - Onboarding step save fails: display error with retry, allow offline continuation (queue save).
+  - Invalid body metrics (e.g., height 0, weight negative): validate on client and server, display inline errors.
+  - Data export fails: display error with retry option, log for investigation.
+  - Account deletion fails: display error, do not clear local data, allow retry.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User enters height of 0 or extreme values (e.g., 300cm): validate range (50-300cm).
+  - User enters weight of 0 or extreme values: validate range (20-500kg).
+  - User's BMR calculates to an unreasonable value: cap minimum at 800kcal, maximum at 5000kcal.
+  - User changes unit system: all displayed values recalculate immediately without data loss.
+  - User uploads very large image: compress on client before upload, reject files over 5MB.
+  - User removes goal weight: caloric targets revert to maintenance.
+  - User selects conflicting goals (e.g., lose weight AND build muscle): allow and calculate balanced approach.
+  - Date of birth results in user under 13: reject with "You must be 13 or older to use FitOnus."
+  - User with no profile (corrupt data): redirect to onboarding.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Body composition tracking (body fat percentage, muscle mass) via smart scale integration.
+  - Custom macro ratio configuration.
+  - Multiple goal profiles (switching between "cutting" and "bulking" phases).
+  - Profile sharing and social profiles.
+  - Coach-adjusted caloric targets based on actual progress (adaptive TDEE).
+  - Timezone and locale preferences.
+  - Accessibility preferences (screen reader mode, high contrast mode).
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Store all measurements in metric internally. Convert only at the display layer.
+  - Recompute derived values (BMI, BMR, TDEE, targets) whenever input values change.
+  - Use optimistic updates for settings toggles to ensure instant feedback.
+  - Cache user profile in MMKV for immediate display on app launch before API response arrives.
+  - Never expose user_id or internal IDs in user-facing UI.
+  - Validate all profile inputs on both client and server.
+  - Handle the partial onboarding state gracefully — users should be able to resume from where they left off.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] user_profiles table created with all columns and constraints.
+  [ ] user_settings table created with all columns and defaults.
+  [ ] user_onboarding table created.
+  [ ] RLS policies defined and tested for all user tables.
+  [ ] Onboarding wizard screens implemented (6 steps).
+  [ ] Onboarding data persistence per step.
+  [ ] Profile overview screen implemented.
+  [ ] Edit profile screen with form and validation.
+  [ ] Settings screen with all sections and toggles.
+  [ ] Calorie and macro calculation service implemented.
+  [ ] Unit conversion service implemented.
+  [ ] Avatar upload flow implemented.
+  [ ] Data export functionality implemented.
+  [ ] Account deletion flow implemented.
+  [ ] Profile data cached in MMKV for offline access.
+  [ ] All API endpoints tested.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Onboarding completes successfully with all steps filled.
+  [ ] Onboarding completes with optional steps skipped.
+  [ ] Profile update persists and reflects across all screens.
+  [ ] BMR/TDEE calculations verified against known values.
+  [ ] Unit conversions accurate to 1 decimal place.
+  [ ] Settings toggles persist after app restart.
+  [ ] Avatar upload and display working.
+  [ ] Data export generates valid JSON with all user data.
+  [ ] Account deletion soft deletes and clears local data.
+  [ ] Profile loads from cache when offline.
+  [ ] Input validation rejects invalid values.
+  [ ] RLS prevents accessing other users' profiles.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - Onboarding wizard collects all required data and stores it persistently.
+  - Profile screen displays accurate, up-to-date user information.
+  - Profile edits are saved and reflected immediately across the app.
+  - Switching between metric and imperial units converts all values correctly.
+  - Settings changes persist across app restarts.
+  - Caloric and macro targets are calculated correctly based on the Mifflin-St Jeor equation.
+  - Avatar images upload, display, and persist correctly.
+  - Account deletion follows the 30-day grace period with data anonymization.
+  - The AI Coach references up-to-date profile data in every conversation.
+
+=====================================
+END OF DOCUMENT
+=====================================

@@ -1,0 +1,717 @@
+=====================================
+FITONUS — CODING STANDARDS
+Document: 03-coding-standards.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document establishes the coding standards, conventions, and style guidelines that every engineer and AI coding agent must follow when contributing to the FitOnus codebase. These standards exist to ensure consistency, readability, maintainability, and quality across all code in the mobile application, backend services, and AI subsystem. Adherence to these standards is mandatory and will be enforced through linting rules, code review, and automated CI checks.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+FitOnus is built entirely in TypeScript across both the mobile application (React Native / Expo) and the backend (NestJS / Node.js). These coding standards cover:
+
+  - TypeScript configuration and type safety requirements.
+  - Naming conventions for files, variables, functions, types, and components.
+  - Code organization patterns within files and modules.
+  - React and React Native component standards.
+  - State management conventions.
+  - Error handling patterns.
+  - Testing standards.
+  - Documentation and commenting guidelines.
+  - Git workflow and commit conventions.
+
+Every code contribution — whether from a human engineer or an AI coding agent — must conform to these standards without exception.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Achieve a codebase that any engineer can read, understand, and modify without requiring the original author's guidance.
+  - Eliminate ambiguity in code style decisions so that engineers focus on solving problems, not debating formatting.
+  - Enable AI coding agents to produce code that is indistinguishable from human-written code in style and quality.
+  - Reduce code review turnaround by catching style issues automatically through linting.
+  - Maintain a codebase that scales to hundreds of thousands of lines without becoming unmaintainable.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - All TypeScript code must compile with zero errors under strict mode.
+  - All code must pass ESLint checks with zero warnings.
+  - All code must be formatted with Prettier before committing.
+  - Every exported function, type, and component must have documentation.
+  - Every new feature must include unit tests covering core logic.
+  - Every React component must handle loading, error, and empty states.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Code must be readable without IDE assistance (clear naming, no cryptic abbreviations).
+  - Files must not exceed three hundred lines. If they do, they must be decomposed.
+  - Functions must not exceed fifty lines. If they do, they must be broken into smaller functions.
+  - Cyclomatic complexity must not exceed ten for any single function.
+  - Import statements must be organized in a consistent order.
+  - No commented-out code in production branches.
+
+=====================================
+6. USER FLOW
+=====================================
+
+6.1 Developer Workflow
+
+  1. Developer picks up a task from the project management tool.
+  2. Creates a feature branch from the main branch following the branch naming convention.
+  3. Implements the feature following the coding standards in this document.
+  4. Runs the linter and formatter locally.
+  5. Writes unit tests achieving the required coverage threshold.
+  6. Commits with a conventional commit message.
+  7. Opens a pull request with a description referencing the task.
+  8. CI pipeline runs linting, type checking, and tests.
+  9. Code review ensures adherence to architecture and coding standards.
+  10. Upon approval, the PR is squash-merged into the main branch.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+7.1 TypeScript Configuration
+------------------------------
+
+  Strict Mode Settings (enforced in tsconfig.json):
+    - strict: true (enables all strict checks).
+    - noUncheckedIndexedAccess: true (arrays and objects may return undefined on index access).
+    - noImplicitReturns: true (all code paths must return a value in non-void functions).
+    - noFallthroughCasesInSwitch: true (switch cases must break or return).
+    - exactOptionalPropertyTypes: true (distinguishes between undefined and missing properties).
+
+  The "any" Type:
+    - PROHIBITED in application code.
+    - Permitted ONLY in type definition files (.d.ts) for untyped third-party libraries.
+    - When interfacing with untyped libraries, create a typed wrapper module in src/types/.
+    - If "any" is absolutely unavoidable, use "unknown" with type narrowing instead.
+    - Every use of "any" requires a comment explaining why it cannot be typed.
+
+  Type Assertions:
+    - Avoid "as" type assertions. Prefer type guards and narrowing.
+    - If an assertion is necessary, use a runtime validation function (e.g., Zod parse) instead.
+    - Never use "as any" or "as unknown as T" chains.
+
+  Utility Types:
+    - Use Pick, Omit, Partial, Required, Record, and other built-in utility types liberally.
+    - Create custom utility types in src/types/common.ts for reusable patterns.
+    - Prefer mapped types and conditional types over duplication.
+
+7.2 Naming Conventions
+------------------------
+
+  Files:
+    - Use kebab-case for all file names: workout-service.ts, metric-card.tsx, use-auth.ts.
+    - Component files use .tsx extension.
+    - Non-component TypeScript files use .ts extension.
+    - Test files use the .test.ts or .test.tsx suffix: workout-service.test.ts.
+    - Type definition files use .d.ts extension.
+    - Constants files are named descriptively: api-endpoints.ts, theme-colors.ts.
+
+  Variables and Functions:
+    - Use camelCase for variables and function names: getUserProfile, workoutDuration.
+    - Use UPPER_SNAKE_CASE for true constants (values that never change at runtime): MAX_RETRY_COUNT, API_BASE_URL.
+    - Boolean variables must start with a verb or adjective: isLoading, hasPermission, canEdit, shouldRefetch.
+    - Functions that return booleans should be prefixed with "is", "has", "can", "should", or "was": isValidEmail, hasCompletedOnboarding.
+    - Event handler functions should be prefixed with "handle" or "on": handlePress, onSubmit, handleWorkoutComplete.
+    - Async functions should be named to reflect their asynchronous nature when relevant: fetchWorkouts, loadUserProfile.
+
+  Types and Interfaces:
+    - Use PascalCase for type names and interface names: UserProfile, WorkoutSession, NutritionEntry.
+    - Do NOT prefix interfaces with "I": use UserRepository, not IUserRepository.
+    - Enum types use PascalCase names with PascalCase members: enum MealType { Breakfast, Lunch, Dinner, Snack }.
+    - Type aliases for function signatures should end with "Fn" or "Handler": type OnPressHandler = (id: string) => void.
+    - Generic type parameters should be descriptive when the context is not obvious: <TResponse>, <TEntity>. Single letters (T, K, V) are acceptable for simple generics.
+
+  React Components:
+    - Use PascalCase for component names: MetricCard, WorkoutDetail, AICoachChat.
+    - Component prop types should be named [ComponentName]Props: MetricCardProps, WorkoutDetailProps.
+    - Hook names must start with "use": useAuth, useWorkoutList, useTheme.
+    - Context names should end with "Context": AuthContext, ThemeContext.
+    - Provider names should end with "Provider": AuthProvider, ThemeProvider.
+
+  Backend:
+    - Route files are named by resource: workouts.ts, nutrition.ts, coach.ts.
+    - Service files are named [domain]-service.ts: workout-service.ts, nutrition-service.ts.
+    - Repository files are named [domain]-repository.ts: workout-repository.ts.
+    - Middleware files are named by function: auth.ts, rate-limit.ts, validation.ts.
+
+  Database:
+    - Table names are plural snake_case: users, workout_sessions, meal_items.
+    - Column names are snake_case: created_at, user_id, calories_burned.
+    - Index names follow the pattern: idx_[table]_[columns]: idx_workouts_user_id, idx_meals_user_id_date.
+    - Foreign key constraint names: fk_[table]_[referenced_table]: fk_workouts_users.
+    - RLS policy names: [action]_[table]_policy: select_workouts_policy, insert_meals_policy.
+
+7.3 Code Organization Within Files
+-------------------------------------
+
+  Component File Structure (recommended order):
+
+    1. Imports (organized by group — see import order below).
+    2. Type definitions (props, local types).
+    3. Constants (component-specific constants).
+    4. Helper functions (pure functions used within the component).
+    5. Component definition (named export, never default export).
+    6. Styles (StyleSheet.create at the bottom of the file).
+
+  Import Order (enforced by ESLint):
+
+    1. React and React Native imports.
+    2. Third-party library imports (expo, tanstack, zustand, etc.).
+    3. Absolute path imports from project root (@/ alias).
+       a. Components (@/components/).
+       b. Features (@/features/).
+       c. Hooks (@/hooks/).
+       d. Services (@/services/).
+       e. Stores (@/stores/).
+       f. Types (@/types/).
+       g. Utils (@/utils/).
+       h. Constants (@/constants/).
+    4. Relative imports (siblings and children).
+    5. Asset imports (images, animations).
+    6. Style imports.
+
+  Each group is separated by an empty line.
+
+  Service File Structure (backend):
+
+    1. Imports.
+    2. Type definitions.
+    3. Constants.
+    4. Exported functions (public API).
+    5. Private helper functions (not exported, used internally).
+
+7.4 React and React Native Standards
+---------------------------------------
+
+  Component Patterns:
+
+    - All components must be functional components. Class components are prohibited.
+    - All components must be named exports. Default exports are prohibited.
+      CORRECT:   export const MetricCard = (props: MetricCardProps) => { ... };
+      INCORRECT: export default function MetricCard(props: MetricCardProps) { ... }
+    - Components must be pure when possible. Side effects belong in hooks.
+    - Props must be destructured in the function signature, not in the body.
+      CORRECT:   export const MetricCard = ({ title, value, trend }: MetricCardProps) => { ... };
+      INCORRECT: export const MetricCard = (props: MetricCardProps) => { const { title, value, trend } = props; ... };
+    - Use React.memo for components that render frequently but receive stable props.
+    - Use useMemo for expensive computations derived from props or state.
+    - Use useCallback for every function passed as a prop to a child component.
+
+  Styling:
+
+    - All styles must use StyleSheet.create. Inline styles are prohibited.
+    - Theme values (colors, spacing, fonts) must come from the theme system, never hardcoded.
+    - Use the useTheme hook to access current theme values.
+    - Responsive layouts use Flexbox. Fixed pixel values are only for border widths, icon sizes, and border radii.
+    - Platform-specific styles use Platform.select or .ios.tsx / .android.tsx file extensions.
+    - Dark mode and light mode must be supported by every component through theme-aware styling.
+
+  Hooks:
+
+    - Custom hooks must start with "use".
+    - Custom hooks must be in a hooks/ directory (global or feature-specific).
+    - Data-fetching hooks should wrap TanStack Query's useQuery or useMutation.
+    - Hooks should have a single responsibility. If a hook does too many things, split it.
+    - Hooks must not contain JSX. If a hook needs to render UI, it should return data that a component renders.
+
+  Accessibility:
+
+    - All interactive elements must have accessibilityLabel and accessibilityRole props.
+    - All images must have accessibilityLabel or be marked as accessibilityElementsHidden if decorative.
+    - Touch targets must be at least 44x44 points.
+    - Use accessibilityHint for non-obvious interactions.
+    - Test with screen readers on both iOS (VoiceOver) and Android (TalkBack).
+
+7.5 State Management Standards
+---------------------------------
+
+  TanStack Query (Server State):
+
+    - Query keys must follow a hierarchical array convention:
+      CORRECT:   ['workouts', 'list', { userId, page }]
+      CORRECT:   ['workouts', 'detail', workoutId]
+      INCORRECT: 'workout-list' (string keys are prohibited)
+    - Create query key factories in a keys.ts file per feature:
+      export const workoutKeys = {
+        all: ['workouts'] as const,
+        lists: () => [...workoutKeys.all, 'list'] as const,
+        list: (filters: WorkoutFilters) => [...workoutKeys.lists(), filters] as const,
+        details: () => [...workoutKeys.all, 'detail'] as const,
+        detail: (id: string) => [...workoutKeys.details(), id] as const,
+      };
+    - Mutations must invalidate relevant queries on success.
+    - Optimistic updates should be used for user-facing mutations (meal logging, weight logging) for instant feedback.
+    - Error handling must be explicit in each query/mutation, not relying solely on global defaults.
+
+  Zustand (Client State):
+
+    - Each store must be in its own file.
+    - Store files must export the hook (useAuthStore) and the store type (AuthState).
+    - Actions and state must be co-located in the same store slice.
+    - Stores must use immer middleware for immutable updates of complex state.
+    - Selectors should be used to minimize re-renders:
+      CORRECT:   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+      INCORRECT: const authStore = useAuthStore(); const isAuthenticated = authStore.isAuthenticated;
+    - Persistence to MMKV should use the persist middleware with a partialize function to exclude ephemeral state.
+
+  MMKV (Persistent Storage):
+
+    - Access MMKV through a typed wrapper, never directly.
+    - Keys must be namespaced by feature: "auth.accessToken", "workout.activeSession".
+    - Large objects should be compressed before storage.
+    - Schema migrations must handle changes to stored data shapes across app versions.
+
+7.6 Error Handling Standards
+------------------------------
+
+  Mobile:
+
+    - All async operations must have try/catch blocks with typed error handling.
+    - Errors must be classified: network errors, validation errors, server errors, unknown errors.
+    - User-facing error messages must be human-readable and actionable ("Unable to load workouts. Tap to retry.").
+    - Technical error details must be logged to Sentry, never displayed to users.
+    - Loading and error states must be handled in every component that fetches data.
+    - Never use empty catch blocks. At minimum, log the error.
+
+  Backend:
+
+    - All errors must extend the AppError base class.
+    - Operational errors (expected, recoverable) must be distinguished from programmer errors (bugs).
+    - Operational errors return appropriate HTTP status codes. Programmer errors return 500.
+    - Every error must include a machine-readable code (e.g., "WORKOUT_NOT_FOUND") and a human-readable message.
+    - Database errors must be caught in repositories and wrapped in domain-specific errors before propagation.
+    - External service errors (OpenAI, Health Connect) must be wrapped with context about the service and operation.
+
+7.7 Async/Await Standards
+---------------------------
+
+  - Always use async/await over raw Promises. Promise.then() chains are prohibited in application code.
+  - Use Promise.all for independent concurrent operations.
+  - Use Promise.allSettled when individual failures should not abort the entire operation.
+  - Never use floating promises (unhandled async calls). Every promise must be awaited or explicitly voided with void keyword.
+  - Timeouts must be implemented for all external calls: AbortController for fetch/axios, Promise.race with a timer.
+
+7.8 Security Standards
+------------------------
+
+  - Never log sensitive data: passwords, tokens, API keys, health data, or personally identifiable information.
+  - Never interpolate user input into SQL queries. Always use parameterized queries.
+  - Never trust client-side input. Validate and sanitize all input on the server.
+  - Never expose stack traces in API responses. Log them server-side, return generic messages to clients.
+  - Never commit secrets to version control. Use environment variables and .env files (which are .gitignored).
+  - Always use HTTPS for all network communication.
+  - Always hash passwords with bcrypt (minimum 12 rounds).
+  - Always validate JWT tokens on every authenticated request.
+
+7.9 Performance Standards
+---------------------------
+
+  Mobile:
+    - Use React.memo on list item components rendered in FlatList/FlashList.
+    - Use useCallback for all callback props to prevent unnecessary re-renders.
+    - Use useMemo for expensive derived data computations.
+    - Avoid rendering more than fifty items without virtualization (FlatList/FlashList).
+    - Images must use expo-image with caching and progressive loading.
+    - Animations must use react-native-reanimated (runs on UI thread). Animated API from React Native core is prohibited.
+    - Avoid layout animations that trigger layout recalculation (use transform-based animations).
+
+  Backend:
+    - Database queries must use proper indexes. Explain plans must be reviewed for complex queries.
+    - N+1 query patterns are prohibited. Use JOINs or batch queries.
+    - Large result sets must be paginated (cursor-based pagination preferred over offset).
+    - Expensive computations must be offloaded to background jobs via BullMQ.
+    - Response payloads should include only the fields the client needs (use select/projection).
+
+7.10 Comments and Documentation
+----------------------------------
+
+  Code Comments:
+    - Comments should explain "why," not "what." The code itself should explain "what."
+    - Use JSDoc format for all exported functions, types, and components:
+
+      /**
+       * Calculates the user's daily caloric target based on their profile metrics
+       * and activity level using the Mifflin-St Jeor equation.
+       *
+       * @param profile - The user's profile containing height, weight, age, and gender.
+       * @param activityLevel - The user's self-reported activity level.
+       * @returns The recommended daily caloric intake in kcal.
+       */
+      export const calculateDailyCalories = (
+        profile: UserProfile,
+        activityLevel: ActivityLevel
+      ): number => { ... };
+
+    - TODO comments must include a ticket reference: // TODO(FIT-123): Implement progressive overload algorithm.
+    - HACK and FIXME comments must include explanation and ticket reference.
+    - Remove all commented-out code before committing. Version control preserves history.
+
+  README Files:
+    - Every feature module must have a README.md documenting its purpose, public API, dependencies, and usage examples.
+    - The root README.md must be kept up to date with setup instructions, architecture overview, and contribution guidelines.
+
+7.11 Git Conventions
+----------------------
+
+  Branch Naming:
+    - feature/[ticket-id]-brief-description: feature/FIT-42-workout-builder
+    - bugfix/[ticket-id]-brief-description: bugfix/FIT-99-login-crash
+    - hotfix/[ticket-id]-brief-description: hotfix/FIT-101-token-refresh
+    - chore/brief-description: chore/update-dependencies
+    - docs/brief-description: docs/api-documentation
+
+  Commit Messages (Conventional Commits):
+    - Format: type(scope): description
+    - Types: feat, fix, refactor, docs, style, test, chore, perf, ci, build.
+    - Scope: feature or module name (auth, workout, nutrition, ai-coach, backend).
+    - Description: imperative mood, lowercase, no period at the end.
+    - Examples:
+      feat(workout): add progressive overload recommendation
+      fix(auth): resolve token refresh race condition
+      refactor(nutrition): extract macro calculation to utility
+      docs(ai-coach): document function calling architecture
+      test(workout): add unit tests for set logging
+
+  Pull Requests:
+    - Title must match the conventional commit format.
+    - Description must include: what changed, why it changed, how to test, and screenshots (for UI changes).
+    - PRs should be small and focused. If a PR touches more than ten files, consider splitting it.
+    - All CI checks must pass before merging.
+    - At least one approval is required from a code owner.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  Coding standard enforcement files:
+
+  mobile/
+  ├── .eslintrc.js              # ESLint configuration
+  ├── .prettierrc               # Prettier configuration
+  ├── tsconfig.json             # TypeScript configuration (strict mode)
+  └── .vscode/
+      └── settings.json         # Editor settings (format on save, etc.)
+
+  backend/
+  ├── .eslintrc.js              # ESLint configuration (backend-specific)
+  ├── .prettierrc               # Prettier configuration
+  └── tsconfig.json             # TypeScript configuration (strict mode)
+
+  Root:
+  ├── .husky/                   # Git hooks
+  │   ├── pre-commit            # Runs lint-staged
+  │   └── commit-msg            # Validates commit message format
+  ├── .commitlintrc.js          # Commit message linting configuration
+  └── .lintstagedrc             # Lint-staged configuration
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  Coding standards for component creation:
+
+  Every component must:
+    1. Be a named export (no default exports).
+    2. Have a corresponding Props type defined above the component.
+    3. Destructure props in the function signature.
+    4. Handle all visual states: default, loading, error, empty, disabled.
+    5. Include accessibility props (accessibilityLabel, accessibilityRole).
+    6. Use StyleSheet.create for styling (no inline styles).
+    7. Use theme values from useTheme hook (no hardcoded colors, spacing, or fonts).
+    8. Be memoized with React.memo if rendered in a list or as a child of a frequently updating parent.
+
+  Component File Example:
+
+    // src/components/ui/button.tsx
+
+    import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
+    import Animated, {
+      useAnimatedStyle,
+      useSharedValue,
+      withSpring,
+    } from 'react-native-reanimated';
+
+    import { Text } from '@/components/ui/text';
+    import { useTheme } from '@/hooks/use-theme';
+    import { Spacing } from '@/constants/theme';
+
+    type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+    type ButtonSize = 'sm' | 'md' | 'lg';
+
+    type ButtonProps = {
+      readonly title: string;
+      readonly onPress: () => void;
+      readonly variant?: ButtonVariant;
+      readonly size?: ButtonSize;
+      readonly isLoading?: boolean;
+      readonly isDisabled?: boolean;
+      readonly leftIcon?: React.ReactNode;
+      readonly rightIcon?: React.ReactNode;
+      readonly style?: ViewStyle;
+    };
+
+    export const Button = ({
+      title,
+      onPress,
+      variant = 'primary',
+      size = 'md',
+      isLoading = false,
+      isDisabled = false,
+      leftIcon,
+      rightIcon,
+      style,
+    }: ButtonProps) => {
+      const { colors } = useTheme();
+      const scale = useSharedValue(1);
+
+      // ... implementation
+    };
+
+    const styles = StyleSheet.create({
+      container: {
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: Spacing.two,
+      },
+    });
+
+=====================================
+10. SCREENS
+=====================================
+
+  Screen standards:
+
+  Every screen must:
+    1. Be a named export.
+    2. Use custom hooks for data fetching (not direct API calls).
+    3. Handle loading state with skeleton loaders or activity indicators.
+    4. Handle error state with a retry mechanism.
+    5. Handle empty state with an illustrated empty state component.
+    6. Use ScrollView or FlatList for scrollable content.
+    7. Respect safe area insets via SafeAreaView or useSafeAreaInsets.
+    8. Include proper navigation headers with back buttons where appropriate.
+
+  Screen File Example:
+
+    // src/app/(tabs)/workouts/index.tsx
+
+    import { FlatList, StyleSheet, View } from 'react-native';
+
+    import { Loading } from '@/components/ui/loading';
+    import { EmptyState } from '@/components/shared/empty-state';
+    import { ErrorState } from '@/components/shared/error-state';
+    import { WorkoutCard } from '@/features/workouts/components/workout-card';
+    import { useWorkoutList } from '@/features/workouts/hooks/use-workout-list';
+    import { useTheme } from '@/hooks/use-theme';
+
+    export const WorkoutsScreen = () => {
+      const { colors } = useTheme();
+      const { data, isLoading, isError, refetch } = useWorkoutList();
+
+      if (isLoading) return <Loading />;
+      if (isError) return <ErrorState onRetry={refetch} />;
+      if (!data?.length) return <EmptyState message="No workouts yet" />;
+
+      return (
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <WorkoutCard workout={item} />}
+          />
+        </View>
+      );
+    };
+
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+    });
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  API coding standards for the backend:
+
+  Route Handler Pattern:
+    - Route handlers must be thin. They validate input, call a service, and return output.
+    - Input validation uses Zod schemas defined alongside the route.
+    - Response types are explicitly defined.
+    - Authentication is handled by middleware, not in the handler.
+
+  Service Pattern:
+    - Services contain all business logic.
+    - Services receive dependencies through function parameters or constructor injection.
+    - Services must be testable without HTTP or database.
+    - Services throw typed errors (AppError subclasses) for error conditions.
+
+  Repository Pattern:
+    - Repositories are the only code that interacts with the database.
+    - Repositories return domain entities, not raw database rows.
+    - Repositories handle query construction and result mapping.
+    - Repositories must not contain business logic.
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  Database coding standards:
+
+  - Table and column names use snake_case.
+  - Primary keys are UUID type, column name "id".
+  - Foreign keys are named [referenced_table_singular]_id: user_id, workout_id.
+  - Boolean columns are prefixed with "is_" or "has_": is_active, has_completed.
+  - Timestamp columns use "timestamptz" type and follow naming: created_at, updated_at, deleted_at, completed_at, started_at.
+  - Enum columns use text type with a CHECK constraint, not PostgreSQL enum type (for easier migration).
+  - JSON/JSONB columns must have a documented schema in the migration comments.
+  - Every table must have a migration file. Manual schema changes are prohibited.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  AI coding standards:
+
+  - All prompts must be defined in dedicated prompt template files, not inline in service code.
+  - Prompts must be version-controlled with clear change documentation.
+  - Function call definitions must use strict JSON Schema with all parameters explicitly typed and described.
+  - AI responses must be validated before being returned to the client.
+  - Token counts must be tracked and logged for cost monitoring.
+  - Temperature and max_tokens settings must be configurable per request type, not hardcoded.
+  - AI error handling must provide graceful fallback responses.
+  - Embedding dimensions must be defined as a constant and referenced consistently.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  Error handling coding standards:
+
+  - Never use empty catch blocks.
+  - Never catch errors and silently swallow them.
+  - Always provide context when re-throwing errors.
+  - Use typed error classes for different error categories.
+  - Log errors with sufficient context for debugging (request ID, user ID, operation, parameters).
+  - Distinguish between operational errors (expected) and programmer errors (bugs).
+
+  Error Class Hierarchy:
+
+    AppError
+    ├── ValidationError         # Invalid input data
+    ├── AuthenticationError     # Invalid or missing credentials
+    ├── AuthorizationError      # Insufficient permissions
+    ├── NotFoundError           # Resource not found
+    ├── ConflictError           # Duplicate or conflicting operation
+    ├── RateLimitError          # Too many requests
+    ├── ExternalServiceError    # Third-party service failure
+    └── InternalError           # Unexpected server error
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - Empty strings vs null vs undefined: Use null for intentionally absent values, undefined for unset optional parameters, and never use empty strings to represent "no value."
+  - Number precision: Use integer arithmetic for currency and caloric values (multiply by 100, store as integers) to avoid floating-point errors.
+  - Date handling: Always use ISO 8601 format for dates in API communication. Use day.js for all date manipulation. Store timestamps in UTC with timezone information (timestamptz).
+  - Unicode and emoji: Ensure all text handling supports full Unicode, including emoji in user names and AI chat messages.
+  - Array operations: Always check array length before accessing elements. Use optional chaining: items?.[0] instead of items[0].
+  - Race conditions: Use AbortController to cancel superseded API requests when user input changes rapidly (search, autocomplete).
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Implement a custom ESLint plugin with FitOnus-specific rules (e.g., enforce feature module boundaries, prevent cross-feature imports).
+  - Add automated architecture validation in CI that checks import paths against the defined layer dependencies.
+  - Implement code generation tools for scaffolding new features, components, and hooks with correct structure.
+  - Establish a visual regression testing pipeline for UI components.
+  - Create a living style guide with interactive component documentation.
+  - Implement automated accessibility testing in CI.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Write code for readability first, optimization second. Premature optimization is the root of all evil.
+  - When in doubt, follow the existing patterns in the codebase. Consistency trumps personal preference.
+  - Test the unhappy path. Most bugs live in error handling code that was never tested.
+  - Keep dependencies minimal. Every dependency is a maintenance burden and potential security risk. Evaluate necessity before adding new packages.
+  - Prefer small, composable functions over large, monolithic ones.
+  - Use early returns to reduce nesting and improve readability.
+  - Avoid boolean parameters. Use options objects or separate functions instead.
+  - Never mutate function parameters. Create new objects and return them.
+  - Strings that appear in more than one place must be extracted to constants.
+  - Magic numbers must be named constants with clear descriptions.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] ESLint configured with recommended TypeScript and React Native rules.
+  [ ] Prettier configured with consistent formatting options.
+  [ ] TypeScript strict mode enabled with all additional checks.
+  [ ] Husky pre-commit hook running lint-staged.
+  [ ] Commitlint configured to enforce conventional commits.
+  [ ] Import order ESLint rule configured and enforced.
+  [ ] Path aliases configured in tsconfig.json and working.
+  [ ] EditorConfig file created for cross-editor consistency.
+  [ ] CI pipeline includes lint, type-check, and test stages.
+  [ ] Code review checklist documented and shared with the team.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Every utility function has unit tests with edge cases.
+  [ ] Every custom hook has tests using @testing-library/react-hooks or equivalent.
+  [ ] Every component has render tests verifying key visual states.
+  [ ] Every API endpoint has integration tests for success and error paths.
+  [ ] Every Zustand store has tests for state transitions and actions.
+  [ ] Tests follow the Arrange-Act-Assert pattern.
+  [ ] Test file naming follows the [module].test.ts(x) convention.
+  [ ] Mocks are co-located with test files or in a shared __mocks__ directory.
+  [ ] Test coverage meets the minimum threshold (eighty percent for utility functions, sixty percent overall).
+  [ ] No tests depend on execution order or shared mutable state.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - All TypeScript files compile with zero errors under strict mode.
+  - ESLint reports zero warnings and zero errors across the entire codebase.
+  - Prettier formatting is applied to every file, verified by CI.
+  - Every exported function, type, and component has JSDoc documentation.
+  - No file exceeds three hundred lines.
+  - No function exceeds fifty lines.
+  - No use of "any" type outside of .d.ts files without an explanatory comment.
+  - All components use named exports exclusively.
+  - All styles use StyleSheet.create, no inline styles.
+  - All imports follow the defined order and use path aliases.
+  - All commits follow the conventional commit format.
+  - All data-fetching hooks use TanStack Query.
+  - All client state lives in Zustand stores with selectors.
+  - All user-facing strings are human-readable and actionable.
+  - All interactive elements have accessibility labels.
+
+=====================================
+END OF DOCUMENT
+=====================================

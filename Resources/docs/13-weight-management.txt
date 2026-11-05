@@ -1,0 +1,355 @@
+=====================================
+FITONUS — WEIGHT MANAGEMENT
+Document: 13-weight-management.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the weight management system for FitOnus, covering daily weight logging, trend visualization, goal tracking, BMI calculation, body composition estimation, and AI-driven caloric adjustment recommendations. Weight management is a core metric that connects to the user's fitness goals, caloric targets, and AI Coach guidance.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The weight management system provides users with tools to track their body weight over time, visualize trends, and understand progress toward their goal weight. It integrates data from multiple sources: manual entries, Health Connect smart scale data, and historical logs. The system applies statistical smoothing to raw weight data to filter out daily fluctuations (water weight, meal timing) and present a meaningful trend line that accurately reflects the user's true weight trajectory.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Enable quick, daily weight logging (under 10 seconds).
+  - Display weight trends with smoothing to show meaningful progress.
+  - Provide BMI calculation and body composition context.
+  - Align caloric recommendations with weight progress (adaptive TDEE).
+  - Celebrate milestones and goal progress.
+  - Integrate with Health Connect for automatic weight data from smart scales.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Manual weight entry with date and optional notes.
+  - Weight entry via quick-entry modal from the dashboard.
+  - Weight history as a list and chart.
+  - Trend line using exponential moving average (EMA) for smoothing.
+  - Goal weight visualization (target line on chart).
+  - BMI calculation from current weight and height.
+  - Weight change statistics: last 7 days, 30 days, 90 days, total.
+  - Milestone notifications: halfway to goal, goal achieved, new low weight.
+  - Body measurement logging (optional): waist, chest, arms, thighs, hips.
+  - Import weight data from Health Connect.
+  - AI Coach integration for weight-related advice and caloric adjustments.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Weight entry must complete in under 5 seconds.
+  - Weight chart must render smoothly with up to 365 data points.
+  - Trend calculation must execute in under 100ms on the client.
+  - Weight data must sync across devices via the backend.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Daily Weight Logging
+    1. User taps "Log Weight" from dashboard quick actions or Weight screen.
+    2. Quick-entry modal opens with numeric keypad pre-filled with last logged weight.
+    3. User adjusts weight value.
+    4. Optional: add a note ("after morning run").
+    5. User taps "Save."
+    6. Weight logged with today's date.
+    7. Weight chart updates with new data point and recalculated trend.
+    8. Dashboard metric card updates.
+    9. If milestone reached: celebration animation and toast.
+
+  6.2 Viewing Weight Trends
+    1. User navigates to Profile → Weight.
+    2. Weight chart displays with raw data points and smooth trend line.
+    3. Time range selector: 1 week, 1 month, 3 months, 6 months, 1 year, all time.
+    4. Statistics card shows: current weight, change over period, average weekly change, days to goal estimate.
+    5. BMI card shows current BMI with category (underweight, normal, overweight, obese).
+    6. Below chart: chronological weight log list with date, weight, change from previous entry, and notes.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Trend Smoothing Algorithm
+
+    Exponential Moving Average (EMA):
+      - Formula: EMA_today = (weight_today × α) + (EMA_yesterday × (1 - α))
+      - Alpha (α) = 0.1 (smoothing factor — low alpha gives more weight to historical trend)
+      - If no EMA_yesterday exists: EMA_today = weight_today
+      - This filters out daily fluctuations and reveals the true weight trend.
+
+  7.2 BMI Calculation
+    - Formula: BMI = weight_kg / (height_m)²
+    - Categories: Underweight (<18.5), Normal (18.5-24.9), Overweight (25-29.9), Obese (≥30).
+    - Displayed with color-coded indicator.
+
+  7.3 Rate of Change Analysis
+    - Weekly average weight change calculated from the trend line (not raw weights).
+    - Safe weight loss rate: 0.5-1.0 kg per week.
+    - Safe weight gain rate: 0.25-0.5 kg per week.
+    - If rate exceeds safe range: AI Coach alerts the user.
+
+  7.4 Goal Projection
+    - Estimated time to goal = (current_trend_weight - goal_weight) / weekly_average_change.
+    - Projection displayed on the chart as a dotted line extending the trend.
+    - Recalculated with each new weight entry.
+
+  7.5 Body Measurements Model
+
+    BodyMeasurement:
+      - id: UUID
+      - user_id: UUID
+      - date: date
+      - waist_cm: number | null
+      - chest_cm: number | null
+      - left_arm_cm: number | null
+      - right_arm_cm: number | null
+      - left_thigh_cm: number | null
+      - right_thigh_cm: number | null
+      - hips_cm: number | null
+      - neck_cm: number | null
+      - notes: string | null
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/weight/
+  ├── components/
+  │   ├── weight-chart.tsx
+  │   ├── weight-entry-form.tsx
+  │   ├── weight-log-item.tsx
+  │   ├── bmi-indicator.tsx
+  │   ├── weight-goal-card.tsx
+  │   ├── weight-stats-card.tsx
+  │   ├── goal-projection.tsx
+  │   └── milestone-celebration.tsx
+  ├── hooks/
+  │   ├── use-weight-log.ts
+  │   ├── use-log-weight.ts
+  │   ├── use-weight-trend.ts
+  │   └── use-weight-stats.ts
+  ├── services/
+  │   ├── weight-api.ts
+  │   └── weight-calculator.ts
+  ├── types/
+  │   └── weight.ts
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  WeightChart:
+    - Line chart with raw data points (dots) and smooth trend line (solid line).
+    - Goal weight as a horizontal dashed line with label.
+    - Time range selector (segmented control) above chart.
+    - Interactive: tap on a data point to see date and weight.
+
+  BMIIndicator:
+    - Horizontal gradient bar (green → yellow → orange → red).
+    - Indicator marker at user's current BMI position.
+    - BMI value and category label.
+
+  WeightGoalCard:
+    - Current trend weight, goal weight, remaining distance.
+    - Progress bar toward goal.
+    - Estimated time to goal.
+
+  WeightStatsCard:
+    - Grid showing: current weight, change (7d), change (30d), change (total).
+    - Each stat with up/down arrow and color coding.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Weight Dashboard (src/app/(tabs)/profile/weight/index.tsx):
+    - WeightChart at top (60% of screen).
+    - WeightGoalCard below chart.
+    - BMIIndicator card.
+    - WeightStatsCard.
+    - Weight log history list.
+    - FAB: "Log Weight."
+
+  Weight Entry (src/app/(tabs)/profile/weight/log.tsx or modal):
+    - Large numeric display showing weight value.
+    - Numeric keypad with decimal point.
+    - Date picker (defaults to today).
+    - Notes text field.
+    - "Save" primary button.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/weight
+    Query: startDate, endDate, page, limit
+    Response: { data: WeightLog[], trend: TrendData }
+
+  POST /api/v1/weight
+    Request: { weight_kg: number, date: string, notes?: string }
+    Response: { data: WeightLog }
+
+  PUT /api/v1/weight/:id
+    Request: { weight_kg, notes }
+    Response: { data: WeightLog }
+
+  DELETE /api/v1/weight/:id
+    Response: 204
+
+  GET /api/v1/weight/stats
+    Response: { data: { current, change7d, change30d, changeTotal, bmi, goalWeight, estimatedDaysToGoal } }
+
+  GET /api/v1/measurements
+    Query: startDate, endDate
+    Response: { data: BodyMeasurement[] }
+
+  POST /api/v1/measurements
+    Request: BodyMeasurement data.
+    Response: { data: BodyMeasurement }
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  weight_logs:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - weight_kg: DECIMAL(5,2) (not null)
+    - trend_weight_kg: DECIMAL(5,2) (EMA smoothed, computed on insert)
+    - date: DATE (not null)
+    - notes: TEXT
+    - source: TEXT (default 'manual', CHECK IN ('manual', 'health_connect'))
+    - created_at: TIMESTAMPTZ (default now())
+    - updated_at: TIMESTAMPTZ
+    - deleted_at: TIMESTAMPTZ
+
+    Unique constraint: (user_id, date, source)
+    Indexes: idx_weight_logs_user_date (user_id, date DESC)
+    RLS: auth.uid() = user_id
+
+  body_measurements:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - date: DATE (not null)
+    - waist_cm: DECIMAL(5,1)
+    - chest_cm: DECIMAL(5,1)
+    - left_arm_cm: DECIMAL(5,1)
+    - right_arm_cm: DECIMAL(5,1)
+    - left_thigh_cm: DECIMAL(5,1)
+    - right_thigh_cm: DECIMAL(5,1)
+    - hips_cm: DECIMAL(5,1)
+    - neck_cm: DECIMAL(5,1)
+    - notes: TEXT
+    - created_at: TIMESTAMPTZ
+    - updated_at: TIMESTAMPTZ
+
+    Unique constraint: (user_id, date)
+    RLS: auth.uid() = user_id
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI Coach monitors weight trends and provides feedback: "You've lost 2.1kg this month — right on track for your goal!"
+  - AI adjusts caloric recommendations based on actual weight change vs. predicted change.
+  - AI alerts on rapid weight loss (>1.5kg/week): "Your weight loss pace is faster than recommended. Consider increasing calories slightly."
+  - AI uses weight data in conjunction with nutrition and workout data for holistic advice.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Duplicate weight entry for same date: update existing entry with confirmation.
+  - Weight value out of realistic range (<20kg or >500kg): reject with validation error.
+  - Chart rendering with very few data points (1-2): display data points without trend line.
+  - Health Connect weight conflict: prefer manual entry, use HC data only if no manual entry exists for the day.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User logs weight in imperial but stored in metric: convert on input, store in kg.
+  - User reaches goal weight: celebration, suggest maintenance targets.
+  - User's weight trend reverses direction: AI Coach acknowledges and provides guidance.
+  - Only 1 data point: show weight without trend, BMI, and basic stats.
+  - Weight logged for future date: allow but warn.
+  - Multiple entries same day from different sources: show all, use most recent for trend calculation.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Smart scale direct integration (Bluetooth).
+  - Body fat percentage tracking and visualization.
+  - DEXA scan import.
+  - Progress photo side-by-side comparison correlated with weight data.
+  - Adaptive TDEE: adjust caloric targets automatically based on measured weight change.
+  - Weight prediction using machine learning models.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Use EMA smoothing for trend display, never show raw averages.
+  - Pre-fill weight input with last logged weight for speed.
+  - Store all weights in kg internally, convert at display layer.
+  - Calculate trend weight on the backend during insert/update.
+  - Display weight change as both absolute (kg) and relative (%).
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] weight_logs table created with constraints.
+  [ ] body_measurements table created.
+  [ ] Weight entry form and quick-entry modal.
+  [ ] Weight chart with raw data and trend line.
+  [ ] BMI indicator component.
+  [ ] Weight statistics card.
+  [ ] Goal projection display.
+  [ ] API endpoints for weight CRUD.
+  [ ] EMA trend calculation on backend.
+  [ ] Health Connect weight data import.
+  [ ] Milestone detection and celebration.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Weight entry saves correctly.
+  [ ] EMA trend calculation produces expected smoothed values.
+  [ ] BMI calculation is accurate.
+  [ ] Weight chart renders with various data ranges.
+  [ ] Goal projection estimate is reasonable.
+  [ ] Unit conversion (kg ↔ lbs) is accurate.
+  [ ] Duplicate entry handling works correctly.
+  [ ] Health Connect weight import creates appropriate entries.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - Users can log their weight in under 10 seconds.
+  - The weight chart displays a smoothed trend line that filters out daily fluctuations.
+  - BMI is calculated and displayed correctly.
+  - Weight statistics show accurate changes over 7, 30, and 90 day periods.
+  - Goal progress and time-to-goal estimates are displayed.
+  - Weight data from Health Connect is imported without duplicating manual entries.
+  - The AI Coach provides relevant weight-related advice based on actual trends.
+
+=====================================
+END OF DOCUMENT
+=====================================

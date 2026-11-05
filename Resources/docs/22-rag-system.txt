@@ -1,0 +1,78 @@
+=====================================
+FITONUS — RAG SYSTEM
+Document: 22-rag-system.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the Retrieval-Augmented Generation (RAG) system for FitOnus. RAG allows the AI Coach to reference a curated, verified knowledge base of exercise science, nutrition, and wellness information, reducing hallucinations and ensuring advice is scientifically sound.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The AI Coach relies on GPT-4o for natural language understanding, but its domain knowledge is augmented by a proprietary knowledge base. When a user asks a factual health question (e.g., "What is the optimal protein intake for hypertrophy?"), the backend retrieves relevant documents from the knowledge base and provides them to the AI to form the basis of its answer.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Eliminate AI hallucinations regarding health and fitness advice.
+  - Ground the AI's responses in verified, evidence-based literature.
+  - Enable the AI to cite sources when providing scientific information.
+  - Provide an admin interface to update and expand the knowledge base without retraining the model.
+
+=====================================
+4. KNOWLEDGE BASE
+=====================================
+
+  The knowledge base consists of curated articles, guidelines, and research summaries covering:
+  - Exercise Physiology (hypertrophy, strength, endurance).
+  - Nutrition (macros, micros, supplements).
+  - Recovery (sleep, stretching, active recovery).
+  - Biomechanics (proper form for common exercises).
+
+  Documents are chunked into 500-token segments for optimal embedding and retrieval.
+
+=====================================
+5. RETRIEVAL PIPELINE
+=====================================
+
+  1. Intent Detection: Determine if the user's query requires external knowledge (vs. a simple conversational reply or a request requiring function calling).
+  2. Query Embedding: Embed the user's query using text-embedding-3-small.
+  3. Semantic Search: Query the `knowledge_base` table using pgvector for the top 3 most relevant chunks.
+  4. Context Injection: Inject the retrieved chunks into the System Prompt under the `[RAG CONTEXT]` section.
+  5. Generation: Instruct the AI to answer the question using *only* the provided RAG context, and to state if the context does not contain the answer.
+
+=====================================
+6. DATABASE STRUCTURE
+=====================================
+
+  table: public.knowledge_base
+    - id: UUID (PK)
+    - title: TEXT
+    - content: TEXT (The chunked text)
+    - source_url: TEXT (Link to original study or article)
+    - category: TEXT ('nutrition', 'exercise', 'recovery')
+    - embedding: vector(1536)
+    - created_at: TIMESTAMPTZ
+    - updated_at: TIMESTAMPTZ
+
+  Index: HNSW index on the `embedding` column for rapid semantic search.
+
+=====================================
+7. ADMIN & MAINTENANCE
+=====================================
+
+  - An internal admin dashboard allows content managers to add markdown documents.
+  - The system automatically chunks the documents, generates embeddings, and stores them in the database.
+  - Periodic reviews ensure information aligns with the latest consensus in sports science.
+
+=====================================
+END OF DOCUMENT
+=====================================

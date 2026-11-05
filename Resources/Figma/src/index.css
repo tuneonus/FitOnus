@@ -1,0 +1,67 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+[data-theme='light'] {
+  --bg: 244 243 238;
+  --surface: 255 255 255;
+  --surface2: 236 235 229;
+  --ink: 17 18 16;
+  --muted: 92 93 86;
+  --line: 226 224 216;
+  --accent: 200 245 60;
+  --accent-ink: 20 24 5;
+  --accent-strong: 92 128 0;
+  --hero: 20 22 18;
+  --hero-ink: 244 244 238;
+  --hero-muted: 164 166 154;
+  --good: 22 140 64;
+  --warn: 214 120 10;
+  --bad: 214 40 40;
+  --sleep: 99 102 241;
+  --move: 244 84 48;
+  --sky: 14 150 220;
+  color-scheme: light;
+}
+[data-theme='dark'] {
+  --bg: 10 11 10;
+  --surface: 22 23 21;
+  --surface2: 34 35 32;
+  --ink: 244 244 238;
+  --muted: 156 157 148;
+  --line: 42 43 39;
+  --accent: 200 245 60;
+  --accent-ink: 20 24 5;
+  --accent-strong: 200 245 60;
+  --hero: 28 30 25;
+  --hero-ink: 244 244 238;
+  --hero-muted: 164 166 154;
+  --good: 74 222 128;
+  --warn: 251 191 36;
+  --bad: 248 113 113;
+  --sleep: 129 140 248;
+  --move: 255 112 80;
+  --sky: 56 189 248;
+  color-scheme: dark;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}

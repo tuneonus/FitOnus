@@ -1,0 +1,746 @@
+=====================================
+FITONUS — BACKEND API
+Document: 19-backend-api.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the complete backend API specification for FitOnus, covering the NestJS server architecture, route definitions, middleware stack, request/response formats, authentication flow, rate limiting, validation, error handling, and API versioning. This is the definitive API reference for all engineers building mobile client integrations and backend services.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The FitOnus backend is a Node.js server built with NestJS, chosen for its enterprise-grade modular architecture and TypeScript support. The API follows RESTful conventions with versioned endpoints under /api/v1/. All data is transmitted as JSON over HTTPS. Authentication uses JWT tokens verified via Supabase Auth. The backend connects to PostgreSQL via Supabase's client library with connection pooling.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Provide a fast, reliable API with P95 response times under 200ms for standard endpoints.
+  - Implement consistent request validation and error handling across all endpoints.
+  - Enforce authentication and authorization on all protected endpoints.
+  - Support the AI Coach subsystem with streaming responses.
+  - Enable horizontal scaling without session affinity.
+  - Provide comprehensive API documentation for all endpoints.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - RESTful endpoint design with consistent resource naming.
+  - JWT-based authentication via Supabase Auth.
+  - Request validation using Zod schemas.
+  - Cursor-based pagination for list endpoints.
+  - Rate limiting on authentication and resource-intensive endpoints.
+  - Streaming support (SSE) for AI Coach responses.
+  - Background job processing via BullMQ.
+  - Health check endpoint for monitoring.
+  - Request ID tracking for debugging.
+  - Structured JSON logging.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - P95 response time: under 200ms for standard CRUD endpoints.
+  - P95 response time: under 3 seconds for AI-powered endpoints (excluding streaming).
+  - Availability: 99.9% uptime.
+  - Concurrent connections: support 1000+ simultaneous connections.
+  - Database connection pool: 20 connections default, scalable to 100.
+  - Request payload limit: 10MB (for image uploads), 1MB for standard requests.
+  - Rate limiting: configurable per endpoint.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Typical API Request Flow
+    1. Mobile client makes an HTTP request with Bearer token.
+    2. NestJS receives the request.
+    3. Request ID middleware assigns a UUID to the request.
+    4. Logger middleware logs the request method, path, and ID.
+    5. Auth middleware verifies the JWT token.
+    6. Rate limit middleware checks request rate.
+    7. Route handler receives the request.
+    8. Validation middleware validates request body/query/params against Zod schema.
+    9. Route handler calls the appropriate service method.
+    10. Service executes business logic, calls repository methods.
+    11. Repository queries the database.
+    12. Response is serialized and returned.
+    13. Logger middleware logs the response status and duration.
+    14. Response is sent to the client with request ID.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 NestJS Server Configuration
+
+    Server Bootstrap (server.ts):
+      - Create NestJS application instance via NestFactory.
+      - Register plugins: CORS, helmet, rate-limit, multipart.
+      - Register custom plugins: auth, request-id, error-handler.
+      - Register route modules under /api/v1.
+      - Start listening on configurable port (default 3000).
+
+    Plugin Registration Order:
+      1. CORS — Built-in NestJS CORS.
+      2. Helmet — Security headers middleware.
+      3. ThrottlerModule — Rate limiting.
+      4. FileInterceptor — File upload support.
+      5. Custom: request-id — UUID per request.
+      6. Custom: auth — JWT verification.
+      7. Custom: error-handler — Centralized error handling.
+      8. Route modules — All /api/v1 routes.
+
+  7.2 Middleware Stack
+
+    Request ID (middleware/request-id.ts):
+      - Generates a UUID v4 for every request.
+      - Attaches to request.id and includes in response header X-Request-Id.
+      - Used for log correlation and debugging.
+
+    Auth (middleware/auth.ts):
+      - Extracts Bearer token from Authorization header.
+      - Verifies token via Supabase's getUser().
+      - Decorates request with user context: request.user = { id, email, role }.
+      - Returns 401 if token is missing, invalid, or expired.
+      - Applied to all routes except public endpoints (health check, auth routes).
+
+    Rate Limiting (middleware/rate-limit.ts):
+      - Global default: 100 requests per minute per IP.
+      - Auth endpoints: 5 requests per 15 minutes per IP+email.
+      - AI Coach endpoint: 20 requests per minute per user.
+      - File upload: 10 requests per minute per user.
+      - Returns 429 with Retry-After header when exceeded.
+
+    Validation (middleware/validation.ts):
+      - Zod schemas defined per endpoint for body, querystring, and params.
+      - Validation runs before the route handler.
+      - Returns 422 with field-level errors for validation failures.
+
+    Error Handler (middleware/error-handler.ts):
+      - Catches all unhandled errors.
+      - Maps AppError subclasses to HTTP status codes.
+      - Returns standardized error response format.
+      - Logs error details with request ID.
+      - Returns 500 for unexpected errors without exposing internals.
+
+  7.3 Standard Response Formats
+
+    Success Response:
+      {
+        "data": { ... },
+        "meta": {
+          "requestId": "550e8400-e29b-41d4-a716-446655440000",
+          "timestamp": "2026-07-15T14:30:00.000Z"
+        }
+      }
+
+    Success Response (List with Pagination):
+      {
+        "data": [ ... ],
+        "pagination": {
+          "cursor": "eyJpZCI6IjEyMyJ9",
+          "hasMore": true,
+          "total": 150
+        },
+        "meta": {
+          "requestId": "...",
+          "timestamp": "..."
+        }
+      }
+
+    Error Response:
+      {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Validation failed",
+          "details": {
+            "email": "Invalid email format",
+            "password": "Must be at least 8 characters"
+          }
+        },
+        "meta": {
+          "requestId": "...",
+          "timestamp": "..."
+        }
+      }
+
+    Error Codes:
+      - VALIDATION_ERROR (400/422): Input data is invalid.
+      - UNAUTHORIZED (401): Missing or invalid authentication.
+      - FORBIDDEN (403): Authenticated but not authorized.
+      - NOT_FOUND (404): Resource does not exist.
+      - CONFLICT (409): Duplicate or conflicting operation.
+      - RATE_LIMITED (429): Too many requests.
+      - INTERNAL_ERROR (500): Unexpected server error.
+      - SERVICE_UNAVAILABLE (503): External service unavailable.
+
+  7.4 Complete Endpoint Reference
+
+    === AUTHENTICATION ===
+
+    POST /api/v1/auth/register
+      Body: { email: string, password: string, fullName: string }
+      Response: 201 { data: { user, session } }
+      Rate Limit: 3/hour/IP
+
+    POST /api/v1/auth/login
+      Body: { email: string, password: string }
+      Response: 200 { data: { user, session } }
+      Rate Limit: 5/15min/IP+email
+
+    POST /api/v1/auth/refresh
+      Body: { refreshToken: string }
+      Response: 200 { data: { accessToken, refreshToken } }
+
+    POST /api/v1/auth/logout
+      Auth: Required
+      Response: 204
+
+    POST /api/v1/auth/forgot-password
+      Body: { email: string }
+      Response: 200 { data: { message } }
+      Rate Limit: 3/hour/email
+
+    POST /api/v1/auth/reset-password
+      Body: { token: string, newPassword: string }
+      Response: 200 { data: { message } }
+
+    POST /api/v1/auth/social
+      Body: { provider: 'google' | 'apple', idToken: string }
+      Response: 200 { data: { user, session, isNewUser } }
+
+    DELETE /api/v1/auth/account
+      Auth: Required
+      Body: { confirmPassword: string }
+      Response: 200 { data: { message } }
+
+    === USER MANAGEMENT ===
+
+    GET /api/v1/users/me
+      Auth: Required
+      Response: 200 { data: { user: UserProfile } }
+
+    PATCH /api/v1/users/me
+      Auth: Required
+      Body: Partial<UserProfile>
+      Response: 200 { data: { user: UserProfile } }
+
+    POST /api/v1/users/me/avatar
+      Auth: Required
+      Body: multipart/form-data (image)
+      Response: 200 { data: { avatarUrl } }
+
+    GET /api/v1/users/me/settings
+      Auth: Required
+      Response: 200 { data: { settings } }
+
+    PATCH /api/v1/users/me/settings
+      Auth: Required
+      Body: Partial<UserSettings>
+      Response: 200 { data: { settings } }
+
+    POST /api/v1/users/me/export
+      Auth: Required
+      Response: 200 { data: { exportUrl, expiresAt } }
+
+    POST /api/v1/onboarding
+      Auth: Required
+      Body: { step: number, data: object }
+      Response: 200 { data: { onboarding } }
+
+    POST /api/v1/onboarding/complete
+      Auth: Required
+      Response: 200 { data: { message } }
+
+    === DASHBOARD ===
+
+    GET /api/v1/dashboard/summary
+      Auth: Required
+      Query: date?
+      Response: 200 { data: DashboardSummary }
+
+    GET /api/v1/dashboard/activity-feed
+      Auth: Required
+      Query: date?
+      Response: 200 { data: ActivityFeedItem[] }
+
+    === AI COACH ===
+
+    POST /api/v1/coach/chat
+      Auth: Required
+      Body: { conversationId?: string, message: string }
+      Response: SSE stream (text/event-stream)
+      Rate Limit: 20/min/user
+
+    GET /api/v1/coach/conversations
+      Auth: Required
+      Query: page, limit
+      Response: 200 { data: Conversation[], pagination }
+
+    GET /api/v1/coach/conversations/:id
+      Auth: Required
+      Response: 200 { data: { conversation, messages } }
+
+    DELETE /api/v1/coach/conversations/:id
+      Auth: Required
+      Response: 204
+
+    GET /api/v1/coach/suggested-prompts
+      Auth: Required
+      Response: 200 { data: string[] }
+
+    === WORKOUTS ===
+
+    GET /api/v1/workouts
+      Auth: Required
+      Query: type, page, limit
+      Response: 200 { data: Workout[], pagination }
+
+    POST /api/v1/workouts
+      Auth: Required
+      Body: { name, description?, exercises }
+      Response: 201 { data: Workout }
+
+    GET /api/v1/workouts/:id
+      Auth: Required
+      Response: 200 { data: Workout }
+
+    PUT /api/v1/workouts/:id
+      Auth: Required
+      Body: Updated workout data
+      Response: 200 { data: Workout }
+
+    DELETE /api/v1/workouts/:id
+      Auth: Required
+      Response: 204
+
+    POST /api/v1/workouts/:id/sessions
+      Auth: Required
+      Body: WorkoutSession data
+      Response: 201 { data: WorkoutSession }
+
+    GET /api/v1/workouts/sessions
+      Auth: Required
+      Query: workoutId?, startDate?, endDate?, page, limit
+      Response: 200 { data: WorkoutSession[], pagination }
+
+    GET /api/v1/workouts/sessions/:id
+      Auth: Required
+      Response: 200 { data: WorkoutSession }
+
+    GET /api/v1/exercises
+      Auth: Required
+      Query: muscleGroup?, category?, equipment?, search?, page, limit
+      Response: 200 { data: Exercise[], pagination }
+
+    GET /api/v1/exercises/:id
+      Auth: Required
+      Response: 200 { data: Exercise }
+
+    POST /api/v1/exercises
+      Auth: Required
+      Body: Custom exercise data
+      Response: 201 { data: Exercise }
+
+    GET /api/v1/exercises/:id/history
+      Auth: Required
+      Query: page, limit
+      Response: 200 { data: ExerciseHistory[], pagination }
+
+    GET /api/v1/exercises/:id/records
+      Auth: Required
+      Response: 200 { data: PersonalRecord[] }
+
+    === NUTRITION ===
+
+    GET /api/v1/nutrition/daily
+      Auth: Required
+      Query: date
+      Response: 200 { data: DailyNutrition }
+
+    POST /api/v1/nutrition/meals
+      Auth: Required
+      Body: Meal data
+      Response: 201 { data: Meal }
+
+    PUT /api/v1/nutrition/meals/:id
+      Auth: Required
+      Body: Updated meal data
+      Response: 200 { data: Meal }
+
+    DELETE /api/v1/nutrition/meals/:id
+      Auth: Required
+      Response: 204
+
+    GET /api/v1/nutrition/foods/search
+      Auth: Required
+      Query: q, page, limit
+      Response: 200 { data: Food[], pagination }
+
+    POST /api/v1/nutrition/foods/barcode
+      Auth: Required
+      Body: { barcode }
+      Response: 200 { data: Food | null }
+
+    POST /api/v1/nutrition/foods
+      Auth: Required
+      Body: Custom food data
+      Response: 201 { data: Food }
+
+    GET /api/v1/nutrition/foods/recent
+      Auth: Required
+      Response: 200 { data: Food[] }
+
+    POST /api/v1/nutrition/water
+      Auth: Required
+      Body: { amount_ml, date }
+      Response: 201 { data: WaterIntake }
+
+    GET /api/v1/nutrition/water
+      Auth: Required
+      Query: date
+      Response: 200 { data: WaterSummary }
+
+    GET /api/v1/nutrition/analytics
+      Auth: Required
+      Query: period, startDate?, endDate?
+      Response: 200 { data: NutritionAnalytics }
+
+    === HEALTH DATA ===
+
+    POST /api/v1/health/sync
+      Auth: Required
+      Body: { dataType, data, syncedAt }
+      Response: 200 { data: { processed, conflicts } }
+
+    GET /api/v1/health/data
+      Auth: Required
+      Query: type, startDate, endDate
+      Response: 200 { data: HealthDataPoint[] }
+
+    GET /api/v1/health/summary
+      Auth: Required
+      Query: date
+      Response: 200 { data: HealthSummary }
+
+    === WEIGHT ===
+
+    GET /api/v1/weight
+      Auth: Required
+      Query: startDate?, endDate?, page, limit
+      Response: 200 { data: WeightLog[], trend }
+
+    POST /api/v1/weight
+      Auth: Required
+      Body: { weight_kg, date, notes? }
+      Response: 201 { data: WeightLog }
+
+    PUT /api/v1/weight/:id
+      Auth: Required
+      Body: { weight_kg, notes }
+      Response: 200 { data: WeightLog }
+
+    DELETE /api/v1/weight/:id
+      Auth: Required
+      Response: 204
+
+    GET /api/v1/weight/stats
+      Auth: Required
+      Response: 200 { data: WeightStats }
+
+    === SLEEP ===
+
+    GET /api/v1/sleep
+      Auth: Required
+      Query: startDate, endDate, page, limit
+      Response: 200 { data: SleepLog[] }
+
+    POST /api/v1/sleep
+      Auth: Required
+      Body: { bedtime, wakeTime, qualityRating, notes? }
+      Response: 201 { data: SleepLog }
+
+    PUT /api/v1/sleep/:id
+      Auth: Required
+      Body: Updated sleep data
+      Response: 200 { data: SleepLog }
+
+    DELETE /api/v1/sleep/:id
+      Auth: Required
+      Response: 204
+
+    GET /api/v1/sleep/analytics
+      Auth: Required
+      Query: period
+      Response: 200 { data: SleepAnalytics }
+
+    === RECOVERY ===
+
+    GET /api/v1/recovery/score
+      Auth: Required
+      Query: date?
+      Response: 200 { data: RecoveryScore }
+
+    GET /api/v1/recovery/history
+      Auth: Required
+      Query: startDate, endDate
+      Response: 200 { data: RecoveryScore[] }
+
+    POST /api/v1/recovery/readiness
+      Auth: Required
+      Body: ReadinessSurvey
+      Response: 201 { data: ReadinessSurvey }
+
+    GET /api/v1/recovery/training-load
+      Auth: Required
+      Query: period?
+      Response: 200 { data: TrainingLoad }
+
+    === PROGRESS ===
+
+    GET /api/v1/progress/analytics
+      Auth: Required
+      Query: period, startDate?, endDate?
+      Response: 200 { data: ProgressAnalytics }
+
+    GET /api/v1/progress/strength/:exerciseId
+      Auth: Required
+      Query: period
+      Response: 200 { data: StrengthProgression }
+
+    GET /api/v1/progress/photos
+      Auth: Required
+      Response: 200 { data: ProgressPhoto[] }
+
+    POST /api/v1/progress/photos
+      Auth: Required
+      Body: multipart/form-data (image, date, tag)
+      Response: 201 { data: ProgressPhoto }
+
+    DELETE /api/v1/progress/photos/:id
+      Auth: Required
+      Response: 204
+
+    === MEASUREMENTS ===
+
+    GET /api/v1/measurements
+      Auth: Required
+      Query: startDate?, endDate?
+      Response: 200 { data: BodyMeasurement[] }
+
+    POST /api/v1/measurements
+      Auth: Required
+      Body: BodyMeasurement data
+      Response: 201 { data: BodyMeasurement }
+
+    === NOTIFICATIONS ===
+
+    GET /api/v1/notifications
+      Auth: Required
+      Query: page, limit, read?
+      Response: 200 { data: Notification[], pagination, unreadCount }
+
+    PATCH /api/v1/notifications/:id/read
+      Auth: Required
+      Response: 200
+
+    POST /api/v1/notifications/mark-all-read
+      Auth: Required
+      Response: 200
+
+    DELETE /api/v1/notifications/:id
+      Auth: Required
+      Response: 204
+
+    POST /api/v1/notifications/register-token
+      Auth: Required
+      Body: { token, platform }
+      Response: 200
+
+    === REPORTS ===
+
+    GET /api/v1/reports
+      Auth: Required
+      Query: page, limit, type?
+      Response: 200 { data: Report[], pagination }
+
+    GET /api/v1/reports/:id
+      Auth: Required
+      Response: 200 { data: Report }
+
+    POST /api/v1/reports/generate
+      Auth: Required
+      Body: { startDate, endDate }
+      Response: 202 { data: { reportId, status: 'generating' } }
+
+    GET /api/v1/reports/:id/pdf
+      Auth: Required
+      Response: 200 { data: { pdfUrl, expiresAt } }
+
+    PATCH /api/v1/reports/:id/read
+      Auth: Required
+      Response: 200
+
+    === SYSTEM ===
+
+    GET /api/v1/health
+      Auth: None (public)
+      Response: 200 { status: 'ok', version: '1.0.0', timestamp: '...' }
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  (Refer to 04-folder-structure.txt, Section 7.2 for complete backend folder structure)
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  Backend architectural components:
+
+  - NestJSServer: Configured NestJS instance with all modules.
+  - AuthGuard: JWT verification NestJS guard.
+  - ValidationPlugin: Zod schema validation for requests.
+  - ErrorHandlerPlugin: Centralized error response formatting.
+  - RateLimitPlugin: Configurable rate limiting per endpoint.
+  - RequestIdPlugin: UUID assignment per request.
+  - LoggerPlugin: Structured JSON logging with pino.
+  - SupabaseClient: Initialized Supabase client with service role key.
+  - BullMQQueue: Job queue for background processing.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Not applicable — this is a backend document. See feature-specific documents for screen references.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  See Section 7.4 for the complete endpoint reference.
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  See 20-database-design.txt for the complete database schema.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - The AI Coach endpoint (POST /api/v1/coach/chat) supports SSE streaming.
+  - AI function calls are executed server-side within the streaming pipeline.
+  - AI endpoints have a higher rate limit (20/min) but lower than standard CRUD (100/min).
+  - AI responses include token usage metadata for cost tracking.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Every error returned from the API follows the standardized error format (Section 7.3).
+  - AppError subclasses map to specific HTTP status codes.
+  - Unhandled exceptions return 500 with a generic message.
+  - Database constraint violations are caught and translated to user-friendly messages.
+  - External service failures (OpenAI, Health Connect APIs) return 503 with retry guidance.
+  - All errors are logged with request ID, user ID, error stack, and request context.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - Request with invalid JSON body: return 400 with "Invalid JSON" message.
+  - Request with missing Content-Type: return 415 Unsupported Media Type.
+  - Extremely large request body (>10MB): return 413 Payload Too Large.
+  - Concurrent modifications to same resource: use database-level constraints and return 409 Conflict.
+  - Token expires during a long-running SSE stream: continue the stream (token was valid at start).
+  - Database connection pool exhaustion: return 503 with queue backpressure.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - GraphQL gateway for more flexible client queries.
+  - WebSocket support for real-time features.
+  - API key authentication for third-party integrations.
+  - OpenAPI/Swagger documentation auto-generation.
+  - API analytics and usage dashboards.
+  - Webhook support for event-driven integrations.
+  - gRPC for service-to-service communication.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Keep route handlers thin: validate → call service → format response.
+  - Use Zod for all request validation. Never trust client input.
+  - Always include request ID in responses and logs.
+  - Always use parameterized queries (Supabase client handles this).
+  - Never return stack traces or internal error details to clients.
+  - Use cursor-based pagination for all list endpoints.
+  - Return only necessary fields in responses (use select/projection).
+  - Log request duration for performance monitoring.
+  - Use environment variables for all configuration. No hardcoded values.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] NestJS server bootstrapped with TypeScript.
+  [ ] All middleware plugins registered and configured.
+  [ ] Auth middleware verifying Supabase JWTs.
+  [ ] Rate limiting configured for all endpoint categories.
+  [ ] Zod validation schemas defined for all endpoints.
+  [ ] Standardized error handler returning consistent formats.
+  [ ] Request ID generation and propagation.
+  [ ] Structured logging with pino.
+  [ ] All route modules registered under /api/v1.
+  [ ] Health check endpoint responding.
+  [ ] Supabase client initialized with connection pooling.
+  [ ] BullMQ queues configured for background jobs.
+  [ ] All endpoints documented with types.
+  [ ] CORS configured for mobile and web origins.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] All endpoints return correct HTTP status codes for success and error cases.
+  [ ] Authentication rejection returns 401 for missing/invalid tokens.
+  [ ] Rate limiting returns 429 after exceeding thresholds.
+  [ ] Validation returns 422 with field-level errors.
+  [ ] Pagination returns correct cursor and hasMore values.
+  [ ] SSE streaming for AI Coach delivers chunks correctly.
+  [ ] Error handler catches and formats all error types.
+  [ ] Request IDs are unique and included in all responses.
+  [ ] Health check endpoint responds correctly.
+  [ ] File upload endpoints handle multipart correctly.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - All endpoints respond with the standardized response format.
+  - Authentication is enforced on all protected endpoints.
+  - Rate limiting prevents abuse without affecting normal usage.
+  - P95 response times are under 200ms for standard CRUD operations.
+  - AI Coach streaming delivers responses in real time.
+  - Error responses provide actionable information without exposing internals.
+  - The API supports cursor-based pagination for all list endpoints.
+  - The health check endpoint enables monitoring and alerting.
+  - All endpoints are documented with request/response types.
+
+=====================================
+END OF DOCUMENT
+=====================================

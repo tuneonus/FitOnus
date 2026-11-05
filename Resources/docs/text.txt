@@ -1,0 +1,570 @@
+AI Fitness Coach App - React Native
+
+Project Vision
+
+We are building an AI-powered fitness and health coach, not just another fitness tracker.
+
+The app should become a personal fitness assistant that understands the user’s health, workouts, nutrition, sleep, and long-term goals through AI.
+
+Instead of manually navigating through multiple screens, users should be able to simply ask questions in natural language.
+
+Example:
+
+“Why am I feeling tired today?”
+
+The AI should analyze:
+
+	•	Sleep
+	•	Heart rate
+	•	HRV
+	•	Yesterday’s workout
+	•	Calories
+	•	Recovery
+	•	Weight trend
+
+and provide a personalized answer.
+
+⸻
+
+Technology Stack
+
+Frontend
+
+	•	React Native
+	•	TypeScript
+	•	Expo Development Build (or Bare Workflow if needed)
+	•	React Navigation / Expo Router
+	•	React Query
+	•	Zustand
+	•	MMKV
+	•	Reanimated
+	•	React Native Skia
+
+Backend
+
+	•	Node.js (Fastify or NestJS)
+	•	Supabase
+	•	PostgreSQL
+	•	Storage
+	•	Authentication
+	•	pgvector (AI memory)
+
+AI
+
+	•	OpenAI Responses API or Google Gemini
+	•	Function/Tool Calling
+	•	Long-term AI memory
+	•	Retrieval-Augmented Generation (RAG)
+
+⸻
+
+Health Integration
+
+iOS
+
+Integrate with Apple HealthKit
+
+Read:
+
+	•	Steps
+	•	Distance
+	•	Active Calories
+	•	Resting Calories
+	•	Heart Rate
+	•	Resting Heart Rate
+	•	Walking Heart Rate
+	•	HRV
+	•	Blood Oxygen
+	•	Respiratory Rate
+	•	Sleep Analysis
+	•	Weight
+	•	Body Fat %
+	•	BMI
+	•	Blood Pressure (if available)
+	•	Blood Glucose (if available)
+	•	Workouts
+	•	Mindfulness Sessions
+
+⸻
+
+Android
+
+Integrate with Health Connect
+
+Support data from:
+
+	•	Google Fit
+	•	Samsung Health
+	•	Fitbit
+	•	Garmin
+	•	Oura
+	•	Other compatible health apps
+
+The app should normalize all data into a single internal format so the AI can use the same APIs regardless of platform.
+
+⸻
+
+Main Features
+
+1. Dashboard
+
+Display today’s summary.
+
+Include:
+
+	•	Recovery Score
+	•	Sleep Score
+	•	Steps
+	•	Calories Burned
+	•	Calories Consumed
+	•	Active Minutes
+	•	Heart Rate
+	•	Weight
+	•	Workout Status
+	•	AI Summary
+
+Example:
+
+Good morning!
+
+You slept 7h 45m.
+
+Recovery Score: 84%
+
+Today’s recommendation:
+
+Chest + Triceps.
+
+⸻
+
+2. AI Chat (Main Feature)
+
+The AI should behave like ChatGPT but with access to the user’s health data.
+
+Examples:
+
+Can I skip today’s workout?
+
+Why is my heart rate higher today?
+
+How much weight have I lost this month?
+
+Can I eat biryani tonight?
+
+How many calories do I have left today?
+
+Show my progress since January.
+
+The AI should retrieve relevant data before responding.
+
+⸻
+
+3. Workout Planner
+
+AI-generated workout plans based on:
+
+	•	Goal
+	•	Experience
+	•	Available Equipment
+	•	Workout Duration
+	•	Recovery
+
+Support:
+
+	•	Fat Loss
+	•	Muscle Gain
+	•	Strength
+	•	Home Workout
+	•	Gym Workout
+	•	Push Pull Legs
+	•	Upper Lower Split
+	•	Full Body
+	•	Custom Plans
+
+Track:
+
+	•	Sets
+	•	Reps
+	•	Weight
+	•	Rest Timer
+	•	Personal Records
+
+⸻
+
+4. Nutrition Tracking
+
+Users can:
+
+	•	Search food
+	•	Scan barcode
+	•	Upload food photo
+	•	Use voice input
+
+AI estimates:
+
+	•	Calories
+	•	Protein
+	•	Carbs
+	•	Fat
+	•	Fiber
+
+Automatically saves meals.
+
+⸻
+
+5. Weight Tracking
+
+Track:
+
+	•	Weight
+	•	Body Fat
+	•	Muscle Mass
+	•	Waist
+	•	Chest
+	•	Hip
+	•	Arm
+	•	Neck
+
+Display trend graphs.
+
+AI explains changes.
+
+⸻
+
+6. Sleep Analysis
+
+Analyze:
+
+	•	Total Sleep
+	•	Deep Sleep
+	•	REM
+	•	Awake Time
+	•	Sleep Consistency
+
+AI insights:
+
+Your sleep quality has improved 18% this month.
+
+⸻
+
+7. Recovery Score
+
+Calculate using:
+
+	•	HRV
+	•	Resting Heart Rate
+	•	Sleep
+	•	Previous Workout
+	•	Activity Level
+
+Display:
+
+Recovery
+
+0-100
+
+AI recommendation:
+
+Train Hard
+
+Moderate Workout
+
+Rest Day
+
+⸻
+
+8. Activity Tracking
+
+Daily:
+
+	•	Steps
+	•	Walking
+	•	Running
+	•	Cycling
+	•	Swimming
+	•	Calories
+	•	Floors
+	•	Distance
+
+⸻
+
+9. Progress Analytics
+
+Charts:
+
+Daily
+
+Weekly
+
+Monthly
+
+Yearly
+
+Track:
+
+	•	Weight
+	•	Calories
+	•	Sleep
+	•	Protein
+	•	Workout Frequency
+	•	Recovery
+	•	Steps
+
+AI generates summaries.
+
+⸻
+
+10. Goal Management
+
+Goals:
+
+Lose Weight
+
+Gain Muscle
+
+Maintain Weight
+
+Run 5K
+
+10K
+
+Marathon
+
+Daily Steps
+
+Water Intake
+
+Protein Intake
+
+Workout Streak
+
+⸻
+
+11. AI Memory
+
+The AI should remember:
+
+	•	Goals
+	•	Injuries
+	•	Food Preferences
+	•	Workout Preferences
+	•	Medical Conditions (if provided)
+	•	Supplements
+	•	Progress History
+	•	Previous Conversations
+
+Example:
+
+User:
+
+I’m vegetarian.
+
+AI remembers.
+
+Months later:
+
+Meal plans avoid meat automatically.
+
+⸻
+
+12. Voice Coach
+
+Voice interaction.
+
+Example:
+
+I finished 3 sets.
+
+Log today’s breakfast.
+
+Start my workout.
+
+How am I doing today?
+
+⸻
+
+13. Notifications
+
+Examples:
+
+You haven’t walked today.
+
+Time to drink water.
+
+Protein target remaining: 35g.
+
+Great job! 7-day workout streak.
+
+Sleep reminder.
+
+⸻
+
+14. Weekly AI Report
+
+Every Sunday.
+
+Generate:
+
+	•	Weight Change
+	•	Workout Summary
+	•	Calories
+	•	Sleep
+	•	Protein
+	•	Recovery
+	•	Achievements
+	•	Areas for Improvement
+	•	Goals for Next Week
+
+⸻
+
+15. Monthly AI Report
+
+Show:
+
+	•	Total Weight Lost
+	•	Workout Count
+	•	Calories Burned
+	•	Average Sleep
+	•	Average Recovery
+	•	Long-term Trends
+	•	AI Recommendations
+
+⸻
+
+16. Apple Watch Support
+
+Sync:
+
+	•	Heart Rate
+	•	Workout
+	•	Steps
+	•	Calories
+	•	Exercise Minutes
+
+Workout starts on the watch should sync automatically with the app.
+
+⸻
+
+17. Android Wear Support (Future)
+
+Support Wear OS devices for workout tracking and quick stats.
+
+⸻
+
+AI Use Cases
+
+Coaching
+
+Create a 45-minute fat-loss workout.
+
+⸻
+
+Nutrition
+
+Plan today’s meals with 160g protein under 2200 calories.
+
+⸻
+
+Health
+
+Why is my resting heart rate increasing?
+
+⸻
+
+Progress
+
+Compare this month with last month.
+
+⸻
+
+Motivation
+
+Motivate me to go to the gym today.
+
+⸻
+
+Predictions
+
+When will I reach 90 kg if I continue at my current pace?
+
+⸻
+
+Meal Analysis
+
+Upload a photo.
+
+AI identifies:
+
+	•	Food
+	•	Calories
+	•	Protein
+	•	Carbs
+	•	Fat
+
+Automatically logs it.
+
+⸻
+
+Trend Analysis
+
+AI identifies:
+
+	•	Weight plateau
+	•	Overtraining
+	•	Poor recovery
+	•	Sleep issues
+	•	Inconsistent workouts
+	•	High calorie weekends
+
+before the user notices.
+
+⸻
+
+AI Tools (Backend Functions)
+
+The AI should have access to backend functions such as:
+
+	•	getTodayHealthData()
+	•	getWorkoutHistory()
+	•	getSleepHistory()
+	•	getWeightHistory()
+	•	getNutritionLogs()
+	•	getGoals()
+	•	getRecoveryScore()
+	•	createWorkoutPlan()
+	•	logWorkout()
+	•	logMeal()
+	•	updateWeight()
+	•	searchFood()
+	•	analyzeMealImage()
+	•	compareProgress()
+	•	generateWeeklyReport()
+	•	generateMonthlyReport()
+
+The AI uses these tools to retrieve information and perform actions instead of relying solely on conversation context.
+
+⸻
+
+Future Enhancements
+
+	•	Apple Watch Companion App
+	•	Wear OS Companion App
+	•	Live Activities (iOS)
+	•	Dynamic Island support
+	•	Workout Sharing
+	•	Friend Challenges
+	•	Coach Dashboard
+	•	Smart Grocery Lists
+	•	Supplement Tracking
+	•	Habit Tracking
+	•	Mental Wellness & Mindfulness
+	•	AI Video Exercise Analysis (using camera)
+	•	Form Correction
+	•	Integration with smart scales and fitness devices
+	•	Subscription plans with premium AI features
+
+⸻
+
+Overall Goal
+
+The app should feel like having a personal AI fitness coach that combines the conversational experience of ChatGPT with the data awareness of Apple Health/Health Connect and the training intelligence of a professional coach. Every answer should be grounded in the user’s own health history and capable of taking actions—such as logging meals, generating workouts, updating goals, and tracking progress—through natural conversation.

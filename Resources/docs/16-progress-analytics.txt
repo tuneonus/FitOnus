@@ -1,0 +1,355 @@
+=====================================
+FITONUS — PROGRESS ANALYTICS
+Document: 16-progress-analytics.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the progress analytics system for FitOnus, covering comprehensive data visualization, trend analysis, strength progression tracking, body measurement tracking, progress photos, AI-generated insights, and exportable reports. Progress analytics transforms raw health data into meaningful narratives that help users understand their journey and make informed decisions.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The progress analytics system aggregates data from every feature in FitOnus — workouts, nutrition, weight, sleep, recovery, and health metrics — and presents it through interactive charts, comparative statistics, and AI-generated insights. It answers the fundamental question every user has: "Am I making progress?" The system provides both quantitative evidence (charts, numbers) and qualitative interpretation (AI-generated narratives).
+
+=====================================
+3. GOALS
+=====================================
+
+  - Provide clear, visual evidence of progress across all tracked metrics.
+  - Enable users to identify trends, patterns, and correlations in their health data.
+  - Track strength progression per exercise with personal record highlights.
+  - Support before/after progress photo comparisons.
+  - Generate AI-powered progress narratives that explain what the data means.
+  - Enable data export for sharing with trainers or healthcare providers.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  4.1 Analytics Dashboard
+    - Overview cards: weight change, workout frequency, caloric adherence, sleep consistency.
+    - Time range selector: 1 week, 1 month, 3 months, 6 months, 1 year, all time.
+    - Metric-specific drill-down charts.
+
+  4.2 Workout Analytics
+    - Total workouts per period.
+    - Workout frequency chart (workouts per week over time).
+    - Total volume progression (weight × reps over time).
+    - Workout duration trends.
+    - Most trained muscle groups distribution (pie chart).
+    - Strength progression per exercise (line chart of max weight over time).
+    - Personal records timeline.
+
+  4.3 Nutrition Analytics
+    - Average daily calories over period.
+    - Macro distribution trends.
+    - Caloric adherence rate (% of days within ±10% of target).
+    - Most logged foods.
+    - Meal pattern analysis (timing and consistency).
+
+  4.4 Body Composition Analytics
+    - Weight trend chart (with EMA smoothing).
+    - Body measurement trends per measurement type.
+    - BMI trend.
+    - Estimated body fat trend (if data available).
+
+  4.5 Progress Photos
+    - Upload progress photos with date and optional body part tag (front, side, back).
+    - Side-by-side comparison view with slider.
+    - Photos organized chronologically.
+    - Photos stored securely in Supabase Storage.
+
+  4.6 AI Progress Reports
+    - AI-generated narrative summarizing progress for a selected period.
+    - Highlights achievements, areas of improvement, and recommendations.
+    - Correlations between metrics (e.g., sleep quality impact on workout performance).
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Charts must render within 1 second with up to 365 data points.
+  - Progress photos must load with progressive rendering (thumbnail first, full size on demand).
+  - AI progress reports must generate within 10 seconds.
+  - All analytics must be computed server-side and cached for performance.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  1. User navigates to Profile → Progress.
+  2. Analytics dashboard shows overview cards with key metrics for the selected period.
+  3. User taps a card to drill down into specific analytics.
+  4. User swipes between analytics sections: Workouts, Nutrition, Body, Photos.
+  5. User taps "Generate Report" for an AI-powered progress narrative.
+  6. User can share or export the report.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Analytics Computation
+
+    All analytics are computed on the backend via the progress service.
+    The service queries multiple tables and computes aggregations:
+
+    WorkoutAnalytics:
+      - Total sessions in period.
+      - Average sessions per week.
+      - Total volume (SUM of weight × reps across all sets).
+      - Volume by muscle group (GROUP BY primary_muscles).
+      - Strength progression: MAX weight per exercise per week.
+      - PR count in period.
+
+    NutritionAnalytics:
+      - Average daily calories.
+      - Average daily macros (protein, carbs, fat).
+      - Days at target (within ±10%): adherence rate.
+      - Most logged foods (top 10 by frequency).
+
+    BodyAnalytics:
+      - Weight change over period (first entry vs. last entry of trend weight).
+      - BMI change.
+      - Body measurement changes.
+
+  7.2 Chart Library Integration
+
+    Charts rendered using a React Native charting library (e.g., Victory Native or a custom SVG-based solution).
+    All charts are theme-aware (colors adapt to dark/light mode).
+    Chart types used:
+      - Line chart: weight trends, strength progression, calorie trends.
+      - Bar chart: workout frequency, daily calories, sleep duration.
+      - Pie/donut chart: macro distribution, muscle group distribution.
+      - Area chart: volume progression.
+      - Stacked bar: macro breakdown per day.
+
+  7.3 Progress Photo Storage
+
+    - Photos uploaded to Supabase Storage bucket: "progress-photos".
+    - File path: {user_id}/progress/{date}_{tag}_{uuid}.jpg
+    - Compression: resize to max 1200px width, 80% JPEG quality.
+    - Thumbnail generation: 200px width for list views.
+    - Signed URLs with 1-hour expiry.
+    - Maximum 50 photos per user (notify when approaching limit).
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/progress/
+  ├── components/
+  │   ├── progress-chart.tsx
+  │   ├── progress-photo-grid.tsx
+  │   ├── progress-photo-comparison.tsx
+  │   ├── measurement-form.tsx
+  │   ├── measurement-list.tsx
+  │   ├── strength-progression.tsx
+  │   ├── analytics-card.tsx
+  │   ├── workout-analytics-view.tsx
+  │   ├── nutrition-analytics-view.tsx
+  │   ├── body-analytics-view.tsx
+  │   └── ai-report-card.tsx
+  ├── hooks/
+  │   ├── use-progress-analytics.ts
+  │   ├── use-progress-photos.ts
+  │   ├── use-body-measurements.ts
+  │   ├── use-strength-progression.ts
+  │   ├── use-workout-analytics.ts
+  │   └── use-nutrition-analytics.ts
+  ├── services/
+  │   ├── progress-api.ts
+  │   └── analytics-calculator.ts
+  ├── types/
+  │   └── progress.ts
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  AnalyticsCard:
+    - Metric name, current value, change from previous period.
+    - Up/down arrow with color coding (green for positive, red for negative — context-dependent).
+    - Mini sparkline.
+    - Press: navigate to detailed view.
+
+  StrengthProgression:
+    - Exercise selector (dropdown or search).
+    - Line chart showing max weight over time.
+    - PR markers on the chart.
+    - Statistics: current max, all-time max, improvement percentage.
+
+  ProgressPhotoComparison:
+    - Two photos side by side with date labels.
+    - Slider/swipe to compare.
+    - Date pickers to select which photos to compare.
+
+  ProgressPhotoGrid:
+    - Grid of thumbnails organized by date.
+    - Tap to view full size.
+    - Long press for delete option.
+    - Add photo button.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Progress Dashboard (src/app/(tabs)/profile/progress/index.tsx):
+    - Time range selector at top.
+    - Overview cards grid (weight change, workout count, calorie avg, sleep avg).
+    - SegmentedControl: Workouts | Nutrition | Body | Photos.
+    - Content changes based on selected segment.
+    - "Generate AI Report" button at bottom.
+
+  Progress Photos (src/app/(tabs)/profile/progress/photos.tsx):
+    - ProgressPhotoGrid with add button.
+    - "Compare" button to enter comparison mode.
+
+  Body Measurements (src/app/(tabs)/profile/progress/measurements.tsx):
+    - Measurement form for new entries.
+    - Chart showing measurement trends per body part.
+    - History list of past measurements.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/progress/analytics
+    Query: period, startDate, endDate
+    Response: { data: { workouts: WorkoutAnalytics, nutrition: NutritionAnalytics, body: BodyAnalytics } }
+
+  GET /api/v1/progress/strength/:exerciseId
+    Query: period
+    Response: { data: { dataPoints: { date, maxWeight }[], prs: PR[] } }
+
+  GET /api/v1/progress/photos
+    Response: { data: ProgressPhoto[] }
+
+  POST /api/v1/progress/photos
+    Request: multipart/form-data (image, date, tag)
+    Response: { data: ProgressPhoto }
+
+  DELETE /api/v1/progress/photos/:id
+    Response: 204
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  progress_photos:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - photo_url: TEXT (not null)
+    - thumbnail_url: TEXT (not null)
+    - date: DATE (not null)
+    - tag: TEXT (nullable, CHECK IN ('front', 'side', 'back', 'other'))
+    - notes: TEXT
+    - created_at: TIMESTAMPTZ
+    - deleted_at: TIMESTAMPTZ
+
+    Indexes: idx_progress_photos_user_date (user_id, date DESC)
+    RLS: auth.uid() = user_id
+
+  (body_measurements table defined in 13-weight-management.txt)
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI generates progress reports analyzing multi-dimensional data.
+  - AI identifies correlations: "Weeks where you slept 7+ hours correlated with 15% higher workout volume."
+  - AI highlights achievements: "You set 4 personal records this month — your best month yet!"
+  - AI identifies areas for improvement: "Your protein intake averaged 20% below target. Increasing protein could accelerate muscle gain."
+  - AI predicts future progress: "At your current rate, you'll reach your goal weight in approximately 6 weeks."
+  - AI function get_progress returns comprehensive analytics data.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Analytics query for period with no data: display "No data for this period" with suggestion to start logging.
+  - Photo upload fails: retry with progress indicator, fallback to queue.
+  - Very large dataset (>1000 data points for a chart): aggregate data (weekly averages for year view).
+  - Analytics computation timeout: return partial results with "Some data is still loading" indicator.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User has data in only one subsystem: show analytics for available data, hide empty sections.
+  - First week of usage: limited data, show per-day view instead of trends.
+  - User deletes a progress photo: soft delete, photo no longer visible.
+  - Exercise renamed or deleted: preserve historical strength data under original name.
+  - Very rapid progress (e.g., 10kg weight loss in 1 week): flag as unusual, suggest verification.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Social sharing of progress achievements.
+  - Comparative analytics against users with similar profiles (anonymized).
+  - Video progress compilation (animated slideshow of progress photos).
+  - Exportable PDF reports with charts and AI commentary.
+  - Predictive analytics using machine learning models.
+  - Goal milestone badges and achievements system.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Aggregate data at appropriate granularity for the time range (daily for week, weekly for month/quarter, monthly for year).
+  - Use consistent colors across all analytics charts.
+  - Always show the context: "Compared to last month" or "vs. your average."
+  - Cache analytics results on the backend (refresh on data changes).
+  - Use skeleton loaders while analytics compute.
+  - Compress progress photos before upload.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Progress analytics API endpoint with multi-domain aggregation.
+  [ ] Analytics dashboard with overview cards.
+  [ ] Workout analytics view with charts.
+  [ ] Nutrition analytics view with charts.
+  [ ] Body analytics view (weight, BMI, measurements).
+  [ ] Strength progression chart per exercise.
+  [ ] Progress photos upload, grid, and comparison.
+  [ ] AI progress report generation.
+  [ ] Time range selector functionality.
+  [ ] progress_photos table and storage bucket.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Analytics correctly aggregate workout, nutrition, and body data.
+  [ ] Charts render correctly with various data ranges and sizes.
+  [ ] Strength progression shows accurate max weight trends.
+  [ ] Progress photos upload, display, and compare correctly.
+  [ ] AI reports reference specific, accurate data points.
+  [ ] Empty state handles no-data scenarios gracefully.
+  [ ] Time range switching updates all analytics components.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - The progress dashboard provides a clear overview of the user's health journey.
+  - Charts are interactive, theme-aware, and render smoothly.
+  - Strength progression accurately tracks per-exercise improvement.
+  - Progress photos can be uploaded, viewed, and compared side-by-side.
+  - AI progress reports provide specific, data-backed insights and recommendations.
+  - All analytics respect the selected time range.
+  - The analytics system handles users with limited data gracefully.
+
+=====================================
+END OF DOCUMENT
+=====================================

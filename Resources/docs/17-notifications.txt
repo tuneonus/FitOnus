@@ -1,0 +1,404 @@
+=====================================
+FITONUS — NOTIFICATIONS
+Document: 17-notifications.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the notification system for FitOnus, covering push notifications, in-app notifications, smart scheduling, user preference management, and AI-driven notification timing. Notifications drive user engagement by reminding users to log meals, complete workouts, stay hydrated, and maintain consistent health habits.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The notification system supports two channels: push notifications (delivered via Expo Notifications even when the app is closed) and in-app notifications (displayed within the app's notification center). Notifications are categorized by type (workout, nutrition, hydration, sleep, AI insights, reports) and each category can be independently enabled or disabled by the user. The system includes smart scheduling that learns the user's optimal notification times.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Drive consistent engagement through well-timed, relevant notifications.
+  - Provide customizable notification preferences per category.
+  - Support both push and in-app notification channels.
+  - Implement smart notification timing based on user behavior patterns.
+  - Enable the AI Coach to trigger contextual notifications.
+  - Respect quiet hours and notification frequency limits to avoid notification fatigue.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  4.1 Notification Types
+    - Workout reminders: "Time for your Upper Body workout! 💪"
+    - Meal logging prompts: "Don't forget to log your lunch."
+    - Hydration reminders: "Time to drink water! You're at 1,500/2,500ml."
+    - Bedtime reminders: "Time to start winding down. Your target bedtime is 10:30 PM."
+    - AI insights: "Your recovery score is 85 — great day for an intense workout!"
+    - Weekly reports: "Your weekly health report is ready."
+    - Streak alerts: "Don't break your 14-day streak! Log an activity today."
+    - Achievement celebrations: "🎉 New personal record on Bench Press!"
+    - Inactivity nudges: "We haven't seen you in 3 days. How about a quick workout?"
+
+  4.2 Push Notification Management
+    - Request push notification permission during onboarding.
+    - Register device push token with the backend.
+    - Handle token refresh (automatic re-registration).
+    - Handle notification taps (deep link to relevant screen).
+    - Schedule local notifications (hydration reminders, bedtime).
+    - Receive remote notifications from the backend (AI insights, reports).
+
+  4.3 In-App Notification Center
+    - Scrollable list of all notifications.
+    - Read/unread status with visual differentiation.
+    - Tap to navigate to the relevant screen.
+    - Mark all as read.
+    - Clear individual notifications.
+    - Unread count badge on the notification bell icon.
+
+  4.4 User Preferences
+    - Per-category enable/disable toggles.
+    - Quiet hours: start and end time (no notifications during this period).
+    - Frequency limits per category (e.g., hydration: every 2 hours, max 8/day).
+    - Custom reminder times for workouts and meals.
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Push notifications must be delivered within 5 seconds of trigger.
+  - Notification center must load within 500ms.
+  - Maximum 10 notifications per day to prevent fatigue.
+  - Notifications must deep link to the correct screen.
+  - Quiet hours must be strictly respected.
+  - Token refresh must be handled transparently.
+
+=====================================
+6. USER FLOW
+=====================================
+
+  6.1 Receiving a Push Notification
+    1. Backend or local scheduler triggers a notification.
+    2. Push notification appears on the device notification shade.
+    3. User taps the notification.
+    4. App opens (or comes to foreground) and navigates to the relevant screen.
+    5. In-app notification record is marked as read.
+
+  6.2 Managing Preferences
+    1. User navigates to Profile → Settings → Notifications.
+    2. Per-category toggles displayed.
+    3. Quiet hours configuration with time pickers.
+    4. Custom reminder time configuration for specific categories.
+    5. Changes save immediately and take effect for future notifications.
+
+  6.3 AI-Triggered Notification
+    1. AI Coach identifies an insight (e.g., user's recovery score is high).
+    2. Backend generates a notification payload.
+    3. Notification sent via Expo Push API.
+    4. User receives: "Your recovery score is 85. Today's a great day for a challenging workout!"
+    5. Tap navigates to the Recovery screen.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+  7.1 Push Notification Infrastructure
+
+    Mobile:
+      - expo-notifications for permission handling, token management, and local scheduling.
+      - Push token obtained on app launch and stored in user_settings.push_token.
+      - Notification listeners: foreground (in-app display), background (update badge), tap (navigate).
+
+    Backend:
+      - Expo Push API (https://exp.host/--/api/v2/push/send) for remote push delivery.
+      - Notification service schedules and sends notifications.
+      - Push tokens stored in user_settings table.
+      - Batch sending for notifications to multiple users (weekly reports).
+
+  7.2 Local Notification Scheduling
+
+    Hydration reminders:
+      - Scheduled locally using expo-notifications.scheduleNotificationAsync.
+      - Repeating interval based on user preferences (default: every 2 hours).
+      - Only during waking hours (respect quiet hours).
+      - Cancelled and rescheduled when preferences change.
+
+    Bedtime reminders:
+      - Scheduled locally for user's target bedtime minus 30 minutes.
+      - Daily repeat.
+
+    Workout reminders:
+      - If user has a workout plan for today: remind at preferred workout time.
+      - Scheduled locally based on user's typical workout time.
+
+  7.3 Remote Notification Types
+
+    AI insights:
+      - Triggered by the backend when the AI generates a notable insight.
+      - Sent via Expo Push API.
+
+    Weekly reports:
+      - Triggered by a cron job (every Monday morning).
+      - Sent to all users with weekly reports enabled.
+
+    Streak alerts:
+      - Triggered when user hasn't logged activity by 6 PM on an active streak day.
+
+    Inactivity nudges:
+      - Triggered after 3 consecutive days without any activity.
+
+  7.4 Deep Linking
+
+    Notification payloads include a deepLink field:
+      - Workout reminder: fitonus://workouts/{workoutId}
+      - Meal logging: fitonus://nutrition/log
+      - AI insight: fitonus://coach
+      - Weekly report: fitonus://reports/{reportId}
+      - Recovery alert: fitonus://recovery
+      - Streak alert: fitonus://dashboard
+
+    On notification tap:
+      1. Parse deepLink from notification data.
+      2. Use expo-router's router.push to navigate to the target.
+      3. If app was cold-started: navigate after auth gate passes.
+
+  7.5 Notification Payload Format
+
+    {
+      to: "ExponentPushToken[...]",
+      title: "Workout Reminder",
+      body: "Time for your Upper Body workout! 💪",
+      data: {
+        type: "workout_reminder",
+        deepLink: "fitonus://workouts/uuid-here",
+        notificationId: "uuid"
+      },
+      sound: "default",
+      badge: 1,
+      channelId: "workout-reminders"
+    }
+
+  7.6 Notification Channels (Android)
+
+    - workout-reminders: Workout-related notifications.
+    - nutrition-reminders: Meal and hydration reminders.
+    - health-insights: AI insights and health alerts.
+    - reports: Weekly and monthly reports.
+    - general: Default channel for miscellaneous notifications.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  mobile/src/features/notifications/
+  ├── components/
+  │   ├── notification-item.tsx
+  │   ├── notification-list.tsx
+  │   ├── notification-badge.tsx
+  │   └── notification-preferences.tsx
+  ├── hooks/
+  │   ├── use-notifications.ts
+  │   ├── use-push-permissions.ts
+  │   ├── use-notification-preferences.ts
+  │   ├── use-push-token.ts
+  │   └── use-local-notifications.ts
+  ├── services/
+  │   ├── notification-api.ts
+  │   ├── push-token-manager.ts
+  │   └── local-scheduler.ts
+  ├── types/
+  │   └── notification.ts
+  └── index.ts
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  NotificationItem:
+    - Type icon (workout, nutrition, AI, report).
+    - Title and body text.
+    - Relative timestamp.
+    - Read/unread indicator (dot or background color).
+    - Pressable: navigate to deep link.
+
+  NotificationBadge:
+    - Small circular badge with unread count.
+    - Positioned on the notification bell icon in the header.
+    - Animated appearance when count changes.
+    - Hidden when count is 0.
+
+  NotificationPreferences:
+    - Per-category toggle rows.
+    - Quiet hours time range selector.
+    - Custom time inputs for specific reminders.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Notification Center (accessible via bell icon in dashboard header):
+    - FlatList of NotificationItems.
+    - "Mark all as read" button in header.
+    - Empty state: "You're all caught up! 🎉"
+    - Pull to refresh for latest notifications.
+
+  Notification Settings (src/app/(tabs)/profile/settings/notifications.tsx):
+    - Category toggles with descriptions.
+    - Quiet hours section.
+    - Custom reminder times section.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  GET /api/v1/notifications
+    Query: page, limit, read (boolean filter)
+    Response: { data: Notification[], pagination, unreadCount }
+
+  PATCH /api/v1/notifications/:id/read
+    Response: 200
+
+  POST /api/v1/notifications/mark-all-read
+    Response: 200
+
+  DELETE /api/v1/notifications/:id
+    Response: 204
+
+  PATCH /api/v1/notifications/preferences
+    Request: Partial<NotificationPreferences>
+    Response: { data: NotificationPreferences }
+
+  POST /api/v1/notifications/register-token
+    Request: { token: string, platform: 'ios' | 'android' }
+    Response: 200
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  notifications:
+    - id: UUID (PK)
+    - user_id: UUID (FK → users.id, not null)
+    - type: TEXT (not null)
+    - title: TEXT (not null)
+    - body: TEXT (not null)
+    - data: JSONB (nullable — deep link, metadata)
+    - is_read: BOOLEAN (default false)
+    - sent_at: TIMESTAMPTZ (not null)
+    - read_at: TIMESTAMPTZ (nullable)
+    - created_at: TIMESTAMPTZ (default now())
+
+    Indexes:
+      - idx_notifications_user_id (user_id)
+      - idx_notifications_user_read (user_id, is_read)
+      - idx_notifications_user_sent (user_id, sent_at DESC)
+
+    RLS: auth.uid() = user_id
+
+  (push_token stored in user_settings table)
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  - AI Coach can trigger notifications via the set_reminder function call.
+  - AI generates contextual notification messages based on user data.
+  - AI learns optimal notification timing from user engagement patterns (future).
+  - AI notifications should feel natural, not robotic.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  - Push token registration fails: retry on next app launch.
+  - Push notification delivery fails (expired token): log error, remove stale token.
+  - Deep link target not found: navigate to dashboard as fallback.
+  - Notification permission denied: show in-app notifications only, disable push features.
+  - Local notification scheduling fails: log error, fall back to remote notifications.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - User in a different timezone: schedule notifications in user's local time.
+  - Multiple devices: send push to all registered tokens.
+  - App uninstalled and reinstalled: re-register push token.
+  - Quiet hours spanning midnight (e.g., 10 PM - 7 AM): handle correctly.
+  - User disables all notification categories: respect, only send critical system notifications.
+  - Notification tap when user is logged out: navigate to login, then deep link after auth.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Rich notifications with images and action buttons.
+  - Smart notification scheduling based on user engagement data.
+  - Notification grouping and threading.
+  - In-app toast notifications for real-time events.
+  - Notification analytics: track open rates and engagement.
+  - Watch notifications (Apple Watch, Wear OS).
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Never send more than 10 notifications per day.
+  - Always respect quiet hours.
+  - Use specific, actionable notification copy (not generic "Open FitOnus").
+  - Include relevant emojis for visual appeal and quick scanning.
+  - Deep link to the most relevant screen for each notification type.
+  - Handle push token rotation gracefully.
+  - Test notifications on both platforms (iOS and Android have different behaviors).
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] expo-notifications configured with permission handling.
+  [ ] Push token registration and server storage.
+  [ ] Local notification scheduling for hydration, bedtime, workouts.
+  [ ] Remote notification sending via Expo Push API.
+  [ ] Deep linking from notification taps.
+  [ ] In-app notification center screen.
+  [ ] Notification preferences screen.
+  [ ] notifications table created with RLS.
+  [ ] Notification badge component.
+  [ ] Quiet hours enforcement.
+  [ ] Android notification channels configured.
+  [ ] Background notification handler.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Push permission request and grant flow.
+  [ ] Push token registration with backend.
+  [ ] Local notifications fire at scheduled times.
+  [ ] Remote notifications display correctly.
+  [ ] Notification tap navigates to correct deep link.
+  [ ] Notification center displays all notifications with read/unread state.
+  [ ] Mark as read updates state correctly.
+  [ ] Preference toggles enable/disable specific categories.
+  [ ] Quiet hours prevent notifications during configured times.
+  [ ] Notification badge shows correct unread count.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - Push notifications are delivered reliably on both iOS and Android.
+  - Notification taps navigate to the correct screen via deep linking.
+  - Users can configure per-category notification preferences.
+  - Quiet hours are strictly respected.
+  - The in-app notification center displays all notifications with read/unread state.
+  - Hydration and workout reminders fire at configured times.
+  - AI-triggered notifications contain personalized, contextual messages.
+  - Maximum notification frequency limits are enforced.
+
+=====================================
+END OF DOCUMENT
+=====================================

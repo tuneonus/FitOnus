@@ -1,0 +1,83 @@
+=====================================
+FITONUS — AI MEMORY SYSTEM
+Document: 21-ai-memory.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the AI Memory system for FitOnus. It outlines how the AI Coach extracts, stores, and retrieves long-term facts about the user across conversational sessions to provide highly contextual and personalized guidance.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The AI Memory system solves the context window limitation of LLMs. Instead of loading every past conversation into the prompt, the system extracts atomic "facts" or "memories" (e.g., "User injured their right knee in 2024", "User hates broccoli") during conversations. These facts are embedded as vectors using OpenAI's text-embedding-3-small model and stored in the database via pgvector. When the user asks a question, the system queries for relevant memories and injects them into the prompt.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Maintain continuity across disparate conversational sessions.
+  - Extract and store user preferences, injuries, and lifestyle details automatically.
+  - Retrieve contextually relevant memories for current queries in < 100ms.
+  - Provide a mechanism for users to view, edit, or delete stored memories.
+
+=====================================
+4. EXTRACTION PIPELINE
+=====================================
+
+  1. Background Job: After a conversation concludes or reaches 10 messages, a background worker analyzes the transcript.
+  2. Prompt: "Extract factual statements about the user's preferences, health, injuries, or lifestyle from this conversation. Format as a JSON array of strings."
+  3. Deduplication: Check if the extracted fact already exists or contradicts an existing memory.
+  4. Embedding: Call OpenAI Embeddings API.
+  5. Storage: Save the fact and its 1536-dimensional vector to the `ai_memories` table.
+
+=====================================
+5. RETRIEVAL PIPELINE
+=====================================
+
+  1. User Query: User asks the AI Coach a question.
+  2. Query Embedding: Embed the user's message.
+  3. Similarity Search: Perform an inner product search (or cosine similarity) in PostgreSQL using pgvector.
+  4. Filter: Retrieve the top 5 most relevant memories where similarity > 0.7.
+  5. Context Injection: Inject retrieved memories into the System Prompt under the `[USER MEMORIES]` section.
+
+=====================================
+6. DATABASE STRUCTURE
+=====================================
+
+  table: public.ai_memories
+    - id: UUID (PK)
+    - user_id: UUID (FK -> users.id)
+    - fact: TEXT (e.g., "Prefers morning workouts")
+    - category: TEXT ('preference', 'injury', 'goal', 'lifestyle')
+    - embedding: vector(1536)
+    - created_at: TIMESTAMPTZ
+
+  Index: HNSW index on the `embedding` column using vector_cosine_ops.
+
+=====================================
+7. MEMORY MANAGEMENT UI
+=====================================
+
+  - Provide a "What the AI Knows About Me" screen in Profile Settings.
+  - Users can review the list of stored facts.
+  - Users can delete incorrect or outdated memories.
+  - Users can manually add specific facts they want the AI to remember.
+
+=====================================
+8. EDGE CASES & PRIVACY
+=====================================
+
+  - Conflicting memories (e.g., "User likes running" vs "User hates running"): Implement conflict resolution prompt during extraction to update older facts.
+  - Privacy: AI memories are strictly scoped to the user via RLS and are never used to train generalized models.
+  - Data Export: All memories are included in the user's GDPR data export.
+
+=====================================
+END OF DOCUMENT
+=====================================

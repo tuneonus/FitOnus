@@ -1,0 +1,788 @@
+=====================================
+FITONUS — DESIGN SYSTEM
+Document: 05-design-system.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the complete design system for FitOnus. It establishes the visual language, component library, color palette, typography scale, spacing system, iconography, animation patterns, and interaction principles that govern every pixel rendered on screen. The design system ensures visual consistency across all screens and features while delivering a premium, Apple Health / Google Fit quality experience. Every engineer and AI coding agent must reference this document when building or modifying UI components.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The FitOnus design system is built on the principles of modern minimal design with premium SaaS quality. It draws inspiration from Apple Health, Google Fit, and leading fitness applications to deliver an interface that feels polished, responsive, and alive. The system supports both dark and light color modes with seamless transitions and full accessibility compliance (WCAG 2.1 AA).
+
+The design system is implemented entirely in React Native using StyleSheet.create, the existing theme.ts constants, react-native-reanimated for animations, and custom components that wrap core React Native primitives with consistent styling.
+
+Design Philosophy:
+  - Clarity: Every element has a clear purpose. Remove anything that does not serve the user.
+  - Depth: Use subtle shadows, glassmorphism, and layered surfaces to create visual hierarchy.
+  - Motion: Use smooth, purposeful animations to guide attention and provide feedback.
+  - Warmth: Despite being data-heavy, the app should feel approachable and encouraging.
+
+=====================================
+3. GOALS
+=====================================
+
+  - Create a cohesive visual identity that users recognize and associate with premium quality.
+  - Provide a complete component library that covers every UI pattern needed across all features.
+  - Ensure every component works flawlessly in both dark and light modes.
+  - Meet WCAG 2.1 AA accessibility standards for color contrast, touch targets, and screen reader support.
+  - Enable rapid UI development by providing pre-styled, composable components.
+  - Deliver smooth sixty-frames-per-second animations that enhance rather than distract from the experience.
+
+=====================================
+4. FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - All colors must be defined in the theme and accessed via the useTheme hook.
+  - All typography must use the Text component with predefined variants.
+  - All spacing must use the Spacing constants from theme.ts.
+  - All interactive elements must provide haptic feedback on press.
+  - All transitions between screens must be smooth and intentional.
+  - All data visualizations must use consistent chart colors and styles.
+  - All forms must provide real-time validation feedback.
+  - All loading states must use skeleton loaders, not spinners (except inline actions).
+
+=====================================
+5. NON-FUNCTIONAL REQUIREMENTS
+=====================================
+
+  - Color contrast ratio must meet 4.5:1 for normal text and 3:1 for large text (AA standard).
+  - Touch targets must be at least 44x44 points.
+  - Animations must run at sixty frames per second on mid-range devices.
+  - The design system must not add more than fifty kilobytes to the bundle size.
+  - All components must render correctly on screen sizes from 320dp (iPhone SE) to 428dp (iPhone Pro Max) width.
+  - Font scaling must be supported up to 200% without layout breakage.
+
+=====================================
+6. USER FLOW
+=====================================
+
+6.1 Theme Experience
+  1. User installs FitOnus. The app detects system color scheme (dark/light) and applies it automatically.
+  2. User navigates through the app with consistent colors, typography, and spacing.
+  3. User can override system theme in Settings > Appearance (System, Light, Dark).
+  4. Theme changes apply instantly with a smooth cross-fade animation.
+  5. All charts, cards, and data visualizations adapt to the selected theme.
+
+6.2 Interaction Feedback
+  1. User taps a button — the button scales down slightly (0.97) with a spring animation and triggers haptic feedback.
+  2. User long-presses an item — a context menu appears with a subtle blur backdrop.
+  3. User swipes on a list item — action buttons slide in from the right.
+  4. User pulls to refresh — the refresh indicator appears with a branded animation.
+  5. User scrolls — the header condenses with a parallax effect.
+
+=====================================
+7. TECHNICAL DESIGN
+=====================================
+
+7.1 Color System
+------------------
+
+  The color system extends the existing Colors constant in theme.ts. Colors are organized into semantic categories rather than raw values.
+
+  Core Palette:
+
+    Light Mode:
+      primary:            #208AEF    (brand blue — used for primary actions, links, active states)
+      primaryLight:       #E6F4FE    (primary tint — used for backgrounds and subtle highlights)
+      primaryDark:        #1A6EBF    (primary shade — used for pressed states)
+      secondary:          #6C63FF    (accent purple — used for AI-related elements)
+      secondaryLight:     #EEEDFF    (secondary tint)
+      success:            #34C759    (positive outcomes, completed states)
+      successLight:       #E8F9ED    (success background)
+      warning:            #FF9F0A    (caution states, approaching limits)
+      warningLight:       #FFF4E0    (warning background)
+      error:              #FF3B30    (destructive actions, errors, alerts)
+      errorLight:         #FFE8E6    (error background)
+      info:               #5AC8FA    (informational elements)
+      infoLight:          #E8F7FE    (info background)
+
+      text:               #000000    (primary text)
+      textSecondary:      #60646C    (secondary text, descriptions)
+      textTertiary:       #9CA3AF    (disabled text, placeholders)
+      textInverse:        #FFFFFF    (text on dark backgrounds)
+
+      background:         #FFFFFF    (primary background)
+      backgroundElement:  #F0F0F3    (card and elevated surface background)
+      backgroundSelected: #E0E1E6    (selected/pressed background)
+      backgroundSubtle:   #F7F8FA    (subtle background differentiation)
+
+      border:             #E5E7EB    (card borders, dividers)
+      borderFocused:      #208AEF    (focused input borders)
+
+      overlay:            rgba(0, 0, 0, 0.5)  (modal and sheet backdrops)
+
+    Dark Mode:
+      primary:            #3B9FFF    (brand blue — slightly brighter for dark backgrounds)
+      primaryLight:       #1A2D40    (primary tint for dark mode)
+      primaryDark:        #208AEF    (primary shade)
+      secondary:          #8B83FF    (accent purple)
+      secondaryLight:     #1E1D30    (secondary tint)
+      success:            #30D158    (success green)
+      successLight:       #0D2A14    (success background)
+      warning:            #FFD60A    (warning yellow)
+      warningLight:       #2D2406    (warning background)
+      error:              #FF453A    (error red)
+      errorLight:         #2D0A08    (error background)
+      info:               #64D2FF    (info blue)
+      infoLight:          #0A2030    (info background)
+
+      text:               #FFFFFF    (primary text)
+      textSecondary:      #B0B4BA    (secondary text)
+      textTertiary:       #6B7280    (disabled text, placeholders)
+      textInverse:        #000000    (text on light backgrounds)
+
+      background:         #000000    (primary background)
+      backgroundElement:  #212225    (card background — existing value)
+      backgroundSelected: #2E3135    (selected background — existing value)
+      backgroundSubtle:   #111214    (subtle background)
+
+      border:             #2E3135    (borders and dividers)
+      borderFocused:      #3B9FFF    (focused input borders)
+
+      overlay:            rgba(0, 0, 0, 0.7)  (modal backdrops)
+
+  Chart Colors (consistent across both modes):
+    chart1:             #208AEF    (primary metric)
+    chart2:             #6C63FF    (secondary metric)
+    chart3:             #34C759    (tertiary metric)
+    chart4:             #FF9F0A    (quaternary metric)
+    chart5:             #FF3B30    (quinary metric)
+    chart6:             #5AC8FA    (senary metric)
+
+  Macro Colors (nutrition-specific):
+    protein:            #FF6B6B    (red)
+    carbs:              #4ECDC4    (teal)
+    fat:                #FFE66D    (yellow)
+    fiber:              #95E1D3    (mint)
+
+  Recovery Score Colors:
+    excellent:          #34C759    (score 80-100)
+    good:               #5AC8FA    (score 60-79)
+    moderate:           #FF9F0A    (score 40-59)
+    poor:               #FF3B30    (score 0-39)
+
+7.2 Typography System
+-----------------------
+
+  Font Family:
+    - iOS: System font (San Francisco) via "system-ui" — already configured in theme.ts.
+    - Android: System default (Roboto) via "normal" — already configured in theme.ts.
+    - The system font provides the cleanest, most native-feeling experience on each platform.
+
+  Type Scale (all sizes in points):
+
+    displayLarge:      { fontSize: 34, lineHeight: 41, fontWeight: '700', letterSpacing: 0.37 }
+    displayMedium:     { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: 0.36 }
+    displaySmall:      { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: 0.35 }
+
+    headlineLarge:     { fontSize: 20, lineHeight: 25, fontWeight: '600', letterSpacing: 0.38 }
+    headlineMedium:    { fontSize: 17, lineHeight: 22, fontWeight: '600', letterSpacing: -0.41 }
+    headlineSmall:     { fontSize: 15, lineHeight: 20, fontWeight: '600', letterSpacing: -0.24 }
+
+    bodyLarge:         { fontSize: 17, lineHeight: 22, fontWeight: '400', letterSpacing: -0.41 }
+    bodyMedium:        { fontSize: 15, lineHeight: 20, fontWeight: '400', letterSpacing: -0.24 }
+    bodySmall:         { fontSize: 13, lineHeight: 18, fontWeight: '400', letterSpacing: -0.08 }
+
+    labelLarge:        { fontSize: 15, lineHeight: 20, fontWeight: '500', letterSpacing: -0.24 }
+    labelMedium:       { fontSize: 13, lineHeight: 18, fontWeight: '500', letterSpacing: -0.08 }
+    labelSmall:        { fontSize: 11, lineHeight: 13, fontWeight: '500', letterSpacing: 0.07 }
+
+    caption:           { fontSize: 12, lineHeight: 16, fontWeight: '400', letterSpacing: 0 }
+    overline:          { fontSize: 10, lineHeight: 13, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase' }
+
+  Usage Guidelines:
+    - displayLarge: Screen titles (Dashboard, Workouts, Nutrition).
+    - displayMedium: Section titles within screens.
+    - displaySmall: Card titles and important labels.
+    - headlineLarge: Sub-section headers.
+    - headlineMedium: List item titles, button text.
+    - bodyLarge: Primary content text, descriptions.
+    - bodyMedium: Secondary content, supporting text.
+    - bodySmall: Tertiary content, timestamps.
+    - labelLarge: Form labels, navigation items.
+    - labelMedium: Chip text, badge labels.
+    - labelSmall: Micro text, footnotes.
+    - caption: Metadata, fine print.
+    - overline: Category labels, section overlines.
+
+7.3 Spacing System
+--------------------
+
+  The spacing system extends the existing Spacing constants in theme.ts. All layout spacing must use these values:
+
+    xxs:   2     (Spacing.half)    — Micro spacing, icon padding
+    xs:    4     (Spacing.one)     — Tight element spacing
+    sm:    8     (Spacing.two)     — Default component internal padding
+    md:    12                      — Comfortable component spacing
+    lg:    16    (Spacing.three)   — Section spacing, card padding
+    xl:    24    (Spacing.four)    — Major section gaps
+    xxl:   32    (Spacing.five)    — Screen-level spacing
+    xxxl:  48                      — Large visual separators
+    huge:  64    (Spacing.six)     — Hero areas, splash spacing
+
+  Usage:
+    - Internal component padding: sm (8) to lg (16).
+    - Gap between sibling elements: sm (8) to md (12).
+    - Section padding: lg (16) to xl (24).
+    - Screen horizontal padding: lg (16) standard, xl (24) for tablet-optimized layouts.
+    - Screen vertical padding: xl (24) from safe area.
+    - Card padding: lg (16).
+    - List item vertical padding: md (12) to lg (16).
+    - Between form fields: lg (16).
+
+7.4 Border Radius System
+--------------------------
+
+    none:    0     — Sharp corners
+    xs:      4     — Subtle rounding (badges, chips)
+    sm:      8     — Standard rounding (buttons, inputs)
+    md:      12    — Card rounding
+    lg:      16    — Modal rounding, large cards
+    xl:      20    — Bottom sheets, panel rounding
+    xxl:     24    — Pill shape for small elements
+    full:    9999  — Fully circular (avatars, FABs)
+
+7.5 Shadow System
+-------------------
+
+  Shadows create depth and hierarchy. Use sparingly on elevated surfaces.
+
+    shadowNone:
+      shadowColor: 'transparent'
+      shadowOffset: { width: 0, height: 0 }
+      shadowOpacity: 0
+      shadowRadius: 0
+      elevation: 0
+
+    shadowSmall:
+      shadowColor: '#000'
+      shadowOffset: { width: 0, height: 1 }
+      shadowOpacity: 0.05
+      shadowRadius: 3
+      elevation: 2
+
+    shadowMedium:
+      shadowColor: '#000'
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.08
+      shadowRadius: 8
+      elevation: 4
+
+    shadowLarge:
+      shadowColor: '#000'
+      shadowOffset: { width: 0, height: 4 }
+      shadowOpacity: 0.12
+      shadowRadius: 16
+      elevation: 8
+
+    shadowXLarge:
+      shadowColor: '#000'
+      shadowOffset: { width: 0, height: 8 }
+      shadowOpacity: 0.16
+      shadowRadius: 24
+      elevation: 12
+
+  Dark Mode Shadow Adjustment:
+    - In dark mode, shadows are less effective visually.
+    - Use border (1px, border color) instead of shadow for dark mode elevated surfaces.
+    - Or use a slightly lighter backgroundElement color for elevation.
+
+7.6 Animation System
+----------------------
+
+  All animations use react-native-reanimated. The Animated API from react-native core is prohibited.
+
+  Spring Configurations:
+
+    springDefault:     { damping: 15, stiffness: 150, mass: 1 }     — General purpose spring
+    springSnappy:      { damping: 20, stiffness: 300, mass: 0.8 }   — Quick, responsive interactions
+    springGentle:      { damping: 20, stiffness: 100, mass: 1 }     — Subtle, smooth transitions
+    springBouncy:      { damping: 10, stiffness: 150, mass: 0.8 }   — Playful, celebratory animations
+
+  Timing Configurations:
+
+    durationInstant:   100ms   — Micro-interactions (opacity changes, color shifts)
+    durationFast:      200ms   — Button presses, toggle switches
+    durationNormal:    300ms   — Screen transitions, modal animations
+    durationSlow:      500ms   — Complex transitions, chart animations
+    durationCeremonial: 800ms  — Achievement celebrations, onboarding transitions
+
+  Standard Animations:
+
+    Press Scale:
+      - On press: scale to 0.97 with springSnappy
+      - On release: scale to 1.0 with springSnappy
+      - Use for all pressable cards and buttons
+
+    Fade In:
+      - Opacity from 0 to 1 over durationNormal
+      - Used for content appearing on screen
+
+    Slide Up:
+      - TranslateY from 20 to 0 with fade in, durationNormal
+      - Used for list items, cards appearing sequentially
+      - Stagger delay: 50ms between items (max 8 staggered items)
+
+    Bottom Sheet Enter:
+      - TranslateY from screen height to snap point with springDefault
+      - Backdrop opacity from 0 to 0.5 over durationFast
+
+    Number Tick:
+      - Animated counting from old value to new value
+      - Used for metrics (calories, steps) when data updates
+      - Duration: durationSlow
+
+    Chart Draw:
+      - SVG path draw animation from 0 to 100% over durationCeremonial
+      - Used for ring charts and line charts on first render
+
+    Skeleton Shimmer:
+      - LinearGradient sweep animation across skeleton placeholders
+      - Speed: 1.5 seconds per cycle
+      - Direction: left to right
+
+    Success Celebration:
+      - Scale from 0 to 1.1 with springBouncy, then settle to 1.0
+      - Optional Lottie confetti animation overlay
+      - Used for workout completion, goal achievement
+
+  Animation Best Practices:
+    - Never animate layout properties (width, height, top, left). Use transform (scale, translateX/Y, rotate).
+    - Use useAnimatedStyle with derived values from shared values.
+    - Use Reanimated's entering/exiting animations for mount/unmount transitions.
+    - Reduce motion: respect the system "Reduce Motion" accessibility setting. Disable animations when enabled.
+    - Shared element transitions: use react-native-reanimated's layout animations for screen transitions where elements persist.
+
+7.7 Iconography
+-----------------
+
+  Icon System:
+    - Use expo-symbols for SF Symbols on iOS (system-native icons).
+    - Use a consistent icon library for Android (e.g., Lucide Icons or custom SVG icons).
+    - Icon sizes: 16 (inline), 20 (buttons), 24 (standard), 28 (tab bar), 32 (large display).
+    - Icon colors must use semantic theme colors, never hardcoded.
+
+  Icon Usage:
+    - Tab bar: 28pt, active state uses primary color, inactive uses textTertiary.
+    - List items: 20pt or 24pt, textSecondary color.
+    - Buttons: 20pt, matching button text color.
+    - Empty states: 48pt or 64pt, textTertiary color.
+    - Metric cards: 20pt, primary or semantic color.
+
+7.8 Component Design Specifications
+--------------------------------------
+
+  Button:
+    Variants: primary, secondary, outline, ghost, destructive.
+    Sizes: sm (height: 32, fontSize: 13), md (height: 44, fontSize: 15), lg (height: 52, fontSize: 17).
+    States: default, pressed (scale 0.97, darker background), disabled (opacity 0.5), loading (spinner replacing text).
+    Border radius: sm (8).
+    Primary colors: background: primary, text: white.
+    Secondary colors: background: primaryLight, text: primary.
+    Outline colors: border: border, text: text.
+    Ghost colors: background: transparent, text: text.
+    Destructive colors: background: error, text: white.
+
+  Card:
+    Background: backgroundElement.
+    Border radius: md (12).
+    Padding: lg (16).
+    Shadow: shadowSmall (light mode), border 1px (dark mode).
+    Press animation: scale 0.98 with springSnappy (if pressable).
+
+  Input:
+    Height: 48.
+    Background: backgroundElement.
+    Border: 1px border, 2px borderFocused on focus.
+    Border radius: sm (8).
+    Padding horizontal: lg (16).
+    Label: labelMedium, textSecondary, positioned above.
+    Placeholder: bodyLarge, textTertiary.
+    Error state: border error color, error text below with bodySmall in error color.
+    Helper text: bodySmall, textTertiary.
+
+  Avatar:
+    Sizes: sm (32x32), md (40x40), lg (56x56), xl (80x80).
+    Border radius: full (circular).
+    Fallback: User initials on primary background.
+    Border: 2px backgroundElement (for contrast on images).
+
+  Badge:
+    Height: 20 (small), 24 (standard).
+    Border radius: full.
+    Padding horizontal: xs (4) to sm (8).
+    Font: labelSmall.
+    Variants: primary (primary background, white text), secondary, success, warning, error, neutral.
+
+  Toast:
+    Position: top of screen, below safe area.
+    Width: screen width minus 32 (16 padding each side).
+    Border radius: md (12).
+    Shadow: shadowMedium.
+    Enter: slide down from above with springDefault.
+    Exit: slide up with timing durationFast.
+    Auto-dismiss: 3 seconds (success/info), 5 seconds (warning/error).
+    Variants: success (successLight background, success icon), error, warning, info.
+
+  Bottom Sheet:
+    Border radius: xl (20) top corners only.
+    Handle: 36x5, backgroundSelected, border radius full, centered, top padding sm.
+    Backdrop: overlay color, dismissible on tap.
+    Snap points: configurable, minimum 25% screen height.
+    Enter/exit: springDefault on translateY.
+
+  Skeleton:
+    Background: backgroundElement.
+    Shimmer gradient: backgroundElement to backgroundSelected to backgroundElement.
+    Border radius: matches the component being loaded.
+    Shapes: rectangle (cards, text lines), circle (avatars), rounded rectangle (buttons, badges).
+
+  Metric Card:
+    Height: auto (content-dependent).
+    Width: flexible (grid-based, typically 50% minus gap).
+    Header: icon (20pt) + label (labelMedium, textSecondary).
+    Value: displaySmall, text color.
+    Unit: bodySmall, textTertiary, inline after value.
+    Trend: bodySmall, success/error color with up/down arrow icon.
+    Sparkline: 48pt height, chart1 color, bottom of card.
+
+7.9 Layout Patterns
+---------------------
+
+  Screen Layout:
+    - SafeAreaView wrapper with flex: 1.
+    - Horizontal padding: 16 (standard).
+    - Vertical padding: 16 from safe area.
+    - ScrollView for scrollable content with showsVerticalScrollIndicator: false.
+    - FlatList for long lists with proper keyExtractor and optimized renderItem.
+
+  Grid Layout:
+    - Two-column grid for metric cards with gap: 12.
+    - Use Flexbox with flexWrap: 'wrap' and calculated widths.
+    - Card width: (screenWidth - horizontalPadding * 2 - gap) / 2.
+
+  List Layout:
+    - Full-width list items with vertical padding: 12.
+    - Divider between items: 1px height, backgroundElement color, 16px left inset.
+    - Section headers: overline text, textTertiary, 24px top padding, 8px bottom padding.
+
+  Form Layout:
+    - Full-width inputs.
+    - 16px gap between fields.
+    - Submit button at bottom with 24px top margin.
+    - Keyboard-aware scrolling via react-native-keyboard-controller.
+
+  Tab Bar Layout:
+    - Custom tab bar component.
+    - Height: 49 (iOS standard) + bottom safe area.
+    - Background: background with slight opacity and blur (glassmorphism).
+    - Active indicator: primary color.
+    - Inactive icons: textTertiary.
+    - Labels: labelSmall.
+
+=====================================
+8. FOLDER STRUCTURE
+=====================================
+
+  Design system files:
+
+  src/
+  ├── constants/
+  │   └── theme.ts                  # Extended color palette, typography, spacing, shadows, animations
+  │
+  ├── components/
+  │   └── ui/                       # All design system components
+  │       ├── button.tsx
+  │       ├── icon-button.tsx
+  │       ├── fab.tsx
+  │       ├── input.tsx
+  │       ├── text-area.tsx
+  │       ├── search-input.tsx
+  │       ├── password-input.tsx
+  │       ├── number-input.tsx
+  │       ├── select.tsx
+  │       ├── date-input.tsx
+  │       ├── time-input.tsx
+  │       ├── slider.tsx
+  │       ├── switch.tsx
+  │       ├── checkbox.tsx
+  │       ├── radio-group.tsx
+  │       ├── card.tsx
+  │       ├── text.tsx
+  │       ├── avatar.tsx
+  │       ├── badge.tsx
+  │       ├── chip.tsx
+  │       ├── divider.tsx
+  │       ├── icon.tsx
+  │       ├── image.tsx
+  │       ├── bottom-sheet.tsx
+  │       ├── modal.tsx
+  │       ├── toast.tsx
+  │       ├── loading.tsx
+  │       ├── skeleton.tsx
+  │       ├── progress-bar.tsx
+  │       ├── progress-ring.tsx
+  │       ├── tab-bar.tsx
+  │       ├── segmented-control.tsx
+  │       ├── list-item.tsx
+  │       ├── section-header.tsx
+  │       └── separator.tsx
+  │
+  ├── hooks/
+  │   ├── use-theme.ts              # Theme access hook
+  │   └── use-color-scheme.ts       # System color scheme detection
+  │
+  └── providers/
+      └── theme-provider.tsx        # Theme context provider
+
+=====================================
+9. COMPONENTS
+=====================================
+
+  Complete component inventory for the design system:
+
+  Input Components:
+    - Button: Pressable with variants, sizes, loading, disabled states.
+    - IconButton: Circular icon-only button.
+    - FAB: Floating action button with shadow and scale animation.
+    - Input: Text input with label, validation, prefix/suffix.
+    - TextArea: Multi-line text input.
+    - SearchInput: Input with search icon, clear button, debounced onChange.
+    - PasswordInput: Input with toggle visibility icon.
+    - NumberInput: Input with stepper (plus/minus) buttons.
+    - Select: Dropdown trigger opening a bottom sheet with options.
+    - DateInput: Date picker trigger with formatted display.
+    - TimeInput: Time picker trigger with formatted display.
+    - Slider: Range slider with value label tooltip.
+    - Switch: Toggle switch with label.
+    - Checkbox: Checkbox with label.
+    - RadioGroup: Radio button group with options.
+
+  Display Components:
+    - Card: Container with elevation, padding, press animation.
+    - Text: Typography with variants, color, alignment, numberOfLines.
+    - Avatar: Image with fallback initials.
+    - Badge: Small label for counts and statuses.
+    - Chip: Selectable tag for filtering and categorization.
+    - Divider: Horizontal or vertical line separator.
+    - Icon: Icon wrapper for consistent sizing and coloring.
+    - Image: expo-image wrapper with placeholder, caching, and transitions.
+
+  Feedback Components:
+    - Toast: Top-aligned notification with auto-dismiss.
+    - Loading: Centered spinner for inline loading.
+    - Skeleton: Shimmer placeholder matching target component shape.
+    - ProgressBar: Horizontal progress indicator.
+    - ProgressRing: Circular progress indicator (SVG-based).
+
+  Navigation Components:
+    - TabBar: Custom bottom tab bar with icons and labels.
+    - SegmentedControl: Inline tab-like selector for switching views.
+
+  Overlay Components:
+    - BottomSheet: Modal sheet from bottom with snap points.
+    - Modal: Center-aligned modal with backdrop.
+
+  List Components:
+    - ListItem: Standard list row with icon, title, subtitle, and right accessory.
+    - SectionHeader: Section divider for grouped lists.
+    - Separator: Fine line divider between list items.
+
+=====================================
+10. SCREENS
+=====================================
+
+  Design system impact on screens:
+
+  Every screen must:
+    - Use the ScreenContainer component for consistent padding and safe area handling.
+    - Display a Header component with the screen title and navigation controls.
+    - Use Skeleton components during data loading (not blank screens).
+    - Use the EmptyState component when there is no data to display.
+    - Use the ErrorState component when data fetching fails.
+    - Apply theme colors from useTheme, never hardcode colors.
+    - Respect the MaxContentWidth constant (800) for tablet-optimized layouts.
+
+=====================================
+11. API REQUIREMENTS
+=====================================
+
+  The design system does not directly interact with APIs. However, components that display API data must:
+    - Accept data via props, never fetch data internally.
+    - Accept loading, error, and empty states via props or render props.
+    - Use TanStack Query's isLoading, isError, and data states to drive component rendering.
+
+=====================================
+12. DATABASE TABLES
+=====================================
+
+  The design system stores user preferences in:
+    - user_settings table: theme_mode (system, light, dark), font_scale, reduce_motion, haptic_feedback.
+    - These settings are also cached locally in MMKV for instant theme application on app launch.
+
+=====================================
+13. AI REQUIREMENTS
+=====================================
+
+  AI Coach chat interface design specifications:
+
+  Chat Bubble (User):
+    - Background: primary.
+    - Text color: white.
+    - Border radius: lg (16) with 4pt bottom-right radius (speech bubble tail).
+    - Max width: 80% of screen.
+    - Alignment: right.
+
+  Chat Bubble (AI):
+    - Background: backgroundElement.
+    - Text color: text.
+    - Border radius: lg (16) with 4pt bottom-left radius.
+    - Max width: 85% of screen.
+    - Alignment: left.
+    - AI avatar (24pt) to the left of the bubble.
+
+  Typing Indicator:
+    - Three dots with sequential bounce animation.
+    - Displayed in an AI bubble during response generation.
+    - Dot size: 8pt, color: textTertiary.
+    - Animation: sequential scale from 1 to 1.4 with 200ms stagger.
+
+  Function Call Card:
+    - Displayed inline in chat when AI executes a function.
+    - Background: primaryLight.
+    - Icon: relevant feature icon.
+    - Title: function description (e.g., "Generated a workout plan").
+    - Pressable: navigates to the created resource.
+
+  Suggested Prompts:
+    - Horizontal scrollable row of chips below the chat input.
+    - Background: backgroundElement.
+    - Text: bodySmall, textSecondary.
+    - On press: insert prompt text into chat input.
+
+=====================================
+14. ERROR HANDLING
+=====================================
+
+  Visual error handling patterns:
+
+  Inline Errors:
+    - Form field errors: red border on input, error text below in bodySmall, error color.
+    - Appear with a subtle shake animation on the input.
+
+  Screen-Level Errors:
+    - ErrorState component: illustration, title ("Something went wrong"), message, retry button.
+    - Center-aligned vertically and horizontally.
+
+  Toast Errors:
+    - Transient errors (network timeout, rate limit): error toast with auto-dismiss.
+    - Action: optional "Retry" button in the toast.
+
+  Offline Indicator:
+    - Persistent banner at top of screen (below status bar, above content).
+    - Background: warning.
+    - Text: "You are offline. Some features may be unavailable."
+    - Dismisses automatically when connectivity restores.
+
+=====================================
+15. EDGE CASES
+=====================================
+
+  - Very long text: use numberOfLines prop with ellipsis truncation on Text components.
+  - Very large numbers: format with abbreviations (e.g., 1.2K, 3.5M) above a configurable threshold.
+  - Missing images: always provide a placeholder or fallback background color.
+  - RTL languages: ensure all layouts flex correctly for right-to-left reading direction (future internationalization).
+  - Notched devices: safe area insets must be respected for all screen content and the tab bar.
+  - Landscape orientation: not officially supported (app is portrait-locked), but layouts should not break if briefly triggered.
+  - Dynamic type / font scaling: test all screens at 200% font scale to ensure no text truncation or layout overflow.
+  - Reduced motion: when the system "Reduce Motion" setting is enabled, replace all spring and timing animations with instant state changes.
+
+=====================================
+16. FUTURE IMPROVEMENTS
+=====================================
+
+  - Implement a Storybook-like component playground within the app for design QA.
+  - Add a haptic feedback engine with configurable patterns per interaction type.
+  - Create a Figma design token export pipeline that automatically syncs design changes to theme.ts.
+  - Implement glassmorphism effects for elevated surfaces (using expo-glass-effect, already in dependencies).
+  - Add micro-interaction animations for data updates (number counting, chart transitions).
+  - Create a comprehensive motion design language document with video references.
+  - Implement a dynamic color system that extracts accent colors from user-uploaded profile photos.
+
+=====================================
+17. BEST PRACTICES
+=====================================
+
+  - Never hardcode colors, spacing, font sizes, or border radii. Always use theme constants.
+  - Never use inline styles. Always use StyleSheet.create.
+  - Always provide all visual states: default, pressed, disabled, loading, error, empty.
+  - Always test components in both dark and light modes.
+  - Always test components at the smallest (320dp) and largest (428dp) supported screen widths.
+  - Always provide accessibility labels for interactive elements.
+  - Prefer Reanimated animations over layout property changes.
+  - Use expo-image instead of React Native's Image component for all image rendering.
+  - Keep components pure: they receive data via props and emit events via callbacks. No internal data fetching.
+  - When creating a new component, check if a similar one exists in the design system first. Extend, do not duplicate.
+
+=====================================
+18. DEVELOPMENT CHECKLIST
+=====================================
+
+  [ ] Extended color palette defined in theme.ts for both dark and light modes.
+  [ ] Typography scale implemented as text component variants.
+  [ ] Spacing constants extended in theme.ts.
+  [ ] Border radius constants defined.
+  [ ] Shadow system defined for both modes.
+  [ ] Animation spring and timing configurations defined.
+  [ ] All atomic UI components implemented in src/components/ui/.
+  [ ] All shared composite components implemented in src/components/shared/.
+  [ ] useTheme hook provides access to all design tokens.
+  [ ] Theme provider wraps the application root.
+  [ ] Dark mode and light mode tested for all components.
+  [ ] Accessibility audit completed (contrast ratios, touch targets, labels).
+  [ ] Animation performance verified on mid-range devices (60 fps).
+  [ ] Reduced motion setting respected.
+
+=====================================
+19. TESTING CHECKLIST
+=====================================
+
+  [ ] Every UI component renders without errors in both dark and light modes.
+  [ ] Every interactive component handles press, disabled, and loading states.
+  [ ] Color contrast ratios pass WCAG AA for all text on background combinations.
+  [ ] Touch targets meet the 44x44pt minimum.
+  [ ] Skeleton loaders match the shape of their corresponding loaded components.
+  [ ] Animations run at 60 fps on a mid-range Android device.
+  [ ] Font scaling at 200% does not cause layout overflow.
+  [ ] Screen reader navigates all components in logical order.
+  [ ] Toast notifications appear and auto-dismiss correctly.
+  [ ] Bottom sheets snap to defined points and dismiss on backdrop press.
+
+=====================================
+20. ACCEPTANCE CRITERIA
+=====================================
+
+  - Every screen in the application uses only design system components for its UI.
+  - No hardcoded color values exist anywhere in the codebase outside of theme.ts.
+  - All text uses the Text component with a defined variant.
+  - All spacing uses the Spacing constants.
+  - Dark mode and light mode are visually polished and consistent across all screens.
+  - All animations are smooth (60 fps) on iPhone 12 and Samsung Galaxy S21 or equivalent.
+  - All interactive elements have a minimum touch target of 44x44 points.
+  - Color contrast ratios meet WCAG 2.1 AA (4.5:1 for normal text, 3:1 for large text).
+  - The reduced motion accessibility setting disables all decorative animations.
+  - Every loading state uses a skeleton loader that matches the layout of the loaded content.
+  - The overall visual quality is comparable to Apple Health and Google Fit applications.
+
+=====================================
+END OF DOCUMENT
+=====================================

@@ -1,0 +1,273 @@
+=====================================
+FITONUS — DATABASE DESIGN
+Document: 20-database-design.txt
+Version: 1.0.0
+Last Updated: 2026-07-15
+Company: TuneOnus
+=====================================
+
+=====================================
+1. PURPOSE
+=====================================
+
+This document defines the complete database schema for FitOnus. It details the table structures, relationships, indexes, constraints, triggers, and Row-Level Security (RLS) policies. The database is hosted on Supabase (PostgreSQL) and heavily utilizes pgvector for AI memory and RAG implementations.
+
+=====================================
+2. OVERVIEW
+=====================================
+
+The FitOnus database is a relational PostgreSQL schema designed for high-performance reads, secure multi-tenant isolation (via RLS), and AI integration. It encompasses the following core domains:
+  - Identity & Auth (managed by Supabase)
+  - User Profiles & Settings
+  - Workouts & Exercises
+  - Nutrition & Foods
+  - Health Metrics (Weight, Sleep, Sensors)
+  - AI Context (Conversations, Memory, RAG)
+  - Notifications & Reports
+
+=====================================
+3. GOALS
+=====================================
+
+  - Ensure absolute data isolation between users via RLS.
+  - Optimize for read-heavy mobile workloads with targeted indexing.
+  - Provide a robust schema for AI embedding storage using pgvector.
+  - Maintain data integrity with foreign keys, constraints, and cascading deletes.
+  - Use UUIDs for all primary keys to prevent enumeration and simplify offline sync.
+
+=====================================
+4. SCHEMA DEFINITIONS
+=====================================
+
+  4.1 Identity & User Profiles
+    (Auth tables are managed by Supabase in the `auth` schema)
+
+    table: public.users
+      - id: UUID (PK, references auth.users)
+      - email: TEXT (unique)
+      - created_at: TIMESTAMPTZ
+      - updated_at: TIMESTAMPTZ
+
+    table: public.user_profiles
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id, unique)
+      - full_name: TEXT
+      - date_of_birth: DATE
+      - gender: TEXT
+      - height_cm: DECIMAL(5,1)
+      - current_weight_kg: DECIMAL(5,1)
+      - goal_weight_kg: DECIMAL(5,1)
+      - fitness_goals: TEXT[]
+      - activity_level: TEXT
+      - diet_type: TEXT
+      - food_allergies: TEXT[]
+      - avatar_url: TEXT
+      - daily_calorie_target: INTEGER
+      - created_at: TIMESTAMPTZ
+      - updated_at: TIMESTAMPTZ
+
+    table: public.user_settings
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id, unique)
+      - theme_mode: TEXT
+      - unit_system: TEXT
+      - push_token: TEXT
+      - created_at: TIMESTAMPTZ
+      - updated_at: TIMESTAMPTZ
+
+  4.2 Workouts & Exercises
+
+    table: public.exercises
+      - id: UUID (PK)
+      - name: TEXT
+      - category: TEXT
+      - equipment: TEXT
+      - primary_muscles: TEXT[]
+      - is_system: BOOLEAN
+      - created_by: UUID (FK -> users.id, nullable)
+      - created_at: TIMESTAMPTZ
+
+    table: public.workouts
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - name: TEXT
+      - workout_type: TEXT
+      - is_ai_generated: BOOLEAN
+      - created_at: TIMESTAMPTZ
+
+    table: public.workout_exercises
+      - id: UUID (PK)
+      - workout_id: UUID (FK -> workouts.id)
+      - exercise_id: UUID (FK -> exercises.id)
+      - order_index: INTEGER
+      - target_sets: INTEGER
+      - target_reps: INTEGER
+      - target_weight_kg: DECIMAL(6,2)
+
+    table: public.workout_sessions
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - workout_id: UUID (FK -> workouts.id, nullable)
+      - started_at: TIMESTAMPTZ
+      - completed_at: TIMESTAMPTZ
+      - total_volume_kg: DECIMAL(10,2)
+
+    table: public.workout_session_sets
+      - id: UUID (PK)
+      - session_id: UUID (FK -> workout_sessions.id)
+      - exercise_id: UUID (FK -> exercises.id)
+      - set_number: INTEGER
+      - weight_kg: DECIMAL(6,2)
+      - reps: INTEGER
+      - is_pr: BOOLEAN
+
+    table: public.personal_records
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - exercise_id: UUID (FK -> exercises.id)
+      - record_type: TEXT
+      - weight_kg: DECIMAL(6,2)
+      - reps: INTEGER
+
+  4.3 Nutrition & Foods
+
+    table: public.foods
+      - id: UUID (PK)
+      - name: TEXT
+      - barcode: TEXT (unique, nullable)
+      - calories: DECIMAL(8,2)
+      - protein_g: DECIMAL(6,2)
+      - carbohydrates_g: DECIMAL(6,2)
+      - fat_g: DECIMAL(6,2)
+      - created_by: UUID (FK -> users.id, nullable)
+
+    table: public.meals
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - meal_type: TEXT
+      - date: DATE
+      - total_calories: DECIMAL(8,2)
+
+    table: public.meal_items
+      - id: UUID (PK)
+      - meal_id: UUID (FK -> meals.id)
+      - food_id: UUID (FK -> foods.id)
+      - serving_multiplier: DECIMAL(4,2)
+      - calories: DECIMAL(8,2)
+
+    table: public.water_intake
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - date: DATE
+      - amount_ml: INTEGER
+      - logged_at: TIMESTAMPTZ
+
+  4.4 Health Metrics
+
+    table: public.health_data
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - metric_type: TEXT
+      - date: DATE
+      - value: DECIMAL(10,2)
+      - source: TEXT
+
+    table: public.weight_logs
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - weight_kg: DECIMAL(5,2)
+      - trend_weight_kg: DECIMAL(5,2)
+      - date: DATE
+
+    table: public.sleep_logs
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - date: DATE
+      - bedtime: TIMESTAMPTZ
+      - wake_time: TIMESTAMPTZ
+      - sleep_score: INTEGER
+
+    table: public.recovery_scores
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - date: DATE
+      - overall_score: INTEGER
+
+  4.5 AI Context
+
+    table: public.ai_conversations
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - title: TEXT
+      - created_at: TIMESTAMPTZ
+
+    table: public.ai_messages
+      - id: UUID (PK)
+      - conversation_id: UUID (FK -> ai_conversations.id)
+      - role: TEXT
+      - content: TEXT
+      - function_call: JSONB
+      - created_at: TIMESTAMPTZ
+
+    table: public.ai_memories
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - fact: TEXT
+      - category: TEXT
+      - embedding: vector(1536)
+      - created_at: TIMESTAMPTZ
+
+    table: public.knowledge_base
+      - id: UUID (PK)
+      - content: TEXT
+      - category: TEXT
+      - embedding: vector(1536)
+
+  4.6 System
+
+    table: public.notifications
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - type: TEXT
+      - title: TEXT
+      - is_read: BOOLEAN
+      - created_at: TIMESTAMPTZ
+
+    table: public.reports
+      - id: UUID (PK)
+      - user_id: UUID (FK -> users.id)
+      - report_type: TEXT
+      - period_start: DATE
+      - data: JSONB
+
+=====================================
+5. INDEXING STRATEGY
+=====================================
+
+  - B-Tree Indexes on all Foreign Keys.
+  - Composite Indexes for frequent queries: (user_id, date) for daily lookups.
+  - GIN Indexes on array columns (e.g., fitness_goals, primary_muscles).
+  - pg_trgm Indexes for text search (e.g., foods.name, exercises.name).
+  - HNSW Indexes on vector embeddings for fast similarity search.
+
+=====================================
+6. ROW-LEVEL SECURITY (RLS)
+=====================================
+
+  - Enable RLS on all tables.
+  - Policy: "Users can view own data" -> `auth.uid() = user_id`
+  - Policy: "Users can insert own data" -> `auth.uid() = user_id`
+  - Policy: "Users can update own data" -> `auth.uid() = user_id`
+  - Policy: "Users can view public data" -> (e.g., system exercises, public knowledge base)
+
+=====================================
+7. TRIGGERS & FUNCTIONS
+=====================================
+
+  - updated_at trigger: Automatically updates the `updated_at` column on record modification.
+  - user creation trigger: Automatically creates a `user_profiles` and `user_settings` record when a new auth user is created.
+  - weight trend trigger: Automatically calculates `trend_weight_kg` when a new `weight_logs` record is inserted.
+
+=====================================
+END OF DOCUMENT
+=====================================
