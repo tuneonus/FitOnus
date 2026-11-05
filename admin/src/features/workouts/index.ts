@@ -1,0 +1,11 @@
+export * from './types';
+export * from './api';
+export * from './hooks/useExercises';
+export * from './hooks/useWorkoutTemplates';
+export * from './hooks/useWorkoutStats';
+export { WorkoutsAdminView } from './components/WorkoutsAdminView';
+export { ExercisesTable } from './components/ExercisesTable';
+export { ExerciseFilterBar } from './components/ExerciseFilterBar';
+export { ExerciseModal } from './components/ExerciseModal';
+export { WorkoutTemplatesTable } from './components/WorkoutTemplatesTable';
+export { WorkoutTemplateModal } from './components/WorkoutTemplateModal';
