@@ -9,6 +9,7 @@ import { createAuthModule } from './modules/auth/index.js';
 import { createHealthRoutes } from './modules/health/health.routes.js';
 import { createProfileModule } from './modules/profile/index.js';
 import { createUsersModule } from './modules/users/index.js';
+import { createWorkoutsModule } from './modules/workouts/index.js';
 import type { RouteGroup } from './shared/http/route.js';
 import { IdempotencyService } from './shared/idempotency/idempotency.js';
 import { PgIdempotencyStore } from './shared/idempotency/pg-idempotency-store.js';
@@ -88,10 +89,24 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     limiters: rateLimiters,
     isProduction: config.isProduction,
   });
+  const workouts = createWorkoutsModule({
+    memberBasePath: `${API_PREFIX}/workouts`,
+    adminBasePath: `${API_PREFIX}/admin/workouts`,
+    db: database,
+    uow,
+  });
 
   return {
     database,
-    routeGroups: [health, auth.routes, users.routes, profile.routes, admin.routes],
+    routeGroups: [
+      health,
+      auth.routes,
+      users.routes,
+      profile.routes,
+      admin.routes,
+      workouts.memberRoutes,
+      workouts.adminRoutes,
+    ],
     authenticate: createAuthenticate(auth.authenticateAccessToken),
     rateLimiters,
     lifecycle,

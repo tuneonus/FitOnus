@@ -23,6 +23,7 @@
     "db:migrate": "node --env-file-if-exists=.env --import tsx scripts/migrate.ts",
     "db:migrate:status": "node --env-file-if-exists=.env --import tsx scripts/migrate.ts status",
     "db:seed": "node --env-file-if-exists=.env --import tsx scripts/seed.ts",
+    "db:seed:exercises": "node --env-file-if-exists=.env --import tsx scripts/seed-exercises.ts",
     "db:cleanup": "node --env-file-if-exists=.env --import tsx scripts/cleanup.ts",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build"
   },
