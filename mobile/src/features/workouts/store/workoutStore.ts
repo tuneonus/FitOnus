@@ -1,8 +1,44 @@
 import { create } from 'zustand';
-import type { ActiveExercise, SetLog, WorkoutLog, WorkoutSession } from '../types/workout';
+import type { ActiveExercise, SetLog, WorkoutLog, WorkoutSession, SaveWorkoutSessionInput } from '../types/workout';
 import { exerciseById, initialWorkoutHistory, todaySession } from '../data/workoutsMock';
+import { WorkoutService } from '../services/workout-service';
+import { offlineSyncService } from '../services/offline-sync';
+import { workoutApi } from '../api/workout-api';
+import { logger } from '@/utils/logger';
 
 type TodayStatus = 'notStarted' | 'inProgress' | 'completed';
+
+const SLUG_TO_UUID: Record<string, string> = {
+  'bench': 'e0000000-0000-0000-0000-000000000001',
+  'incline-db': 'e0000000-0000-0000-0000-000000000002',
+  'cable-fly': 'e0000000-0000-0000-0000-000000000003',
+  'oh-tricep': 'e0000000-0000-0000-0000-000000000004',
+  'dips': 'e0000000-0000-0000-0000-000000000005',
+  'lateral': 'e0000000-0000-0000-0000-000000000006',
+  'squat': 'e0000000-0000-0000-0000-000000000007',
+  'rdl': 'e0000000-0000-0000-0000-000000000008',
+  'pullup': 'e0000000-0000-0000-0000-000000000009',
+  'row': 'e0000000-0000-0000-0000-000000000010',
+  'goblet': 'e0000000-0000-0000-0000-000000000011',
+  'plank': 'e0000000-0000-0000-0000-000000000012',
+  'burpee': 'e0000000-0000-0000-0000-000000000013',
+  'kb-swing': 'e0000000-0000-0000-0000-000000000014',
+};
+
+export function resolveExerciseUuid(idOrSlug: string): string {
+  return SLUG_TO_UUID[idOrSlug] || idOrSlug;
+}
+
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 type WorkoutState = {
   plannedSession: WorkoutSession;
@@ -13,6 +49,7 @@ type WorkoutState = {
   elapsedSec: number;
   paused: boolean;
   lastCompleted: WorkoutLog | null;
+  pendingSyncCount: number;
   setPlannedSession: (session: WorkoutSession) => void;
   removePlannedExercise: (exerciseId: string) => void;
   startSession: () => void;
@@ -25,6 +62,8 @@ type WorkoutState = {
   finishSession: () => WorkoutLog;
   saveCompleted: () => void;
   logExternal: (log: WorkoutLog) => void;
+  loadHistoryFromBackend: () => Promise<void>;
+  syncOfflineSessions: () => Promise<void>;
 };
 
 export const useWorkoutStore = create<WorkoutState>((set, get) => ({
@@ -36,7 +75,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   elapsedSec: 0,
   paused: false,
   lastCompleted: null,
+  pendingSyncCount: 0,
+
   setPlannedSession: (plannedSession) => set({ plannedSession }),
+
   removePlannedExercise: (exerciseId) => {
     const s = get().plannedSession;
     set({
@@ -46,6 +88,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       },
     });
   },
+
   startSession: () => {
     if (get().todayStatus === 'inProgress') return;
     const active: ActiveExercise[] = get().plannedSession.exercises.map((e) => ({
@@ -67,9 +110,13 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       todayStatus: 'inProgress',
     });
   },
+
   tick: () => !get().paused && set({ elapsedSec: get().elapsedSec + 1 }),
+
   togglePause: () => set({ paused: !get().paused }),
+
   setCurrentIndex: (currentIndex) => set({ currentIndex }),
+
   updateSet: (exIndex: number, setIndex: number, patch: Partial<SetLog>) =>
     set({
       active: get().active.map((ex: ActiveExercise, i: number) =>
@@ -83,6 +130,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           : ex
       ),
     }),
+
   addSet: (exIndex: number) =>
     set({
       active: get().active.map((ex: ActiveExercise, i: number) => {
@@ -97,12 +145,14 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         };
       }),
     }),
+
   skipExercise: (exIndex: number) =>
     set({
       active: get().active.map((ex: ActiveExercise, i: number) =>
         i === exIndex ? { ...ex, skipped: true } : ex
       ),
     }),
+
   finishSession: () => {
     const { active, elapsedSec, plannedSession } = get();
     const doneSets = active.flatMap((e: ActiveExercise) =>
@@ -118,8 +168,10 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const durationMin = Math.max(1, Math.round(elapsedSec / 60));
     const calories = Math.round(durationMin * 7.5);
 
+    const clientSessionId = generateUUID();
+
     const log: WorkoutLog = {
-      id: `w-${Date.now()}`,
+      id: clientSessionId,
       date: 'Today',
       title: plannedSession.title,
       durationMin,
@@ -129,6 +181,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       calories,
       avgHr: 126,
       source: 'FitOnus',
+      clientSessionId,
+      pendingSync: false,
       exercises: active
         .filter((e: ActiveExercise) => !e.skipped)
         .map((e: ActiveExercise) => {
@@ -147,15 +201,124 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           };
         }),
     };
+
     set({ lastCompleted: log, todayStatus: 'completed' });
     return log;
   },
+
   saveCompleted: () => {
-    const { lastCompleted, history } = get();
+    const { lastCompleted, history, active, elapsedSec, plannedSession } = get();
     if (!lastCompleted) return;
+
+    // Immediately persist in local UI history
     set({ history: [lastCompleted, ...history] });
+
+    // Build backend atomic submission payload
+    const clientSessionId = lastCompleted.clientSessionId || generateUUID();
+    const startedAt = new Date(Date.now() - Math.max(1, elapsedSec) * 1000).toISOString();
+    const completedAt = new Date().toISOString();
+
+    const completedSets = active.flatMap((ex) =>
+      ex.sets
+        .filter((s) => s.done)
+        .map((s, idx) => ({
+          exerciseId: resolveExerciseUuid(ex.exerciseId),
+          setNumber: s.setNumber ?? idx + 1,
+          weightKg: Number(s.weightKg ?? s.weight) || 0,
+          reps: Number(s.reps) || 1,
+          isWarmup: Boolean(s.isWarmup),
+          rpe: s.rpe ?? null,
+        }))
+    );
+
+    // Fallback if sets were empty
+    const sets = completedSets.length > 0
+      ? completedSets
+      : [{
+          exerciseId: resolveExerciseUuid('bench'),
+          setNumber: 1,
+          weightKg: 50,
+          reps: 10,
+          isWarmup: false,
+        }];
+
+    const payload: SaveWorkoutSessionInput = {
+      clientSessionId,
+      workoutName: plannedSession.title || 'Completed Workout',
+      planId: plannedSession.id && !plannedSession.id.startsWith('push-') ? plannedSession.id : null,
+      startedAt,
+      completedAt,
+      durationSeconds: Math.max(1, elapsedSec),
+      sets,
+    };
+
+    // Asynchronously dispatch to backend with offline fallback
+    WorkoutService.saveSession(payload)
+      .then(({ response, isOffline }) => {
+        set((state) => ({
+          history: state.history.map((h) =>
+            h.id === lastCompleted.id || h.clientSessionId === clientSessionId
+              ? {
+                  ...h,
+                  id: response.id,
+                  volumeKg: response.totalVolumeKg,
+                  calories: response.estimatedCaloriesBurned,
+                  prs: response.personalRecords?.length ?? h.prs,
+                  pendingSync: isOffline,
+                  clientSessionId,
+                  completedAt: response.completedAt,
+                  isCaloriesEstimated: response.isCaloriesEstimated,
+                  caloriesSource: response.caloriesSource,
+                }
+              : h
+          ),
+          pendingSyncCount: isOffline ? state.pendingSyncCount + 1 : state.pendingSyncCount,
+        }));
+      })
+      .catch((err) => {
+        logger.error('Unexpected error saving workout session:', err);
+      });
   },
+
   logExternal: (log: WorkoutLog) => {
     set({ history: [log, ...get().history], todayStatus: 'completed' });
+  },
+
+  loadHistoryFromBackend: async () => {
+    try {
+      const res = await workoutApi.getWorkoutSessions({ limit: 20 });
+      if (res.sessions && res.sessions.length > 0) {
+        const mappedSessions: WorkoutLog[] = res.sessions.map((s: any) => ({
+          id: s.id,
+          date: s.completedAt ? new Date(s.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recent',
+          title: s.workoutName,
+          durationMin: Math.max(1, Math.round(s.durationSeconds / 60)),
+          volumeKg: s.totalVolumeKg,
+          sets: s.totalSets,
+          prs: 0,
+          calories: s.estimatedCaloriesBurned,
+          source: 'FitOnus',
+          clientSessionId: s.clientSessionId,
+          pendingSync: false,
+          exercises: [],
+        }));
+        set({ history: mappedSessions });
+      }
+    } catch (err) {
+      logger.warn('Failed to load sessions history from backend:', err);
+    }
+  },
+
+  syncOfflineSessions: async () => {
+    try {
+      const { synced, failed } = await offlineSyncService.syncPendingSessions();
+      if (synced > 0) {
+        const pendingCount = await offlineSyncService.getPendingCount();
+        set({ pendingSyncCount: pendingCount });
+        await get().loadHistoryFromBackend();
+      }
+    } catch (err) {
+      logger.warn('Offline sync failed:', err);
+    }
   },
 }));

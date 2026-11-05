@@ -1,113 +1,196 @@
-import { WorkoutTemplate, WorkoutDetail, Exercise } from '../types/workout';
+import { workoutApi, type ExerciseListParams } from '../api/workout-api';
+import { offlineSyncService } from './offline-sync';
+import type {
+  Exercise,
+  WorkoutTemplate,
+  WorkoutDetail,
+  SaveWorkoutSessionInput,
+  WorkoutSessionResponse,
+  PersonalRecordView,
+  WorkoutPlanSummaryView,
+  WorkoutPlanDetailView,
+} from '../types/workout';
+import { logger } from '@/utils/logger';
 
 export class WorkoutService {
+  /**
+   * Retrieves system-curated starter templates from backend PostgreSQL.
+   */
   static async getTemplates(): Promise<WorkoutTemplate[]> {
-    return [
-      {
-        id: 't1',
-        name: 'Full Body Fundamentals',
-        description: 'A great starting point for beginners focusing on compound movements.',
-        estimatedDuration: 45,
-        difficulty: 'Beginner',
-        tags: ['Full Body', 'Strength'],
-        exercisesCount: 5,
-      },
-      {
-        id: 't2',
-        name: 'Push Hypertrophy',
-        description: 'Focus on chest, shoulders, and triceps for muscle growth.',
-        estimatedDuration: 60,
-        difficulty: 'Intermediate',
-        tags: ['Push', 'Hypertrophy'],
-        exercisesCount: 7,
-      },
-      {
-        id: 't3',
-        name: 'Lower Body Power',
-        description: 'Heavy squats and deadlifts to build explosive strength.',
-        estimatedDuration: 75,
-        difficulty: 'Advanced',
-        tags: ['Legs', 'Power'],
-        exercisesCount: 6,
-      }
-    ];
+    try {
+      const res = await workoutApi.getWorkoutPlans({ type: 'templates' });
+      return res.plans.map(this.mapPlanSummaryToTemplate);
+    } catch (error) {
+      logger.error('Failed to load workout templates from backend:', error);
+      return [];
+    }
   }
 
+  /**
+   * Retrieves current member's personal workout routines from backend PostgreSQL.
+   */
   static async getMyWorkouts(): Promise<WorkoutTemplate[]> {
-    return [
-      {
-        id: 'm1',
-        name: 'AI Generated: Core & Cardio',
-        description: 'Personalized circuit based on your goal to burn fat.',
-        estimatedDuration: 30,
-        difficulty: 'Intermediate',
-        tags: ['Core', 'Cardio', 'HIIT'],
-        exercisesCount: 8,
-        isAiGenerated: true,
-      },
-      {
-        id: 'm2',
-        name: 'My Custom Pull Day',
-        description: 'Back and biceps routine focusing on lat width.',
-        estimatedDuration: 55,
-        difficulty: 'Intermediate',
-        tags: ['Pull', 'Hypertrophy'],
-        exercisesCount: 6,
-      }
-    ];
+    try {
+      const res = await workoutApi.getWorkoutPlans({ type: 'mine' });
+      return res.plans.map(this.mapPlanSummaryToTemplate);
+    } catch (error) {
+      logger.error('Failed to load member workouts from backend:', error);
+      return [];
+    }
   }
 
+  /**
+   * Retrieves comprehensive details of a workout plan including exercise configurations.
+   */
   static async getWorkoutDetail(id: string): Promise<WorkoutDetail> {
-    const mockExercise: Exercise = {
-      id: 'e1',
-      name: 'Barbell Bench Press',
-      primaryMuscles: ['Chest'],
-      equipment: 'Barbell',
-      difficulty: 'Intermediate'
-    };
+    try {
+      const plan = await workoutApi.getWorkoutPlanById(id);
+      return this.mapPlanDetailToWorkoutDetail(plan);
+    } catch (error) {
+      logger.error(`Failed to load workout detail for ${id}:`, error);
+      throw error;
+    }
+  }
 
-    const mockExercise2: Exercise = {
-      id: 'e2',
-      name: 'Incline Dumbbell Press',
-      primaryMuscles: ['Chest', 'Shoulders'],
-      equipment: 'Dumbbell',
-      difficulty: 'Intermediate'
-    };
+  /**
+   * Retrieves exercises from global catalog with muscle, category, and equipment filters.
+   */
+  static async getExercises(params: ExerciseListParams = {}): Promise<Exercise[]> {
+    try {
+      const res = await workoutApi.getExercises(params);
+      return res.exercises;
+    } catch (error) {
+      logger.error('Failed to load exercises catalog:', error);
+      return [];
+    }
+  }
 
+  /**
+   * Retrieves single exercise detail by ID.
+   */
+  static async getExerciseById(id: string): Promise<Exercise> {
+    return await workoutApi.getExerciseById(id);
+  }
+
+  /**
+   * Atomically saves a completed workout session with offline fallback.
+   * If the network is unavailable, enqueues in local storage queue.
+   */
+  static async saveSession(
+    payload: SaveWorkoutSessionInput
+  ): Promise<{ response: WorkoutSessionResponse; isOffline: boolean }> {
+    try {
+      // Attempt live atomic submission
+      const response = await workoutApi.saveWorkoutSession(
+        payload,
+        payload.clientSessionId
+      );
+      return { response, isOffline: false };
+    } catch (error: any) {
+      logger.warn(
+        `Direct session submission failed for ${payload.clientSessionId}. Enqueueing offline...`,
+        error?.message
+      );
+
+      // Enqueue to persistent offline queue
+      await offlineSyncService.enqueueSession(payload);
+
+      // Construct optimistic local response
+      const totalVolumeKg = payload.sets.reduce(
+        (sum, s) => (s.isWarmup ? sum : sum + s.weightKg * s.reps),
+        0
+      );
+      const totalReps = payload.sets.reduce(
+        (sum, s) => (s.isWarmup ? sum : sum + s.reps),
+        0
+      );
+      const durationMin = Math.max(1, Math.round(payload.durationSeconds / 60));
+      const estimatedCaloriesBurned = Math.round(durationMin * 7.5);
+
+      const optimisticResponse: WorkoutSessionResponse = {
+        id: payload.clientSessionId,
+        userId: 'current-user',
+        planId: payload.planId ?? null,
+        workoutName: payload.workoutName,
+        startedAt: payload.startedAt,
+        completedAt: payload.completedAt,
+        durationSeconds: payload.durationSeconds,
+        totalVolumeKg,
+        totalSets: payload.sets.length,
+        totalReps,
+        estimatedCaloriesBurned,
+        caloriesSource: 'estimated',
+        isCaloriesEstimated: true,
+        notes: payload.notes ?? null,
+        clientSessionId: payload.clientSessionId,
+        sets: payload.sets.map((s, idx) => ({
+          id: `local-set-${idx}`,
+          exerciseId: s.exerciseId,
+          exerciseName: 'Exercise',
+          setNumber: s.setNumber,
+          weightKg: s.weightKg,
+          reps: s.reps,
+          isWarmup: Boolean(s.isWarmup),
+          rpe: s.rpe ?? null,
+        })),
+        personalRecords: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      return { response: optimisticResponse, isOffline: true };
+    }
+  }
+
+  /**
+   * Retrieves verified personal record milestones.
+   */
+  static async getPersonalRecords(exerciseId?: string): Promise<PersonalRecordView[]> {
+    try {
+      return await workoutApi.getPersonalRecords(exerciseId);
+    } catch (error) {
+      logger.error('Failed to load personal records:', error);
+      return [];
+    }
+  }
+
+  // --- Internal Mappers ---
+
+  private static mapPlanSummaryToTemplate(plan: WorkoutPlanSummaryView): WorkoutTemplate {
     return {
-      id,
-      name: 'Push Hypertrophy',
-      description: 'Focus on chest, shoulders, and triceps for muscle growth.',
-      estimatedDuration: 60,
-      difficulty: 'Intermediate',
-      tags: ['Push', 'Hypertrophy'],
-      exercisesCount: 2,
-      exercises: [
-        {
-          id: 'we1',
-          exercise: mockExercise,
-          targetSets: 3,
-          targetReps: '8-10',
-          restSeconds: 90,
-        },
-        {
-          id: 'we2',
-          exercise: mockExercise2,
-          targetSets: 3,
-          targetReps: '10-12',
-          restSeconds: 90,
-        }
-      ]
+      id: plan.id,
+      name: plan.name,
+      description: plan.description || 'System workout routine',
+      estimatedDuration: plan.estimatedDurationMinutes ?? 45,
+      difficulty: plan.difficulty ? (plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)) : 'Intermediate',
+      tags: plan.tags || [],
+      exercisesCount: plan.exerciseCount ?? 0,
+      isAiGenerated: plan.tags?.includes('ai-generated') ?? false,
     };
   }
 
-  static async getExercises(): Promise<Exercise[]> {
-    return [
-      { id: 'e1', name: 'Barbell Bench Press', primaryMuscles: ['Chest'], equipment: 'Barbell', difficulty: 'Intermediate' },
-      { id: 'e2', name: 'Incline Dumbbell Press', primaryMuscles: ['Chest'], equipment: 'Dumbbell', difficulty: 'Intermediate' },
-      { id: 'e3', name: 'Pull-up', primaryMuscles: ['Back'], equipment: 'Bodyweight', difficulty: 'Intermediate' },
-      { id: 'e4', name: 'Barbell Squat', primaryMuscles: ['Legs'], equipment: 'Barbell', difficulty: 'Advanced' },
-      { id: 'e5', name: 'Dumbbell Lateral Raise', primaryMuscles: ['Shoulders'], equipment: 'Dumbbell', difficulty: 'Beginner' },
-    ];
+  private static mapPlanDetailToWorkoutDetail(plan: WorkoutPlanDetailView): WorkoutDetail {
+    return {
+      id: plan.id,
+      name: plan.name,
+      description: plan.description || 'System workout routine',
+      estimatedDuration: plan.estimatedDurationMinutes ?? 45,
+      difficulty: plan.difficulty ? (plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)) : 'Intermediate',
+      tags: plan.tags || [],
+      exercisesCount: plan.exerciseCount ?? plan.exercises?.length ?? 0,
+      exercises: (plan.exercises || []).map((we) => ({
+        id: we.id,
+        exerciseId: we.exerciseId,
+        targetSets: we.targetSets,
+        targetReps: we.targetReps,
+        restSeconds: we.restSeconds ?? 60,
+        exercise: {
+          id: we.exerciseId,
+          name: we.exerciseName,
+          primaryMuscles: [we.primaryMuscle],
+          equipment: we.equipment ? (we.equipment.charAt(0).toUpperCase() + we.equipment.slice(1)) : 'Barbell',
+          difficulty: plan.difficulty,
+        },
+      })),
+    };
   }
 }
