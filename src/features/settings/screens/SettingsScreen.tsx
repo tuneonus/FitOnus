@@ -18,12 +18,26 @@ import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { Units, useSettingsStore } from '@/shared/stores/settingsStore';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { AuthService } from '@/features/auth/services/auth-service';
+import { useSettings, useUpdateSettings } from '@/features/profile/hooks/use-settings';
 
 export function SettingsScreen() {
   const { colors } = useTheme();
   const { navigate, reset } = useNavigation();
   const { theme, units, setUnits } = useSettingsStore();
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const currentUser = useAuthStore((s) => s.user);
+  useSettings();
+  const { mutate: updateSettings } = useUpdateSettings();
+
+  const handleUnitChange = (nextUnits: Units) => {
+    setUnits(nextUnits);
+    if (isAuthenticated) {
+      updateSettings({ unitSystem: nextUnits });
+    }
+  };
 
   return (
     <Screen title="Settings">
@@ -55,7 +69,7 @@ export function SettingsScreen() {
                     { value: 'imperial', label: 'lb · in' },
                   ]}
                   value={units}
-                  onChange={setUnits}
+                  onChange={handleUnitChange}
                 />
               </View>
             </View>
@@ -97,7 +111,7 @@ export function SettingsScreen() {
             <ListRow
               icon={CircleUserRound}
               title="Account settings"
-              subtitle="aarav.mehta@gmail.com"
+              subtitle={currentUser?.email ?? 'aarav.mehta@gmail.com'}
               onPress={() => navigate('account')}
             />
             <ListRow
@@ -122,8 +136,9 @@ export function SettingsScreen() {
         confirmLabel="Log out"
         destructive
         onCancel={() => setConfirmLogout(false)}
-        onConfirm={() => {
+        onConfirm={async () => {
           setConfirmLogout(false);
+          await AuthService.logout();
           reset('welcome');
         }}
       />

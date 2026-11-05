@@ -15,11 +15,17 @@ import {
   workoutPlaces,
 } from '../../onboarding/constants/options';
 import { useTheme } from '@/hooks/use-theme';
+import { useProfile, useUpdateProfile } from '../hooks/use-profile';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 export function FitnessPreferencesScreen() {
   const { colors } = useTheme();
   const { goBack } = useNavigation();
   const store = useProfileSetupStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { data: serverProfile, refetch } = useProfile();
+  const { mutateAsync: updateProfile, isPending: isSaving } = useUpdateProfile();
+
   const [d, setD] = useState({
     goal: store.goal,
     experience: store.experience,
@@ -29,6 +35,19 @@ export function FitnessPreferencesScreen() {
     equipment: store.equipment,
   });
 
+  React.useEffect(() => {
+    if (serverProfile) {
+      setD({
+        goal: serverProfile.primaryGoal || store.goal,
+        experience: serverProfile.experienceLevel || store.experience,
+        place: serverProfile.preferredWorkoutPlace || store.place,
+        daysPerWeek: serverProfile.workoutDaysPerWeek ?? store.daysPerWeek,
+        durationMin: serverProfile.preferredWorkoutDurationMin ?? store.durationMin,
+        equipment: serverProfile.availableEquipment.length > 0 ? [...serverProfile.availableEquipment] : store.equipment,
+      });
+    }
+  }, [serverProfile]);
+
   const toggleEq = (e: string) =>
     setD({
       ...d,
@@ -37,10 +56,33 @@ export function FitnessPreferencesScreen() {
         : [...d.equipment, e],
     });
 
-  const save = () => {
-    store.update(d);
-    showToast({ message: 'Preferences saved · next plan will reflect them' });
-    goBack();
+  const save = async () => {
+    if (isAuthenticated && serverProfile) {
+      try {
+        await updateProfile({
+          version: serverProfile.version,
+          primaryGoal: d.goal as any,
+          experienceLevel: d.experience as any,
+          preferredWorkoutPlace: d.place as any,
+          workoutDaysPerWeek: d.daysPerWeek,
+          preferredWorkoutDurationMin: d.durationMin,
+          availableEquipment: d.equipment,
+        });
+        showToast({ message: 'Preferences saved · next plan will reflect them' });
+        goBack();
+      } catch (err: any) {
+        if (err.code === 'VERSION_CONFLICT') {
+          showToast({ message: 'Preferences updated elsewhere. Refreshed latest data.' });
+          await refetch();
+        } else {
+          showToast({ message: err.message || 'Failed to save preferences' });
+        }
+      }
+    } else {
+      store.update(d);
+      showToast({ message: 'Preferences saved · next plan will reflect them' });
+      goBack();
+    }
   };
 
   const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -54,7 +96,7 @@ export function FitnessPreferencesScreen() {
     <Screen
       title="Fitness preferences"
       footer={
-        <Button size="lg" fullWidth onPress={save}>
+        <Button size="lg" fullWidth onPress={save} loading={isSaving}>
           Save preferences
         </Button>
       }

@@ -13,16 +13,32 @@ import {
 } from '../../onboarding/constants/options';
 import { nutritionGoals } from '../../nutrition/constants/meals';
 import { useTheme } from '@/hooks/use-theme';
+import { useProfile, useUpdateProfile } from '../hooks/use-profile';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 export function NutritionPreferencesScreen() {
   const { colors } = useTheme();
   const { goBack } = useNavigation();
   const store = useProfileSetupStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { data: serverProfile, refetch } = useProfile();
+  const { mutateAsync: updateProfile, isPending: isSaving } = useUpdateProfile();
+
   const [d, setD] = useState({
     diet: store.diet,
     allergies: store.allergies,
     cuisines: store.cuisines,
   });
+
+  React.useEffect(() => {
+    if (serverProfile) {
+      setD({
+        diet: serverProfile.dietType || store.diet,
+        allergies: serverProfile.allergies ? [...serverProfile.allergies] : store.allergies,
+        cuisines: serverProfile.preferredCuisines?.length ? [...serverProfile.preferredCuisines] : store.cuisines,
+      });
+    }
+  }, [serverProfile]);
 
   const toggle = (k: 'allergies' | 'cuisines', v: string) =>
     setD({
@@ -30,17 +46,37 @@ export function NutritionPreferencesScreen() {
       [k]: d[k].includes(v) ? d[k].filter((x) => x !== v) : [...d[k], v],
     });
 
-  const save = () => {
-    store.update(d);
-    showToast({ message: 'Saved · meal suggestions updated' });
-    goBack();
+  const save = async () => {
+    if (isAuthenticated && serverProfile) {
+      try {
+        await updateProfile({
+          version: serverProfile.version,
+          dietType: d.diet as any,
+          allergies: d.allergies,
+          preferredCuisines: d.cuisines,
+        });
+        showToast({ message: 'Saved · meal suggestions updated' });
+        goBack();
+      } catch (err: any) {
+        if (err.code === 'VERSION_CONFLICT') {
+          showToast({ message: 'Preferences updated elsewhere. Refreshed latest data.' });
+          await refetch();
+        } else {
+          showToast({ message: err.message || 'Failed to save preferences' });
+        }
+      }
+    } else {
+      store.update(d);
+      showToast({ message: 'Saved · meal suggestions updated' });
+      goBack();
+    }
   };
 
   return (
     <Screen
       title="Nutrition preferences"
       footer={
-        <Button size="lg" fullWidth onPress={save}>
+        <Button size="lg" fullWidth onPress={save} loading={isSaving}>
           Save preferences
         </Button>
       }

@@ -1,11 +1,11 @@
-import { create, InternalAxiosRequestConfig } from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { Config } from '../constants/config';
 import { logger } from '../utils/logger';
 import { SecureStorageService } from './secure-storage';
 import { AuthRepository } from '../features/auth/api/auth-repository';
 import { useAuthStore } from '../features/auth/stores/auth-store';
 
-export const apiClient = create({
+export const apiClient = axios.create({
   baseURL: Config.API_BASE_URL,
   timeout: 10000,
   headers: {
@@ -16,10 +16,10 @@ export const apiClient = create({
 let isRefreshing = false;
 let failedQueue: {
   resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
 }[] = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -32,9 +32,18 @@ const processQueue = (error: any, token: string | null = null) => {
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    const accessToken = await SecureStorageService.getItem('auth.access_token');
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    const isPublicAuthRoute =
+      config.url?.includes('/auth/login') ||
+      config.url?.includes('/auth/register') ||
+      config.url?.includes('/auth/refresh');
+
+    if (!isPublicAuthRoute) {
+      const accessToken = await SecureStorageService.getItem('auth.access_token');
+      if (accessToken && config.headers && !config.headers.Authorization) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
+    } else if (config.headers?.Authorization) {
+      delete config.headers.Authorization;
     }
     return config;
   },
@@ -48,15 +57,29 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    logger.error('API Response Error:', error?.response?.data || error.message);
-    
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const errorData = error?.response?.data;
+    const errorMessage = errorData?.error?.message || errorData?.message || error.message;
+
+    logger.error('API Response Error:', {
+      status: error.response?.status,
+      url: originalRequest?.url,
+      message: errorMessage,
+    });
+
+    const isAuthRoute =
+      originalRequest?.url?.includes('/auth/login') ||
+      originalRequest?.url?.includes('/auth/register') ||
+      originalRequest?.url?.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest?._retry && !isAuthRoute) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
             return apiClient(originalRequest);
           })
           .catch((err) => Promise.reject(err));
@@ -74,10 +97,12 @@ apiClient.interceptors.response.use(
         const newTokens = await AuthRepository.refreshToken(refreshToken);
         await SecureStorageService.setItem('auth.access_token', newTokens.accessToken);
         await SecureStorageService.setItem('auth.refresh_token', newTokens.refreshToken);
-        
+
         processQueue(null, newTokens.accessToken);
-        
-        originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
+
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
+        }
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
@@ -89,7 +114,7 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

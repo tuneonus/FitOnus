@@ -3,7 +3,7 @@ export const isValidEmail = (email: string) =>
 
 export function passwordStrength(password: string) {
   const checks = [
-    { label: 'At least 8 characters', ok: password.length >= 8 },
+    { label: 'At least 12 characters', ok: password.length >= 12 },
     { label: 'One number', ok: /\d/.test(password) },
     { label: 'One uppercase letter', ok: /[A-Z]/.test(password) },
   ];

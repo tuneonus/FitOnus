@@ -4,7 +4,7 @@ import { AppShell } from './AppShell';
 
 export default function Index() {
   return (
-    <NavigationProvider initialRoute="home">
+    <NavigationProvider initialRoute="splash">
       <AppShell />
     </NavigationProvider>
   );

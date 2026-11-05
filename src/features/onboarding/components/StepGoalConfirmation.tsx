@@ -4,6 +4,7 @@ import { Info, Edit2 } from 'lucide-react-native';
 import { useProfileSetupStore } from '../store/profileSetupStore';
 import { experienceLevels, fitnessGoals } from '../constants/options';
 import { useTheme } from '@/hooks/use-theme';
+import { useProfile } from '@/features/profile/hooks/use-profile';
 
 export type StepGoalConfirmationProps = {
   onEdit: (stepId: string) => void;
@@ -12,10 +13,29 @@ export type StepGoalConfirmationProps = {
 export function StepGoalConfirmation({ onEdit }: StepGoalConfirmationProps) {
   const { colors } = useTheme();
   const s = useProfileSetupStore();
+  const { data: profile } = useProfile();
   const goal = fitnessGoals.find((g) => g.value === s.goal);
   const exp = experienceLevels.find((e) => e.value === s.experience);
   const target =
     s.goal === 'lose' ? 75 : s.goal === 'gain' ? s.weightKg + 4 : s.weightKg;
+
+  // Derive metabolic targets from server or local Mifflin-St Jeor formula
+  const age = Math.max(13, new Date().getFullYear() - (s.dobYear || 1997));
+  const sexOffset = s.sex === 'male' ? 5 : s.sex === 'female' ? -161 : -78;
+  const bmr = 10 * (s.weightKg || 70) + 6.25 * (s.heightCm || 170) - 5 * age + sexOffset;
+  const multiplier =
+    s.daysPerWeek === 0 ? 1.2 : s.daysPerWeek <= 2 ? 1.375 : s.daysPerWeek <= 4 ? 1.55 : s.daysPerWeek <= 6 ? 1.725 : 1.9;
+  const tdee = Math.round(bmr * multiplier);
+  const localCal =
+    s.goal === 'lose'
+      ? Math.max(s.sex === 'female' ? 1200 : 1500, tdee - 500)
+      : s.goal === 'gain'
+        ? tdee + 300
+        : tdee;
+  const localProtein = Math.round((s.weightKg || 70) * (s.goal === 'lose' || s.goal === 'strength' ? 2.0 : s.goal === 'gain' ? 2.2 : 1.6));
+
+  const displayCalories = profile?.calculatedTargets?.dailyCalorieTarget ?? localCal;
+  const displayProtein = profile?.calculatedTargets?.dailyProteinGrams ?? localProtein;
 
   const rows = [
     { label: 'Goal', value: goal?.label ?? '—', step: 'goal' },
@@ -52,8 +72,8 @@ export function StepGoalConfirmation({ onEdit }: StepGoalConfirmationProps) {
         </Text>
         <View style={styles.metricsGrid}>
           {[
-            ['2,350', 'kcal / day'],
-            ['150 g', 'protein'],
+            [displayCalories.toLocaleString(), 'kcal / day'],
+            [`${displayProtein} g`, 'protein'],
             [`${s.daysPerWeek}`, 'workouts / wk'],
           ].map(([val, label]) => (
             <View key={label} style={styles.metricItem}>

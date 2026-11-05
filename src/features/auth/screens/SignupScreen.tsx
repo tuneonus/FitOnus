@@ -5,6 +5,7 @@ import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Screen } from '../../../shared/components/ui/Screen';
 import { Button } from '../../../shared/components/ui/Button';
 import { TextField } from '../../../shared/components/ui/TextField';
+import { StatusBanner } from '../../../shared/components/ui/StatusBanner';
 import { PasswordField } from '../components/PasswordField';
 import { PasswordStrength } from '../components/PasswordStrength';
 import { authService } from '../services/authService';
@@ -21,27 +22,35 @@ export function SignupScreen() {
   const [agreed, setAgreed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const strength = passwordStrength(password);
   const errors = {
     name: !name.trim() ? 'Tell us what to call you.' : undefined,
     email: !isValidEmail(email) ? 'Enter a valid email address.' : undefined,
     password:
-      strength.score < 3
-        ? 'Password doesn’t meet all requirements yet.'
-        : undefined,
+      password.length > 0 && password.length < 12
+        ? 'Password must be at least 12 characters.'
+        : strength.score < 3
+          ? 'Password doesn’t meet all requirements yet.'
+          : undefined,
     terms: !agreed ? 'Please accept the Terms and Privacy Policy.' : undefined,
   };
   const hasErrors = Object.values(errors).some(Boolean);
 
   const handleSubmit = async () => {
     setSubmitted(true);
+    setAuthError(null);
     if (hasErrors) return;
 
     setLoading(true);
-    await authService.signup();
+    const res = await authService.signup(name.trim(), email.trim(), password);
     setLoading(false);
-    reset('onboarding');
+    if (res.ok) {
+      reset('onboarding');
+    } else {
+      setAuthError(res.error);
+    }
   };
 
   return (
@@ -53,6 +62,15 @@ export function SignupScreen() {
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           Your health data stays yours. You choose what the coach can see.
         </Text>
+
+        {authError ? (
+          <StatusBanner
+            tone="error"
+            title="Couldn’t create account"
+            body={authError}
+            style={{ marginBottom: 16 }}
+          />
+        ) : null}
 
         <View style={styles.inputsSection}>
           <TextField

@@ -5,6 +5,8 @@ import { Screen } from '@/shared/components/ui/Screen';
 import { OptionCard } from '@/shared/components/ui/OptionCard';
 import { ThemePreference, useSettingsStore } from '@/shared/stores/settingsStore';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { useUpdateSettings } from '@/features/profile/hooks/use-settings';
 
 const options: {
   value: ThemePreference;
@@ -35,10 +37,15 @@ const options: {
 export function AppearanceScreen() {
   const { colors, setThemeMode } = useTheme();
   const { theme, setTheme } = useSettingsStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { mutate: updateSettings } = useUpdateSettings();
 
   const handleSelect = (v: ThemePreference) => {
     setTheme(v);
     setThemeMode(v);
+    if (isAuthenticated) {
+      updateSettings({ themeMode: v });
+    }
   };
 
   return (

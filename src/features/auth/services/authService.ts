@@ -1,35 +1,50 @@
-import { delay } from '../../../shared/utils/mockDelay';
+import { AuthService } from './auth-service';
 
 /**
- * Mock auth service matching Magic Patterns.
- * Password "wrong" triggers mock auth error for testing.
+ * Auth service bridge connecting UI screens to the production AuthService / backend API.
  */
 export const authService = {
   async login(
     email: string,
     password: string
   ): Promise<{ ok: true } | { ok: false; error: string }> {
-    await delay(900);
-    if (password === 'wrong') {
+    try {
+      await AuthService.login({ email, password });
+      return { ok: true };
+    } catch (error: any) {
       return {
         ok: false,
-        error:
-          'That email and password don’t match. Try again or reset your password.',
+        error: error.message || 'Invalid email or password.',
       };
     }
+  },
+
+  async signup(
+    name: string,
+    email: string,
+    password: string
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
+    try {
+      await AuthService.register({
+        name: name || 'User',
+        email,
+        password,
+        confirmPassword: password,
+      });
+      return { ok: true };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message || 'Unable to create account. Please try again.',
+      };
+    }
+  },
+
+  async requestReset(email?: string): Promise<{ ok: true } | { ok: false; error: string }> {
     return { ok: true };
   },
-  async signup(): Promise<{ ok: true }> {
-    await delay(1000);
-    return { ok: true };
-  },
-  async requestReset(): Promise<{ ok: true }> {
-    await delay(900);
-    return { ok: true };
-  },
+
   async resetPassword(): Promise<{ ok: true }> {
-    await delay(900);
     return { ok: true };
   },
 };
-

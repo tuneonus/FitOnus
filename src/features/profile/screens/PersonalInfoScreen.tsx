@@ -9,11 +9,17 @@ import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { showToast } from '@/shared/stores/toastStore';
 import { ProfileSetup, useProfileSetupStore } from '../../onboarding/store/profileSetupStore';
 import { useTheme } from '@/hooks/use-theme';
+import { useProfile, useUpdateProfile } from '../hooks/use-profile';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 export function PersonalInfoScreen() {
   const { colors } = useTheme();
   const { goBack } = useNavigation();
   const store = useProfileSetupStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { data: serverProfile, refetch } = useProfile();
+  const { mutateAsync: updateProfile, isPending: isSaving } = useUpdateProfile();
+
   const [draft, setDraft] = useState({
     name: store.name,
     sex: store.sex,
@@ -25,27 +31,63 @@ export function PersonalInfoScreen() {
   });
   const [error, setError] = useState<string | undefined>();
 
-  const save = () => {
+  // Sync draft if server profile loads
+  React.useEffect(() => {
+    if (serverProfile) {
+      setDraft({
+        name: serverProfile.name || store.name,
+        sex: serverProfile.sex || store.sex,
+        dob: serverProfile.dateOfBirth || `${store.dobYear}-${String(store.dobMonth).padStart(2, '0')}-${String(store.dobDay).padStart(2, '0')}`,
+        heightCm: serverProfile.heightCm ?? store.heightCm,
+        weightKg: serverProfile.currentWeightKg ?? store.weightKg,
+      });
+    }
+  }, [serverProfile]);
+
+  const save = async () => {
     if (!draft.name.trim()) return setError('Enter your name.');
     const [y = 1995, m = 6, d = 15] = draft.dob.split('-').map(Number);
-    store.update({
-      name: draft.name.trim(),
-      sex: draft.sex,
-      dobYear: y,
-      dobMonth: m,
-      dobDay: d,
-      heightCm: draft.heightCm,
-      weightKg: draft.weightKg,
-    });
-    showToast({ message: 'Personal information saved' });
-    goBack();
+
+    if (isAuthenticated && serverProfile) {
+      try {
+        await updateProfile({
+          version: serverProfile.version,
+          name: draft.name.trim(),
+          sex: draft.sex,
+          dateOfBirth: draft.dob,
+          heightCm: draft.heightCm,
+          currentWeightKg: draft.weightKg,
+        });
+        showToast({ message: 'Personal information saved' });
+        goBack();
+      } catch (err: any) {
+        if (err.code === 'VERSION_CONFLICT') {
+          showToast({ message: 'Profile was modified concurrently. Refreshed with latest data.' });
+          await refetch();
+        } else {
+          setError(err.message || 'Failed to save personal information');
+        }
+      }
+    } else {
+      store.update({
+        name: draft.name.trim(),
+        sex: draft.sex,
+        dobYear: y,
+        dobMonth: m,
+        dobDay: d,
+        heightCm: draft.heightCm,
+        weightKg: draft.weightKg,
+      });
+      showToast({ message: 'Personal information saved' });
+      goBack();
+    }
   };
 
   return (
     <Screen
       title="Personal information"
       footer={
-        <Button size="lg" fullWidth onPress={save}>
+        <Button size="lg" fullWidth onPress={save} loading={isSaving}>
           Save
         </Button>
       }

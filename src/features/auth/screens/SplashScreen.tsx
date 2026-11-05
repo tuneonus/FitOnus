@@ -3,14 +3,54 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Logo } from '../../../shared/components/common/Logo';
 import { useTheme } from '@/hooks/use-theme';
+import { AuthService } from '../services/auth-service';
+import { useAuthStore } from '../stores/auth-store';
+import { profileApi } from '@/features/profile/api/profile-api';
 
 export function SplashScreen() {
   const { colors } = useTheme();
   const { reset } = useNavigation();
 
   useEffect(() => {
-    const t = setTimeout(() => reset('welcome'), 1600);
-    return () => clearTimeout(t);
+    let cancelled = false;
+
+    async function boot() {
+      await AuthService.initialize();
+      const isAuth = useAuthStore.getState().isAuthenticated;
+
+      if (isAuth) {
+        const user = useAuthStore.getState().user;
+        if (user?.onboardingCompleted) {
+          if (!cancelled) reset('home');
+          return;
+        }
+        try {
+          const profile = await profileApi.getProfile();
+          if (profile?.onboardingCompleted) {
+            if (!cancelled) reset('home');
+            return;
+          } else {
+            if (!cancelled) reset('onboarding');
+            return;
+          }
+        } catch {
+          if (!cancelled) reset('onboarding');
+          return;
+        }
+      }
+
+      const t = setTimeout(() => {
+        if (!cancelled) reset('welcome');
+      }, 1400);
+
+      return () => clearTimeout(t);
+    }
+
+    boot();
+
+    return () => {
+      cancelled = true;
+    };
   }, [reset]);
 
   return (

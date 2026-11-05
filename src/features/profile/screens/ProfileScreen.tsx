@@ -21,10 +21,12 @@ import { useMemoryStore } from '../../ai-memory/store/memoryStore';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 import { fitnessGoals } from '../../onboarding/constants/options';
 import { useTheme } from '@/hooks/use-theme';
+import { useProfile } from '../hooks/use-profile';
 
 export function ProfileScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
+  const { data: serverProfile } = useProfile();
   const p = useProfileSetupStore();
   const activeGoals = useGoalsStore((s) => s.goals.filter((g) => g.status === 'active').length);
   const memories = useMemoryStore((s) => s.items.length);

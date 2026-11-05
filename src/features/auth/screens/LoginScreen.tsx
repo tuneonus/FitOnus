@@ -10,6 +10,7 @@ import { PasswordField } from '../components/PasswordField';
 import { authService } from '../services/authService';
 import { isValidEmail } from '../utils/validation';
 import { useTheme } from '@/hooks/use-theme';
+import { profileApi } from '@/features/profile/api/profile-api';
 
 export function LoginScreen() {
   const { colors } = useTheme();
@@ -32,10 +33,18 @@ export function LoginScreen() {
     if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
-    const res = await authService.login(email, password);
+    const res = await authService.login(email.trim(), password);
     setLoading(false);
 
     if (res.ok) {
+      try {
+        const p = await profileApi.getProfile();
+        if (p?.onboardingCompleted) {
+          return reset('home');
+        }
+      } catch {
+        // Fallback to onboarding if profile check fails
+      }
       return reset('onboarding');
     }
 
