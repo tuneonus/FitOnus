@@ -1,0 +1,145 @@
+import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
+import type { UsersController } from './users.controller.js';
+import {
+  createUserRequest,
+  listUsersRequest,
+  updateOwnProfileRequest,
+  updateUserProfileRequest,
+  userIdRequest,
+  userListSchema,
+  userViewSchema,
+} from './users.schemas.js';
+
+const tags = ['Users'];
+
+export function createUsersRoutes(basePath: string, controller: UsersController): RouteGroup {
+  return {
+    basePath,
+    routes: [
+      defineRoute({
+        method: 'post',
+        path: '/',
+        summary: 'Create a user',
+        description:
+          'Admin-controlled account creation. Supports the Idempotency-Key header: a retry with the same key ' +
+          'and payload replays the original result (header Idempotent-Replayed: true).',
+        tags,
+        access: { kind: 'permission', permission: 'users:create' },
+        request: createUserRequest,
+        response: {
+          status: 201,
+          description: 'User created',
+          message: 'User created',
+          schema: userViewSchema,
+        },
+        errorStatuses: [409, 422],
+        handler: controller.create,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/',
+        summary: 'List users with pagination, search and filters',
+        tags,
+        access: { kind: 'permission', permission: 'users:read' },
+        request: listUsersRequest,
+        response: {
+          status: 200,
+          description: 'A page of users',
+          message: 'Success',
+          schema: userListSchema,
+          paginated: true,
+        },
+        handler: controller.list,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/me',
+        summary: 'Get the current user',
+        tags,
+        access: { kind: 'authenticated' },
+        response: {
+          status: 200,
+          description: 'The current user',
+          message: 'Success',
+          schema: userViewSchema,
+        },
+        handler: controller.getMe,
+      }),
+      defineRoute({
+        method: 'patch',
+        path: '/me',
+        summary: 'Update the current user profile',
+        tags,
+        access: { kind: 'authenticated' },
+        request: updateOwnProfileRequest,
+        response: {
+          status: 200,
+          description: 'Updated user',
+          message: 'Profile updated',
+          schema: userViewSchema,
+        },
+        errorStatuses: [409],
+        handler: controller.updateMe,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/:id',
+        summary: 'Get a user by id (self, or any user with users:read)',
+        tags,
+        access: { kind: 'authenticated' },
+        request: userIdRequest,
+        response: { status: 200, description: 'The user', message: 'Success', schema: userViewSchema },
+        errorStatuses: [403, 404],
+        handler: controller.getById,
+      }),
+      defineRoute({
+        method: 'patch',
+        path: '/:id',
+        summary: 'Update a user profile (self, or any user with users:update)',
+        tags,
+        access: { kind: 'authenticated' },
+        request: updateUserProfileRequest,
+        response: {
+          status: 200,
+          description: 'Updated user',
+          message: 'Profile updated',
+          schema: userViewSchema,
+        },
+        errorStatuses: [403, 404, 409],
+        handler: controller.updateById,
+      }),
+      defineRoute({
+        method: 'post',
+        path: '/:id/disable',
+        summary: 'Disable a user account',
+        tags,
+        access: { kind: 'permission', permission: 'users:manage-status' },
+        request: userIdRequest,
+        response: {
+          status: 200,
+          description: 'Disabled user',
+          message: 'User disabled',
+          schema: userViewSchema,
+        },
+        errorStatuses: [404, 409, 422],
+        handler: controller.disable,
+      }),
+      defineRoute({
+        method: 'post',
+        path: '/:id/enable',
+        summary: 'Re-enable a disabled user account',
+        tags,
+        access: { kind: 'permission', permission: 'users:manage-status' },
+        request: userIdRequest,
+        response: {
+          status: 200,
+          description: 'Enabled user',
+          message: 'User enabled',
+          schema: userViewSchema,
+        },
+        errorStatuses: [404, 409, 422],
+        handler: controller.enable,
+      }),
+    ],
+  };
+}

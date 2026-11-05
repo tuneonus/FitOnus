@@ -1,0 +1,17 @@
+# Keep the build context small and secret-free.
+.git
+.github
+node_modules
+dist
+coverage
+tests
+docs
+*.md
+.env
+.env.*
+!.env.example
+*.log
+.vscode
+.idea
+compose.yaml
+Dockerfile

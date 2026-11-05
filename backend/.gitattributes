@@ -1,0 +1,4 @@
+# Keep LF everywhere so migration checksums and formatting match across Windows/Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

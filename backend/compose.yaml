@@ -1,0 +1,52 @@
+# Local development. `docker compose up -d db` starts PostgreSQL only (the usual workflow).
+# `docker compose --profile app up --build` also builds and runs migrations + the API container.
+# All credentials come from .env (gitignored); nothing secret is written here.
+name: generic-backend
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      # Bound to localhost only; never exposed on the network.
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    profiles: [app]
+    build: .
+    command: ['node', 'dist/scripts/migrate.js']
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-app_dev}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    profiles: [app]
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-app_dev}
+      NODE_ENV: ${APP_NODE_ENV:-development}
+      HOST: 0.0.0.0
+      LOG_PRETTY: 'false'
+    ports:
+      - '127.0.0.1:${PORT:-3000}:3000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db-data:
