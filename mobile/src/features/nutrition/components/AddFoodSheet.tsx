@@ -21,15 +21,17 @@ type AddFoodSheetProps = {
 export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetProps) {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const { addEntry, removeEntry } = useNutritionStore();
+  const { logMeal, createCustomFood, removeEntry } = useNutritionStore();
   const [mode, setMode] = useState<'pick' | 'manual'>('pick');
   const [meal, setMeal] = useState<MealType>(initialMeal);
   const [form, setForm] = useState({ name: '', kcal: '', protein: '', carbs: '', fat: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const close = () => {
     setMode('pick');
     setSubmitted(false);
+    setIsSaving(false);
     onClose();
   };
 
@@ -74,31 +76,59 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
   const nameError = submitted && !form.name.trim() ? 'Name the food.' : undefined;
   const kcalError = submitted && !(Number(form.kcal) > 0) ? 'Enter calories.' : undefined;
 
-  const saveManual = () => {
+  const saveManual = async () => {
     setSubmitted(true);
     if (!form.name.trim() || !(Number(form.kcal) > 0)) return;
-    const id = addEntry({
-      meal,
-      time: 'Just now',
+
+    setIsSaving(true);
+    const kcal = Number(form.kcal);
+    const protein = Number(form.protein) || 0;
+    const carbs = Number(form.carbs) || 0;
+    const fat = Number(form.fat) || 0;
+
+    let foodId: string | undefined;
+    try {
+      const created = await createCustomFood({
+        name: form.name.trim(),
+        servingSize: 1,
+        servingUnit: 'serving',
+        servingWeightG: 100,
+        servingBasis: 'serving',
+        calories: kcal,
+        proteinG: protein,
+        carbohydratesG: carbs,
+        fatG: fat,
+        fiberG: 0,
+      });
+      foodId = created.id;
+    } catch {
+      // Continue offline logging even if remote custom food creation fails
+    }
+
+    const id = await logMeal({
+      mealType: meal,
       method: 'manual',
       items: [
         {
-          id: `q-${Date.now()}`,
-          name: form.name,
+          id: foodId || `q-${Date.now()}`,
+          name: form.name.trim(),
           serving: '1 serving',
-          kcal: Number(form.kcal),
-          protein: Number(form.protein) || 0,
-          carbs: Number(form.carbs) || 0,
-          fat: Number(form.fat) || 0,
+          kcal,
+          protein,
+          carbs,
+          fat,
           fiber: 0,
+          isCustom: true,
         },
       ],
     });
+
     showToast({
       message: `Added to ${mealLabels[meal]}`,
       actionLabel: 'Undo',
       onAction: () => removeEntry(id),
     });
+
     setForm({ name: '', kcal: '', protein: '', carbs: '', fat: '' });
     close();
   };
@@ -110,7 +140,13 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
       title={mode === 'pick' ? `Add to ${mealLabels[initialMeal]}` : 'Quick add'}
       footer={
         mode === 'manual' ? (
-          <Button size="lg" fullWidth title="Add food" onPress={saveManual} />
+          <Button
+            size="lg"
+            fullWidth
+            title={isSaving ? 'Adding...' : 'Add food'}
+            disabled={isSaving}
+            onPress={saveManual}
+          />
         ) : undefined
       }
     >
@@ -129,13 +165,11 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
                   isFullWidth ? { width: '100%' } : { width: '48.5%' },
                 ]}
               >
-                <Icon size={22} color={colors.ink} />
-                <Text style={[styles.methodLabel, { color: colors.ink }]}>
-                  {label}
-                </Text>
-                <Text style={[styles.methodDetail, { color: colors.muted }]}>
-                  {detail}
-                </Text>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.surface }]}>
+                  <Icon size={20} color={colors.ink} />
+                </View>
+                <Text style={[styles.methodLabel, { color: colors.ink }]}>{label}</Text>
+                <Text style={[styles.methodDetail, { color: colors.muted }]}>{detail}</Text>
               </TouchableOpacity>
             );
           })}
@@ -143,46 +177,61 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
       ) : (
         <View style={styles.manualForm}>
           <SegmentedControl
-            label="Meal"
             options={mealOrder.map((m) => ({ value: m, label: mealLabels[m] }))}
             value={meal}
             onChange={(val) => setMeal(val as MealType)}
           />
+
           <TextField
             label="Food name"
-            placeholder="e.g. Homemade poha"
+            placeholder="e.g. Grandma's apple pie"
             value={form.name}
-            onChangeText={(text) => setForm({ ...form, name: text })}
+            onChangeText={(t) => setForm((f) => ({ ...f, name: t }))}
             error={nameError}
           />
-          <TextField
-            label="Calories"
-            keyboardType="numeric"
-            suffix="kcal"
-            value={form.kcal}
-            onChangeText={(text) =>
-              setForm({ ...form, kcal: text.replace(/[^\d]/g, '') })
-            }
-            error={kcalError}
-          />
-          <View style={styles.macroInputs}>
-            {(['protein', 'carbs', 'fat'] as const).map((k) => (
-              <View key={k} style={{ flex: 1 }}>
-                <TextField
-                  label={k[0]!.toUpperCase() + k.slice(1)}
-                  keyboardType="decimal-pad"
-                  suffix="g"
-                  value={form[k]}
-                  onChangeText={(text) =>
-                    setForm({ ...form, [k]: text.replace(/[^\d.]/g, '') })
-                  }
-                />
-              </View>
-            ))}
+
+          <View style={styles.macroRow}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label="Calories (kcal)"
+                placeholder="0"
+                keyboardType="numeric"
+                value={form.kcal}
+                onChangeText={(t) => setForm((f) => ({ ...f, kcal: t }))}
+                error={kcalError}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label="Protein (g)"
+                placeholder="0"
+                keyboardType="numeric"
+                value={form.protein}
+                onChangeText={(t) => setForm((f) => ({ ...f, protein: t }))}
+              />
+            </View>
           </View>
-          <Text style={[styles.manualNote, { color: colors.muted }]}>
-            Manual entries are marked as logged by you.
-          </Text>
+
+          <View style={styles.macroRow}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label="Carbs (g)"
+                placeholder="0"
+                keyboardType="numeric"
+                value={form.carbs}
+                onChangeText={(t) => setForm((f) => ({ ...f, carbs: t }))}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label="Fat (g)"
+                placeholder="0"
+                keyboardType="numeric"
+                value={form.fat}
+                onChangeText={(t) => setForm((f) => ({ ...f, fat: t }))}
+              />
+            </View>
+          </View>
         </View>
       )}
     </BottomSheet>
@@ -193,36 +242,35 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
+    gap: 10,
+    marginTop: 8,
   },
   methodCard: {
     borderRadius: 20,
     padding: 16,
-    minHeight: 100,
+    gap: 8,
+  },
+  iconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   methodLabel: {
     fontSize: 15,
     fontWeight: '600',
-    marginTop: 12,
   },
   methodDetail: {
     fontSize: 12,
-    marginTop: 2,
+    lineHeight: 16,
   },
   manualForm: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
     gap: 16,
+    marginTop: 8,
   },
-  macroInputs: {
+  macroRow: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  manualNote: {
-    fontSize: 12,
-    marginTop: 4,
+    gap: 12,
   },
 });
-

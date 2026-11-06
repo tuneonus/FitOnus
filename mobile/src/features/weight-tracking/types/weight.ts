@@ -1,4 +1,5 @@
 export type WeightEntry = {
+  id?: string | undefined;
   date: string;
   value: number;
   time?: string | undefined;
@@ -9,6 +10,7 @@ export type WeightEntry = {
 export type MeasurementKey = 'bodyFat' | 'muscleMass' | 'waist' | 'chest' | 'hip' | 'arm' | 'neck';
 
 export type MeasurementEntry = {
+  id?: string | undefined;
   date: string;
   values: Partial<Record<MeasurementKey, number>>;
 };

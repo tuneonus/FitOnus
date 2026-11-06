@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { ChevronRight, Plus, Ruler, Sparkles } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { ChevronRight, Plus, Ruler, Sparkles, Trash2 } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { Button } from '@/shared/components/ui/Button';
@@ -11,30 +11,49 @@ import { LineChart } from '@/shared/components/charts/LineChart';
 import type { TimeRange } from '@/shared/types/health';
 import { useTheme } from '@/hooks/use-theme';
 import { useWeightStore } from '../store/weightStore';
-import { weightByMonth } from '../data/weightMock';
 import { AddWeightSheet } from '../components/AddWeightSheet';
+import { showToast } from '@/shared/stores/toastStore';
 
 export function WeightScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const { entries, goalWeight, startWeight } = useWeightStore();
+  const {
+    entries,
+    goalWeight,
+    startWeight,
+    points: storePoints,
+    isLoading,
+    fetchWeightHistory,
+    deleteEntry,
+  } = useWeightStore();
   const [range, setRange] = useState<TimeRange>('W');
   const [adding, setAdding] = useState(false);
 
-  const latest = entries[entries.length - 1]!;
-  const points =
-    range === 'D'
-      ? entries.slice(-7).map((e) => ({ label: e.date, value: e.value }))
-      : range === 'W'
-      ? entries.map((e) => ({ label: e.date, value: e.value }))
-      : range === 'M'
-      ? [...weightByMonth.slice(-5, -1), { label: 'Oct', value: latest.value }]
-      : [...weightByMonth.slice(0, -1), { label: 'Oct', value: latest.value }];
+  useEffect(() => {
+    fetchWeightHistory(range).catch(() => {});
+  }, [range, fetchWeightHistory]);
 
-  const firstPt = points[0]?.value ?? latest.value;
-  const lastPt = points[points.length - 1]?.value ?? latest.value;
-  const change = lastPt - firstPt;
-  const lost = startWeight - latest.value;
+  const latest = entries[entries.length - 1];
+  const measurements = useWeightStore((s) => s.measurements);
+  const latestMeas = measurements[0];
+
+  const points =
+    storePoints && storePoints.length > 0
+      ? storePoints
+      : entries.map((e) => ({ label: e.date, value: e.value }));
+
+  const firstPt = points[0]?.value ?? latest?.value ?? 0;
+  const lastPt = points[points.length - 1]?.value ?? latest?.value ?? 0;
+  const change = points.length > 1 ? lastPt - firstPt : 0;
+  const lost = latest ? startWeight - latest.value : 0;
+
+  const handleDelete = async (id?: string) => {
+    if (!id) return;
+    const ok = await deleteEntry(id);
+    if (ok) {
+      showToast({ message: 'Weight entry deleted' });
+    }
+  };
 
   return (
     <Screen
@@ -45,31 +64,49 @@ export function WeightScreen() {
         </Button>
       }
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => fetchWeightHistory(range, true)}
+            tintColor={colors.accent}
+          />
+        }
+      >
         {/* Current Weight Hero */}
         <View style={styles.currentSection}>
           <Text style={[styles.currentLabel, { color: colors.muted }]}>Current</Text>
           <View style={styles.weightNumberRow}>
-            <Text style={[styles.weightBig, { color: colors.ink }]}>{latest.value.toFixed(1)}</Text>
-            <Text style={[styles.weightUnit, { color: colors.muted }]}>kg</Text>
+            <Text style={[styles.weightBig, { color: colors.ink }]}>
+              {latest ? latest.value.toFixed(1) : '—'}
+            </Text>
+            {latest && <Text style={[styles.weightUnit, { color: colors.muted }]}>kg</Text>}
           </View>
           <View style={styles.badgeRow}>
-            <Text
-              style={[
-                styles.changeText,
-                { color: change <= 0 ? colors.good : colors.warn },
-              ]}
-            >
-              {change > 0 ? '+' : ''}
-              {change.toFixed(1)} kg this view
-            </Text>
-            <SourceTag
-              source={
-                latest.source === 'synced'
-                  ? { kind: 'synced', label: 'Smart scale' }
-                  : { kind: 'manual', label: `Logged ${latest.time ?? ''}` }
-              }
-            />
+            {latest ? (
+              <>
+                <Text
+                  style={[
+                    styles.changeText,
+                    { color: change <= 0 ? colors.good : colors.warn },
+                  ]}
+                >
+                  {change > 0 ? '+' : ''}
+                  {change.toFixed(1)} kg this view
+                </Text>
+                <SourceTag
+                  source={
+                    latest.source === 'synced'
+                      ? { kind: 'synced', label: 'Smart scale' }
+                      : { kind: 'manual', label: `Logged ${latest.time ?? ''}` }
+                  }
+                />
+              </>
+            ) : (
+              <Text style={{ color: colors.muted, fontSize: 13 }}>No weight logged yet</Text>
+            )}
           </View>
         </View>
 
@@ -86,15 +123,24 @@ export function WeightScreen() {
             onChange={(val) => setRange(val as TimeRange)}
           />
           <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            <LineChart
-              key={range}
-              points={points}
-              target={goalWeight}
-              targetLabel={`Goal ${goalWeight}`}
-              formatValue={(v) => `${v.toFixed(1)} kg`}
-              height={170}
-              strokeColor={colors.accent}
-            />
+            {points.length > 0 ? (
+              <LineChart
+                key={range}
+                points={points}
+                target={goalWeight}
+                targetLabel={`Goal ${goalWeight}`}
+                subtitle="EMA trend smoothed"
+                formatValue={(v) => `${v.toFixed(1)} kg`}
+                height={170}
+                strokeColor={colors.accent}
+              />
+            ) : (
+              <View style={{ height: 170, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>
+                  No weight entries recorded for this time range.
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -103,7 +149,7 @@ export function WeightScreen() {
           <View style={styles.goalHeader}>
             <Text style={[styles.cardTitle, { color: colors.ink }]}>Goal · {goalWeight} kg</Text>
             <Text style={[styles.goalSub, { color: colors.muted }]}>
-              {(latest.value - goalWeight).toFixed(1)} kg to go
+              {latest ? `${(latest.value - goalWeight).toFixed(1)} kg to go` : 'Target set'}
             </Text>
           </View>
           <ProgressBar
@@ -150,7 +196,9 @@ export function WeightScreen() {
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={[styles.measurementsTitle, { color: colors.ink }]}>Body measurements</Text>
             <Text style={[styles.measurementsSub, { color: colors.muted }]}>
-              Body fat 18.6% · Waist 86.5 cm · Oct 4
+              {latestMeas?.values?.waist
+                ? `Waist ${latestMeas.values.waist} cm · ${latestMeas.date}`
+                : 'Track waist, chest, arms and more'}
             </Text>
           </View>
           <ChevronRight size={18} color={colors.muted} />
@@ -160,48 +208,64 @@ export function WeightScreen() {
         <View style={styles.historyBlock}>
           <Text style={[styles.historyHeading, { color: colors.ink }]}>History</Text>
           <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            {[...entries]
-              .reverse()
-              .slice(0, 8)
-              .map((e, i, arr) => {
-                const prev = arr[i + 1];
-                const d = prev ? e.value - prev.value : 0;
-                return (
-                  <View
-                    key={e.date}
-                    style={[
-                      styles.historyRow,
-                      { borderBottomColor: colors.line },
-                      i === Math.min(arr.length, 8) - 1 && { borderBottomWidth: 0 },
-                    ]}
-                  >
-                    <View style={{ gap: 3 }}>
-                      <Text style={[styles.rowDate, { color: colors.ink }]}>{e.date}</Text>
-                      <SourceTag
-                        source={
-                          e.source === 'synced'
-                            ? { kind: 'synced', label: 'Apple Health' }
-                            : { kind: 'manual', label: e.note ?? 'Manual' }
-                        }
-                      />
+            {entries.length === 0 ? (
+              <Text style={{ color: colors.muted, textAlign: 'center', padding: 16, fontSize: 13 }}>
+                No weight history recorded yet.
+              </Text>
+            ) : (
+              [...entries]
+                .reverse()
+                .slice(0, 8)
+                .map((e, i, arr) => {
+                  const prev = arr[i + 1];
+                  const d = prev ? e.value - prev.value : 0;
+                  return (
+                    <View
+                      key={e.id || `${e.date}-${i}`}
+                      style={[
+                        styles.historyRow,
+                        { borderBottomColor: colors.line },
+                        i === Math.min(arr.length, 8) - 1 && { borderBottomWidth: 0 },
+                      ]}
+                    >
+                      <View style={{ gap: 3 }}>
+                        <Text style={[styles.rowDate, { color: colors.ink }]}>{e.date}</Text>
+                        <SourceTag
+                          source={
+                            e.source === 'synced'
+                              ? { kind: 'synced', label: 'Apple Health' }
+                              : { kind: 'manual', label: e.note ?? 'Manual' }
+                          }
+                        />
+                      </View>
+                      <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={[styles.rowWeight, { color: colors.ink }]}>{e.value.toFixed(1)}</Text>
+                          {e.id && (
+                            <TouchableOpacity
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              onPress={() => handleDelete(e.id)}
+                            >
+                              <Trash2 size={14} color={colors.muted} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                        {prev && (
+                          <Text
+                            style={[
+                              styles.rowDiff,
+                              { color: d <= 0 ? colors.good : colors.warn },
+                            ]}
+                          >
+                            {d > 0 ? '+' : ''}
+                            {d.toFixed(1)}
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                    <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                      <Text style={[styles.rowWeight, { color: colors.ink }]}>{e.value.toFixed(1)}</Text>
-                      {prev && (
-                        <Text
-                          style={[
-                            styles.rowDiff,
-                            { color: d <= 0 ? colors.good : colors.warn },
-                          ]}
-                        >
-                          {d > 0 ? '+' : ''}
-                          {d.toFixed(1)}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                );
-              })}
+                  );
+                })
+            )}
           </View>
         </View>
       </ScrollView>

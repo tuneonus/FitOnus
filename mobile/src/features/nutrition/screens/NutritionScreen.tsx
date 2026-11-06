@@ -1,6 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { BookOpenText, BarChart3, Camera, ScanBarcode, Utensils, Plus, Sparkles } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import {
+  BookOpenText,
+  BarChart3,
+  Camera,
+  ScanBarcode,
+  Utensils,
+  Plus,
+  Sparkles,
+  Droplets,
+  CloudOff,
+  RefreshCw,
+} from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { IconButton } from '@/shared/components/ui/IconButton';
@@ -18,11 +29,49 @@ import type { FoodItem, MealEntry, MealType } from '../types/nutrition';
 export function NutritionScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const entries = useNutritionStore((s) => s.entries);
+  const {
+    entries,
+    dailySummary,
+    waterMl,
+    isLoading,
+    isRefreshing,
+    pendingSyncCount,
+    fetchDailyNutrition,
+    logWater,
+    syncPendingMutations,
+    refreshPendingSyncCount,
+  } = useNutritionStore();
+
   const totals = useDailyTotals();
   const [addMeal, setAddMeal] = useState<MealType | null>(null);
   const [editing, setEditing] = useState<{ entry: MealEntry; item: FoodItem } | null>(null);
-  const remaining = nutritionGoals.kcal - totals.kcal;
+  const [syncingOffline, setSyncingOffline] = useState(false);
+
+  useEffect(() => {
+    fetchDailyNutrition();
+    refreshPendingSyncCount();
+  }, [fetchDailyNutrition, refreshPendingSyncCount]);
+
+  const targets = dailySummary?.targets;
+  const currentGoals = {
+    kcal: targets?.calories ?? nutritionGoals.kcal,
+    protein: targets?.proteinG ?? nutritionGoals.protein,
+    carbs: targets?.carbsG ?? nutritionGoals.carbs,
+    fat: targets?.fatG ?? nutritionGoals.fat,
+    fiber: nutritionGoals.fiber,
+  };
+
+  const waterGoal = targets?.waterMl ?? 2500;
+  const remaining = currentGoals.kcal - totals.kcal;
+
+  const handleManualSync = async () => {
+    setSyncingOffline(true);
+    try {
+      await syncPendingMutations();
+    } finally {
+      setSyncingOffline(false);
+    }
+  };
 
   return (
     <Screen
@@ -34,13 +83,46 @@ export function NutritionScreen() {
         </View>
       }
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => fetchDailyNutrition(undefined, true)}
+            tintColor={colors.ink}
+          />
+        }
+      >
+        {/* Offline Pending Banner */}
+        {pendingSyncCount > 0 && (
+          <View style={[styles.offlineBanner, { backgroundColor: colors.surface2, borderColor: colors.line }]}>
+            <View style={styles.offlineBannerLeft}>
+              <CloudOff size={16} color={colors.warn} />
+              <Text style={[styles.offlineBannerText, { color: colors.ink }]}>
+                {pendingSyncCount} item{pendingSyncCount > 1 ? 's' : ''} queued offline
+              </Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleManualSync}
+              disabled={syncingOffline}
+              style={[styles.syncBtn, { borderColor: colors.line }]}
+            >
+              <RefreshCw size={12} color={colors.ink} />
+              <Text style={[styles.syncBtnText, { color: colors.ink }]}>
+                {syncingOffline ? 'Syncing...' : 'Sync'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Calories Ring & Macros Card */}
         <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <ProgressRing
             size={112}
             strokeWidth={10}
-            value={Math.min(1, Math.max(0, totals.kcal / nutritionGoals.kcal))}
+            value={Math.min(1, Math.max(0, totals.kcal / currentGoals.kcal))}
             color={colors.ink}
             trackColor={colors.line}
           >
@@ -57,7 +139,7 @@ export function NutritionScreen() {
           <View style={styles.macrosList}>
             {macroMeta.map((m) => {
               const val = totals[m.key];
-              const goal = nutritionGoals[m.key];
+              const goal = currentGoals[m.key];
               const barColor =
                 m.key === 'protein'
                   ? colors.move
@@ -112,8 +194,54 @@ export function NutritionScreen() {
           </View>
         </View>
 
+        {/* Hydration Tracker Card */}
+        <View style={[styles.hydrationCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View style={styles.hydrationHeader}>
+            <View style={styles.hydrationTitleRow}>
+              <Droplets size={18} color="#38BDF8" />
+              <Text style={[styles.hydrationTitle, { color: colors.ink }]}>Hydration</Text>
+            </View>
+            <Text style={[styles.hydrationValue, { color: colors.ink }]}>
+              {(waterMl / 1000).toFixed(1)} L
+              <Text style={{ color: colors.muted }}> / {(waterGoal / 1000).toFixed(1)} L</Text>
+            </Text>
+          </View>
+          <ProgressBar
+            value={Math.min(1, Math.max(0, waterMl / waterGoal))}
+            color="#38BDF8"
+            trackColor={colors.surface2}
+            style={styles.progressBar}
+          />
+          <View style={styles.hydrationActions}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => logWater(250)}
+              style={[styles.waterPill, { backgroundColor: colors.surface2, borderColor: colors.line }]}
+            >
+              <Plus size={14} color={colors.ink} />
+              <Text style={[styles.waterPillText, { color: colors.ink }]}>250 ml</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => logWater(500)}
+              style={[styles.waterPill, { backgroundColor: colors.surface2, borderColor: colors.line }]}
+            >
+              <Plus size={14} color={colors.ink} />
+              <Text style={[styles.waterPillText, { color: colors.ink }]}>500 ml</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => logWater(750)}
+              style={[styles.waterPill, { backgroundColor: colors.surface2, borderColor: colors.line }]}
+            >
+              <Plus size={14} color={colors.ink} />
+              <Text style={[styles.waterPillText, { color: colors.ink }]}>750 ml</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Empty State */}
-        {entries.length === 0 && (
+        {entries.length === 0 && !isLoading && (
           <EmptyState
             compact
             icon={Utensils}
@@ -127,7 +255,7 @@ export function NutritionScreen() {
         {/* Meal Sections */}
         {mealOrder.map((meal) => {
           const mealEntries = entries.filter((e) => e.meal === meal);
-          const kcal = mealEntries.flatMap((e) => e.items).reduce((s, i) => s + i.kcal, 0);
+          const kcal = mealEntries.flatMap((e) => e.items).reduce((s, i) => s + (i.kcal || 0), 0);
 
           return (
             <View key={meal} style={styles.mealSection}>
@@ -167,6 +295,9 @@ export function NutritionScreen() {
                             <Text style={[styles.estText, { color: colors.muted }]}>Est.</Text>
                           </View>
                         )}
+                        {entry.isSynced === false && (
+                          <View style={[styles.offlineDot, { backgroundColor: colors.warn }]} />
+                        )}
                       </View>
                     </TouchableOpacity>
                   ))
@@ -198,10 +329,10 @@ export function NutritionScreen() {
           </View>
           <View style={styles.coachTextCol}>
             <Text style={[styles.coachHeading, { color: colors.ink }]}>
-              You’re {Math.max(0, Math.round(nutritionGoals.protein - totals.protein))} g short on protein
+              You’re {Math.max(0, Math.round(currentGoals.protein - totals.protein))} g short on protein
             </Text>
             <Text style={[styles.coachBody, { color: colors.muted }]}>
-              Paneer tikka bowl for lunch (46 g) and a whey shake post-workout (27 g) get you most of the way. Tap to plan the rest.
+              Tap to get personal meal suggestions matching your targets.
             </Text>
           </View>
         </TouchableOpacity>
@@ -223,6 +354,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  offlineBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  offlineBannerText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  syncBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  syncBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   summaryCard: {
     flexDirection: 'row',
@@ -276,6 +438,49 @@ const styles = StyleSheet.create({
   },
   actionBtnWrapper: {
     flex: 1,
+  },
+  hydrationCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+  },
+  hydrationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  hydrationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  hydrationTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  hydrationValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  hydrationActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  waterPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  waterPillText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   mealSection: {
     gap: 8,
@@ -337,6 +542,12 @@ const styles = StyleSheet.create({
   },
   estText: {
     fontSize: 10,
+  },
+  offlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 2,
   },
   addFoodBtn: {
     flexDirection: 'row',

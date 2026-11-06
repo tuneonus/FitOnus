@@ -1,46 +1,79 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Screen } from '@/shared/components/ui/Screen';
 import { BarChart } from '@/shared/components/charts/BarChart';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
 import { useTheme } from '@/hooks/use-theme';
-import { useDailyTotals } from '../store/nutritionStore';
-import { mealHistory } from '../data/foodsMock';
+import { useDailyTotals, useNutritionStore } from '../store/nutritionStore';
 import { nutritionGoals } from '../constants/meals';
+import { nutritionApi } from '../api/nutrition-api';
+import type { NutritionAnalyticsView } from '../types/nutrition';
+import { logger } from '@/utils/logger';
 
 export function MealDiaryScreen() {
   const { colors } = useTheme();
   const today = useDailyTotals();
+  const dailySummary = useNutritionStore((s) => s.dailySummary);
 
-  const week = [...mealHistory].reverse().map((d) => ({
-    label: d.date.slice(0, 3),
-    value: d.kcal,
-  }));
-  week.push({ label: 'Fri', value: Math.round(today.kcal) });
+  const [analytics, setAnalytics] = useState<NutritionAnalyticsView | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const avgProtein = Math.round(
-    mealHistory.reduce((s, d) => s + d.protein, 0) / mealHistory.length
-  );
-  const avgKcal = Math.round(
-    mealHistory.reduce((s, d) => s + d.kcal, 0) / mealHistory.length
-  );
+  const loadData = async () => {
+    try {
+      const data = await nutritionApi.getNutritionAnalytics('week');
+      setAnalytics(data);
+    } catch (err: any) {
+      logger.warn('Failed to load nutrition analytics for diary:', err?.message);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const calGoal = dailySummary?.targets?.calories ?? nutritionGoals.kcal;
+  const proGoal = dailySummary?.targets?.proteinG ?? nutritionGoals.protein;
+
+  const week =
+    analytics?.caloriesTrend && analytics.caloriesTrend.length > 0
+      ? analytics.caloriesTrend.map((d) => ({
+          label: d.label,
+          value: Math.round(d.value),
+        }))
+      : [];
+
+  const avgProtein = analytics ? Math.round(analytics.avgProtein) : 0;
+  const avgKcal = analytics ? Math.round(analytics.avgCalories) : 0;
+  const pastDays = analytics?.caloriesTrend ? [...analytics.caloriesTrend].reverse() : [];
 
   return (
     <Screen title="Meal diary">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />
+        }
+      >
         {/* Calories 7-day BarChart */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <View style={styles.chartHeader}>
             <Text style={[styles.cardTitle, { color: colors.ink }]}>Calories · 7 days</Text>
             <Text style={[styles.goalText, { color: colors.muted }]}>
-              Goal {nutritionGoals.kcal.toLocaleString()}
+              Goal {calGoal.toLocaleString()}
             </Text>
           </View>
 
           <View style={styles.chartWrapper}>
             <BarChart
               data={week}
-              goal={nutritionGoals.kcal}
+              goal={calGoal}
               height={140}
               barColor={colors.ink}
               formatValue={(v) => `${v.toLocaleString()} kcal`}
@@ -48,7 +81,9 @@ export function MealDiaryScreen() {
           </View>
 
           <Text style={[styles.chartFootnote, { color: colors.muted }]}>
-            Weekend days ran ~590 kcal above weekdays. Sunday was the highest at 2,860.
+            {analytics
+              ? `Logged ${analytics.loggedDaysCount} of ${analytics.totalDaysInRange} days in this period.`
+              : 'Log meals daily to see your calorie adherence trend.'}
           </Text>
         </View>
 
@@ -63,11 +98,11 @@ export function MealDiaryScreen() {
             <Text style={[styles.statLabel, { color: colors.muted }]}>Avg protein</Text>
             <Text style={[styles.statValue, { color: colors.ink }]}>
               {avgProtein}
-              <Text style={{ fontSize: 13, color: colors.muted }}> / {nutritionGoals.protein} g</Text>
+              <Text style={{ fontSize: 13, color: colors.muted }}> / {proGoal} g</Text>
             </Text>
             <ProgressBar
               value={avgProtein}
-              max={nutritionGoals.protein}
+              max={proGoal}
               color={colors.move}
               trackColor={colors.surface2}
               style={{ marginTop: 8, height: 6 }}
@@ -92,29 +127,37 @@ export function MealDiaryScreen() {
             </View>
 
             {/* Past days */}
-            {mealHistory.map((d, idx) => (
-              <View
-                key={d.date}
-                style={[
-                  styles.historyRow,
-                  { borderBottomColor: colors.line },
-                  idx === mealHistory.length - 1 && { borderBottomWidth: 0 },
-                ]}
-              >
-                <View>
-                  <Text style={[styles.rowDate, { color: colors.ink }]}>{d.date}</Text>
-                  <Text style={[styles.rowSub, { color: colors.muted }]}>{d.meals} meals</Text>
-                </View>
-                <Text
-                  style={[
-                    styles.rowNumbers,
-                    { color: d.kcal > nutritionGoals.kcal ? colors.warn : colors.ink },
-                  ]}
-                >
-                  {d.kcal.toLocaleString()} kcal · {d.protein} g
+            {pastDays.length === 0 ? (
+              <View style={[styles.historyRow, { borderBottomWidth: 0 }]}>
+                <Text style={[styles.rowSub, { color: colors.muted, paddingVertical: 8 }]}>
+                  No past meals logged in this period.
                 </Text>
               </View>
-            ))}
+            ) : (
+              pastDays.map((d, idx) => (
+                <View
+                  key={d.date}
+                  style={[
+                    styles.historyRow,
+                    { borderBottomColor: colors.line },
+                    idx === pastDays.length - 1 && { borderBottomWidth: 0 },
+                  ]}
+                >
+                  <View>
+                    <Text style={[styles.rowDate, { color: colors.ink }]}>{d.label || d.date}</Text>
+                    <Text style={[styles.rowSub, { color: colors.muted }]}>Logged day</Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.rowNumbers,
+                      { color: d.value > calGoal ? colors.warn : colors.ink },
+                    ]}
+                  >
+                    {Math.round(d.value).toLocaleString()} kcal
+                  </Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
       </ScrollView>
@@ -126,12 +169,12 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingBottom: 32,
-    gap: 18,
+    gap: 16,
   },
   card: {
     borderRadius: 24,
     borderWidth: 1,
-    padding: 18,
+    padding: 16,
     gap: 12,
   },
   chartHeader: {
@@ -144,32 +187,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   goalText: {
-    fontSize: 12,
+    fontSize: 13,
   },
   chartWrapper: {
-    marginTop: 6,
+    paddingTop: 8,
   },
   chartFootnote: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
-    justifyContent: 'center',
     gap: 4,
   },
   statLabel: {
     fontSize: 12,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
@@ -188,8 +230,8 @@ const styles = StyleSheet.create({
   },
   historyRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
@@ -199,7 +241,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   rowSub: {
-    fontSize: 12.5,
+    fontSize: 12,
     marginTop: 2,
   },
   rowNumbers: {

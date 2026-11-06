@@ -9,6 +9,7 @@ import {
   ScrollText,
   LogOut,
   Dumbbell,
+  Utensils,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 
@@ -25,6 +26,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Workouts', href: '/workouts', icon: Dumbbell },
+    { name: 'Nutrition', href: '/nutrition', icon: Utensils },
     { name: 'Audit Logs', href: '/audit-logs', icon: ScrollText },
   ];
 

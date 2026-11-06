@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { Search, SearchX } from 'lucide-react-native';
+import { Search, SearchX, Star, CheckCircle2 } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { TextField } from '@/shared/components/ui/TextField';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useTheme } from '@/hooks/use-theme';
-import { mockAiTools } from '../../ai-coach/services/mockAiTools';
-import { foodDatabase, recentFoodIds } from '../data/foodsMock';
+import { nutritionApi } from '../api/nutrition-api';
+import { useNutritionStore } from '../store/nutritionStore';
 import { mealLabels } from '../constants/meals';
 import type { FoodItem, MealType } from '../types/nutrition';
+import { logger } from '@/utils/logger';
 
 export function FoodSearchScreen() {
   const { colors } = useTheme();
@@ -17,31 +18,61 @@ export function FoodSearchScreen() {
   const params = useRouteParams<{ meal?: MealType }>();
   const meal = params.meal ?? 'lunch';
 
+  const { recentFoods, favorites, fetchRecentFoods, fetchFavorites } = useNutritionStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[] | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    fetchRecentFoods();
+    fetchFavorites();
+  }, [fetchRecentFoods, fetchFavorites]);
+
+  useEffect(() => {
     if (!query.trim()) {
       setResults(null);
+      setLoading(false);
       return;
     }
+
     setLoading(true);
     let cancelled = false;
-    const t = setTimeout(async () => {
-      const r = await mockAiTools.searchFood({ query });
-      if (!cancelled) {
-        setResults(r);
-        setLoading(false);
+
+    const timer = setTimeout(async () => {
+      try {
+        const response = await nutritionApi.searchFoods({ q: query.trim() });
+        if (!cancelled) {
+          setResults(response.foods);
+        }
+      } catch (err: any) {
+        logger.warn('Food search failed:', err?.message);
+        if (!cancelled) {
+          setResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    }, 250);
+    }, 300);
+
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [query]);
 
-  const list = results ?? recentFoodIds.map((id) => foodDatabase.find((f) => f.id === id)!).filter(Boolean);
+  // Determine fallback list when no active search query
+  const defaultList = recentFoods.length > 0 ? recentFoods : favorites;
+  const list = results !== null ? results : defaultList;
+  const sectionLabel =
+    results !== null
+      ? `${results.length} result${results.length === 1 ? '' : 's'}`
+      : recentFoods.length > 0
+      ? 'Recent foods'
+      : favorites.length > 0
+      ? 'Favorites'
+      : 'Catalog';
 
   return (
     <Screen title={`Add to ${mealLabels[meal]}`}>
@@ -49,7 +80,7 @@ export function FoodSearchScreen() {
         <TextField
           label="Search foods"
           hideLabel
-          placeholder="Search foods, e.g. paneer"
+          placeholder="Search verified & custom foods..."
           value={query}
           onChangeText={setQuery}
           autoFocus
@@ -63,15 +94,13 @@ export function FoodSearchScreen() {
         />
       </View>
 
-      <Text style={[styles.sectionTitle, { color: colors.muted }]}>
-        {results ? `${results.length} results` : 'Recent'}
-      </Text>
+      <Text style={[styles.sectionTitle, { color: colors.muted }]}>{sectionLabel}</Text>
 
-      {results && results.length === 0 ? (
+      {results !== null && results.length === 0 ? (
         <EmptyState
           icon={SearchX}
           title={`No match for “${query}”`}
-          body="Try a simpler name, or add it manually with your own calories."
+          body="Try a simpler name, or add it with custom calories."
           actionLabel="Snap a photo instead"
           onAction={() => navigate('mealPhoto', { meal })}
         />
@@ -89,12 +118,21 @@ export function FoodSearchScreen() {
               ]}
             >
               <View style={styles.itemInfo}>
-                <Text style={[styles.itemName, { color: colors.ink }]} numberOfLines={1}>
-                  {f.name}
-                </Text>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.itemName, { color: colors.ink }]} numberOfLines={1}>
+                    {f.name}
+                  </Text>
+                  {f.isVerified && (
+                    <CheckCircle2 size={13} color={colors.accent} style={{ marginLeft: 4 }} />
+                  )}
+                  {f.isFavorite && (
+                    <Star size={12} color={colors.warn} fill={colors.warn} style={{ marginLeft: 4 }} />
+                  )}
+                </View>
                 <Text style={[styles.itemSub, { color: colors.muted }]}>
                   {f.brand ? `${f.brand} · ` : ''}
                   {f.serving}
+                  {f.isCustom ? ' · Custom' : ''}
                 </Text>
               </View>
               <View style={styles.itemKcalCol}>
@@ -137,6 +175,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
     gap: 3,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   itemName: {
     fontSize: 15,

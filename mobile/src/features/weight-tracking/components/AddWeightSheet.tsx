@@ -26,12 +26,18 @@ export function AddWeightSheet({ open, onClose }: { open: boolean; onClose: () =
     onClose();
   };
 
+  const todayStr = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date());
+
   return (
     <BottomSheet
       open={open}
       onClose={onClose}
       title="Log weight"
-      description="Today · Fri, Oct 9"
+      description={`Today · ${todayStr}`}
       footer={
         <Button size="lg" fullWidth onPress={save}>
           Save

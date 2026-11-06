@@ -6,8 +6,9 @@ import { BottomSheet } from '@/shared/components/ui/BottomSheet';
 import { Button } from '@/shared/components/ui/Button';
 import { TextField } from '@/shared/components/ui/TextField';
 import { useTheme } from '@/hooks/use-theme';
-import { barcodeProduct } from '../data/foodsMock';
-import type { MealType } from '../types/nutrition';
+import { nutritionApi } from '../api/nutrition-api';
+import type { FoodItem, MealType } from '../types/nutrition';
+import { logger } from '@/utils/logger';
 
 export function BarcodeScannerScreen() {
   const { colors } = useTheme();
@@ -19,7 +20,9 @@ export function BarcodeScannerScreen() {
   const [manual, setManual] = useState(false);
   const [code, setCode] = useState('');
   const [notFound, setNotFound] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
+  const [product, setProduct] = useState<FoodItem | null>(null);
 
   // Scan line animation
   const scanAnim = useRef(new Animated.Value(0)).current;
@@ -39,17 +42,27 @@ export function BarcodeScannerScreen() {
         }),
       ])
     ).start();
-
-    const t = setTimeout(() => setFound(true), 2600);
-    return () => clearTimeout(t);
   }, [scanAnim]);
 
-  const lookup = () => {
-    if (code.trim().length >= 8) {
+  const lookup = async () => {
+    const clean = code.trim();
+    if (clean.length < 6) {
+      setNotFound(true);
+      return;
+    }
+
+    setLookingUp(true);
+    try {
+      const item = await nutritionApi.getFoodByBarcode(clean);
+      setProduct(item);
       setManual(false);
       setFound(true);
-    } else {
+      setNotFound(false);
+    } catch (err: any) {
+      logger.warn('Barcode lookup failed on backend:', err?.message);
       setNotFound(true);
+    } finally {
+      setLookingUp(false);
     }
   };
 
@@ -99,7 +112,7 @@ export function BarcodeScannerScreen() {
         <Text style={styles.statusText}>
           {found ? 'Barcode detected' : 'Line up the barcode inside the frame'}
         </Text>
-        <Text style={styles.subText}>Camera preview is simulated in this prototype.</Text>
+        <Text style={styles.subText}>Camera preview is simulated in this environment.</Text>
       </View>
 
       {/* Manual Button */}
@@ -115,40 +128,42 @@ export function BarcodeScannerScreen() {
       </View>
 
       {/* Found Product Sheet */}
-      <BottomSheet
-        open={found}
-        onClose={() => setFound(false)}
-        title={barcodeProduct.name}
-        description={`${barcodeProduct.brand} · ${barcodeProduct.serving}`}
-        footer={
-          <Button
-            size="lg"
-            fullWidth
-            onPress={() =>
-              replace('foodDetail', { id: barcodeProduct.id, meal, source: 'barcode' })
-            }
-          >
-            Review & add
-          </Button>
-        }
-      >
-        <View style={[styles.productGrid, { backgroundColor: colors.surface2 }]}>
-          {[
-            ['kcal', barcodeProduct.kcal],
-            ['Protein', `${barcodeProduct.protein}g`],
-            ['Carbs', `${barcodeProduct.carbs}g`],
-            ['Fat', `${barcodeProduct.fat}g`],
-          ].map(([label, val]) => (
-            <View key={String(label)} style={styles.gridItem}>
-              <Text style={[styles.gridLabel, { color: colors.muted }]}>{label}</Text>
-              <Text style={[styles.gridVal, { color: colors.ink }]}>{val}</Text>
-            </View>
-          ))}
-        </View>
-        <Text style={[styles.gridFootnote, { color: colors.muted }]}>
-          Values from the product label database.
-        </Text>
-      </BottomSheet>
+      {product && (
+        <BottomSheet
+          open={found}
+          onClose={() => setFound(false)}
+          title={product.name}
+          description={`${product.brand ? `${product.brand} · ` : ''}${product.serving}`}
+          footer={
+            <Button
+              size="lg"
+              fullWidth
+              onPress={() =>
+                replace('foodDetail', { id: product.id, meal, source: 'barcode' })
+              }
+            >
+              Review & add
+            </Button>
+          }
+        >
+          <View style={[styles.productGrid, { backgroundColor: colors.surface2 }]}>
+            {[
+              ['kcal', product.kcal],
+              ['Protein', `${product.protein}g`],
+              ['Carbs', `${product.carbs}g`],
+              ['Fat', `${product.fat}g`],
+            ].map(([label, val]) => (
+              <View key={String(label)} style={styles.gridItem}>
+                <Text style={[styles.gridLabel, { color: colors.muted }]}>{label}</Text>
+                <Text style={[styles.gridVal, { color: colors.ink }]}>{val}</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={[styles.gridFootnote, { color: colors.muted }]}>
+            Values from authoritative food catalog.
+          </Text>
+        </BottomSheet>
+      )}
 
       {/* Manual Entry Sheet */}
       <BottomSheet
@@ -156,15 +171,15 @@ export function BarcodeScannerScreen() {
         onClose={() => setManual(false)}
         title="Enter barcode"
         footer={
-          <Button size="lg" fullWidth onPress={lookup}>
-            Look up
+          <Button size="lg" fullWidth onPress={lookup} disabled={lookingUp}>
+            {lookingUp ? 'Looking up...' : 'Look up'}
           </Button>
         }
       >
         <TextField
           label="Barcode number"
           keyboardType="numeric"
-          placeholder="13 digits"
+          placeholder="e.g. 012345678901"
           value={code}
           onChangeText={(t) => {
             setCode(t.replace(/\D/g, ''));
@@ -172,7 +187,7 @@ export function BarcodeScannerScreen() {
           }}
           error={
             notFound
-              ? 'We couldn’t find that product. Check the number or search by name.'
+              ? 'We couldn’t find that barcode. Check the number or search by name.'
               : undefined
           }
         />
@@ -214,72 +229,72 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   frame: {
-    width: 280,
+    width: 260,
     height: 180,
-    borderRadius: 28,
+    borderRadius: 16,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderColor: 'rgba(255, 255, 255, 0.6)',
     overflow: 'hidden',
     position: 'relative',
+    marginBottom: 24,
   },
   scanLine: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    height: 3,
-    borderRadius: 2,
+    height: 2,
+    width: '100%',
   },
   statusText: {
-    marginTop: 24,
-    fontSize: 15,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 6,
     textAlign: 'center',
   },
   subText: {
-    marginTop: 6,
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
   },
   bottomBar: {
-    paddingHorizontal: 20,
-    paddingBottom: 28,
+    padding: 24,
+    alignItems: 'center',
   },
   manualBtn: {
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   manualText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   productGrid: {
     flexDirection: 'row',
     borderRadius: 16,
-    padding: 14,
-    justifyContent: 'space-around',
+    padding: 16,
+    marginVertical: 12,
   },
   gridItem: {
+    flex: 1,
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
   gridLabel: {
     fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'uppercase',
   },
   gridVal: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
+    fontSize: 16,
+    fontWeight: '700',
   },
   gridFootnote: {
-    marginTop: 10,
-    fontSize: 12.5,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

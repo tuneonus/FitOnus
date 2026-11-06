@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { FileText, Medal, Scale, Target, Trophy } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
@@ -12,10 +12,11 @@ import { LineChart } from '@/shared/components/charts/LineChart';
 import { BarChart } from '@/shared/components/charts/BarChart';
 import type { TimeRange } from '@/shared/types/health';
 import { useHasDeviceData } from '../../health-integration/store/healthStore';
-import { MetricKey, achievements, progressMetrics, rangeLabels } from '../data/progressMock';
+import { MetricKey, progressMetrics, rangeLabels } from '../data/progressMock';
 import { aiInsights } from '../data/insightsMock';
 import { InsightCard } from '../components/InsightCard';
 import { useTheme } from '@/hooks/use-theme';
+import { useProgressStore } from '../store/progressStore';
 
 const fmt = (v: number, unit: string) =>
   unit === 'h'
@@ -29,17 +30,68 @@ export function ProgressScreen() {
   const [range, setRange] = useState<TimeRange>('M');
   const [metric, setMetric] = useState<MetricKey>('weight');
 
+  const {
+    analyticsData,
+    periodComparison,
+    achievements: storeAchievements,
+    isRefreshing,
+    refreshAll,
+    fetchAnalytics,
+    fetchPeriodComparison,
+    fetchAchievements,
+  } = useProgressStore();
+
+  useEffect(() => {
+    fetchAnalytics(metric, range).catch(() => {});
+    const period = range === 'W' ? 'week' : 'month';
+    fetchPeriodComparison(period).catch(() => {});
+    fetchAchievements().catch(() => {});
+  }, [metric, range, fetchAnalytics, fetchPeriodComparison, fetchAchievements]);
+
+  const liveData = analyticsData[`${metric}-${range}`];
   const m = progressMetrics[metric];
-  const points = m.series[range];
-  const first = points[0]?.value ?? 0;
-  const last = points[points.length - 1]?.value ?? 0;
-  const delta = last - first;
-  const improving = m.lowerIsBetter ? delta < 0 : delta > 0;
-  const blocked = m.requiresDevice && !hasDevice;
+
+  const points = liveData && liveData.points ? liveData.points : [];
+  const hasEmptyPoints = points.length === 0;
+
+  const first = liveData ? liveData.firstValue : points[0]?.value ?? 0;
+  const last = liveData ? liveData.latestValue : points[points.length - 1]?.value ?? 0;
+  const delta = liveData ? liveData.delta : last - first;
+  const improving = (liveData?.lowerIsBetter ?? m.lowerIsBetter) ? delta < 0 : delta > 0;
+  const blocked =
+    (m.requiresDevice ||
+      (liveData && !liveData.hasDeviceData && ['sleep', 'recovery', 'steps'].includes(metric))) &&
+    !hasDevice;
+
+  const comparisonTitle = periodComparison?.title ?? (range === 'W' ? 'This Week vs Last Week' : 'This Month vs Last Month');
+  const comparisonItems =
+    periodComparison && periodComparison.comparisons.length > 0
+      ? periodComparison.comparisons.map(
+          (c) => [c.label, c.current, c.previous, c.better] as const,
+        )
+      : ([
+          ['Workouts', '0', '0', true],
+          ['Weight change', '0.0 kg', '0.0 kg', true],
+          ['Avg sleep', '—', '—', true],
+          ['Avg protein', '—', '—', true],
+          ['Avg calories', '—', '—', true],
+        ] as const);
+
+  const activeAchievements = storeAchievements ?? [];
 
   return (
     <Screen title="Progress" subtitle="Trends, goals and AI reports">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refreshAll}
+            tintColor={colors.accent}
+          />
+        }
+      >
         <SegmentedControl
           options={[
             { value: 'D', label: 'Daily' },
@@ -97,12 +149,19 @@ export function ProgressScreen() {
                 </Text>
               </View>
               <View style={styles.chartWrapper}>
-                {m.chart === 'line' ? (
+                {hasEmptyPoints ? (
+                  <View style={{ height: 160, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                    <Text style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}>
+                      No {m.label.toLowerCase()} entries recorded for {rangeLabels[range].toLowerCase()}.
+                    </Text>
+                  </View>
+                ) : m.chart === 'line' ? (
                   <LineChart
                     key={`${metric}-${range}`}
                     points={points}
                     target={m.goal}
                     targetLabel={m.goal ? `Goal ${m.goal}` : undefined}
+                    subtitle={metric === 'weight' ? 'EMA trend smoothed' : undefined}
                     formatValue={(v) => fmt(v, m.unit)}
                     height={170}
                     strokeColor={colors.accent}
@@ -125,18 +184,12 @@ export function ProgressScreen() {
         {/* Month comparison */}
         <View style={styles.sectionBlock}>
           <SectionHeader
-            title="September vs August"
+            title={comparisonTitle}
             action="Ask coach"
             onAction={() => navigate('coach', { q: 'Compare this month with last month' })}
           />
           <View style={[styles.compareCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            {[
-              ['Workouts', '19', '16', true],
-              ['Weight change', '−1.2 kg', '−0.6 kg', true],
-              ['Avg sleep', hasDevice ? '7h 12m' : '—', hasDevice ? '6h 58m' : '—', true],
-              ['Avg protein', '124 g', '112 g', true],
-              ['Avg steps', '8,940', '9,120', false],
-            ].map(([label, a, b, better], idx, arr) => (
+            {comparisonItems.map(([label, a, b, better], idx, arr) => (
               <View
                 key={label as string}
                 style={[
@@ -184,27 +237,35 @@ export function ProgressScreen() {
         {/* Achievements */}
         <View style={styles.sectionBlock}>
           <SectionHeader title="Achievements" />
-          <View style={styles.achievementsGrid}>
-            {achievements.map((a) => (
-              <View
-                key={a.title}
-                style={[
-                  styles.achCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.line,
-                    borderStyle: a.earned ? 'solid' : 'dashed',
-                  },
-                ]}
-              >
-                <Medal size={20} color={a.earned ? colors.accent : colors.muted} />
-                <Text style={[styles.achTitle, { color: colors.ink }]}>{a.title}</Text>
-                <Text style={[styles.achDetail, { color: colors.muted }]}>
-                  {a.earned ? a.detail : `In progress · ${a.detail}`}
-                </Text>
-              </View>
-            ))}
-          </View>
+          {activeAchievements.length === 0 ? (
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+              <Text style={{ color: colors.muted, textAlign: 'center', padding: 12, fontSize: 13 }}>
+                No achievements earned yet. Log workouts, nutrition and weigh-ins to unlock milestones.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.achievementsGrid}>
+              {activeAchievements.map((a) => (
+                <View
+                  key={a.title}
+                  style={[
+                    styles.achCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.line,
+                      borderStyle: a.earned ? 'solid' : 'dashed',
+                    },
+                  ]}
+                >
+                  <Medal size={20} color={a.earned ? colors.accent : colors.muted} />
+                  <Text style={[styles.achTitle, { color: colors.ink }]}>{a.title}</Text>
+                  <Text style={[styles.achDetail, { color: colors.muted }]}>
+                    {a.earned ? a.detail : `In progress · ${a.detail}`}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Quick Nav Links */}
@@ -218,7 +279,7 @@ export function ProgressScreen() {
           <ListRow
             icon={Target}
             title="Goals"
-            subtitle="5 active · 2 completed"
+            subtitle="View and track your targets"
             onPress={() => navigate('goals')}
           />
           <ListRow

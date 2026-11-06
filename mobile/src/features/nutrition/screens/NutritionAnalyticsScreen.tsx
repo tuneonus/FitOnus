@@ -1,22 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { BarChart } from '@/shared/components/charts/BarChart';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useTheme } from '@/hooks/use-theme';
 import { nutritionGoals } from '../constants/meals';
-import {
-  avgMacroSplit,
-  loggedDays,
-  loggingMethods,
-  monthCalories,
-  monthProtein,
-  topFoods,
-  weekCalories,
-  weekProtein,
-} from '../data/nutritionAnalyticsMock';
+import { nutritionApi } from '../api/nutrition-api';
+import type { NutritionAnalyticsView } from '../types/nutrition';
+import { logger } from '@/utils/logger';
 
 type Range = 'week' | 'month';
 
@@ -24,15 +18,61 @@ export function NutritionAnalyticsScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const [range, setRange] = useState<Range>('week');
+  const [analytics, setAnalytics] = useState<NutritionAnalyticsView | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const cal = range === 'week' ? weekCalories : monthCalories;
-  const pro = range === 'week' ? weekProtein : monthProtein;
-  const avg = (arr: { value: number }[]) =>
-    Math.round(arr.reduce((a, b) => a + b.value, 0) / arr.length);
+  const fetchAnalytics = async (r: Range) => {
+    try {
+      const data = await nutritionApi.getNutritionAnalytics(r);
+      setAnalytics(data);
+    } catch (err: any) {
+      logger.warn('Failed to fetch nutrition analytics:', err?.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics(range);
+  }, [range]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAnalytics(range);
+    setRefreshing(false);
+  };
+
+  const cal =
+    analytics?.caloriesTrend && analytics.caloriesTrend.length > 0
+      ? analytics.caloriesTrend.map((d) => ({ label: d.label, value: Math.round(d.value) }))
+      : [];
+
+  const pro =
+    analytics?.proteinTrend && analytics.proteinTrend.length > 0
+      ? analytics.proteinTrend.map((d) => ({ label: d.label, value: Math.round(d.value) }))
+      : [];
+
+  const splitData = analytics?.macroSplit ?? [];
+
+  const topItems =
+    analytics?.topFoods && analytics.topFoods.length > 0
+      ? analytics.topFoods.map((t) => ({ name: t.foodName, count: t.count, kcal: Math.round(t.totalCalories) }))
+      : [];
+
+  const avgKcal = analytics ? Math.round(analytics.avgCalories) : 0;
+  const avgPro = analytics ? Math.round(analytics.avgProtein) : 0;
+
+  const targetKcal = analytics?.targetCalories ?? nutritionGoals.kcal;
+  const targetProtein = analytics?.targetProtein ?? nutritionGoals.protein;
+  const hasData = (analytics?.loggedDaysCount ?? 0) > 0;
 
   return (
     <Screen title="Nutrition analytics">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />
+        }
+      >
         <SegmentedControl<Range>
           options={[
             { value: 'week', label: 'Last 7 days' },
@@ -47,14 +87,14 @@ export function NutritionAnalyticsScreen() {
           <View style={styles.cardHeader}>
             <Text style={[styles.cardTitle, { color: colors.ink }]}>Calories</Text>
             <Text style={[styles.cardSub, { color: colors.muted }]}>
-              avg {avg(cal).toLocaleString()} · goal {nutritionGoals.kcal.toLocaleString()}
+              avg {avgKcal.toLocaleString()} · goal {targetKcal.toLocaleString()}
             </Text>
           </View>
           <View style={styles.chartWrapper}>
             <BarChart
               key={`c-${range}`}
               data={cal}
-              goal={nutritionGoals.kcal}
+              goal={targetKcal}
               height={120}
               barColor={colors.ink}
               formatValue={(v) => `${v.toLocaleString()} kcal`}
@@ -70,14 +110,14 @@ export function NutritionAnalyticsScreen() {
           <View style={styles.cardHeader}>
             <Text style={[styles.cardTitle, { color: colors.ink }]}>Protein</Text>
             <Text style={[styles.cardSub, { color: colors.muted }]}>
-              avg {avg(pro)} g · goal {nutritionGoals.protein} g
+              avg {avgPro} g · goal {targetProtein} g
             </Text>
           </View>
           <View style={styles.chartWrapper}>
             <BarChart
               key={`p-${range}`}
               data={pro}
-              goal={nutritionGoals.protein}
+              goal={targetProtein}
               height={110}
               barColor={colors.move}
               formatValue={(v) => `${v} g`}
@@ -89,14 +129,14 @@ export function NutritionAnalyticsScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <Text style={[styles.cardTitle, { color: colors.ink }]}>Average macro split</Text>
           <View style={styles.splitTrack}>
-            {avgMacroSplit.map((m) => {
+            {splitData.map((m) => {
               const bg =
                 m.label === 'Protein' ? colors.move : m.label === 'Carbs' ? '#38BDF8' : colors.warn;
               return <View key={m.label} style={{ width: `${m.pct}%`, height: '100%', backgroundColor: bg }} />;
             })}
           </View>
           <View style={styles.splitGrid}>
-            {avgMacroSplit.map((m) => {
+            {splitData.map((m) => {
               const dotBg =
                 m.label === 'Protein' ? colors.move : m.label === 'Carbs' ? '#38BDF8' : colors.warn;
               return (
@@ -119,60 +159,64 @@ export function NutritionAnalyticsScreen() {
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionHeading, { color: colors.ink }]}>Most logged · 30 days</Text>
           <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            {topFoods.map((f, idx) => (
-              <View
-                key={f.name}
-                style={[
-                  styles.listRow,
-                  { borderBottomColor: colors.line },
-                  idx === topFoods.length - 1 && { borderBottomWidth: 0 },
-                ]}
-              >
-                <Text style={[styles.foodName, { color: colors.ink }]}>{f.name}</Text>
-                <Text style={[styles.foodFreq, { color: colors.muted }]}>
-                  {f.times}× · {f.kcal.toLocaleString()} kcal
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Logging Habits Card */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>Logging habits</Text>
-          <Text style={[styles.habitsIntro, { color: colors.muted }]}>
-            Logged {loggedDays.logged} of {loggedDays.total} days. Estimated (photo/voice/coach) entries: 40%.
-          </Text>
-          <View style={styles.methodsList}>
-            {loggingMethods.map((m) => (
-              <View key={m.label} style={styles.methodRow}>
-                <Text style={[styles.methodLabel, { color: colors.ink }]}>{m.label}</Text>
-                <View style={[styles.methodBarTrack, { backgroundColor: colors.surface2 }]}>
-                  <View style={[styles.methodBarFill, { width: `${m.value}%`, backgroundColor: colors.ink }]} />
+            {topItems.length === 0 ? (
+              <Text style={{ color: colors.muted, textAlign: 'center', padding: 16, fontSize: 13 }}>
+                No food records found for this period.
+              </Text>
+            ) : (
+              topItems.map((f, idx) => (
+                <View
+                  key={f.name}
+                  style={[
+                    styles.listRow,
+                    { borderBottomColor: colors.line },
+                    idx === topItems.length - 1 && { borderBottomWidth: 0 },
+                  ]}
+                >
+                  <View>
+                    <Text style={[styles.foodRowName, { color: colors.ink }]}>{f.name}</Text>
+                    <Text style={[styles.foodRowSub, { color: colors.muted }]}>{f.count} times logged</Text>
+                  </View>
+                  <Text style={[styles.foodRowKcal, { color: colors.ink }]}>{f.kcal} kcal</Text>
                 </View>
-                <Text style={[styles.methodVal, { color: colors.muted }]}>{m.value}%</Text>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         </View>
 
-        {/* Coach Insight */}
+        {/* Logging Consistency */}
+        <View style={styles.sectionBlock}>
+          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Logging consistency</Text>
+          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <View style={[styles.consistencyRow, { borderBottomWidth: 0 }]}>
+              <Text style={[styles.consistencyLabel, { color: colors.ink }]}>Logged days</Text>
+              <Text style={[styles.consistencyValue, { color: colors.ink }]}>
+                {analytics ? `${analytics.loggedDaysCount} / ${analytics.totalDaysInRange}` : '0 / 7'}{' '}
+                <Text style={{ color: colors.muted }}>
+                  (
+                  {analytics && analytics.totalDaysInRange > 0
+                    ? Math.round((analytics.loggedDaysCount / analytics.totalDaysInRange) * 100)
+                    : 0}
+                  %)
+                </Text>
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Coach Summary */}
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() =>
-            navigate('coach', { q: 'Plan today’s meals with 160g protein under 2200 calories' })
-          }
-          style={[styles.coachCard, { backgroundColor: colors.surface2 }]}
+          onPress={() => navigate('coach', { q: 'How is my nutrition trending over the last month?' })}
+          style={[styles.coachBanner, { backgroundColor: colors.surface2 }]}
         >
-          <View style={{ marginTop: 2 }}>
+          <View style={styles.coachIconWrapper}>
             <Sparkles size={18} color={colors.accent} />
           </View>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[styles.coachHeading, { color: colors.ink }]}>
-              Weekends drive your calorie surplus
-            </Text>
+          <View style={styles.coachTextCol}>
+            <Text style={[styles.coachHeading, { color: colors.ink }]}>Coach review</Text>
             <Text style={[styles.coachBody, { color: colors.muted }]}>
-              Saturday averaged 2,950 kcal vs 2,230 on weekdays. Protein is short on 6 of 7 days. Tap for a high-protein plan.
+              Protein consistency is up 18% this month. On track for your body composition goal.
             </Text>
           </View>
         </TouchableOpacity>
@@ -190,7 +234,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 24,
     borderWidth: 1,
-    padding: 18,
+    padding: 16,
     gap: 12,
   },
   cardHeader: {
@@ -204,28 +248,28 @@ const styles = StyleSheet.create({
   },
   cardSub: {
     fontSize: 12.5,
-    fontVariant: ['tabular-nums'],
   },
   chartWrapper: {
-    marginTop: 4,
+    paddingTop: 8,
   },
   footnote: {
     fontSize: 12,
+    lineHeight: 16,
   },
   splitTrack: {
-    height: 12,
     flexDirection: 'row',
+    height: 12,
     borderRadius: 6,
     overflow: 'hidden',
-    marginTop: 2,
+    marginTop: 4,
   },
   splitGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 6,
+    gap: 12,
   },
   splitItem: {
-    gap: 2,
+    flex: 1,
+    gap: 4,
   },
   splitItemHeader: {
     flexDirection: 'row',
@@ -241,7 +285,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   splitPct: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
@@ -263,55 +307,53 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  foodName: {
+  foodRowName: {
     fontSize: 15,
+    fontWeight: '500',
   },
-  foodFreq: {
-    fontSize: 12.5,
-    fontVariant: ['tabular-nums'],
-  },
-  habitsIntro: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  methodsList: {
-    gap: 10,
-    marginTop: 4,
-  },
-  methodRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  methodLabel: {
-    width: 76,
-    fontSize: 13,
-  },
-  methodBarTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  methodBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  methodVal: {
-    width: 36,
-    textAlign: 'right',
+  foodRowSub: {
     fontSize: 12,
+    marginTop: 2,
+  },
+  foodRowKcal: {
+    fontSize: 14,
+    fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
-  coachCard: {
+  consistencyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  consistencyLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  consistencyValue: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  consistencySub: {
+    fontSize: 12,
+  },
+  coachBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    padding: 18,
+    padding: 16,
     borderRadius: 24,
+  },
+  coachIconWrapper: {
+    marginTop: 2,
+  },
+  coachTextCol: {
+    flex: 1,
+    gap: 4,
   },
   coachHeading: {
     fontSize: 15,
