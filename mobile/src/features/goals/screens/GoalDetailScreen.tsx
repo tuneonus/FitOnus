@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Pencil, Sparkles, Target } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
@@ -22,9 +22,15 @@ export function GoalDetailScreen() {
   const params = useRouteParams<{ id?: string }>();
   const id = params.id;
   const { navigate, goBack } = useNavigation();
-  const { goals, deleteGoal, completeGoal, addGoal } = useGoalsStore();
+  const { goals, deleteGoal, completeGoal, addGoal, fetchGoalDetails, activeGoalDetails } = useGoalsStore();
   const goal = goals.find((g) => g.id === id);
   const [confirm, setConfirm] = useState<'delete' | 'complete' | null>(null);
+
+  useEffect(() => {
+    if (id) {
+      fetchGoalDetails(id);
+    }
+  }, [id, fetchGoalDetails]);
 
   if (!goal) {
     return (
@@ -42,8 +48,10 @@ export function GoalDetailScreen() {
 
   const p = goalProgress(goal);
   const done = goal.status === 'completed';
-  const points = goal.history.map((v, i) => ({
-    label: goal.cadence === 'once' ? `W${i + 1}` : days[i] ?? `${i + 1}`,
+  const historyData = activeGoalDetails?.recentHistory?.length ? activeGoalDetails.recentHistory : goal.history;
+
+  const points = (historyData.length > 0 ? historyData : [goal.start, goal.current]).map((v, i) => ({
+    label: goal.cadence === 'once' ? `W${i + 1}` : days[i % 7] ?? `${i + 1}`,
     value: v,
   }));
 
@@ -92,7 +100,7 @@ export function GoalDetailScreen() {
 
           <View style={styles.summaryDetails}>
             {done ? (
-              <Badge tone="good">{`Completed ${goal.completedOn}`}</Badge>
+              <Badge tone="good">{`Completed ${goal.completedOn ?? ''}`}</Badge>
             ) : (
               <Badge tone="neutral">
                 {goal.deadline === 'Ongoing' ? 'Ongoing' : `By ${goal.deadline}`}
@@ -150,10 +158,10 @@ export function GoalDetailScreen() {
             </View>
             <Text style={[styles.forecastText, { color: colors.ink }]}>
               {goal.type === 'weightLoss'
-                ? 'At your 6-week pace (−0.45 kg/wk) you’d reach 75 kg around Dec 14 — likely range Dec 2 to Jan 8.'
+                ? `At your active pace you're aiming for ${goal.target} ${goal.unit} by ${goal.deadline}.`
                 : goal.cadence === 'daily'
                 ? 'You’re hitting this most on training days. Rest days are where it slips.'
-                : `${goal.target - goal.current} more to go. Keep today’s session to stay on track.`}
+                : `${Math.abs(goal.target - goal.current).toFixed(1)} ${goal.unit} to go. Keep going to stay on track.`}
             </Text>
           </View>
         )}
@@ -179,9 +187,9 @@ export function GoalDetailScreen() {
         confirmLabel="Delete"
         destructive
         onCancel={() => setConfirm(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           const copy = { ...goal };
-          deleteGoal(goal.id);
+          await deleteGoal(goal.id);
           setConfirm(null);
           goBack();
           showToast({
@@ -199,8 +207,8 @@ export function GoalDetailScreen() {
         message="It will move to Completed goals. You can create a new one anytime."
         confirmLabel="Complete"
         onCancel={() => setConfirm(null)}
-        onConfirm={() => {
-          completeGoal(goal.id);
+        onConfirm={async () => {
+          await completeGoal(goal.id);
           setConfirm(null);
           showToast({ message: 'Goal completed — nice work.' });
         }}
@@ -218,8 +226,8 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 18,
-    paddingHorizontal: 4,
+    gap: 16,
+    paddingVertical: 8,
   },
   ringCenter: {
     alignItems: 'center',
@@ -232,34 +240,33 @@ const styles = StyleSheet.create({
   },
   summaryDetails: {
     flex: 1,
-    gap: 4,
+    gap: 6,
   },
   goalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    lineHeight: 25,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   goalNumbers: {
     fontSize: 13,
-    fontVariant: ['tabular-nums'],
   },
   card: {
     borderRadius: 24,
     borderWidth: 1,
-    padding: 18,
+    padding: 16,
+    gap: 8,
   },
   cardTitle: {
     fontSize: 15,
     fontWeight: '600',
   },
   footnote: {
-    fontSize: 12.5,
-    marginTop: 8,
+    fontSize: 12,
+    marginTop: 6,
   },
   forecastCard: {
-    borderRadius: 24,
-    padding: 18,
+    borderRadius: 20,
+    padding: 16,
     gap: 8,
   },
   forecastHeader: {
@@ -268,15 +275,17 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   forecastLabel: {
-    fontSize: 12.5,
+    fontSize: 11.5,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   forecastText: {
-    fontSize: 14.5,
-    lineHeight: 20,
+    fontSize: 13.5,
+    lineHeight: 19,
   },
   actionsBlock: {
     gap: 10,
     marginTop: 8,
   },
 });
-

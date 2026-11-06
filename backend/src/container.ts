@@ -8,6 +8,9 @@ import { createAdminModule } from './modules/admin/index.js';
 import { createAuthModule } from './modules/auth/index.js';
 import { createHealthRoutes } from './modules/health/health.routes.js';
 import { createProfileModule } from './modules/profile/index.js';
+import { createNutritionModule } from './modules/nutrition/index.js';
+import { createProgressModule } from './modules/progress/index.js';
+import { createGoalsModule } from './modules/goals/index.js';
 import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
 import type { RouteGroup } from './shared/http/route.js';
@@ -17,7 +20,7 @@ import { Argon2PasswordHasher } from './shared/security/argon2-password-hasher.j
 import { HmacKeyedHasher } from './shared/security/hmac-keyed-hasher.js';
 
 export const API_PREFIX = '/api/v1';
-const READINESS_TIMEOUT_MS = 5_000;
+const READINESS_TIMEOUT_MS = 15_000;
 
 export interface Container {
   database: Database;
@@ -94,6 +97,22 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     adminBasePath: `${API_PREFIX}/admin/workouts`,
     db: database,
     uow,
+    idempotency,
+  });
+  const nutrition = createNutritionModule({
+    memberBasePath: `${API_PREFIX}/nutrition`,
+    adminBasePath: `${API_PREFIX}/admin/nutrition`,
+    db: database,
+    uow,
+  });
+  const progress = createProgressModule({
+    basePath: `${API_PREFIX}/progress`,
+    db: database,
+  });
+  const goals = createGoalsModule({
+    goalsBasePath: `${API_PREFIX}/goals`,
+    habitsBasePath: `${API_PREFIX}/habits`,
+    db: database,
   });
 
   return {
@@ -106,6 +125,11 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
       admin.routes,
       workouts.memberRoutes,
       workouts.adminRoutes,
+      nutrition.memberRoutes,
+      ...(nutrition.adminRoutes ? [nutrition.adminRoutes] : []),
+      progress.routes,
+      goals.goalsRoutes,
+      goals.habitsRoutes,
     ],
     authenticate: createAuthenticate(auth.authenticateAccessToken),
     rateLimiters,

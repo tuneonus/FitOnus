@@ -19,7 +19,7 @@ export const goalTypeMeta: Record<
     icon: any;
     unit: string;
     defaultTarget: number;
-    cadence: 'once' | 'daily' | 'streak';
+    cadence: 'once' | 'daily' | 'weekly' | 'streak';
     step: number;
     decimals: number;
   }
@@ -111,6 +111,24 @@ export const goalTypeMeta: Record<
     unit: 'days',
     defaultTarget: 7,
     cadence: 'streak',
+    step: 1,
+    decimals: 0,
+  },
+  workoutFrequency: {
+    label: 'Workout frequency',
+    icon: Dumbbell,
+    unit: 'sessions',
+    defaultTarget: 4,
+    cadence: 'weekly',
+    step: 1,
+    decimals: 0,
+  },
+  custom: {
+    label: 'Custom goal',
+    icon: Award,
+    unit: 'units',
+    defaultTarget: 10,
+    cadence: 'once',
     step: 1,
     decimals: 0,
   },

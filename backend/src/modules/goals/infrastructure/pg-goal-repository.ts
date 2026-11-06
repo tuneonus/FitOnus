@@ -32,10 +32,23 @@ interface CheckpointRow {
   goal_id: string;
   user_id: string;
   value: string | number;
-  date: string;
+  date: string | Date;
   recorded_at: Date;
   source: string;
   notes: string | null;
+}
+
+function formatDate(val: unknown): string | null {
+  if (!val) return null;
+  if (val instanceof Date) {
+    const year = val.getFullYear();
+    const month = String(val.getMonth() + 1).padStart(2, '0');
+    const day = String(val.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  const s = String(val);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  return null;
 }
 
 function toDomainGoal(row: GoalRow): Goal {
@@ -54,7 +67,7 @@ function toDomainGoal(row: GoalRow): Goal {
     status: row.status as GoalStatus,
     isPrimary: row.is_primary,
     deadlineLabel: row.deadline_label,
-    targetDate: row.target_date ? String(row.target_date).slice(0, 10) : null,
+    targetDate: formatDate(row.target_date),
     completedAt: row.completed_at,
     telemetrySource: row.telemetry_source as TelemetrySource | null,
     metadata: row.metadata ?? {},
@@ -218,7 +231,7 @@ export class PgGoalRepository implements IGoalRepository {
           goalId: r.goal_id,
           userId: r.user_id,
           value: Number(r.value),
-          date: String(r.date).slice(0, 10),
+          date: formatDate(r.date) ?? new Date().toISOString().slice(0, 10),
           recordedAt: r.recorded_at,
           source: r.source,
           notes: r.notes,

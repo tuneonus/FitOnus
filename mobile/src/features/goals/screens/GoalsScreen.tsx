@@ -1,22 +1,44 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { CheckCircle2, Plus, Target } from 'lucide-react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { CheckCircle2, Circle, Plus, Target, Flame, RefreshCw } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { IconButton } from '@/shared/components/ui/IconButton';
 import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
+import { Button } from '@/shared/components/ui/Button';
 import { goalProgress, useGoalsStore } from '../store/goalsStore';
 import { goalTypeMeta } from '../constants/goalTypes';
 import { useTheme } from '@/hooks/use-theme';
-import type { Goal } from '../types/goal';
+import type { Goal, Habit } from '../types/goal';
 
 export function GoalsScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const goals = useGoalsStore((s) => s.goals);
+  const {
+    goals,
+    habits,
+    isLoading,
+    isRefreshing,
+    error,
+    fetchGoals,
+    fetchHabits,
+    setHabitCompletion,
+  } = useGoalsStore();
+
   const [tab, setTab] = useState<'active' | 'completed'>('active');
+
+  useEffect(() => {
+    fetchGoals();
+    fetchHabits();
+  }, [fetchGoals, fetchHabits]);
+
+  const onRefresh = useCallback(() => {
+    fetchGoals({ force: true });
+    fetchHabits();
+  }, [fetchGoals, fetchHabits]);
+
   const list = goals.filter((g) => g.status === tab);
   const [primary, ...rest] = list;
 
@@ -27,7 +49,18 @@ export function GoalsScreen() {
         <IconButton icon={Plus} label="Create goal" onPress={() => navigate('goalCreate')} />
       }
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
+      >
         <SegmentedControl
           options={[
             {
@@ -43,7 +76,15 @@ export function GoalsScreen() {
           onChange={(val) => setTab(val as 'active' | 'completed')}
         />
 
-        {list.length === 0 ? (
+        {error && goals.length === 0 ? (
+          <EmptyState
+            icon={Target}
+            title="Unable to load goals"
+            body={error}
+            actionLabel="Try again"
+            onAction={onRefresh}
+          />
+        ) : list.length === 0 ? (
           <EmptyState
             icon={tab === 'active' ? Target : CheckCircle2}
             title={tab === 'active' ? 'No active goals' : 'Nothing completed yet'}
@@ -78,6 +119,36 @@ export function GoalsScreen() {
                 </View>
               ))}
             </View>
+
+            {/* Daily Habits Section on Active Tab */}
+            {tab === 'active' && habits.length > 0 && (
+              <View style={styles.habitsSection}>
+                <View style={styles.habitsSectionHeader}>
+                  <Text style={[styles.habitsSectionTitle, { color: colors.ink }]}>Daily Habits</Text>
+                  <Text style={[styles.habitsSectionSub, { color: colors.muted }]}>
+                    {habits.filter((h) => h.isCompletedToday).length}/{habits.length} done today
+                  </Text>
+                </View>
+
+                <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+                  {habits.map((habit, idx) => (
+                    <View
+                      key={habit.id}
+                      style={[
+                        styles.rowBorder,
+                        { borderBottomColor: colors.line },
+                        idx === habits.length - 1 && { borderBottomWidth: 0 },
+                      ]}
+                    >
+                      <HabitRow
+                        habit={habit}
+                        onToggle={() => setHabitCompletion(habit.id, !habit.isCompletedToday)}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -125,8 +196,8 @@ function PrimaryGoal({ goal, onOpen }: { goal: Goal; onOpen: () => void }) {
 
 function GoalRow({ goal, onOpen }: { goal: Goal; onOpen: () => void }) {
   const { colors } = useTheme();
-  const meta = goalTypeMeta[goal.type];
-  const Icon = meta.icon;
+  const meta = goalTypeMeta[goal.type] ?? goalTypeMeta.custom;
+  const Icon = meta?.icon ?? Target;
   const p = goalProgress(goal);
   const done = goal.status === 'completed';
 
@@ -180,6 +251,50 @@ function GoalRow({ goal, onOpen }: { goal: Goal; onOpen: () => void }) {
           </Text>
         )}
       </View>
+    </TouchableOpacity>
+  );
+}
+
+function HabitRow({ habit, onToggle }: { habit: Habit; onToggle: () => void }) {
+  const { colors } = useTheme();
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={onToggle}
+      style={styles.habitRow}
+    >
+      <View style={styles.habitCheckIcon}>
+        {habit.isCompletedToday ? (
+          <CheckCircle2 size={22} color={colors.accent} />
+        ) : (
+          <Circle size={22} color={colors.muted} />
+        )}
+      </View>
+
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text
+          style={[
+            styles.habitTitle,
+            { color: colors.ink },
+            habit.isCompletedToday && styles.habitCompletedText,
+          ]}
+          numberOfLines={1}
+        >
+          {habit.title}
+        </Text>
+        <Text style={[styles.habitMeta, { color: colors.muted }]}>
+          {habit.frequency === 'daily' ? 'Daily' : `${habit.targetDaysPerWeek}x/week`}
+          {habit.currentStreak > 0 && ` · ${habit.currentStreak} day streak`}
+        </Text>
+      </View>
+
+      {habit.currentStreak > 0 && (
+        <View style={[styles.streakBadge, { backgroundColor: colors.surface2 }]}>
+          <Flame size={13} color={colors.accent} />
+          <Text style={[styles.streakText, { color: colors.ink }]}>{habit.currentStreak}</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -275,5 +390,58 @@ const styles = StyleSheet.create({
   completedNote: {
     fontSize: 12.5,
   },
+  habitsSection: {
+    gap: 10,
+    marginTop: 8,
+  },
+  habitsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    paddingHorizontal: 4,
+  },
+  habitsSectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  habitsSectionSub: {
+    fontSize: 13,
+  },
+  habitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  habitCheckIcon: {
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  habitTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  habitCompletedText: {
+    textDecorationLine: 'line-through',
+    opacity: 0.7,
+  },
+  habitMeta: {
+    fontSize: 12,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  streakText: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
 });
-

@@ -35,6 +35,7 @@ export function GoalCreateScreen() {
   const [target, setTarget] = useState(editing?.target ?? meta.defaultTarget);
   const [deadline, setDeadline] = useState(editing ? 'Ongoing' : '12 weeks');
   const [title, setTitle] = useState(editing?.title ?? '');
+  const [saving, setSaving] = useState(false);
 
   const pick = (t: GoalType) => {
     setType(t);
@@ -43,36 +44,44 @@ export function GoalCreateScreen() {
 
   const autoTitle = `${meta.label} · ${target.toFixed(meta.decimals)} ${meta.unit}`;
 
-  const save = () => {
-    if (editing) {
-      updateGoal(editing.id, { target, title: title || editing.title });
-      showToast({ message: 'Goal updated' });
-      goBack();
-      return;
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (editing) {
+        await updateGoal(editing.id, { targetValue: target, title: title || editing.title });
+        showToast({ message: 'Goal updated' });
+        goBack();
+        return;
+      }
+      const start = baseline[type] ?? 0;
+      const newId = await addGoal({
+        type,
+        title: title || autoTitle,
+        unit: meta.unit,
+        start,
+        current: meta.cadence === 'once' ? start : 0,
+        target,
+        deadline: deadline === 'Ongoing' ? 'Ongoing' : `In ${deadline}`,
+        status: 'active',
+        cadence: meta.cadence,
+        history: meta.cadence === 'once' ? [start] : [0],
+        hitDays: meta.cadence === 'daily' ? 0 : undefined,
+      });
+      showToast({ message: 'Goal created. Your coach will plan around it.' });
+      replace('goalDetail', { id: newId });
+    } catch {
+      showToast({ message: 'Failed to save goal. Please try again.' });
+    } finally {
+      setSaving(false);
     }
-    const start = baseline[type] ?? 0;
-    const newId = addGoal({
-      type,
-      title: title || autoTitle,
-      unit: meta.unit,
-      start,
-      current: meta.cadence === 'once' ? start : 0,
-      target,
-      deadline: deadline === 'Ongoing' ? 'Ongoing' : `In ${deadline}`,
-      status: 'active',
-      cadence: meta.cadence,
-      history: meta.cadence === 'once' ? [start] : [0],
-      hitDays: meta.cadence === 'daily' ? 0 : undefined,
-    });
-    showToast({ message: 'Goal created. Your coach will plan around it.' });
-    replace('goalDetail', { id: newId });
   };
 
   return (
     <Screen
       title={editing ? 'Edit goal' : 'New goal'}
       footer={
-        <Button size="lg" fullWidth onPress={save}>
+        <Button size="lg" fullWidth onPress={save} loading={saving}>
           {editing ? 'Save changes' : 'Create goal'}
         </Button>
       }
