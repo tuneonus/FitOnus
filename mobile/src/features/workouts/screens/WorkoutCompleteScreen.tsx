@@ -14,33 +14,42 @@ import { useTheme } from '@/hooks/use-theme';
 
 const feelings = ['Easy', 'Solid', 'Hard', 'Max effort'];
 
-const previewSession: WorkoutLog = {
-  id: 'preview',
-  date: 'Today',
-  title: 'Chest + Triceps',
-  durationMin: 52,
-  volumeKg: 10480,
-  sets: 19,
-  prs: 1,
-  calories: 402,
-  avgHr: 122,
-  source: 'FitOnus',
-  exercises: [
-    { name: 'Barbell Bench Press', best: '72.5 kg × 6 · PR' },
-    { name: 'Incline Dumbbell Press', best: '26 kg × 10' },
-    { name: 'Cable Crossover', best: '15 kg × 12' },
-  ],
-};
-
 export function WorkoutCompleteScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { reset } = useNavigation();
   const { lastCompleted: finished, saveCompleted } = useWorkoutStore();
-  const lastCompleted = finished ?? previewSession;
   const hasDevice = useHasDeviceData();
   const [feel, setFeel] = useState('Solid');
   const [discard, setDiscard] = useState(false);
+
+  if (!finished) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: colors.hero,
+            paddingTop: insets.top,
+            paddingBottom: Math.max(insets.bottom, 20),
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: 24,
+          },
+        ]}
+      >
+        <Text style={[styles.eyebrow, { color: colors.accent, marginBottom: 8 }]}>
+          No active session
+        </Text>
+        <Text style={[styles.heading, { color: colors.heroInk, textAlign: 'center', marginBottom: 24 }]}>
+          No recently completed workout found
+        </Text>
+        <Button title="Go to Workouts" onPress={() => reset('workouts')} />
+      </View>
+    );
+  }
+
+  const lastCompleted = finished;
 
   const stats = [
     { label: 'Duration', value: `${lastCompleted.durationMin}`, unit: 'min' },
@@ -50,14 +59,7 @@ export function WorkoutCompleteScreen() {
   ];
 
   const save = () => {
-    if (finished) {
-      saveCompleted();
-    } else {
-      useWorkoutStore
-        .getState()
-        .logExternal({ ...previewSession, id: `w-${Date.now()}` });
-    }
-    showToast({ message: 'Workout saved · streak now 5 days' });
+    saveCompleted();
     reset('home');
   };
 

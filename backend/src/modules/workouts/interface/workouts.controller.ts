@@ -130,21 +130,30 @@ export function createWorkoutMemberController(useCases: WorkoutMemberUseCases) {
 
     saveWorkoutSession: async (req: Request): Promise<RouteResult<WorkoutSessionView>> => {
       const actor = requireActor(req);
-      const { body } = getValidated(req, saveWorkoutSessionRequest);
-      const data = await useCases.logWorkoutSession.execute({
-        userId: actor.userId,
-        workoutId: body.workoutId,
-        workoutName: body.workoutName,
-        startedAt: new Date(body.startedAt),
-        completedAt: new Date(body.completedAt),
-        durationSeconds: body.durationSeconds,
-        difficultyRating: body.difficultyRating,
-        notes: body.notes,
-        caloriesBurned: body.caloriesBurned,
-        caloriesSource: body.caloriesSource,
-        sets: body.sets,
-      });
-      return { data, status: 201, message: 'Workout session completed and saved successfully' };
+      const { body, headers } = getValidated(req, saveWorkoutSessionRequest);
+      const idempotencyKey = headers?.['idempotency-key'];
+      const result = await useCases.logWorkoutSession.execute(
+        {
+          userId: actor.userId,
+          workoutId: body.workoutId,
+          workoutName: body.workoutName,
+          startedAt: new Date(body.startedAt),
+          completedAt: new Date(body.completedAt),
+          durationSeconds: body.durationSeconds,
+          difficultyRating: body.difficultyRating,
+          notes: body.notes,
+          caloriesBurned: body.caloriesBurned,
+          caloriesSource: body.caloriesSource,
+          sets: body.sets,
+        },
+        idempotencyKey,
+      );
+      return {
+        data: result.value,
+        status: 201,
+        headers: result.replayed ? { 'Idempotent-Replayed': 'true' } : undefined,
+        message: 'Workout session completed and saved successfully',
+      };
     },
 
     listWorkoutSessions: async (req: Request): Promise<RouteResult<WorkoutSessionView[]>> => {

@@ -121,9 +121,11 @@ export interface UpdateTemplateInput {
 
 export interface WorkoutStats {
   totalExercises: number;
-  systemExercises: number;
-  customExercises: number;
-  totalTemplates: number;
-  totalSessions: number;
-  totalVolumeKg: number;
+  totalSystemTemplates: number;
+  totalCompletedSessions: number;
+  totalVolumeLiftedKg: number;
+  activeLiftersCount: number;
+  totalTemplates?: number;
+  totalSessions?: number;
+  totalVolumeKg?: number;
 }

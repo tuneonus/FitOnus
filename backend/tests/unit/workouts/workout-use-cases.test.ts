@@ -505,7 +505,7 @@ describe('Workouts Module — Use Cases', () => {
       const startedAt = new Date('2026-11-05T06:00:00Z');
       const completedAt = new Date('2026-11-05T06:45:00Z');
 
-      const session = await logSession.execute({
+      const { value: session } = await logSession.execute({
         userId,
         workoutName: 'Chest Strength Day',
         startedAt,
@@ -557,7 +557,7 @@ describe('Workouts Module — Use Cases', () => {
       });
 
       // Session 2: Bench 85kg x 8 (New max_weight PR!)
-      const session2 = await logSession.execute({
+      const { value: session2 } = await logSession.execute({
         userId,
         workoutName: 'Week 2 Push',
         startedAt: new Date('2026-11-05T06:00:00Z'),

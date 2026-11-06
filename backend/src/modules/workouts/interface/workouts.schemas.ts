@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idempotencyHeadersSchema } from '../../../shared/http/schemas.js';
 import { EXERCISE_DIFFICULTIES } from '../domain/exercise.js';
 import { PR_RECORD_TYPES } from '../domain/personal-record.js';
 import { CALORIE_SOURCES } from '../domain/workout-session.js';
@@ -185,6 +186,7 @@ export const deleteWorkoutPlanRequest = {
 };
 
 export const saveWorkoutSessionRequest = {
+  headers: idempotencyHeadersSchema,
   body: z.object({
     workoutId: z.string().uuid().optional(),
     workoutName: z.string().trim().min(1).max(120),
@@ -318,7 +320,10 @@ export const deleteAdminTemplateRequest = {
 export const workoutStatsSchema = z.object({
   totalExercises: z.number().int().nonnegative(),
   totalSystemTemplates: z.number().int().nonnegative(),
+  totalTemplates: z.number().int().nonnegative().optional(),
   totalCompletedSessions: z.number().int().nonnegative(),
+  totalSessions: z.number().int().nonnegative().optional(),
   totalVolumeLiftedKg: z.number().nonnegative(),
+  totalVolumeKg: z.number().nonnegative().optional(),
   activeLiftersCount: z.number().int().nonnegative(),
 });

@@ -194,3 +194,4 @@ export function ExercisesTable({
     </div>
   );
 }
+

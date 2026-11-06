@@ -6,15 +6,24 @@ import { Screen } from '../../../shared/components/ui/Screen';
 import { Badge } from '../../../shared/components/ui/Badge';
 import { Button } from '../../../shared/components/ui/Button';
 import { LineChart } from '../../../shared/components/charts/LineChart';
-import { exerciseById, personalRecords } from '../data/workoutsMock';
+import { useWorkoutStore } from '../store/workoutStore';
+import { WorkoutService } from '../services/workout-service';
+import type { PersonalRecordView } from '../types/workout';
 import { useTheme } from '@/hooks/use-theme';
 
 export function ExerciseDetailScreen() {
   const { colors } = useTheme();
   const { id = 'e1' } = useRouteParams<{ id?: string }>();
   const { navigate } = useNavigation();
-  const ex = exerciseById(id);
-  const pr = personalRecords.find((r) => r.lift === ex.name);
+  const getExerciseById = useWorkoutStore((s) => s.getExerciseById);
+  const ex = getExerciseById(id);
+  const [prRecords, setPrRecords] = React.useState<PersonalRecordView[]>([]);
+
+  React.useEffect(() => {
+    WorkoutService.getPersonalRecords(ex.id).then(setPrRecords).catch(() => {});
+  }, [ex.id]);
+
+  const bestPr = prRecords[0];
 
   return (
     <Screen title={ex.name}>
@@ -43,7 +52,7 @@ export function ExerciseDetailScreen() {
           ))}
         </View>
 
-        {pr && pr.history.length > 0 && (
+        {bestPr && (
           <View
             style={[
               styles.prCard,
@@ -58,14 +67,14 @@ export function ExerciseDetailScreen() {
                 Your top set
               </Text>
               <Text style={[styles.prMeta, { color: colors.muted }]}>
-                PR {pr.best} · {pr.date}
+                PR {bestPr.weightKg ?? bestPr.value} kg {bestPr.reps ? `× ${bestPr.reps}` : ''} · {new Date(bestPr.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </Text>
             </View>
             <View style={{ marginTop: 8 }}>
               <LineChart
-                points={pr.history.map((v, i) => ({
-                  label: `W${34 + i}`,
-                  value: v,
+                points={prRecords.map((v, i) => ({
+                  label: `S${i + 1}`,
+                  value: v.weightKg ?? v.value,
                 }))}
                 ariaLabel={`${ex.name} top set trend`}
                 height={120}

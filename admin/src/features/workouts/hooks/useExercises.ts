@@ -111,3 +111,4 @@ export function useExercises(initialSearch: string = '') {
     fetchExercises,
   };
 }
+

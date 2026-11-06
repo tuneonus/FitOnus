@@ -7,7 +7,6 @@ import { TextField } from '../../../shared/components/ui/TextField';
 import { Chip } from '../../../shared/components/ui/Chip';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { showToast } from '../../../shared/stores/toastStore';
-import { exercises } from '../data/workoutsMock';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -17,13 +16,19 @@ export function ExerciseLibraryScreen() {
   const { colors } = useTheme();
   const { navigate, goBack } = useNavigation();
   const { pick } = useRouteParams<{ pick?: string }>();
-  const { plannedSession, setPlannedSession } = useWorkoutStore();
+  const { plannedSession, setPlannedSession, catalog, loadExercises } = useWorkoutStore();
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState('All');
 
-  const results = exercises.filter(
+  React.useEffect(() => {
+    loadExercises();
+  }, [loadExercises]);
+
+  const results = catalog.filter(
     (e) =>
-      (muscle === 'All' || e.muscle === muscle) &&
+      (muscle === 'All' ||
+        e.muscle === muscle ||
+        e.primaryMuscles?.some((m) => m.toLowerCase() === muscle.toLowerCase())) &&
       e.name.toLowerCase().includes(query.toLowerCase())
   );
 

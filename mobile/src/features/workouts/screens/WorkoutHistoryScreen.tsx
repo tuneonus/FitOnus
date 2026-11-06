@@ -9,15 +9,39 @@ import { SourceTag } from '../../../shared/components/ui/SourceTag';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useTheme } from '@/hooks/use-theme';
 
-const octoberWorkoutDays = [1, 3, 5, 6, 8];
 const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export function WorkoutHistoryScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const { history, todayStatus } = useWorkoutStore();
-  const trained =
-    todayStatus === 'completed' ? [...octoberWorkoutDays, 9] : octoberWorkoutDays;
+  const { history, todayStatus, loadHistoryFromBackend } = useWorkoutStore();
+
+  React.useEffect(() => {
+    loadHistoryFromBackend();
+  }, [loadHistoryFromBackend]);
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const todayDay = now.getDate();
+
+  const monthName = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(now);
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayWeekday = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7;
+
+  const trainedDays = React.useMemo(() => {
+    const daysSet = new Set<number>();
+    history.forEach((h) => {
+      const dt = new Date(h.date || (h as any).startedAt || (h as any).completedAt);
+      if (!isNaN(dt.getTime()) && dt.getFullYear() === currentYear && dt.getMonth() === currentMonth) {
+        daysSet.add(dt.getDate());
+      }
+    });
+    if (todayStatus === 'completed') {
+      daysSet.add(todayDay);
+    }
+    return Array.from(daysSet);
+  }, [history, todayStatus, currentYear, currentMonth, todayDay]);
 
   return (
     <Screen
@@ -43,10 +67,10 @@ export function WorkoutHistoryScreen() {
         >
           <View style={styles.calHeader}>
             <Text style={[styles.calTitle, { color: colors.ink }]}>
-              October 2026
+              {monthName}
             </Text>
             <Text style={[styles.calSub, { color: colors.muted }]}>
-              {trained.length} workouts
+              {trainedDays.length} {trainedDays.length === 1 ? 'workout' : 'workouts'}
             </Text>
           </View>
 
@@ -57,13 +81,13 @@ export function WorkoutHistoryScreen() {
               </Text>
             ))}
 
-            {Array.from({ length: 3 }).map((_, i) => (
+            {Array.from({ length: firstDayWeekday }).map((_, i) => (
               <View key={`pad-${i}`} style={styles.dayCell} />
             ))}
 
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
-              const isTrained = trained.includes(d);
-              const isToday = d === 9;
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
+              const isTrained = trainedDays.includes(d);
+              const isToday = d === todayDay;
 
               return (
                 <View key={d} style={styles.dayCell}>
@@ -85,7 +109,7 @@ export function WorkoutHistoryScreen() {
                         {
                           color: isTrained
                             ? colors.accentInk
-                            : d > 9
+                            : d > todayDay
                             ? `${colors.muted}70`
                             : colors.ink,
                           fontWeight: isTrained ? '700' : '400',

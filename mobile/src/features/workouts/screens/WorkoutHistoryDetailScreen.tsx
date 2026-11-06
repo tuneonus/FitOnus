@@ -3,7 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
 import { Screen } from '../../../shared/components/ui/Screen';
 import { SourceTag } from '../../../shared/components/ui/SourceTag';
+import { Dumbbell } from 'lucide-react-native';
 import { Button } from '../../../shared/components/ui/Button';
+import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -11,9 +13,21 @@ export function WorkoutHistoryDetailScreen() {
   const { colors } = useTheme();
   const { id } = useRouteParams<{ id?: string }>();
   const { navigate } = useNavigation();
-  const log = useWorkoutStore((s) => s.history.find((h) => h.id === id) ?? s.history[0]);
+  const log = useWorkoutStore((s) => (id ? s.history.find((h) => h.id === id) : s.history[0]));
 
-  if (!log) return null;
+  if (!log) {
+    return (
+      <Screen title="Workout detail">
+        <EmptyState
+          icon={Dumbbell}
+          title="Workout not found"
+          body="This workout session does not exist or has been removed."
+          actionLabel="View all workouts"
+          onAction={() => navigate('workoutHistory')}
+        />
+      </Screen>
+    );
+  }
   const synced = log.source === 'Apple Watch';
 
   return (

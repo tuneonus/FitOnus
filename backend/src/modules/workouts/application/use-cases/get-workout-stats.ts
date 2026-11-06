@@ -3,8 +3,11 @@ import type { IExerciseRepository, IWorkoutPlanRepository, IWorkoutSessionReposi
 export interface WorkoutStatsView {
   totalExercises: number;
   totalSystemTemplates: number;
+  totalTemplates: number;
   totalCompletedSessions: number;
+  totalSessions: number;
   totalVolumeLiftedKg: number;
+  totalVolumeKg: number;
   activeLiftersCount: number;
 }
 
@@ -33,8 +36,11 @@ export class GetWorkoutStatsUseCase {
     return {
       totalExercises,
       totalSystemTemplates,
+      totalTemplates: totalSystemTemplates,
       totalCompletedSessions,
+      totalSessions: totalCompletedSessions,
       totalVolumeLiftedKg,
+      totalVolumeKg: totalVolumeLiftedKg,
       activeLiftersCount,
     };
   }

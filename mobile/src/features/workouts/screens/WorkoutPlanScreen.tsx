@@ -5,22 +5,26 @@ import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Screen } from '../../../shared/components/ui/Screen';
 import { Button } from '../../../shared/components/ui/Button';
 import { showToast } from '../../../shared/stores/toastStore';
-import { exerciseById } from '../data/workoutsMock';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useTheme } from '@/hooks/use-theme';
 
 export function WorkoutPlanScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const { plannedSession, removePlannedExercise, setPlannedSession, todayStatus } =
-    useWorkoutStore();
+  const {
+    plannedSession,
+    removePlannedExercise,
+    setPlannedSession,
+    todayStatus,
+    getExerciseById,
+  } = useWorkoutStore();
   const [editing, setEditing] = useState(false);
 
   const remove = (id: string) => {
     const before = plannedSession;
     removePlannedExercise(id);
     showToast({
-      message: `${exerciseById(id).name} removed`,
+      message: `${getExerciseById(id).name} removed`,
       actionLabel: 'Undo',
       onAction: () => setPlannedSession(before),
     });
@@ -99,7 +103,7 @@ export function WorkoutPlanScreen() {
 
       <View style={styles.exercisesList}>
         {plannedSession.exercises.map((p, i) => {
-          const ex = exerciseById(p.exerciseId);
+          const ex = getExerciseById(p.exerciseId);
           return (
             <View
               key={p.exerciseId}

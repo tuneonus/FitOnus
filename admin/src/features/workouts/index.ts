@@ -9,3 +9,4 @@ export { ExerciseFilterBar } from './components/ExerciseFilterBar';
 export { ExerciseModal } from './components/ExerciseModal';
 export { WorkoutTemplatesTable } from './components/WorkoutTemplatesTable';
 export { WorkoutTemplateModal } from './components/WorkoutTemplateModal';
+

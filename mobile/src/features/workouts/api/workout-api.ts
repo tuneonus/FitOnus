@@ -188,3 +188,4 @@ export const workoutApi = {
     return res.data?.data || [];
   },
 };
+

@@ -108,3 +108,4 @@ export const workoutsApi = {
     return res.data;
   },
 };
+

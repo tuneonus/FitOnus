@@ -21,15 +21,93 @@ import { ProgressBar } from '../../../shared/components/ui/ProgressBar';
 import { BottomSheet } from '../../../shared/components/ui/BottomSheet';
 import { BarChart } from '../../../shared/components/charts/BarChart';
 import { showToast } from '../../../shared/stores/toastStore';
-import { program, weekSchedule, weeklyVolume, workoutCategories } from '../data/workoutsMock';
+import { workoutCategories } from '../data/workoutsMock';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useTheme } from '@/hooks/use-theme';
 
 export function WorkoutsScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const { plannedSession, todayStatus } = useWorkoutStore();
+  const {
+    plannedSession,
+    todayStatus,
+    history,
+    loadHistoryFromBackend,
+    syncOfflineSessions,
+    loadExercises,
+  } = useWorkoutStore();
   const [category, setCategory] = useState<(typeof workoutCategories)[number] | null>(null);
+
+  React.useEffect(() => {
+    loadHistoryFromBackend();
+    syncOfflineSessions();
+    loadExercises();
+  }, [loadHistoryFromBackend, syncOfflineSessions, loadExercises]);
+
+  const now = new Date();
+  const currentDayOfWeek = (now.getDay() + 6) % 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - currentDayOfWeek);
+
+  const daysLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  const dynamicWeekSchedule = React.useMemo(() => {
+    return daysLabels.map((dayLabel, index) => {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + index);
+      const dateNumStr = String(dayDate.getDate());
+
+      const isCurrentDay = index === currentDayOfWeek;
+
+      const hasWorkout = history.some((h) => {
+        const dt = new Date(h.date || (h as any).startedAt || (h as any).completedAt);
+        return (
+          !isNaN(dt.getTime()) &&
+          dt.getDate() === dayDate.getDate() &&
+          dt.getMonth() === dayDate.getMonth() &&
+          dt.getFullYear() === dayDate.getFullYear()
+        );
+      });
+
+      let status: 'done' | 'missed' | 'rest' | 'today' = 'rest';
+      if (isCurrentDay) {
+        status = 'today';
+      } else if (hasWorkout) {
+        status = 'done';
+      } else {
+        status = 'rest';
+      }
+
+      return {
+        day: dayLabel,
+        date: dateNumStr,
+        status: status as 'done' | 'missed' | 'rest' | 'today',
+      };
+    });
+  }, [history, currentDayOfWeek, monday]);
+
+  const dynamicWeeklyVolume = React.useMemo(() => {
+    return daysLabels.map((dayLabel, index) => {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + index);
+
+      const daySessions = history.filter((h) => {
+        const dt = new Date(h.date || (h as any).startedAt || (h as any).completedAt);
+        return (
+          !isNaN(dt.getTime()) &&
+          dt.getDate() === dayDate.getDate() &&
+          dt.getMonth() === dayDate.getMonth() &&
+          dt.getFullYear() === dayDate.getFullYear()
+        );
+      });
+
+      const totalVol = daySessions.reduce((sum, s) => sum + (s.volumeKg || 0), 0);
+      return {
+        label: dayLabel,
+        value: totalVol,
+      };
+    });
+  }, [history, monday]);
 
   return (
     <Screen
@@ -46,7 +124,7 @@ export function WorkoutsScreen() {
       <View style={styles.content}>
         {/* Week Schedule Strip */}
         <View style={styles.scheduleRow}>
-          {weekSchedule.map((d) => {
+          {dynamicWeekSchedule.map((d) => {
             const isToday = d.status === 'today';
             return (
               <View
@@ -156,15 +234,14 @@ export function WorkoutsScreen() {
             ]}
           >
             <Text style={[styles.progName, { color: colors.ink }]}>
-              {program.name}
+              Starter Strength Routine
             </Text>
             <Text style={[styles.progMeta, { color: colors.muted }]}>
-              Week {program.week} of {program.totalWeeks} · {program.sessionsDone}/
-              {program.sessionsTotal} sessions
+              {history.length} completed {history.length === 1 ? 'session' : 'sessions'} logged
             </Text>
             <ProgressBar
-              value={program.sessionsDone}
-              max={program.sessionsTotal}
+              value={Math.min(history.length, 12)}
+              max={12}
               color={colors.accent}
               height={8}
               style={{ marginTop: 12 }}
@@ -233,7 +310,7 @@ export function WorkoutsScreen() {
             ]}
           >
             <BarChart
-              data={weeklyVolume}
+              data={dynamicWeeklyVolume}
               formatValue={(v) => `${v.toLocaleString()} kg`}
               barColor={colors.accent}
               height={110}

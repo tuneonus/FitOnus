@@ -22,7 +22,7 @@ interface SeedExercise {
 
 const APPROVED_EXERCISES: SeedExercise[] = [
   {
-    id: 'e0000000-0000-0000-0000-000000000001',
+    id: 'e0000000-0000-4000-8000-000000000001',
     name: 'Barbell Bench Press',
     description:
       'Fundamental horizontal push compound movement targeting the pectoral muscles, front delts, and triceps.',
@@ -46,7 +46,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000002',
+    id: 'e0000000-0000-4000-8000-000000000002',
     name: 'Incline Dumbbell Press',
     description: 'Upper chest hypertrophy builder that increases range of motion compared to barbells.',
     instructions: [
@@ -65,7 +65,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000003',
+    id: 'e0000000-0000-4000-8000-000000000003',
     name: 'Cable Crossover',
     description: 'Isolation chest movement maintaining continuous tension through peak contraction.',
     instructions: [
@@ -84,7 +84,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: false,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000004',
+    id: 'e0000000-0000-4000-8000-000000000004',
     name: 'Overhead Cable Triceps Extension',
     description: 'Triceps long-head isolation targeting deep elbow flexion stretch.',
     instructions: [
@@ -103,7 +103,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: false,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000005',
+    id: 'e0000000-0000-4000-8000-000000000005',
     name: 'Parallel Bar Dips',
     description: 'Classic calisthenics compound movement developing chest and triceps pushing power.',
     instructions: [
@@ -122,7 +122,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000006',
+    id: 'e0000000-0000-4000-8000-000000000006',
     name: 'Dumbbell Lateral Raise',
     description: 'Premier lateral deltoid builder essential for developing shoulder width.',
     instructions: [
@@ -140,7 +140,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: false,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000007',
+    id: 'e0000000-0000-4000-8000-000000000007',
     name: 'Back Squat',
     description:
       'King of lower-body compound movements building quadriceps, glutes, and spinal erector strength.',
@@ -164,7 +164,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000008',
+    id: 'e0000000-0000-4000-8000-000000000008',
     name: 'Romanian Deadlift',
     description: 'Posterior chain hinge movement prioritizing hamstring and glute development.',
     instructions: [
@@ -183,7 +183,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000009',
+    id: 'e0000000-0000-4000-8000-000000000009',
     name: 'Pull-up',
     description: 'Essential bodyweight vertical pull building latissimus dorsi and upper back thickness.',
     instructions: [
@@ -202,7 +202,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000010',
+    id: 'e0000000-0000-4000-8000-000000000010',
     name: 'Seated Cable Row',
     description: 'Horizontal pulling exercise strengthening mid-back, rhomboids, and rear delts.',
     instructions: [
@@ -221,7 +221,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000011',
+    id: 'e0000000-0000-4000-8000-000000000011',
     name: 'Goblet Squat',
     description: 'Front-loaded squat variation ideal for perfecting depth and upright posture.',
     instructions: [
@@ -240,7 +240,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000012',
+    id: 'e0000000-0000-4000-8000-000000000012',
     name: 'Plank',
     description: 'Isometric anterior core exercise reinforcing spinal stabilization and anti-extension.',
     instructions: [
@@ -261,7 +261,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: false,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000013',
+    id: 'e0000000-0000-4000-8000-000000000013',
     name: 'Burpee',
     description: 'Full-body metabolic conditioning movement integrating squat thrust, push-up, and jump.',
     instructions: [
@@ -279,7 +279,7 @@ const APPROVED_EXERCISES: SeedExercise[] = [
     isCompound: true,
   },
   {
-    id: 'e0000000-0000-0000-0000-000000000014',
+    id: 'e0000000-0000-4000-8000-000000000014',
     name: 'Kettlebell Swing',
     description: 'Dynamic hip hinge generating explosive power from hamstrings, glutes, and hips.',
     instructions: [
@@ -320,7 +320,7 @@ interface StarterTemplate {
 
 const STARTER_TEMPLATES: StarterTemplate[] = [
   {
-    id: '00000000-0000-0000-0000-000000000101',
+    id: '00000000-0000-4000-8000-000000000101',
     name: 'Chest + Triceps Starter',
     description: 'System curated push routine for upper body strength and pectoral hypertrophy.',
     workoutType: 'strength',
@@ -329,7 +329,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     tags: ['Push', 'Hypertrophy'],
     exercises: [
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000001',
+        exerciseId: 'e0000000-0000-4000-8000-000000000001',
         orderIndex: 0,
         targetSets: 4,
         targetReps: '6-8',
@@ -338,7 +338,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Work up to heavy set',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000002',
+        exerciseId: 'e0000000-0000-4000-8000-000000000002',
         orderIndex: 1,
         targetSets: 3,
         targetReps: '10',
@@ -347,7 +347,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Focus on upper chest stretch',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000003',
+        exerciseId: 'e0000000-0000-4000-8000-000000000003',
         orderIndex: 2,
         targetSets: 3,
         targetReps: '12',
@@ -356,7 +356,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Constant cable tension',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000004',
+        exerciseId: 'e0000000-0000-4000-8000-000000000004',
         orderIndex: 3,
         targetSets: 3,
         targetReps: '12',
@@ -365,7 +365,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Deep stretch at bottom',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000005',
+        exerciseId: 'e0000000-0000-4000-8000-000000000005',
         orderIndex: 4,
         targetSets: 3,
         targetReps: 'AMRAP',
@@ -374,7 +374,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Bodyweight finish',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000006',
+        exerciseId: 'e0000000-0000-4000-8000-000000000006',
         orderIndex: 5,
         targetSets: 3,
         targetReps: '15',
@@ -385,7 +385,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     ],
   },
   {
-    id: '00000000-0000-0000-0000-000000000102',
+    id: '00000000-0000-4000-8000-000000000102',
     name: 'Back + Biceps Starter',
     description: 'System curated pull routine focusing on lat width, mid-back density, and posterior chain.',
     workoutType: 'strength',
@@ -394,7 +394,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     tags: ['Pull', 'Upper Body'],
     exercises: [
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000009',
+        exerciseId: 'e0000000-0000-4000-8000-000000000009',
         orderIndex: 0,
         targetSets: 4,
         targetReps: '8-10',
@@ -403,7 +403,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Dead hang to chest touch',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000010',
+        exerciseId: 'e0000000-0000-4000-8000-000000000010',
         orderIndex: 1,
         targetSets: 3,
         targetReps: '10-12',
@@ -412,7 +412,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Squeeze shoulder blades',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000008',
+        exerciseId: 'e0000000-0000-4000-8000-000000000008',
         orderIndex: 2,
         targetSets: 3,
         targetReps: '8-10',
@@ -423,7 +423,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     ],
   },
   {
-    id: '00000000-0000-0000-0000-000000000103',
+    id: '00000000-0000-4000-8000-000000000103',
     name: 'Legs + Core Starter',
     description: 'System curated lower body workout targeting quads, glutes, and core stability.',
     workoutType: 'strength',
@@ -432,7 +432,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
     tags: ['Legs', 'Lower Body'],
     exercises: [
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000007',
+        exerciseId: 'e0000000-0000-4000-8000-000000000007',
         orderIndex: 0,
         targetSets: 4,
         targetReps: '6-8',
@@ -441,7 +441,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Hit parallel depth',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000008',
+        exerciseId: 'e0000000-0000-4000-8000-000000000008',
         orderIndex: 1,
         targetSets: 3,
         targetReps: '8-10',
@@ -450,7 +450,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Hips back, neutral back',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000011',
+        exerciseId: 'e0000000-0000-4000-8000-000000000011',
         orderIndex: 2,
         targetSets: 3,
         targetReps: '12',
@@ -459,7 +459,7 @@ const STARTER_TEMPLATES: StarterTemplate[] = [
         notes: 'Stay upright',
       },
       {
-        exerciseId: 'e0000000-0000-0000-0000-000000000012',
+        exerciseId: 'e0000000-0000-4000-8000-000000000012',
         orderIndex: 3,
         targetSets: 3,
         targetReps: '60s',

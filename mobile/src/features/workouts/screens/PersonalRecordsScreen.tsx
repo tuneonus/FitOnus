@@ -1,113 +1,139 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Trophy } from 'lucide-react-native';
 import { Screen } from '../../../shared/components/ui/Screen';
 import { LineChart } from '../../../shared/components/charts/LineChart';
 import { Sparkline } from '../../../shared/components/charts/Sparkline';
-import { personalRecords } from '../data/workoutsMock';
+import { EmptyState } from '../../../shared/components/ui/EmptyState';
+import { WorkoutService } from '../services/workout-service';
+import type { PersonalRecordView } from '../types/workout';
+import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { useTheme } from '@/hooks/use-theme';
 
 export function PersonalRecordsScreen() {
   const { colors } = useTheme();
-  const lifts = personalRecords.filter((r) => r.history.length > 0);
-  const [selected, setSelected] = useState(lifts[0]?.lift || 'Barbell Bench Press');
-  const rec = lifts.find((l) => l.lift === selected) ?? lifts[0]!;
+  const { navigate } = useNavigation();
+  const [records, setRecords] = useState<PersonalRecordView[]>([]);
+  const [selectedLift, setSelectedLift] = useState<string>('');
+
+  useEffect(() => {
+    WorkoutService.getPersonalRecords()
+      .then((data) => {
+        setRecords(data);
+        if (data.length > 0 && data[0]?.exerciseName) {
+          setSelectedLift(data[0].exerciseName);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const activeRec = records.find((r) => r.exerciseName === selectedLift) || records[0];
+  const activeWeight = activeRec?.weightKg ?? activeRec?.value ?? 0;
+  const activeReps = activeRec?.reps ?? 1;
+  const activeE1rm = Math.round(activeWeight * (1 + activeReps / 30));
 
   return (
     <Screen title="Personal records">
       <View style={styles.content}>
-        {/* Selected Lift Detail Card */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.line,
-            },
-          ]}
-        >
-          <Text style={[styles.liftName, { color: colors.muted }]}>
-            {rec.lift}
-          </Text>
-          <Text style={[styles.liftBest, { color: colors.ink }]}>
-            {rec.best}
-          </Text>
-          <Text style={[styles.e1rmText, { color: colors.muted }]}>
-            Estimated 1RM{' '}
-            <Text style={{ color: colors.ink, fontWeight: '600' }}>
-              {rec.e1rm} kg
-            </Text>{' '}
-            · set {rec.date}
-          </Text>
+        {!activeRec || records.length === 0 ? (
+          <EmptyState
+            icon={Trophy}
+            title="No personal records yet"
+            body="Complete your first workout to establish your baseline personal records."
+            actionLabel="Start a workout"
+            onAction={() => navigate('activeWorkout')}
+          />
+        ) : (
+          <>
+            {/* Selected Lift Detail Card */}
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.line,
+                },
+              ]}
+            >
+              <Text style={[styles.liftName, { color: colors.muted }]}>
+                {activeRec.exerciseName}
+              </Text>
+              <Text style={[styles.liftBest, { color: colors.ink }]}>
+                {activeWeight} kg × {activeReps}
+              </Text>
+              <Text style={[styles.e1rmText, { color: colors.muted }]}>
+                Estimated 1RM{' '}
+                <Text style={{ color: colors.ink, fontWeight: '600' }}>
+                  {activeE1rm} kg
+                </Text>{' '}
+                · set {new Date(activeRec.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </Text>
 
-          <View style={{ marginTop: 12 }}>
-            <LineChart
-              points={rec.history.map((v, i) => ({
-                label: `W${34 + i}`,
-                value: v,
-              }))}
-              ariaLabel={`${rec.lift} top set by week`}
-              height={130}
-              formatValue={(v) => `${v} kg`}
-              strokeColor={colors.accent}
-            />
-          </View>
-
-          <Text style={[styles.formulaNote, { color: colors.muted }]}>
-            Estimated 1RM uses the Epley formula — a guide, not a tested max.
-          </Text>
-        </View>
-
-        {/* All Lifts List */}
-        <View style={styles.liftsList}>
-          {personalRecords.map((r, idx) => {
-            const isSelected = r.lift === selected;
-            const hasHistory = r.history.length > 0;
-
-            return (
-              <TouchableOpacity
-                key={r.lift}
-                activeOpacity={0.7}
-                disabled={!hasHistory}
-                onPress={() => setSelected(r.lift)}
-                style={[
-                  styles.liftRow,
-                  idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line },
-                ]}
-              >
-                <Trophy
-                  size={18}
-                  color={isSelected ? colors.accent : colors.muted}
+              <View style={{ marginTop: 12 }}>
+                <LineChart
+                  points={[{ label: 'PR', value: activeWeight }]}
+                  ariaLabel={`${activeRec.exerciseName} top set trend`}
+                  height={130}
+                  formatValue={(v) => `${v} kg`}
+                  strokeColor={colors.accent}
                 />
-                <View style={styles.liftTextCol}>
-                  <Text
+              </View>
+
+              <Text style={[styles.formulaNote, { color: colors.muted }]}>
+                Estimated 1RM uses the Epley formula — a guide, not a tested max.
+              </Text>
+            </View>
+
+            {/* All Lifts List */}
+            <View style={styles.liftsList}>
+              {records.map((r, idx) => {
+                const isSelected = r.exerciseName === selectedLift;
+                const rWeight = r.weightKg ?? r.value ?? 0;
+                const rReps = r.reps ?? 1;
+
+                return (
+                  <TouchableOpacity
+                    key={r.exerciseId}
+                    activeOpacity={0.7}
+                    onPress={() => setSelectedLift(r.exerciseName)}
                     style={[
-                      styles.rowLiftName,
-                      {
-                        color: colors.ink,
-                        fontWeight: isSelected ? '700' : '500',
-                      },
+                      styles.liftRow,
+                      idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line },
                     ]}
                   >
-                    {r.lift}
-                  </Text>
-                  <Text style={[styles.rowLiftBest, { color: colors.muted }]}>
-                    {r.best} · {r.date}
-                  </Text>
-                </View>
+                    <Trophy
+                      size={18}
+                      color={isSelected ? colors.accent : colors.muted}
+                    />
+                    <View style={styles.liftTextCol}>
+                      <Text
+                        style={[
+                          styles.rowLiftName,
+                          {
+                            color: colors.ink,
+                            fontWeight: isSelected ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        {r.exerciseName}
+                      </Text>
+                      <Text style={[styles.rowLiftBest, { color: colors.muted }]}>
+                        {rWeight} kg × {rReps} · {new Date(r.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </Text>
+                    </View>
 
-                {hasHistory && (
-                  <Sparkline
-                    points={r.history}
-                    strokeColor={colors.ink}
-                    width={64}
-                    height={28}
-                  />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                    <Sparkline
+                      points={[rWeight]}
+                      strokeColor={colors.ink}
+                      width={64}
+                      height={28}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
       </View>
     </Screen>
   );

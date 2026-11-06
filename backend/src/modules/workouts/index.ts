@@ -1,6 +1,7 @@
 import type { SqlExecutor } from '../../database/transaction.js';
 import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
+import type { IdempotencyService } from '../../shared/idempotency/idempotency.js';
 import { AdminManageExerciseUseCase } from './application/use-cases/admin-manage-exercise.js';
 import { AdminManageTemplateUseCase } from './application/use-cases/admin-manage-template.js';
 import { CreateWorkoutPlanUseCase } from './application/use-cases/create-workout-plan.js';
@@ -49,6 +50,7 @@ export function createWorkoutsModule(deps: {
   adminBasePath: string;
   db: SqlExecutor;
   uow: UnitOfWork;
+  idempotency?: IdempotencyService;
 }): WorkoutsModule {
   const exerciseRepo = new PgExerciseRepository(deps.db);
   const workoutRepo = new PgWorkoutPlanRepository(deps.db);
@@ -65,7 +67,7 @@ export function createWorkoutsModule(deps: {
     createWorkoutPlan: new CreateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
     updateWorkoutPlan: new UpdateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
     deleteWorkoutPlan: new DeleteWorkoutPlanUseCase(workoutRepo),
-    logWorkoutSession: new LogWorkoutSessionUseCase(sessionRepo, prRepo, exerciseRepo),
+    logWorkoutSession: new LogWorkoutSessionUseCase(sessionRepo, prRepo, exerciseRepo, deps.idempotency),
     listWorkoutSessions: new ListWorkoutSessionsUseCase(sessionRepo),
     getWorkoutSession: new GetWorkoutSessionUseCase(sessionRepo),
     listPersonalRecords: new ListPersonalRecordsUseCase(prRepo),

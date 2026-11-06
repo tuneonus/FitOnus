@@ -175,28 +175,28 @@ export function WorkoutsAdminView() {
           <StatsCard
             title="Exercise Catalog"
             value={stats ? stats.totalExercises : '—'}
-            subtitle={stats ? `${stats.systemExercises} system, ${stats.customExercises} custom` : 'Loading catalog...'}
+            subtitle="Global library exercises"
             icon={<Dumbbell className="h-5 w-5" />}
             accent="teal"
           />
           <StatsCard
             title="Curated Routines"
-            value={stats ? stats.totalTemplates : '—'}
+            value={stats ? (stats.totalSystemTemplates ?? stats.totalTemplates ?? 0) : '—'}
             subtitle="Verified starter templates"
             icon={<Layers className="h-5 w-5" />}
             accent="emerald"
           />
           <StatsCard
             title="Sessions Completed"
-            value={stats ? stats.totalSessions.toLocaleString() : '—'}
+            value={stats ? (stats.totalCompletedSessions ?? stats.totalSessions ?? 0).toLocaleString() : '—'}
             subtitle="Total member logs"
             icon={<Activity className="h-5 w-5" />}
             accent="purple"
           />
           <StatsCard
             title="Total Volume Lifted"
-            value={stats ? formatVolume(stats.totalVolumeKg) : '—'}
-            subtitle="Cumulative weight moved"
+            value={stats ? formatVolume(stats.totalVolumeLiftedKg ?? stats.totalVolumeKg ?? 0) : '—'}
+            subtitle={stats ? `${stats.activeLiftersCount ?? 0} active lifters` : 'Cumulative weight moved'}
             icon={<Flame className="h-5 w-5" />}
             accent="amber"
           />

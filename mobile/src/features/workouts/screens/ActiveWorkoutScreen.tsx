@@ -5,7 +5,6 @@ import { ChevronLeft, ChevronRight, Pause, Play, Plus, SkipForward } from 'lucid
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { ConfirmDialog } from '../../../shared/components/ui/ConfirmDialog';
-import { exerciseById } from '../data/workoutsMock';
 import { useWorkoutStore } from '../store/workoutStore';
 import { useRestTimer } from '../hooks/useRestTimer';
 import { SetRow } from '../components/SetRow';
@@ -20,7 +19,7 @@ export function ActiveWorkoutScreen() {
   const { colors } = useTheme();
   const { goBack, replace } = useNavigation();
   const store = useWorkoutStore();
-  const { active, currentIndex, elapsedSec, paused, plannedSession } = store;
+  const { active, currentIndex, elapsedSec, paused, plannedSession, getExerciseById } = store;
   const restTimer = useRestTimer();
   const [confirmFinish, setConfirmFinish] = useState(false);
 
@@ -35,7 +34,7 @@ export function ActiveWorkoutScreen() {
 
   const current = active[currentIndex];
   if (!current) return null;
-  const ex = exerciseById(current.exerciseId);
+  const ex = getExerciseById(current.exerciseId);
   const doneSets = active.flatMap((e) => e.sets).filter((s) => s.done).length;
   const totalSets = active.filter((e) => !e.skipped).flatMap((e) => e.sets).length;
   const next = active[currentIndex + 1];
@@ -260,7 +259,7 @@ export function ActiveWorkoutScreen() {
           total={restTimer.rest.total}
           nextLabel={
             current.sets.every((s) => s.done) && next
-              ? exerciseById(next.exerciseId).name
+              ? getExerciseById(next.exerciseId).name
               : `Set ${current.sets.filter((s) => s.done).length + 1}`
           }
           onAdd={() => restTimer.add(15)}

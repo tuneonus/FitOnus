@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Sparkles } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { BarChart3, Sparkles } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Screen } from '../../../shared/components/ui/Screen';
 import { SegmentedControl } from '../../../shared/components/ui/SegmentedControl';
 import { BarChart } from '../../../shared/components/charts/BarChart';
 import { LineChart } from '../../../shared/components/charts/LineChart';
-import { weeklyVolume } from '../data/workoutsMock';
-import {
-  benchE1rm,
-  muscleSplit,
-  sessionsPerWeek,
-  workoutSummary as s,
-} from '../data/workoutAnalyticsMock';
+import { EmptyState } from '../../../shared/components/ui/EmptyState';
+import { useWorkoutStore } from '../store/workoutStore';
 import { useTheme } from '@/hooks/use-theme';
 
 type ViewType = 'frequency' | 'volume';
@@ -21,221 +16,149 @@ export function WorkoutAnalyticsScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const [view, setView] = useState<ViewType>('frequency');
+  const { history, loadHistoryFromBackend } = useWorkoutStore();
+
+  React.useEffect(() => {
+    loadHistoryFromBackend();
+  }, [loadHistoryFromBackend]);
+
+  const now = Date.now();
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+  const sessions30d = history.filter((h) => {
+    const t = new Date(h.date || (h as any).startedAt || (h as any).completedAt).getTime();
+    return !isNaN(t) && t >= thirtyDaysAgo;
+  });
+
+  const sessionCount = sessions30d.length;
+  const avgDurationMin =
+    sessionCount > 0
+      ? Math.round(sessions30d.reduce((sum, h) => sum + (h.durationMin || 0), 0) / sessionCount)
+      : 0;
+  const totalVolumeKg = sessions30d.reduce((sum, h) => sum + (h.volumeKg || 0), 0);
+  const prs30d = sessions30d.reduce((sum, h) => sum + (h.prs || 0), 0);
+
+  // Weekly aggregates for the last 4 weeks
+  const weeksData = React.useMemo(() => {
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    return [3, 2, 1, 0].map((wOffset) => {
+      const start = now - (wOffset + 1) * oneWeekMs;
+      const end = now - wOffset * oneWeekMs;
+      const weekSessions = history.filter((h) => {
+        const t = new Date(h.date || (h as any).startedAt || (h as any).completedAt).getTime();
+        return !isNaN(t) && t >= start && t < end;
+      });
+      const label = wOffset === 0 ? 'This wk' : `W-${wOffset}`;
+      return {
+        label,
+        frequency: weekSessions.length,
+        volume: weekSessions.reduce((sum, h) => sum + (h.volumeKg || 0), 0),
+      };
+    });
+  }, [history, now]);
+
+  const frequencyChartData = weeksData.map((d) => ({ label: d.label, value: d.frequency }));
+  const volumeChartData = weeksData.map((d) => ({ label: d.label, value: d.volume }));
 
   return (
     <Screen title="Workout analytics">
-      <View style={styles.content}>
-        {/* Last 30 days headline */}
-        <View style={styles.headerSection}>
-          <Text style={[styles.sectionSub, { color: colors.muted }]}>
-            Last 30 days
-          </Text>
-          <Text style={[styles.bigSessions, { color: colors.ink }]}>
-            {s.sessions30d}
-            <Text style={[styles.sessionsUnit, { color: colors.muted }]}>
-              {' '}
-              sessions
+      {history.length === 0 ? (
+        <EmptyState
+          icon={BarChart3}
+          title="No analytics yet"
+          body="Complete workouts in FitOnus to see 30-day session volume, frequency trends and strength progression."
+          actionLabel="Start a workout"
+          onAction={() => navigate('activeWorkout')}
+        />
+      ) : (
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Last 30 days headline */}
+          <View style={styles.headerSection}>
+            <Text style={[styles.sectionSub, { color: colors.muted }]}>
+              Last 30 days
             </Text>
-          </Text>
+            <Text style={[styles.bigSessions, { color: colors.ink }]}>
+              {sessionCount}
+              <Text style={[styles.sessionsUnit, { color: colors.muted }]}>
+                {' '}
+                sessions
+              </Text>
+            </Text>
 
-          <View style={[styles.statsStrip, { borderTopColor: colors.line }]}>
-            <View style={styles.statCol}>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>
-                Avg length
-              </Text>
-              <Text style={[styles.statVal, { color: colors.ink }]}>
-                {s.avgDurationMin} min
-              </Text>
-            </View>
-            <View style={styles.statCol}>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>
-                Volume
-              </Text>
-              <Text style={[styles.statVal, { color: colors.ink }]}>
-                {(s.totalVolumeKg / 1000).toFixed(1)} t
-              </Text>
-            </View>
-            <View style={styles.statCol}>
-              <Text style={[styles.statLabel, { color: colors.muted }]}>
-                New PRs
-              </Text>
-              <Text style={[styles.statVal, { color: colors.ink }]}>
-                {s.prs30d}
-              </Text>
+            <View style={[styles.statsStrip, { borderTopColor: colors.line }]}>
+              <View style={styles.statCol}>
+                <Text style={[styles.statLabel, { color: colors.muted }]}>
+                  Avg length
+                </Text>
+                <Text style={[styles.statVal, { color: colors.ink }]}>
+                  {avgDurationMin} min
+                </Text>
+              </View>
+              <View style={styles.statCol}>
+                <Text style={[styles.statLabel, { color: colors.muted }]}>
+                  Volume
+                </Text>
+                <Text style={[styles.statVal, { color: colors.ink }]}>
+                  {(totalVolumeKg / 1000).toFixed(1)} t
+                </Text>
+              </View>
+              <View style={styles.statCol}>
+                <Text style={[styles.statLabel, { color: colors.muted }]}>
+                  New PRs
+                </Text>
+                <Text style={[styles.statVal, { color: colors.ink }]}>
+                  {prs30d}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Training Trend Card */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.line,
-            },
-          ]}
-        >
-          <SegmentedControl
-            label="Trend metric"
-            options={[
-              { value: 'frequency', label: 'Sessions / week' },
-              { value: 'volume', label: 'Volume / week' },
+          {/* Training Trend Card */}
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.line,
+              },
             ]}
-            value={view}
-            onChange={(val) => setView(val as ViewType)}
-          />
-
-          <View style={{ marginTop: 16 }}>
-            {view === 'frequency' ? (
-              <BarChart
-                data={sessionsPerWeek}
-                goal={5}
-                formatValue={(v) => `${v} sessions`}
-                barColor={colors.accent}
-                height={120}
-              />
-            ) : (
-              <BarChart
-                data={weeklyVolume}
-                formatValue={(v) => `${v.toLocaleString()} kg`}
-                barColor={colors.accent}
-                height={120}
-              />
-            )}
-          </View>
-
-          <Text style={[styles.cardNote, { color: colors.muted }]}>
-            {view === 'frequency'
-              ? `Plan: 5 per week · ${Math.round(s.consistency * 100)}% adherence over 8 weeks`
-              : 'Includes logged and Apple Watch strength sessions'}
-          </Text>
-        </View>
-
-        {/* Muscle Split */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.line,
-            },
-          ]}
-        >
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>
-            Weekly sets by muscle group
-          </Text>
-          <View style={styles.musclesList}>
-            {muscleSplit.map((m) => {
-              const under = m.sets < m.target * 0.75;
-              const fillPct = Math.min(100, (m.sets / 20) * 100);
-              const targetPct = (m.target / 20) * 100;
-
-              return (
-                <View key={m.group} style={styles.muscleRow}>
-                  <Text style={[styles.muscleGroup, { color: colors.ink }]}>
-                    {m.group}
-                  </Text>
-                  <View
-                    style={[
-                      styles.trackBar,
-                      { backgroundColor: colors.surface2 },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.fillBar,
-                        {
-                          width: `${fillPct}%`,
-                          backgroundColor: under ? colors.warn : colors.accent,
-                        },
-                      ]}
-                    />
-                    <View
-                      style={[
-                        styles.targetTick,
-                        {
-                          left: `${targetPct}%`,
-                          backgroundColor: colors.ink,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.muscleNumbers,
-                      { color: under ? colors.warn : colors.muted },
-                    ]}
-                  >
-                    {m.sets}/{m.target}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-          <Text style={[styles.cardNote, { color: colors.muted }]}>
-            Tick = recommended weekly sets for your goal.
-          </Text>
-        </View>
-
-        {/* Bench Press E1RM */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.line,
-            },
-          ]}
-        >
-          <View style={styles.chartHeader}>
-            <Text style={[styles.cardTitle, { color: colors.ink }]}>
-              Bench press · estimated 1RM
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => navigate('personalRecords')}
-            >
-              <Text style={[styles.allLiftsLink, { color: colors.muted }]}>
-                All lifts
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ marginTop: 12 }}>
-            <LineChart
-              points={benchE1rm}
-              formatValue={(v) => `${v} kg`}
-              height={130}
-              strokeColor={colors.accent}
+          >
+            <SegmentedControl
+              label="Trend metric"
+              options={[
+                { value: 'frequency', label: 'Sessions / week' },
+                { value: 'volume', label: 'Volume / week' },
+              ]}
+              value={view}
+              onChange={(val) => setView(val as ViewType)}
             />
-          </View>
-          <Text style={[styles.cardNote, { color: colors.muted }]}>
-            Estimated from your best set each session (Epley formula) — not a tested max.
-          </Text>
-        </View>
 
-        {/* AI Insight Card */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() =>
-            navigate('coach', { q: 'Create a 45-minute fat-loss workout' })
-          }
-          style={[
-            styles.aiInsightCard,
-            { backgroundColor: colors.hero },
-          ]}
-        >
-          <Sparkles size={18} color={colors.accent} style={{ marginTop: 2 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.aiInsightTitle, { color: colors.heroInk }]}>
-              Core and legs are under-trained
-            </Text>
-            <Text style={[styles.aiInsightDesc, { color: colors.heroMuted }]}>
-              Core is at 4 of 8 sets. Adding a 10-minute finisher twice a week would close the gap. Tap to plan it.
+            <View style={{ marginTop: 16 }}>
+              {view === 'frequency' ? (
+                <BarChart
+                  data={frequencyChartData}
+                  goal={4}
+                  formatValue={(v) => `${v} sessions`}
+                  barColor={colors.accent}
+                  height={120}
+                />
+              ) : (
+                <BarChart
+                  data={volumeChartData}
+                  formatValue={(v) => `${v.toLocaleString()} kg`}
+                  barColor={colors.accent}
+                  height={120}
+                />
+              )}
+            </View>
+
+            <Text style={[styles.cardNote, { color: colors.muted }]}>
+              {view === 'frequency'
+                ? `Logged sessions over the past 4 weeks`
+                : 'Total lifted volume across completed workouts'}
             </Text>
           </View>
-        </TouchableOpacity>
-      </View>
+        </ScrollView>
+      )}
     </Screen>
   );
 }
