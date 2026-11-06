@@ -1,0 +1,102 @@
+@baseUrl = http://localhost:3000
+@adminEmail = admin@fitonus.com
+@adminPassword = AdminSecurePass123!
+@userEmail = aarav.mehta@gmail.com
+@userPassword = Password1234!
+
+### 1. Health Liveness Probe
+GET {{baseUrl}}/health/live
+
+### 2. Health Readiness Probe (checks Database)
+GET {{baseUrl}}/health/ready
+
+### 3. OpenAPI 3.1 Schema
+GET {{baseUrl}}/api/v1/openapi.json
+
+### 4. Login as Admin
+# @name loginAdmin
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### Store Token
+@adminToken = {{loginAdmin.response.body.data.accessToken}}
+
+### 5. Login as User
+# @name loginUser
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
+}
+
+### Store User Token
+@userToken = {{loginUser.response.body.data.accessToken}}
+
+### 6. Get Current User Profile (Admin)
+GET {{baseUrl}}/api/v1/users/me
+Authorization: Bearer {{adminToken}}
+
+### 7. Get Current User Fitness Profile
+GET {{baseUrl}}/api/v1/profile/me
+Authorization: Bearer {{userToken}}
+
+### 8. List Exercises
+GET {{baseUrl}}/api/v1/workouts/exercises
+Authorization: Bearer {{userToken}}
+
+### 9. List System Workout Templates
+GET {{baseUrl}}/api/v1/workouts/templates
+Authorization: Bearer {{userToken}}
+
+### 10. Admin: Workout Platform Stats
+GET {{baseUrl}}/api/v1/admin/workouts/stats
+Authorization: Bearer {{adminToken}}
+
+### 11. Nutrition: Daily Dashboard
+GET {{baseUrl}}/api/v1/nutrition/daily?date=2026-11-05
+Authorization: Bearer {{userToken}}
+
+### 12. Nutrition: Search Foods Catalog
+GET {{baseUrl}}/api/v1/nutrition/foods/search?q=milk
+Authorization: Bearer {{userToken}}
+
+### 13. Admin Nutrition: Catalog Statistics
+GET {{baseUrl}}/api/v1/admin/nutrition/stats
+Authorization: Bearer {{adminToken}}
+
+### 14. Admin Nutrition: List Foods
+GET {{baseUrl}}/api/v1/admin/nutrition/foods?page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### 15. Admin Nutrition: Create Verified Food
+POST {{baseUrl}}/api/v1/admin/nutrition/foods
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Olive Oil, extra virgin",
+  "brand": "Kirkland",
+  "barcode": "098765432109",
+  "servingSize": 1,
+  "servingUnit": "tbsp",
+  "servingWeightG": 13.5,
+  "servingVolumeMl": 14.7,
+  "densityGPerMl": 0.9184,
+  "servingBasis": "100g",
+  "calories": 884,
+  "proteinG": 0,
+  "carbohydratesG": 0,
+  "fatG": 100,
+  "fiberG": 0,
+  "dataSource": "usda_fdc",
+  "sourceId": "171413"
+}
+
+

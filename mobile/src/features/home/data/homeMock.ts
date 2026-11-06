@@ -80,8 +80,8 @@ export type BodySignal = {
   meta: string;
   source: DataSource;
   requiresDevice: boolean;
-  series?: number[];
-  stages?: { label: string; share: number; color: string }[];
+  series?: number[] | undefined;
+  stages?: { label: string; share: number; color: string }[] | undefined;
 };
 
 export const bodySignals: BodySignal[] = [

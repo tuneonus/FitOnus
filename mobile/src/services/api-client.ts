@@ -32,6 +32,8 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    config.baseURL = Config.API_BASE_URL;
+
     const isPublicAuthRoute =
       config.url?.includes('/auth/login') ||
       config.url?.includes('/auth/register') ||
@@ -62,6 +64,7 @@ apiClient.interceptors.response.use(
 
     logger.error('API Response Error:', {
       status: error.response?.status,
+      baseURL: originalRequest?.baseURL,
       url: originalRequest?.url,
       message: errorMessage,
     });

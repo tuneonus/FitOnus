@@ -27,27 +27,32 @@ type ProfileSetupState = ProfileSetup & {
     key: 'equipment' | 'allergies' | 'cuisines',
     value: string
   ) => void;
+  reset: () => void;
+};
+
+const initialSetup: ProfileSetup = {
+  name: '',
+  sex: 'unspecified',
+  dobDay: 1,
+  dobMonth: 1,
+  dobYear: 2000,
+  heightCm: 170,
+  weightKg: 70,
+  experience: 'beginner',
+  goal: 'maintain',
+  place: 'gym',
+  daysPerWeek: 3,
+  equipment: [],
+  durationMin: 45,
+  diet: 'omnivore',
+  allergies: [],
+  cuisines: [],
+  healthAllowed: false,
+  deviceConnected: false,
 };
 
 export const useProfileSetupStore = create<ProfileSetupState>((set, get) => ({
-  name: 'Aarav Mehta',
-  sex: 'male',
-  dobDay: 14,
-  dobMonth: 3,
-  dobYear: 1997,
-  heightCm: 178,
-  weightKg: 78.4,
-  experience: 'intermediate',
-  goal: 'lose',
-  place: 'gym',
-  daysPerWeek: 5,
-  equipment: ['Barbell', 'Dumbbells', 'Cable machine', 'Bench', 'Pull-up bar'],
-  durationMin: 60,
-  diet: 'eggetarian',
-  allergies: [],
-  cuisines: ['North Indian', 'South Indian'],
-  healthAllowed: false,
-  deviceConnected: false,
+  ...initialSetup,
   update: (patch) => set(patch),
   toggleInList: (key, value) => {
     const list = get()[key];
@@ -57,5 +62,6 @@ export const useProfileSetupStore = create<ProfileSetupState>((set, get) => ({
         : [...list, value],
     } as Partial<ProfileSetup>);
   },
+  reset: () => set(initialSetup),
 }));
 

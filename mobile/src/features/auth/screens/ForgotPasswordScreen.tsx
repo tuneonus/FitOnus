@@ -13,7 +13,7 @@ export function ForgotPasswordScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
 
-  const [email, setEmail] = useState('aarav.mehta@gmail.com');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -80,6 +80,7 @@ export function ForgotPasswordScreen() {
 
         <TextField
           label="Email"
+          placeholder="name@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}

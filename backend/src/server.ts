@@ -1,9 +1,15 @@
+// Expand threadpool before any libuv operations (crypto, DNS, file I/O)
+process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE || '64';
+
 import http from 'node:http';
 import { createApp } from './app.js';
 import { ConfigError, loadConfig, type AppConfig } from './config/env.js';
 import { createContainer } from './container.js';
 import { createPool } from './database/pool.js';
+import { setupDnsFallback } from './database/dns-fallback.js';
 import { createLogger } from './shared/logging/logger.js';
+
+setupDnsFallback();
 
 function loadConfigOrExit(): AppConfig {
   try {
@@ -77,6 +83,15 @@ function main(): void {
   });
   server.listen(config.http.port, config.http.host, () => {
     logger.info({ host: config.http.host, port: config.http.port, env: config.env }, 'Server listening');
+    // Pre-warm database connection in background so initial client requests don't suffer cold-start delay
+    pool
+      .query('SELECT 1')
+      .then(() => {
+        logger.info('PostgreSQL connection pool pre-warmed and ready');
+      })
+      .catch((err) => {
+        logger.warn({ err }, 'Background PostgreSQL pre-warm failed');
+      });
   });
 }
 

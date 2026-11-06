@@ -17,18 +17,22 @@ export function BodySignals() {
   const hasDevice = useHasDeviceData();
   const weights = useWeightStore((s) => s.entries);
 
-  const latest = weights[weights.length - 1] || { value: 78.4, time: '7:10 AM' };
-  const monthAgo = weights[Math.max(0, weights.length - 22)] || { value: 80.0 };
+  const latest = weights[weights.length - 1];
+  const monthAgo = weights.length > 22 ? weights[weights.length - 22] : weights[0];
 
   const weightSignal: BodySignal = {
     key: 'weight',
     label: 'Weight',
-    value: latest.value.toFixed(1),
-    unit: 'kg',
-    meta: `${(latest.value - monthAgo.value).toFixed(1)} kg in 3 weeks`,
-    source: { kind: 'manual', label: `Logged ${latest.time ?? 'today'}` },
+    value: latest ? latest.value.toFixed(1) : '—',
+    unit: latest ? 'kg' : '',
+    meta: latest
+      ? monthAgo && latest !== monthAgo
+        ? `${(latest.value - monthAgo.value).toFixed(1)} kg over time`
+        : `Logged on ${latest.date}`
+      : 'No weigh-ins logged yet',
+    source: { kind: 'manual', label: latest ? `Logged ${latest.time ?? latest.date}` : 'Manual entry' },
     requiresDevice: false,
-    series: weights.slice(-9).map((w) => w.value),
+    ...(weights.length > 1 ? { series: weights.slice(-9).map((w) => w.value) } : {}),
   };
 
   const signals = [...bodySignals, weightSignal];

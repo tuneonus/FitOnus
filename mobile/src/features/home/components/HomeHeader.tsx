@@ -4,13 +4,36 @@ import { Bell } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { IconButton } from '../../../shared/components/ui/IconButton';
 import { useUnreadCount } from '../../notifications/store/notificationsStore';
-import { homeUser } from '../data/homeMock';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { useProfile } from '@/features/profile/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 
 export function HomeHeader() {
   const { colors } = useTheme();
   const { navigate, switchTab } = useNavigation();
   const unread = useUnreadCount();
+  const user = useAuthStore((s) => s.user);
+  const { data: profile } = useProfile();
+
+  const displayName = profile?.name || user?.name || 'User';
+  const firstName = displayName.split(' ')[0] || 'User';
+  const initials =
+    displayName
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'U';
+
+  const now = new Date();
+  const dateLabel = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  }).format(now);
+
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <View style={styles.header}>
@@ -21,16 +44,16 @@ export function HomeHeader() {
           style={[styles.avatar, { backgroundColor: colors.ink }]}
         >
           <Text style={[styles.avatarText, { color: colors.bg }]}>
-            {homeUser.initials}
+            {initials}
           </Text>
         </TouchableOpacity>
 
         <View style={styles.titleColumn}>
           <Text style={[styles.dateText, { color: colors.muted }]}>
-            {homeUser.dateLabel}
+            {dateLabel}
           </Text>
           <Text style={[styles.greeting, { color: colors.ink }]}>
-            {homeUser.greeting}, {homeUser.firstName}
+            {greeting}, {firstName}
           </Text>
         </View>
       </View>

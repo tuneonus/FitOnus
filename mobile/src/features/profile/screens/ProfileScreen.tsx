@@ -19,6 +19,8 @@ import { useProfileSetupStore } from '../../onboarding/store/profileSetupStore';
 import { useGoalsStore } from '../../goals/store/goalsStore';
 import { useMemoryStore } from '../../ai-memory/store/memoryStore';
 import { useHealthStore } from '../../health-integration/store/healthStore';
+import { useWorkoutStore } from '../../workouts/store/workoutStore';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { fitnessGoals } from '../../onboarding/constants/options';
 import { useTheme } from '@/hooks/use-theme';
 import { useProfile } from '../hooks/use-profile';
@@ -27,18 +29,23 @@ export function ProfileScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const { data: serverProfile } = useProfile();
+  const user = useAuthStore((s) => s.user);
+  const workoutCount = useWorkoutStore((s) => s.history.length);
   const p = useProfileSetupStore();
   const activeGoals = useGoalsStore((s) => s.goals.filter((g) => g.status === 'active').length);
-  const memories = useMemoryStore((s) => s.items.length);
   const { connection, platform, watchConnected } = useHealthStore();
 
-  const goalLabel = fitnessGoals.find((g) => g.value === p.goal)?.label ?? 'Not set';
-  const initials = p.name
+  const displayName = serverProfile?.name || user?.name || p.name || 'User';
+  const goalLabel = fitnessGoals.find((g) => g.value === p.goal)?.label ?? 'Fitness';
+  const initials = displayName
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || 'U';
+
+  const weightVal = serverProfile?.currentWeightKg ?? (p.weightKg > 0 ? p.weightKg : '—');
+  const heightVal = serverProfile?.heightCm ?? (p.heightCm > 0 ? p.heightCm : '—');
 
   return (
     <Screen
@@ -52,9 +59,9 @@ export function ProfileScreen() {
           <View style={[styles.avatarCircle, { backgroundColor: colors.ink }]}>
             <Text style={[styles.avatarText, { color: colors.bg }]}>{initials}</Text>
           </View>
-          <Text style={[styles.userName, { color: colors.ink }]}>{p.name}</Text>
+          <Text style={[styles.userName, { color: colors.ink }]}>{displayName}</Text>
           <Text style={[styles.userMeta, { color: colors.muted }]}>
-            Member since Sep 2026 · {goalLabel}
+            {user?.email ? `${user.email} · ` : ''}{goalLabel}
           </Text>
         </View>
 
@@ -63,22 +70,22 @@ export function ProfileScreen() {
           <View style={styles.statCol}>
             <Text style={[styles.statLabel, { color: colors.muted }]}>Weight</Text>
             <Text style={[styles.statVal, { color: colors.ink }]}>
-              {p.weightKg}
-              <Text style={[styles.statUnit, { color: colors.muted }]}> kg</Text>
+              {weightVal}
+              {weightVal !== '—' && <Text style={[styles.statUnit, { color: colors.muted }]}> kg</Text>}
             </Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
           <View style={styles.statCol}>
             <Text style={[styles.statLabel, { color: colors.muted }]}>Height</Text>
             <Text style={[styles.statVal, { color: colors.ink }]}>
-              {p.heightCm}
-              <Text style={[styles.statUnit, { color: colors.muted }]}> cm</Text>
+              {heightVal}
+              {heightVal !== '—' && <Text style={[styles.statUnit, { color: colors.muted }]}> cm</Text>}
             </Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
           <View style={styles.statCol}>
             <Text style={[styles.statLabel, { color: colors.muted }]}>Workouts</Text>
-            <Text style={[styles.statVal, { color: colors.ink }]}>47</Text>
+            <Text style={[styles.statVal, { color: colors.ink }]}>{workoutCount}</Text>
           </View>
         </View>
 
@@ -135,7 +142,7 @@ export function ProfileScreen() {
           <ListRow
             icon={Brain}
             title="AI memory"
-            value={`${memories} saved`}
+            value="On hold"
             onPress={() => navigate('aiMemory')}
           />
         </ListGroup>

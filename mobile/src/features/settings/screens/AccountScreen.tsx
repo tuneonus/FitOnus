@@ -9,10 +9,13 @@ import { Button } from '@/shared/components/ui/Button';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { showToast } from '@/shared/stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { AuthService } from '@/features/auth/services/auth-service';
 
 export function AccountScreen() {
   const { colors } = useTheme();
   const { navigate, reset } = useNavigation();
+  const user = useAuthStore((s) => s.user);
   const [confirm, setConfirm] = useState<'logout' | 'delete' | null>(null);
 
   return (
@@ -22,9 +25,9 @@ export function AccountScreen() {
           <ListRow
             icon={Mail}
             title="Email"
-            subtitle="aarav.mehta@gmail.com"
+            subtitle={user?.email || 'No email attached'}
             chevron={false}
-            trailing={<Badge tone="good">Verified</Badge>}
+            trailing={user?.isEmailVerified ? <Badge tone="good">Verified</Badge> : undefined}
           />
           <ListRow
             icon={KeyRound}
@@ -73,8 +76,9 @@ export function AccountScreen() {
         confirmLabel="Log out"
         destructive
         onCancel={() => setConfirm(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           setConfirm(null);
+          await AuthService.logout();
           reset('welcome');
         }}
       />
@@ -83,14 +87,13 @@ export function AccountScreen() {
       <ConfirmDialog
         open={confirm === 'delete'}
         title="Delete your account?"
-        message="All logs, AI memory and reports will be permanently deleted after 30 days. Data in Apple Health or Health Connect isn’t affected."
-        confirmLabel="Delete account"
+        message="Account deletion requires account verification through customer support."
+        confirmLabel="Request deletion"
         destructive
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           setConfirm(null);
-          showToast({ message: 'Account scheduled for deletion' });
-          reset('welcome');
+          showToast({ message: 'Contact support@fitonus.com to process deletion.' });
         }}
       />
     </Screen>

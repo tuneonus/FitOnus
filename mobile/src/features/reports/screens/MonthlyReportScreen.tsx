@@ -1,20 +1,60 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Sparkles } from 'lucide-react-native';
+import { Sparkles, Target } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { LineChart } from '@/shared/components/charts/LineChart';
 import { Button } from '@/shared/components/ui/Button';
-import { getMonthlyReport } from '../data/reportsMock';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useTheme } from '@/hooks/use-theme';
+import { useProgressStore } from '@/features/analytics/store/progressStore';
+import { progressApi } from '@/features/progress/api/progress-api';
+import { useHasDeviceData } from '@/features/health-integration/store/healthStore';
 
 export function MonthlyReportScreen() {
   const { colors } = useTheme();
+  const hasDevice = useHasDeviceData();
   const params = useRouteParams<{ period?: string; id?: string }>();
   const period = params.period;
-  const id = params.id;
-  const r = getMonthlyReport(id);
+  const { monthlyReport } = useProgressStore();
   const { navigate } = useNavigation();
+
+  useEffect(() => {
+    progressApi
+      .getProgressReport({ type: 'monthly' })
+      .then((data) => {
+        if (data) useProgressStore.setState({ monthlyReport: data });
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!monthlyReport) {
+    return (
+      <Screen title="Monthly report">
+        <EmptyState
+          icon={Target}
+          title="No monthly report"
+          body="Log workouts and nutrition consistently to generate your monthly report."
+          actionLabel="Go to Workouts"
+          onAction={() => navigate('workouts')}
+        />
+      </Screen>
+    );
+  }
+
+  const r = {
+    month: monthlyReport.period,
+    generated: monthlyReport.generated,
+    headline: monthlyReport.headline,
+    stats: monthlyReport.stats,
+    weightTrend: [] as { label: string; value: number }[],
+    recoveryTrend: [] as { label: string; value: number }[],
+    trends: monthlyReport.improvements || [],
+    recommendations: (monthlyReport.nextGoals || []).map((g, idx) => ({
+      title: `Goal ${idx + 1}`,
+      detail: g,
+    })),
+  };
 
   return (
     <Screen
@@ -75,13 +115,24 @@ export function MonthlyReportScreen() {
         {/* Average recovery 6 months */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <Text style={[styles.cardTitle, { color: colors.ink }]}>Average recovery · 6 months</Text>
-          <View style={{ marginTop: 8 }}>
-            <LineChart
-              points={r.recoveryTrend}
-              height={120}
-              strokeColor={colors.accent}
+          {!hasDevice ? (
+            <EmptyState
+              compact
+              icon={Target}
+              title="Recovery needs a wearable"
+              body="Connect Apple Health or Health Connect to see recovery trends."
+              actionLabel="Connect"
+              onAction={() => navigate('healthIntegration')}
             />
-          </View>
+          ) : (
+            <View style={{ marginTop: 8 }}>
+              <LineChart
+                points={r.recoveryTrend}
+                height={120}
+                strokeColor={colors.accent}
+              />
+            </View>
+          )}
         </View>
 
         {/* Long-term trends */}

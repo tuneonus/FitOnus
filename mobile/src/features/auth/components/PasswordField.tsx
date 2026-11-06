@@ -8,6 +8,7 @@ export type PasswordFieldProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string | undefined;
   error?: string | undefined;
   hint?: string | undefined;
   autoComplete?: string | undefined;
@@ -17,6 +18,7 @@ export function PasswordField({
   label,
   value,
   onChange,
+  placeholder,
   error,
   hint,
 }: PasswordFieldProps) {
@@ -26,6 +28,7 @@ export function PasswordField({
   return (
     <TextField
       label={label}
+      placeholder={placeholder}
       secureTextEntry={!visible}
       value={value}
       onChangeText={onChange}

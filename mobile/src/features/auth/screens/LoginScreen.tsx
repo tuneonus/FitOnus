@@ -16,7 +16,7 @@ export function LoginScreen() {
   const { colors } = useTheme();
   const { navigate, reset } = useNavigation();
 
-  const [email, setEmail] = useState('aarav.mehta@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [authError, setAuthError] = useState<string | null>(null);
@@ -80,6 +80,7 @@ export function LoginScreen() {
         <View style={styles.inputsSection}>
           <TextField
             label="Email"
+            placeholder="name@example.com"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -89,6 +90,7 @@ export function LoginScreen() {
 
           <PasswordField
             label="Password"
+            placeholder="Enter password"
             value={password}
             onChange={setPassword}
             error={errors.password}

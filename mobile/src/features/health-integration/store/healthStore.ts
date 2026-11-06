@@ -18,6 +18,7 @@ type HealthState = {
   setAllPermissions: (value: boolean) => void;
   syncNow: () => void;
   setWatchConnected: (value: boolean) => void;
+  resetStore: () => void;
 };
 
 const allPermissions = (value: boolean) =>
@@ -29,12 +30,20 @@ const allPermissions = (value: boolean) =>
   );
 
 export const useHealthStore = create<HealthState>((set, get) => ({
-  status: 'synced',
+  status: 'noDevice',
   platform: 'ios',
-  connection: 'connected',
-  lastSync: '9:38 AM',
-  permissions: allPermissions(true),
-  watchConnected: true,
+  connection: 'disconnected',
+  lastSync: '',
+  permissions: allPermissions(false),
+  watchConnected: false,
+  resetStore: () =>
+    set({
+      status: 'noDevice',
+      connection: 'disconnected',
+      lastSync: '',
+      permissions: allPermissions(false),
+      watchConnected: false,
+    }),
   setStatus: (status) =>
     set({
       status,

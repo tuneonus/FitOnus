@@ -1,22 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Check, Circle, TrendingUp, Trophy } from 'lucide-react-native';
+import { Check, Circle, TrendingUp, Trophy, CalendarRange } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { Button } from '@/shared/components/ui/Button';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { BarChart } from '@/shared/components/charts/BarChart';
 import { showToast } from '@/shared/stores/toastStore';
-import { getWeeklyReport } from '../data/reportsMock';
 import { useTheme } from '@/hooks/use-theme';
+import { useProgressStore } from '@/features/analytics/store/progressStore';
+import { progressApi } from '@/features/progress/api/progress-api';
 
 export function WeeklyReportScreen() {
   const { colors } = useTheme();
   const params = useRouteParams<{ period?: string; id?: string }>();
   const period = params.period;
-  const id = params.id;
-  const r = getWeeklyReport(id);
+  const { weeklyReport } = useProgressStore();
+  const r = weeklyReport;
   const { navigate } = useNavigation();
   const [accepted, setAccepted] = useState<string[]>([]);
+
+  useEffect(() => {
+    progressApi
+      .getProgressReport({ type: 'weekly' })
+      .then((data) => {
+        if (data) useProgressStore.setState({ weeklyReport: data });
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!r) {
+    return (
+      <Screen title="Weekly report">
+        <EmptyState
+          icon={CalendarRange}
+          title="No weekly report"
+          body="Log workouts and nutrition consistently to generate your weekly report."
+          actionLabel="Go to Workouts"
+          onAction={() => navigate('workouts')}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen

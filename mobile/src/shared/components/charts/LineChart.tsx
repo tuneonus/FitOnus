@@ -18,6 +18,7 @@ export type LineChartProps = {
   dotColor?: string | undefined;
   formatValue?: ((value: number) => string) | undefined;
   style?: ViewStyle | undefined;
+  subtitle?: string | undefined;
 };
 
 const CHART_WIDTH = 320;
@@ -33,6 +34,7 @@ export function LineChart({
   dotColor,
   formatValue = (v) => v.toLocaleString(),
   style,
+  subtitle,
 }: LineChartProps) {
   const { colors } = useTheme();
   const all = useMemo(() => [...points, ...projection], [points, projection]);
@@ -93,9 +95,16 @@ export function LineChart({
       {/* Inspector header */}
       {selPoint && (
         <View style={styles.header}>
-          <Text style={[styles.label, { color: colors.muted }]}>
-            {selPoint.label}
-          </Text>
+          <View>
+            <Text style={[styles.label, { color: colors.muted }]}>
+              {selPoint.label}
+            </Text>
+            {subtitle ? (
+              <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '500' }}>
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
           <Text style={[styles.val, { color: colors.ink }]}>
             {formatValue(selPoint.value)}
           </Text>

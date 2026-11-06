@@ -12,8 +12,33 @@ const ringSizes = [120, 94, 68];
 
 export function ActivitySummary() {
   const { colors } = useTheme();
-  const { switchTab } = useNavigation();
+  const { switchTab, navigate } = useNavigation();
   const hasDevice = useHasDeviceData();
+
+  if (!hasDevice) {
+    return (
+      <View style={styles.container}>
+        <SectionHeader
+          title="Activity"
+          actionLabel="Connect"
+          onAction={() => navigate('healthIntegration')}
+        />
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.surface, borderColor: colors.line, padding: 20 },
+          ]}
+        >
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.ink, marginBottom: 4 }}>
+            Activity tracking paused
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
+            Daily steps, active calories, and movement rings require a connected smartwatch or Apple Health / Health Connect.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   const maxSteps = Math.max(
     ...weeklySteps.map((d) => d.steps),

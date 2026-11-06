@@ -3,9 +3,27 @@ import { AuthRepository, type LoginRequest, type RegisterRequest } from '../api/
 import { useAuthStore } from '../stores/auth-store';
 import { logger } from '@/utils/logger';
 import { queryClient } from '@/providers/query-provider';
+import { useNutritionStore } from '@/features/nutrition/store/nutritionStore';
+import { useWeightStore } from '@/features/weight-tracking/store/weightStore';
+import { useWorkoutStore } from '@/features/workouts/store/workoutStore';
+import { useProgressStore } from '@/features/analytics/store/progressStore';
+import { useProfileSetupStore } from '@/features/onboarding/store/profileSetupStore';
+import { useHealthStore } from '@/features/health-integration/store/healthStore';
+import { useGoalsStore } from '@/features/goals/store/goalsStore';
 
 const ACCESS_TOKEN_KEY = 'auth.access_token';
 const REFRESH_TOKEN_KEY = 'auth.refresh_token';
+
+function resetAllUserStores() {
+  useAuthStore.getState().clearAuth();
+  useNutritionStore.getState().resetStore().catch(() => {});
+  useWeightStore.getState().resetStore();
+  useWorkoutStore.getState().resetStore();
+  useProgressStore.getState().resetStore();
+  useGoalsStore.getState().resetStore().catch(() => {});
+  useProfileSetupStore.getState().reset();
+  useHealthStore.getState().resetStore();
+}
 
 export function extractApiErrorMessage(error: any, fallback: string): string {
   const errData = error?.response?.data;
@@ -108,7 +126,7 @@ export const AuthService = {
     // Clear any previous stale tokens before logging in
     await SecureStorageService.removeItem(ACCESS_TOKEN_KEY).catch(() => {});
     await SecureStorageService.removeItem(REFRESH_TOKEN_KEY).catch(() => {});
-    useAuthStore.getState().clearAuth();
+    resetAllUserStores();
 
     try {
       const response = await AuthRepository.login(data);
@@ -130,7 +148,7 @@ export const AuthService = {
     // Clear any previous stale tokens before registering
     await SecureStorageService.removeItem(ACCESS_TOKEN_KEY).catch(() => {});
     await SecureStorageService.removeItem(REFRESH_TOKEN_KEY).catch(() => {});
-    useAuthStore.getState().clearAuth();
+    resetAllUserStores();
 
     try {
       const response = await AuthRepository.register(data);
@@ -156,7 +174,7 @@ export const AuthService = {
     } finally {
       await SecureStorageService.removeItem(ACCESS_TOKEN_KEY);
       await SecureStorageService.removeItem(REFRESH_TOKEN_KEY);
-      useAuthStore.getState().clearAuth();
+      resetAllUserStores();
       queryClient.clear();
     }
   },
