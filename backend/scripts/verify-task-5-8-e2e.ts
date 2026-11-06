@@ -13,7 +13,7 @@ async function main() {
   console.log('=================================================================\n');
 
   const config = loadConfig();
-  const logger = createLogger({ level: 'silent' });
+  const logger = createLogger({ level: 'silent', pretty: false });
   const pool = createPool(config.database);
 
   // 1. Verify Neon Database Safety Branch
