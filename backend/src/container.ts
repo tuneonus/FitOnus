@@ -11,6 +11,7 @@ import { createProfileModule } from './modules/profile/index.js';
 import { createNutritionModule } from './modules/nutrition/index.js';
 import { createProgressModule } from './modules/progress/index.js';
 import { createGoalsModule } from './modules/goals/index.js';
+import { createChallengesModule } from './modules/challenges/index.js';
 import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
 import type { RouteGroup } from './shared/http/route.js';
@@ -114,6 +115,13 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     habitsBasePath: `${API_PREFIX}/habits`,
     db: database,
   });
+  const challenges = createChallengesModule({
+    memberBasePath: `${API_PREFIX}/challenges`,
+    gamificationBasePath: `${API_PREFIX}/gamification`,
+    adminBasePath: `${API_PREFIX}/admin/challenges`,
+    db: database,
+    uow,
+  });
 
   return {
     database,
@@ -130,6 +138,9 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
       progress.routes,
       goals.goalsRoutes,
       goals.habitsRoutes,
+      challenges.memberChallengesRoutes,
+      challenges.memberGamificationRoutes,
+      challenges.adminChallengesRoutes,
     ],
     authenticate: createAuthenticate(auth.authenticateAccessToken),
     rateLimiters,
