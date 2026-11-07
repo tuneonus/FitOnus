@@ -1,0 +1,14 @@
+# Gitleaks false positive fingerprints
+# Confirmed non-secret mock data in unit tests and markdown documentation
+
+# backend/tests/unit/challenges/challenges-use-cases.test.ts - Challenge occurrence mock keys
+27cb76cbc445ff4ab7f01c0347df11bfaa29a938:backend/tests/unit/challenges/challenges-use-cases.test.ts:generic-api-key:395
+27cb76cbc445ff4ab7f01c0347df11bfaa29a938:backend/tests/unit/challenges/challenges-use-cases.test.ts:generic-api-key:550
+27cb76cbc445ff4ab7f01c0347df11bfaa29a938:backend/tests/unit/challenges/challenges-use-cases.test.ts:generic-api-key:632
+27cb76cbc445ff4ab7f01c0347df11bfaa29a938:backend/tests/unit/challenges/challenges-use-cases.test.ts:generic-api-key:710
+27cb76cbc445ff4ab7f01c0347df11bfaa29a938:backend/tests/unit/challenges/challenges-use-cases.test.ts:generic-api-key:985
+
+# backend/BACKEND_AUDIT/API_ENDPOINT_INVENTORY.md - Markdown example JSON response documentation
+ffc0fec33751d9ec2a14695b58a6ef53a879ce2e:backend/BACKEND_AUDIT/API_ENDPOINT_INVENTORY.md:generic-api-key:103
+ffc0fec33751d9ec2a14695b58a6ef53a879ce2e:backend/BACKEND_AUDIT/API_ENDPOINT_INVENTORY.md:generic-api-key:104
+ffc0fec33751d9ec2a14695b58a6ef53a879ce2e:backend/BACKEND_AUDIT/API_ENDPOINT_INVENTORY.md:generic-api-key:114

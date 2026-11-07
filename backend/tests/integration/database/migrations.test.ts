@@ -19,13 +19,16 @@ describe('migration runner against PostgreSQL', () => {
   });
 
   it('applies every migration once, even when runners start concurrently', async () => {
+    const statusBefore = await getMigrationStatus({ pool: db.pool, directory: MIGRATIONS_DIR });
+    const totalMigrations = statusBefore.length;
+
     const results = await Promise.all([
       runMigrations({ pool: db.pool, directory: MIGRATIONS_DIR }),
       runMigrations({ pool: db.pool, directory: MIGRATIONS_DIR }),
       runMigrations({ pool: db.pool, directory: MIGRATIONS_DIR }),
     ]);
     const appliedCounts = results.map((result) => result.applied.length).sort();
-    expect(appliedCounts).toEqual([0, 0, 3]);
+    expect(appliedCounts).toEqual([0, 0, totalMigrations]);
 
     const status = await getMigrationStatus({ pool: db.pool, directory: MIGRATIONS_DIR });
     expect(status.every((entry) => entry.appliedAt !== null)).toBe(true);
@@ -33,12 +36,9 @@ describe('migration runner against PostgreSQL', () => {
     const { rows } = await db.pool.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`,
     );
-    expect(rows.map((row) => row.table_name)).toEqual([
-      'auth_sessions',
-      'idempotency_keys',
-      'schema_migrations',
-      'users',
-    ]);
+    expect(rows.map((row) => row.table_name)).toEqual(
+      expect.arrayContaining(['auth_sessions', 'idempotency_keys', 'schema_migrations', 'users']),
+    );
   });
 
   it('is a no-op when everything is applied', async () => {

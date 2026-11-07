@@ -130,7 +130,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Gitleaks (full history)
-        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 git /repo --redact --verbose
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 git /repo --gitleaks-ignore-path=/repo/.gitleaksignore --redact --verbose
 
   docker:
     name: Backend Docker Image Build
