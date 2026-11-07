@@ -26,4 +26,3 @@ export class PgUserProfileTargetAdapter implements IUserProfileTargetPort {
     };
   }
 }
-

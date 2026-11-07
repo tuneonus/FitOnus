@@ -10,12 +10,34 @@ import { z } from 'zod';
 // --- Shared Query Schemas ---
 
 export const periodQuerySchema = z.enum([
-  'W', 'w', '7d', '7D', 'week', 'WEEK',
-  'M', 'm', '30d', '30D', 'month', 'MONTH',
-  '3M', '3m', '90d', '90D',
-  '6M', '6m', '180d', '180D',
-  'Y', 'y', '1y', '1Y', 'year', 'YEAR',
-  'all', 'ALL',
+  'W',
+  'w',
+  '7d',
+  '7D',
+  'week',
+  'WEEK',
+  'M',
+  'm',
+  '30d',
+  '30D',
+  'month',
+  'MONTH',
+  '3M',
+  '3m',
+  '90d',
+  '90D',
+  '6M',
+  '6m',
+  '180d',
+  '180D',
+  'Y',
+  'y',
+  '1y',
+  '1Y',
+  'year',
+  'YEAR',
+  'all',
+  'ALL',
 ]);
 
 export const refDateQuerySchema = z
@@ -285,4 +307,3 @@ export const goalsHabitsAnalyticsViewSchema = z.object({
     }),
   ),
 });
-

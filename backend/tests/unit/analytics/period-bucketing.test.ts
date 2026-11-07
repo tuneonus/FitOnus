@@ -53,13 +53,7 @@ describe('Analytics Period & Calendar Bucketing', () => {
 
     it('generates an inclusive contiguous date series', () => {
       const series = generateDateSeries('2026-10-01', '2026-10-05');
-      expect(series).toEqual([
-        '2026-10-01',
-        '2026-10-02',
-        '2026-10-03',
-        '2026-10-04',
-        '2026-10-05',
-      ]);
+      expect(series).toEqual(['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04', '2026-10-05']);
     });
 
     it('returns empty array when start date is after end date', () => {

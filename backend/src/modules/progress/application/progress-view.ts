@@ -175,4 +175,3 @@ export function toMeasurementHistoryView(res: GetMeasurementsResult): Measuremen
     total: res.total,
   };
 }
-

@@ -141,4 +141,3 @@ export class Food implements FoodNutritionBasis {
     return getStandardServingNutrients(this);
   }
 }
-

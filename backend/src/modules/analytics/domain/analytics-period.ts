@@ -151,7 +151,7 @@ export function createCalendarBuckets(
     for (let i = 6; i >= 0; i--) {
       const dateStr = addDaysToDateString(todayStr, -i);
       const [y, m, d] = dateStr.split('-').map(Number);
-      const refDate = new Date(Date.UTC(y!, m! - 1, d!, 12, 0, 0));
+      const refDate = new Date(Date.UTC(y!, m! - 1, d, 12, 0, 0));
       const parts = getZonedDateParts(refDate, tz);
       const { startUtc, endUtc } = getUtcBoundsForLocalDateRange(dateStr, dateStr);
 
@@ -196,7 +196,7 @@ export function createCalendarBuckets(
       const startStr = addDaysToDateString(todayStr, -startOffset);
       const endStr = addDaysToDateString(todayStr, -endOffset);
       const [y, m, d] = startStr.split('-').map(Number);
-      const refDate = new Date(Date.UTC(y!, m! - 1, d!, 12, 0, 0));
+      const refDate = new Date(Date.UTC(y!, m! - 1, d, 12, 0, 0));
       const parts = getZonedDateParts(refDate, tz);
       const label = `${parts.monthShort} ${parts.day}`;
       const dates = generateDateSeries(startStr, endStr);
@@ -248,4 +248,3 @@ export function createCalendarBuckets(
 
   return buckets;
 }
-

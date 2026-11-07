@@ -40,4 +40,3 @@ export class UpdateWeightLogUseCase {
     return { log: updated };
   }
 }
-

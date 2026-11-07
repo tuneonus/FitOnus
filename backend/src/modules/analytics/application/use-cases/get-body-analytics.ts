@@ -6,10 +6,7 @@
  */
 
 import { AppError } from '../../../../shared/errors/app-error.js';
-import {
-  createCalendarBuckets,
-  validateTimezone,
-} from '../../domain/analytics-period.js';
+import { createCalendarBuckets, validateTimezone } from '../../domain/analytics-period.js';
 import { summarizeBodyAnalytics } from '../../domain/body-analytics-metrics.js';
 import type { IAnalyticsBodyRepository } from '../ports.js';
 import type { BodyAnalyticsView } from '../dtos.js';

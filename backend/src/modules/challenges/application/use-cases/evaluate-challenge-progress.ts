@@ -87,4 +87,3 @@ export class EvaluateChallengeProgressUseCase {
     return { enrollments: updatedViews };
   }
 }
-

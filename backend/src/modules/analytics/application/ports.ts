@@ -11,10 +11,7 @@ import type {
 } from '../domain/workout-metrics.js';
 import type { RawMealAggregateRecord } from '../domain/nutrition-metrics.js';
 import type { RawWaterAggregateRecord } from '../domain/hydration-metrics.js';
-import type {
-  RawWeightLogRecord,
-  RawMeasurementRecord,
-} from '../domain/body-analytics-metrics.js';
+import type { RawWeightLogRecord, RawMeasurementRecord } from '../domain/body-analytics-metrics.js';
 import type { RawGoalRecord, RawHabitRecord } from '../domain/goals-habits-metrics.js';
 
 export interface UserProfileAnalyticsGoals {
@@ -31,11 +28,7 @@ export interface IAnalyticsWorkoutRepository {
   /**
    * Retrieves completed workout sessions for a user within a UTC date range.
    */
-  getCompletedSessions(
-    userId: string,
-    startUtc: Date,
-    endUtc: Date,
-  ): Promise<RawWorkoutSessionRecord[]>;
+  getCompletedSessions(userId: string, startUtc: Date, endUtc: Date): Promise<RawWorkoutSessionRecord[]>;
 
   /**
    * Retrieves historical sets for a specific exercise within a UTC date range.
@@ -50,10 +43,7 @@ export interface IAnalyticsWorkoutRepository {
   /**
    * Retrieves the current personal record for an exercise.
    */
-  getExerciseCurrentPr(
-    userId: string,
-    exerciseId: string,
-  ): Promise<RawExercisePrRecord | null>;
+  getExerciseCurrentPr(userId: string, exerciseId: string): Promise<RawExercisePrRecord | null>;
 }
 
 export interface IAnalyticsNutritionRepository {
@@ -80,20 +70,12 @@ export interface IAnalyticsBodyRepository {
   /**
    * Retrieves chronological body weight logs for a user within a UTC date range.
    */
-  getWeightLogs(
-    userId: string,
-    startUtc: Date,
-    endUtc: Date,
-  ): Promise<RawWeightLogRecord[]>;
+  getWeightLogs(userId: string, startUtc: Date, endUtc: Date): Promise<RawWeightLogRecord[]>;
 
   /**
    * Retrieves chronological body measurements for a user within a UTC date range.
    */
-  getMeasurements(
-    userId: string,
-    startUtc: Date,
-    endUtc: Date,
-  ): Promise<RawMeasurementRecord[]>;
+  getMeasurements(userId: string, startUtc: Date, endUtc: Date): Promise<RawMeasurementRecord[]>;
 
   /**
    * Retrieves profile targets (starting weight, goal weight, calories, protein, workout frequency).
@@ -116,4 +98,3 @@ export interface IAnalyticsGoalsHabitsRepository {
     endDateStr: string,
   ): Promise<RawHabitRecord[]>;
 }
-

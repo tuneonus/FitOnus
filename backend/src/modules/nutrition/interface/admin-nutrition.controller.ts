@@ -95,12 +95,7 @@ export function createNutritionAdminController(useCases: AdminNutritionUseCases)
     deleteFood: async (req: Request): Promise<RouteResult<{ success: boolean }>> => {
       const actor = requireActor(req);
       const { params } = getValidated(req, adminDeleteFoodRequest);
-      await useCases.manageFood.delete(
-        actor.userId,
-        params.id,
-        req.ip,
-        req.get('user-agent'),
-      );
+      await useCases.manageFood.delete(actor.userId, params.id, req.ip, req.get('user-agent'));
       return {
         data: { success: true },
         status: 204,
@@ -135,4 +130,3 @@ export function createNutritionAdminController(useCases: AdminNutritionUseCases)
     },
   };
 }
-

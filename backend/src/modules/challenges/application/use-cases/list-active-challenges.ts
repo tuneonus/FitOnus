@@ -109,4 +109,3 @@ export class ListActiveChallengesUseCase {
     return { challenges: result };
   }
 }
-

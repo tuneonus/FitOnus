@@ -187,10 +187,7 @@ describe('Progress Member HTTP API', () => {
     nextGoals: ['Aim for 4 training sessions next week', 'Maintain protein intake ≥ 150g'],
   };
 
-  function createTestApp(
-    useCasesOverrides: Partial<ProgressUseCases> = {},
-    authenticated = true,
-  ) {
+  function createTestApp(useCasesOverrides: Partial<ProgressUseCases> = {}, authenticated = true) {
     const useCases: ProgressUseCases = {
       logWeight: { execute: vi.fn().mockResolvedValue(sampleLogWeightResult) } as any,
       getWeightHistory: { execute: vi.fn().mockResolvedValue(sampleWeightHistoryResult) } as any,
@@ -280,15 +277,13 @@ describe('Progress Member HTTP API', () => {
     it('creates a weight log successfully with 201 and response envelope', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .post('/api/v1/progress/weight')
-        .send({
-          weightKg: 78.5,
-          loggedAt: '2026-11-05T08:00:00.000Z',
-          source: 'manual',
-          notes: 'Morning weigh-in',
-          clientId,
-        });
+      const res = await request(app).post('/api/v1/progress/weight').send({
+        weightKg: 78.5,
+        loggedAt: '2026-11-05T08:00:00.000Z',
+        source: 'manual',
+        notes: 'Morning weigh-in',
+        clientId,
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -319,12 +314,10 @@ describe('Progress Member HTTP API', () => {
         logWeight: { execute: vi.fn().mockResolvedValue(duplicateResult) } as any,
       });
 
-      const res = await request(app)
-        .post('/api/v1/progress/weight')
-        .send({
-          weightKg: 78.5,
-          clientId,
-        });
+      const res = await request(app).post('/api/v1/progress/weight').send({
+        weightKg: 78.5,
+        clientId,
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -335,15 +328,11 @@ describe('Progress Member HTTP API', () => {
     it('rejects weight < 25 kg or > 450 kg with 400 validation error', async () => {
       const { app } = createTestApp();
 
-      const resTooLow = await request(app)
-        .post('/api/v1/progress/weight')
-        .send({ weightKg: 15 });
+      const resTooLow = await request(app).post('/api/v1/progress/weight').send({ weightKg: 15 });
       expect(resTooLow.status).toBe(400);
       expect(resTooLow.body.success).toBe(false);
 
-      const resTooHigh = await request(app)
-        .post('/api/v1/progress/weight')
-        .send({ weightKg: 500 });
+      const resTooHigh = await request(app).post('/api/v1/progress/weight').send({ weightKg: 500 });
       expect(resTooHigh.status).toBe(400);
       expect(resTooHigh.body.success).toBe(false);
     });
@@ -361,7 +350,9 @@ describe('Progress Member HTTP API', () => {
     it('retrieves weight history and time-series points with 200', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app).get('/api/v1/progress/weight?range=M&timezone=America/New_York&limit=10&offset=0');
+      const res = await request(app).get(
+        '/api/v1/progress/weight?range=M&timezone=America/New_York&limit=10&offset=0',
+      );
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -392,12 +383,10 @@ describe('Progress Member HTTP API', () => {
       const { app, useCases } = createTestApp();
 
       // PUT
-      const resPut = await request(app)
-        .put(`/api/v1/progress/weight/${weightLogId}`)
-        .send({
-          weightKg: 78.2,
-          notes: 'Updated note',
-        });
+      const resPut = await request(app).put(`/api/v1/progress/weight/${weightLogId}`).send({
+        weightKg: 78.2,
+        notes: 'Updated note',
+      });
       expect(resPut.status).toBe(200);
       expect(resPut.body.success).toBe(true);
       expect(resPut.body.message).toBe('Weight log updated successfully');
@@ -411,11 +400,9 @@ describe('Progress Member HTTP API', () => {
       });
 
       // PATCH
-      const resPatch = await request(app)
-        .patch(`/api/v1/progress/weight/${weightLogId}`)
-        .send({
-          weightKg: 78.0,
-        });
+      const resPatch = await request(app).patch(`/api/v1/progress/weight/${weightLogId}`).send({
+        weightKg: 78.0,
+      });
       expect(resPatch.status).toBe(200);
       expect(resPatch.body.success).toBe(true);
     });
@@ -423,13 +410,15 @@ describe('Progress Member HTTP API', () => {
     it('returns 404 when updating non-existent or foreign weight log', async () => {
       const { app } = createTestApp({
         updateWeight: {
-          execute: vi.fn().mockRejectedValue(new AppError('not_found', 'NOT_FOUND', 'Weight log not found or not owned by user')),
+          execute: vi
+            .fn()
+            .mockRejectedValue(
+              new AppError('not_found', 'NOT_FOUND', 'Weight log not found or not owned by user'),
+            ),
         } as any,
       });
 
-      const res = await request(app)
-        .put(`/api/v1/progress/weight/${weightLogId}`)
-        .send({ weightKg: 78.0 });
+      const res = await request(app).put(`/api/v1/progress/weight/${weightLogId}`).send({ weightKg: 78.0 });
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('NOT_FOUND');
@@ -470,16 +459,14 @@ describe('Progress Member HTTP API', () => {
     it('creates body measurement log successfully with 201 and diffs', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .post('/api/v1/progress/measurements')
-        .send({
-          waistCm: 82.5,
-          chestCm: 101.0,
-          hipCm: 96.0,
-          bodyFatPct: 15.5,
-          notes: 'Monthly tape measurement',
-          clientId,
-        });
+      const res = await request(app).post('/api/v1/progress/measurements').send({
+        waistCm: 82.5,
+        chestCm: 101.0,
+        hipCm: 96.0,
+        bodyFatPct: 15.5,
+        notes: 'Monthly tape measurement',
+        clientId,
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -504,11 +491,9 @@ describe('Progress Member HTTP API', () => {
     it('rejects measurement log when no measurement metrics are provided with 400', async () => {
       const { app } = createTestApp();
 
-      const res = await request(app)
-        .post('/api/v1/progress/measurements')
-        .send({
-          notes: 'Only notes, no measurements',
-        });
+      const res = await request(app).post('/api/v1/progress/measurements').send({
+        notes: 'Only notes, no measurements',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -553,12 +538,10 @@ describe('Progress Member HTTP API', () => {
     it('updates body measurement via PUT and PATCH with 200', async () => {
       const { app, useCases } = createTestApp();
 
-      const resPut = await request(app)
-        .put(`/api/v1/progress/measurements/${measurementId}`)
-        .send({
-          waistCm: 81.5,
-          chestCm: 102.0,
-        });
+      const resPut = await request(app).put(`/api/v1/progress/measurements/${measurementId}`).send({
+        waistCm: 81.5,
+        chestCm: 102.0,
+      });
 
       expect(resPut.status).toBe(200);
       expect(resPut.body.success).toBe(true);
@@ -583,7 +566,9 @@ describe('Progress Member HTTP API', () => {
     it('returns 404 when updating non-existent measurement', async () => {
       const { app } = createTestApp({
         updateMeasurement: {
-          execute: vi.fn().mockRejectedValue(new AppError('not_found', 'NOT_FOUND', 'Body measurement not found')),
+          execute: vi
+            .fn()
+            .mockRejectedValue(new AppError('not_found', 'NOT_FOUND', 'Body measurement not found')),
         } as any,
       });
 

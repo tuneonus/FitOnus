@@ -51,7 +51,9 @@ export class ClaimChallengeRewardUseCase {
     // 2. Enforce 7-day claim grace period
     const now = new Date();
     if (!canClaimOccurrenceReward(occurrence.periodEnd, now, 7)) {
-      throw new OccurrenceClosedError('Reward claim window for this occurrence has expired (7-day grace period exceeded).');
+      throw new OccurrenceClosedError(
+        'Reward claim window for this occurrence has expired (7-day grace period exceeded).',
+      );
     }
 
     // 3. Find parent challenge
@@ -103,4 +105,3 @@ export class ClaimChallengeRewardUseCase {
     });
   }
 }
-

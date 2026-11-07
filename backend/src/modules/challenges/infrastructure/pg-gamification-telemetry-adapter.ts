@@ -211,4 +211,3 @@ export class PgGamificationTelemetryAdapter implements IGamificationTelemetryPor
     }
   }
 }
-

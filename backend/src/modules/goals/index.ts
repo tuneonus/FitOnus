@@ -48,7 +48,10 @@ import { GetGoalDetailsUseCase } from './application/use-cases/get-goal-details.
 import { UpdateGoalUseCase } from './application/use-cases/update-goal.js';
 import { DeleteGoalUseCase } from './application/use-cases/delete-goal.js';
 import { CalculateGoalProgressUseCase } from './application/use-cases/calculate-goal-progress.js';
-import { GetGoalCheckpointsUseCase, LogGoalCheckpointUseCase } from './application/use-cases/goal-checkpoints.js';
+import {
+  GetGoalCheckpointsUseCase,
+  LogGoalCheckpointUseCase,
+} from './application/use-cases/goal-checkpoints.js';
 import { CreateHabitUseCase } from './application/use-cases/create-habit.js';
 import { ListHabitsUseCase } from './application/use-cases/list-habits.js';
 import { GetHabitHistoryUseCase } from './application/use-cases/get-habit-history.js';
@@ -56,7 +59,11 @@ import { UpdateHabitUseCase } from './application/use-cases/update-habit.js';
 import { DeleteHabitUseCase } from './application/use-cases/delete-habit.js';
 import { SetHabitCompletionUseCase } from './application/use-cases/set-habit-completion.js';
 import { CalculateHabitStreaksUseCase } from './application/use-cases/calculate-habit-streaks.js';
-import { createGoalsController, type GoalsController, type GoalsUseCases } from './interface/goals.controller.js';
+import {
+  createGoalsController,
+  type GoalsController,
+  type GoalsUseCases,
+} from './interface/goals.controller.js';
 import { createGoalsRoutes, createHabitsRoutes } from './interface/goals.routes.js';
 
 export interface GoalsModule {
@@ -103,7 +110,8 @@ export function createGoalsModule(deps: CreateGoalsModuleOptions): GoalsModule {
   const controller = createGoalsController(useCases);
 
   const goalsBasePath = deps.goalsBasePath ?? (deps.basePath ? `${deps.basePath}/goals` : '/api/v1/goals');
-  const habitsBasePath = deps.habitsBasePath ?? (deps.basePath ? `${deps.basePath}/habits` : '/api/v1/habits');
+  const habitsBasePath =
+    deps.habitsBasePath ?? (deps.basePath ? `${deps.basePath}/habits` : '/api/v1/habits');
 
   const goalsRoutes = createGoalsRoutes(goalsBasePath, controller);
   const habitsRoutes = createHabitsRoutes(habitsBasePath, controller);

@@ -129,8 +129,6 @@ describe('GetBodyAnalyticsUseCase', () => {
 
   it('propagates repository errors', async () => {
     vi.mocked(mockBodyRepo.getWeightLogs).mockRejectedValueOnce(new Error('Body DB failure'));
-    await expect(useCase.execute({ userId, range: 'M' })).rejects.toThrowError(
-      'Body DB failure',
-    );
+    await expect(useCase.execute({ userId, range: 'M' })).rejects.toThrowError('Body DB failure');
   });
 });

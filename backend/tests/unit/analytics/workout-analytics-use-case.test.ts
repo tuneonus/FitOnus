@@ -35,9 +35,9 @@ describe('GetWorkoutAnalyticsUseCase', () => {
   });
 
   it('rejects invalid period range strings', async () => {
-    await expect(
-      useCase.execute({ userId, range: 'invalid-period' }),
-    ).rejects.toThrowError(/Invalid analytics period/);
+    await expect(useCase.execute({ userId, range: 'invalid-period' })).rejects.toThrowError(
+      /Invalid analytics period/,
+    );
   });
 
   it('returns clean truthful empty state for empty accounts', async () => {
@@ -113,11 +113,7 @@ describe('GetWorkoutAnalyticsUseCase', () => {
   });
 
   it('propagates repository errors', async () => {
-    vi.mocked(mockWorkoutRepo.getCompletedSessions).mockRejectedValueOnce(
-      new Error('Database timeout'),
-    );
-    await expect(useCase.execute({ userId, range: 'M' })).rejects.toThrowError(
-      'Database timeout',
-    );
+    vi.mocked(mockWorkoutRepo.getCompletedSessions).mockRejectedValueOnce(new Error('Database timeout'));
+    await expect(useCase.execute({ userId, range: 'M' })).rejects.toThrowError('Database timeout');
   });
 });

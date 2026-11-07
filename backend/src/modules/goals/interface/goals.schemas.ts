@@ -22,7 +22,14 @@ export const goalCadenceEnum = z.enum(['daily', 'weekly', 'once', 'streak']);
 export const goalDirectionEnum = z.enum(['increase', 'decrease', 'maintain']);
 export const goalStatusEnum = z.enum(['active', 'completed', 'abandoned', 'paused']);
 
-export const habitCategoryEnum = z.enum(['nutrition', 'fitness', 'wellness', 'mindset', 'recovery', 'general']);
+export const habitCategoryEnum = z.enum([
+  'nutrition',
+  'fitness',
+  'wellness',
+  'mindset',
+  'recovery',
+  'general',
+]);
 export const habitFrequencyEnum = z.enum(['daily', 'weekly']);
 
 export const goalViewSchema = z.object({
@@ -140,7 +147,11 @@ export const createGoalRequest = {
     direction: goalDirectionEnum.optional(),
     isPrimary: z.boolean().optional(),
     deadlineLabel: z.string().trim().max(50).optional(),
-    targetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD').nullable().optional(),
+    targetDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+      .nullable()
+      .optional(),
     metadata: z.record(z.string(), z.unknown()).optional(),
   }),
 };
@@ -148,9 +159,14 @@ export const createGoalRequest = {
 export const listGoalsRequest = {
   query: z.object({
     status: goalStatusEnum.optional(),
-    isPrimary: z
-      .preprocess((val) => (val === 'true' || val === true ? true : val === 'false' || val === false ? false : undefined), z.boolean().optional()),
-    syncTelemetry: z.preprocess((val) => (val === 'false' ? false : true), z.boolean().optional().default(true)),
+    isPrimary: z.preprocess(
+      (val) => (val === 'true' || val === true ? true : val === 'false' || val === false ? false : undefined),
+      z.boolean().optional(),
+    ),
+    syncTelemetry: z.preprocess(
+      (val) => (val === 'false' ? false : true),
+      z.boolean().optional().default(true),
+    ),
   }),
 };
 
@@ -170,7 +186,11 @@ export const updateGoalRequest = {
     targetValue: z.number().nonnegative('Target value cannot be negative').optional(),
     currentValue: z.number().nonnegative('Current value cannot be negative').optional(),
     deadlineLabel: z.string().trim().max(50).optional(),
-    targetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD').nullable().optional(),
+    targetDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+      .nullable()
+      .optional(),
     status: goalStatusEnum.optional(),
     isPrimary: z.boolean().optional(),
   }),
@@ -208,7 +228,10 @@ export const logGoalCheckpointRequest = {
   }),
   body: z.object({
     value: z.number().nonnegative('Checkpoint value cannot be negative'),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD').optional(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+      .optional(),
     notes: z.string().trim().max(500).nullable().optional(),
     source: z.string().trim().max(50).optional(),
   }),
@@ -221,7 +244,12 @@ export const createHabitRequest = {
     description: z.string().trim().max(500).nullable().optional(),
     category: habitCategoryEnum.optional().default('general'),
     frequency: habitFrequencyEnum.optional().default('daily'),
-    targetDaysPerWeek: z.number().int().min(1, 'targetDaysPerWeek must be at least 1').max(7, 'targetDaysPerWeek cannot exceed 7').optional(),
+    targetDaysPerWeek: z
+      .number()
+      .int()
+      .min(1, 'targetDaysPerWeek must be at least 1')
+      .max(7, 'targetDaysPerWeek cannot exceed 7')
+      .optional(),
     icon: z.string().trim().max(50).optional().default('check'),
     color: z.string().trim().max(50).optional().default('teal'),
   }),
@@ -230,9 +258,14 @@ export const createHabitRequest = {
 export const listHabitsRequest = {
   query: z.object({
     category: habitCategoryEnum.optional(),
-    isArchived: z
-      .preprocess((val) => (val === 'true' || val === true ? true : val === 'false' || val === false ? false : undefined), z.boolean().optional()),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD').optional(),
+    isArchived: z.preprocess(
+      (val) => (val === 'true' || val === true ? true : val === 'false' || val === false ? false : undefined),
+      z.boolean().optional(),
+    ),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+      .optional(),
   }),
 };
 
@@ -285,6 +318,9 @@ export const getHabitStreaksRequest = {
     id: z.string().uuid('Invalid habit ID format'),
   }),
   query: z.object({
-    referenceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Reference date must be formatted as YYYY-MM-DD').optional(),
+    referenceDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Reference date must be formatted as YYYY-MM-DD')
+      .optional(),
   }),
 };

@@ -28,7 +28,10 @@ export class UpdateHabitUseCase {
       throw notFound('Habit not found');
     }
 
-    if (input.targetDaysPerWeek !== undefined && (input.targetDaysPerWeek < 1 || input.targetDaysPerWeek > 7)) {
+    if (
+      input.targetDaysPerWeek !== undefined &&
+      (input.targetDaysPerWeek < 1 || input.targetDaysPerWeek > 7)
+    ) {
       throw badRequest('Target days per week must be between 1 and 7');
     }
 

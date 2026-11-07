@@ -250,4 +250,3 @@ describe('Challenges Domain Entities & Business Rules', () => {
     });
   });
 });
-

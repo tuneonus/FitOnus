@@ -29,7 +29,7 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Calculates daily habit streak from unique completion dates.
- * 
+ *
  * Rules:
  * - If today is completed: streak includes today and counts backward consecutive days.
  * - If today is pending, but yesterday was completed: streak is preserved (active) and counts backward from yesterday.
@@ -216,7 +216,7 @@ function getPreviousIsoWeekKey(dateStr: string): string {
 function getPreviousIsoWeekKeyFromKey(weekKey: string): string {
   const [yStr, wStr] = weekKey.split('-W');
   let y = Number(yStr);
-  let w = Number(wStr);
+  const w = Number(wStr);
   if (w > 1) {
     return `${y}-W${String(w - 1).padStart(2, '0')}`;
   }

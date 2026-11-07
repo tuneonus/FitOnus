@@ -46,9 +46,7 @@ describe('Hydration Metrics & Calculation Engine', () => {
 
   describe('buildDailyHydrationTrends', () => {
     it('maps continuous days with goalMet flag', () => {
-      const entries: RawWaterAggregateRecord[] = [
-        { date: '2026-10-01', totalMl: 3500 },
-      ];
+      const entries: RawWaterAggregateRecord[] = [{ date: '2026-10-01', totalMl: 3500 }];
       const dateSeries = ['2026-10-01', '2026-10-02'];
 
       const points = buildDailyHydrationTrends(entries, dateSeries, 3000);
@@ -66,9 +64,7 @@ describe('Hydration Metrics & Calculation Engine', () => {
 
   describe('summarizeHydrationAnalytics', () => {
     it('assembles hydration summary cleanly', () => {
-      const entries: RawWaterAggregateRecord[] = [
-        { date: '2026-10-01', totalMl: 3000 },
-      ];
+      const entries: RawWaterAggregateRecord[] = [{ date: '2026-10-01', totalMl: 3000 }];
       const summary = summarizeHydrationAnalytics(entries, ['2026-10-01'], 3000);
 
       expect(summary.avgWaterMl).toBe(3000);

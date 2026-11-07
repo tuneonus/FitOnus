@@ -227,4 +227,3 @@ export interface NutritionAnalyticsView {
   macroSplit: MacroSplitView[];
   topFoods: { foodName: string; count: number; totalCalories: number }[];
 }
-

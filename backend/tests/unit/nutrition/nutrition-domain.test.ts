@@ -262,4 +262,3 @@ describe('Nutrition Domain Entities', () => {
     });
   });
 });
-

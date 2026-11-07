@@ -205,10 +205,7 @@ export const progressReportResponseSchema = z.object({
 export const logWeightRequest = {
   headers: idempotencyHeadersSchema,
   body: z.object({
-    weightKg: z
-      .number()
-      .min(25, 'Weight must be at least 25 kg')
-      .max(450, 'Weight cannot exceed 450 kg'),
+    weightKg: z.number().min(25, 'Weight must be at least 25 kg').max(450, 'Weight cannot exceed 450 kg'),
     loggedAt: z.string().datetime({ offset: true }).optional(),
     source: z.enum(['manual', 'synced']).optional().default('manual'),
     notes: z.string().trim().max(500).nullable().optional(),
@@ -263,13 +260,13 @@ const measurementBodySchema = z
   })
   .refine(
     (data) =>
-      data.waistCm != null ||
-      data.chestCm != null ||
-      data.hipCm != null ||
-      data.armCm != null ||
-      data.neckCm != null ||
-      data.bodyFatPct != null ||
-      data.muscleMassKg != null,
+      (data.waistCm !== undefined && data.waistCm !== null) ||
+      (data.chestCm !== undefined && data.chestCm !== null) ||
+      (data.hipCm !== undefined && data.hipCm !== null) ||
+      (data.armCm !== undefined && data.armCm !== null) ||
+      (data.neckCm !== undefined && data.neckCm !== null) ||
+      (data.bodyFatPct !== undefined && data.bodyFatPct !== null) ||
+      (data.muscleMassKg !== undefined && data.muscleMassKg !== null),
     {
       message: 'At least one body measurement metric must be provided',
     },
@@ -329,8 +326,10 @@ export const getPeriodComparisonRequest = {
 export const getProgressReportRequest = {
   query: z.object({
     type: z.enum(['weekly', 'monthly']).optional().default('weekly'),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD').optional(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+      .optional(),
     timezone: z.string().optional().default('UTC'),
   }),
 };
-

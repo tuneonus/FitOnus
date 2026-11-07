@@ -76,7 +76,9 @@ export class AdminArchiveChallengeUseCase {
 export class AdminListChallengesUseCase {
   constructor(private readonly challengeRepo: IChallengeRepository) {}
 
-  async execute(input: { cadence?: ChallengeCadence; status?: ChallengeStatus } = {}): Promise<{ challenges: ChallengeView[] }> {
+  async execute(
+    input: { cadence?: ChallengeCadence; status?: ChallengeStatus } = {},
+  ): Promise<{ challenges: ChallengeView[] }> {
     const challenges = await this.challengeRepo.listAll(input);
     return { challenges: challenges.map(toChallengeView) };
   }
@@ -93,4 +95,3 @@ export class AdminGetChallengeUseCase {
     return { challenge: toChallengeView(challenge) };
   }
 }
-

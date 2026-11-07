@@ -1,5 +1,12 @@
 import type { SqlExecutor } from '../../../database/transaction.js';
-import { Goal, type GoalCadence, type GoalDirection, type GoalStatus, type GoalType, type TelemetrySource } from '../domain/goal.js';
+import {
+  Goal,
+  type GoalCadence,
+  type GoalDirection,
+  type GoalStatus,
+  type GoalType,
+  type TelemetrySource,
+} from '../domain/goal.js';
 import { GoalCheckpoint } from '../domain/goal-checkpoint.js';
 import type { IGoalRepository } from '../application/ports.js';
 
@@ -46,8 +53,10 @@ function formatDate(val: unknown): string | null {
     const day = String(val.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
-  const s = String(val);
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  if (typeof val === 'string' || typeof val === 'number') {
+    const s = String(val);
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  }
   return null;
 }
 

@@ -11,10 +11,7 @@ const VALID_RANGES = new Set<TimeRange>(['W', 'M', '3M', '6M', 'Y', 'all']);
  * Normalizes user-supplied period or range string to canonical TimeRange.
  * Throws validation AppError if unrecognized.
  */
-export function normalizeAnalyticsRange(
-  rawRange?: string | null,
-  defaultRange: TimeRange = 'M',
-): TimeRange {
+export function normalizeAnalyticsRange(rawRange?: string | null, defaultRange: TimeRange = 'M'): TimeRange {
   if (!rawRange) {
     return defaultRange;
   }
@@ -71,11 +68,7 @@ export function parseReferenceDate(refDateStr?: string | null): Date {
 
   const [year, month, day] = trimmed.split('-').map(Number);
   if (!year || !month || !day || month < 1 || month > 12 || day < 1 || day > 31) {
-    throw new AppError(
-      'validation',
-      'VALIDATION_FAILED',
-      `Invalid calendar date '${refDateStr}'.`,
-    );
+    throw new AppError('validation', 'VALIDATION_FAILED', `Invalid calendar date '${refDateStr}'.`);
   }
 
   // Midday UTC ensures safety across timezone offsets

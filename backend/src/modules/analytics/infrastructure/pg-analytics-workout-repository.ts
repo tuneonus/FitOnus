@@ -114,10 +114,7 @@ export class PgAnalyticsWorkoutRepository implements IAnalyticsWorkoutRepository
     }));
   }
 
-  async getExerciseCurrentPr(
-    userId: string,
-    exerciseId: string,
-  ): Promise<RawExercisePrRecord | null> {
+  async getExerciseCurrentPr(userId: string, exerciseId: string): Promise<RawExercisePrRecord | null> {
     const res = await this.db.query<{
       record_type: string;
       weight_kg: string | number;
@@ -148,4 +145,3 @@ export class PgAnalyticsWorkoutRepository implements IAnalyticsWorkoutRepository
     };
   }
 }
-

@@ -16,7 +16,7 @@ import {
   CalculateHabitStreaksUseCase,
   GetHabitHistoryUseCase,
   Goal,
-  GoalCheckpoint,
+  type GoalCheckpoint,
   Habit,
   type IGoalRepository,
   type IHabitRepository,
@@ -111,7 +111,8 @@ class InMemoryGoalRepository implements IGoalRepository {
 
 class InMemoryHabitRepository implements IHabitRepository {
   habits: Map<string, Habit> = new Map();
-  completions: Map<string, { habitId: string; userId: string; date: string; notes?: string | null }> = new Map();
+  completions: Map<string, { habitId: string; userId: string; date: string; notes?: string | null }> =
+    new Map();
 
   async save(habit: Habit): Promise<void> {
     this.habits.set(habit.id, habit);

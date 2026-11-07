@@ -37,7 +37,7 @@ export class GetPeriodComparisonUseCase {
     const goals = await this.telemetryPort.getProfileGoals(input.userId);
     const goalType = goals?.primaryGoal ?? 'lose';
 
-    let title = '';
+    let title: string;
     let currStart: Date;
     let currEnd: Date;
     let prevStart: Date;
@@ -62,8 +62,12 @@ export class GetPeriodComparisonUseCase {
       prevStart = new Date(Date.UTC(prevYear, prevMonth - 1, 1));
       prevEnd = new Date(Date.UTC(parts.year, parts.month - 1, 1, 0, 0, 0, -1));
 
-      const currMonthName = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(currStart);
-      const prevMonthName = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(prevStart);
+      const currMonthName = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(
+        currStart,
+      );
+      const prevMonthName = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(
+        prevStart,
+      );
       title = `${currMonthName} vs ${prevMonthName}`;
     }
 
@@ -108,7 +112,8 @@ export class GetPeriodComparisonUseCase {
 
     const currAvgCalories = calculateDailyAverage(currNutr.map((n) => n.totalCalories));
     const prevAvgCalories = calculateDailyAverage(prevNutr.map((n) => n.totalCalories));
-    const caloriesBetter = goalType === 'lose' ? currAvgCalories <= prevAvgCalories : currAvgCalories >= prevAvgCalories;
+    const caloriesBetter =
+      goalType === 'lose' ? currAvgCalories <= prevAvgCalories : currAvgCalories >= prevAvgCalories;
 
     const comparisons: ComparisonItem[] = [
       {

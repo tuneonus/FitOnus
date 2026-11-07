@@ -44,7 +44,10 @@ function round(val: number, decimals: number): number {
 /**
  * Calculates effective weight in grams for a given portion specification.
  */
-export function resolveEffectiveWeightG(food: FoodNutritionBasis, portion: PortionSpecification): {
+export function resolveEffectiveWeightG(
+  food: FoodNutritionBasis,
+  portion: PortionSpecification,
+): {
   effectiveWeightG: number;
   servingMultiplier: number;
 } {
@@ -157,4 +160,3 @@ export function calculateByVolumeMl(food: FoodNutritionBasis, volumeMl: number):
 export function getStandardServingNutrients(food: FoodNutritionBasis): CalculatedNutrients {
   return calculateByServingMultiplier(food, 1.0);
 }
-

@@ -24,4 +24,3 @@ export class GetRecentFoodsUseCase {
     return foods.map((f) => toFoodView(f, favoriteIds.has(f.id)));
   }
 }
-

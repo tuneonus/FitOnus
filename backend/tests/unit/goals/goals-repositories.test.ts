@@ -195,10 +195,7 @@ describe('Goals & Habits PostgreSQL Repositories', () => {
 
       const weight = await telemetryAdapter.getLatestWeight(testUserId);
       expect(weight).toBe(78.2);
-      expect(mockDb.query).toHaveBeenCalledWith(
-        expect.stringContaining('FROM weight_logs'),
-        [testUserId],
-      );
+      expect(mockDb.query).toHaveBeenCalledWith(expect.stringContaining('FROM weight_logs'), [testUserId]);
     });
 
     it('falls back to user_profiles if no weight logs exist', async () => {

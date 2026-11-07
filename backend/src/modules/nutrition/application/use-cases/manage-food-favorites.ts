@@ -20,7 +20,7 @@ export class ManageFoodFavoritesUseCase {
     if (!food) {
       const unconstrained = await this.foodRepo.findById(foodId);
       if (unconstrained && unconstrained.isCustom && unconstrained.createdBy !== userId) {
-        throw new AppError('forbidden', 'FORBIDDEN', 'Cannot favorite another user\'s private custom food');
+        throw new AppError('forbidden', 'FORBIDDEN', "Cannot favorite another user's private custom food");
       }
       throw new AppError('not_found', 'NOT_FOUND', 'Food not found');
     }
@@ -63,4 +63,3 @@ export class ManageFoodFavoritesUseCase {
     };
   }
 }
-

@@ -108,10 +108,42 @@ describe('Nutrition Metrics & Calculation Engine', () => {
     it('evaluates adherence within +/- 10% tolerance band', () => {
       const target = 2000; // Acceptable: 1800 to 2200 kcal
       const entries: RawMealAggregateRecord[] = [
-        { date: '2026-10-01', totalCalories: 1950, totalProteinG: 150, totalCarbsG: 200, totalFatG: 60, totalFiberG: 20, mealCount: 3 }, // On target
-        { date: '2026-10-02', totalCalories: 2180, totalProteinG: 150, totalCarbsG: 200, totalFatG: 60, totalFiberG: 20, mealCount: 3 }, // On target
-        { date: '2026-10-03', totalCalories: 2400, totalProteinG: 150, totalCarbsG: 200, totalFatG: 60, totalFiberG: 20, mealCount: 3 }, // Off target (over)
-        { date: '2026-10-04', totalCalories: 1600, totalProteinG: 150, totalCarbsG: 200, totalFatG: 60, totalFiberG: 20, mealCount: 3 }, // Off target (under)
+        {
+          date: '2026-10-01',
+          totalCalories: 1950,
+          totalProteinG: 150,
+          totalCarbsG: 200,
+          totalFatG: 60,
+          totalFiberG: 20,
+          mealCount: 3,
+        }, // On target
+        {
+          date: '2026-10-02',
+          totalCalories: 2180,
+          totalProteinG: 150,
+          totalCarbsG: 200,
+          totalFatG: 60,
+          totalFiberG: 20,
+          mealCount: 3,
+        }, // On target
+        {
+          date: '2026-10-03',
+          totalCalories: 2400,
+          totalProteinG: 150,
+          totalCarbsG: 200,
+          totalFatG: 60,
+          totalFiberG: 20,
+          mealCount: 3,
+        }, // Off target (over)
+        {
+          date: '2026-10-04',
+          totalCalories: 1600,
+          totalProteinG: 150,
+          totalCarbsG: 200,
+          totalFatG: 60,
+          totalFiberG: 20,
+          mealCount: 3,
+        }, // Off target (under)
       ];
 
       const res = calculateCalorieAdherence(entries, target, 0.1);
@@ -122,7 +154,15 @@ describe('Nutrition Metrics & Calculation Engine', () => {
 
     it('returns 0% adherence if target is null or <= 0', () => {
       const entries: RawMealAggregateRecord[] = [
-        { date: '2026-10-01', totalCalories: 2000, totalProteinG: 150, totalCarbsG: 200, totalFatG: 60, totalFiberG: 20, mealCount: 3 },
+        {
+          date: '2026-10-01',
+          totalCalories: 2000,
+          totalProteinG: 150,
+          totalCarbsG: 200,
+          totalFatG: 60,
+          totalFiberG: 20,
+          mealCount: 3,
+        },
       ];
       expect(calculateCalorieAdherence(entries, null).adherencePct).toBe(0);
       expect(calculateCalorieAdherence(entries, 0).adherencePct).toBe(0);
@@ -133,9 +173,33 @@ describe('Nutrition Metrics & Calculation Engine', () => {
     it('evaluates adherence for days meeting at least 90% of protein goal', () => {
       const target = 160; // Acceptable: >= 144 g
       const entries: RawMealAggregateRecord[] = [
-        { date: '2026-10-01', totalCalories: 2000, totalProteinG: 162, totalCarbsG: 200, totalFatG: 60, totalFiberG: 20, mealCount: 3 }, // >= 144 (Met)
-        { date: '2026-10-02', totalCalories: 2000, totalProteinG: 145, totalCarbsG: 200, totalFatG: 60, totalFiberG: 20, mealCount: 3 }, // >= 144 (Met)
-        { date: '2026-10-03', totalCalories: 2000, totalProteinG: 130, totalCarbsG: 200, totalFatG: 60, totalFiberG: 20, mealCount: 3 }, // < 144 (Missed)
+        {
+          date: '2026-10-01',
+          totalCalories: 2000,
+          totalProteinG: 162,
+          totalCarbsG: 200,
+          totalFatG: 60,
+          totalFiberG: 20,
+          mealCount: 3,
+        }, // >= 144 (Met)
+        {
+          date: '2026-10-02',
+          totalCalories: 2000,
+          totalProteinG: 145,
+          totalCarbsG: 200,
+          totalFatG: 60,
+          totalFiberG: 20,
+          mealCount: 3,
+        }, // >= 144 (Met)
+        {
+          date: '2026-10-03',
+          totalCalories: 2000,
+          totalProteinG: 130,
+          totalCarbsG: 200,
+          totalFatG: 60,
+          totalFiberG: 20,
+          mealCount: 3,
+        }, // < 144 (Missed)
       ];
 
       const res = calculateProteinAdherence(entries, target, 0.9);
@@ -148,7 +212,15 @@ describe('Nutrition Metrics & Calculation Engine', () => {
   describe('buildDailyNutritionTrends', () => {
     it('maps continuous days marking missing dates as unlogged with zero values', () => {
       const entries: RawMealAggregateRecord[] = [
-        { date: '2026-10-01', totalCalories: 2050, totalProteinG: 155, totalCarbsG: 210, totalFatG: 65, totalFiberG: 25, mealCount: 3 },
+        {
+          date: '2026-10-01',
+          totalCalories: 2050,
+          totalProteinG: 155,
+          totalCarbsG: 210,
+          totalFatG: 65,
+          totalFiberG: 25,
+          mealCount: 3,
+        },
       ];
       const dateSeries = ['2026-10-01', '2026-10-02'];
 
@@ -169,7 +241,15 @@ describe('Nutrition Metrics & Calculation Engine', () => {
   describe('summarizeNutritionAnalytics', () => {
     it('assembles complete nutrition summary accurately', () => {
       const entries: RawMealAggregateRecord[] = [
-        { date: '2026-10-01', totalCalories: 2000, totalProteinG: 160, totalCarbsG: 220, totalFatG: 60, totalFiberG: 25, mealCount: 3 },
+        {
+          date: '2026-10-01',
+          totalCalories: 2000,
+          totalProteinG: 160,
+          totalCarbsG: 220,
+          totalFatG: 60,
+          totalFiberG: 25,
+          mealCount: 3,
+        },
       ];
       const summary = summarizeNutritionAnalytics(entries, ['2026-10-01'], 2000, 160);
 

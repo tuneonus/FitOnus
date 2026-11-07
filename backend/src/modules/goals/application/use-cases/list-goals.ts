@@ -1,4 +1,4 @@
-import type { GoalStatus } from '../../domain/goal.js';
+import type { Goal, GoalStatus } from '../../domain/goal.js';
 import type { IGoalRepository, IGoalsTelemetryPort } from '../ports.js';
 import { toGoalView, type GoalView } from '../goals-view.js';
 
@@ -59,7 +59,7 @@ export class ListGoalsUseCase {
     return views;
   }
 
-  private async syncGoalTelemetry(goal: import('../../domain/goal.js').Goal, todayStr: string): Promise<void> {
+  private async syncGoalTelemetry(goal: Goal, todayStr: string): Promise<void> {
     if (!this.telemetryPort) return;
 
     let updatedValue: number | null = null;

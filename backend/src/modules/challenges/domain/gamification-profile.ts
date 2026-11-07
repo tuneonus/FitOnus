@@ -71,4 +71,3 @@ export class GamificationProfile {
     this._updatedAt = timestamp;
   }
 }
-

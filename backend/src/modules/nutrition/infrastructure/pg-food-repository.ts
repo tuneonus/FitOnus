@@ -192,7 +192,7 @@ export class PgFoodRepository implements IFoodRepository {
       WHERE ${whereClause}
       ORDER BY is_verified DESC, name ASC
       OFFSET $${idx++}
-      LIMIT $${idx++}
+      LIMIT $${idx}
     `;
     const queryValues = [...values, filter.offset, filter.limit];
 
@@ -205,7 +205,9 @@ export class PgFoodRepository implements IFoodRepository {
 
   async listRecent(userId: string, limit: number): Promise<Food[]> {
     const query = `
-      SELECT DISTINCT ON (f.id) ${SELECT_COLUMNS.split(',').map((c) => `f.${c.trim()}`).join(', ')}
+      SELECT DISTINCT ON (f.id) ${SELECT_COLUMNS.split(',')
+        .map((c) => `f.${c.trim()}`)
+        .join(', ')}
       FROM meal_items mi
       JOIN meals m ON mi.meal_id = m.id
       JOIN foods f ON mi.food_id = f.id
@@ -239,7 +241,9 @@ export class PgFoodRepository implements IFoodRepository {
     const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
 
     const query = `
-      SELECT ${SELECT_COLUMNS.split(',').map((c) => `f.${c.trim()}`).join(', ')}
+      SELECT ${SELECT_COLUMNS.split(',')
+        .map((c) => `f.${c.trim()}`)
+        .join(', ')}
       FROM food_favorites ff
       JOIN foods f ON ff.food_id = f.id
       WHERE ff.user_id = $1
@@ -306,11 +310,7 @@ export class PgFoodRepository implements IFoodRepository {
     return toDomain(res.rows[0]!);
   }
 
-  async update(
-    id: string,
-    patch: Partial<FoodProps>,
-    updatingUserId?: string | null,
-  ): Promise<Food | null> {
+  async update(id: string, patch: Partial<FoodProps>, updatingUserId?: string | null): Promise<Food | null> {
     const existing = await this.findById(id, updatingUserId);
     if (!existing) return null;
 
@@ -421,7 +421,7 @@ export class PgFoodRepository implements IFoodRepository {
 
     const whereConditions = ['id = $1', 'deleted_at IS NULL'];
     if (updatingUserId) {
-      whereConditions.push(`created_by = $${idx++}`);
+      whereConditions.push(`created_by = $${idx}`);
       values.push(updatingUserId);
     }
 

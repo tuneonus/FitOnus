@@ -24,15 +24,11 @@ describe('GetExerciseProgressionUseCase', () => {
   });
 
   it('throws UNAUTHENTICATED error when userId is missing', async () => {
-    await expect(useCase.execute({ userId: '', exerciseId })).rejects.toThrowError(
-      /User ID is required/,
-    );
+    await expect(useCase.execute({ userId: '', exerciseId })).rejects.toThrowError(/User ID is required/);
   });
 
   it('throws VALIDATION_FAILED when exerciseId is missing', async () => {
-    await expect(useCase.execute({ userId, exerciseId: '' })).rejects.toThrowError(
-      /Exercise ID is required/,
-    );
+    await expect(useCase.execute({ userId, exerciseId: '' })).rejects.toThrowError(/Exercise ID is required/);
   });
 
   it('returns clean empty state when no historical sets or PR exist', async () => {
@@ -144,11 +140,7 @@ describe('GetExerciseProgressionUseCase', () => {
   });
 
   it('propagates repository errors', async () => {
-    vi.mocked(mockWorkoutRepo.getExerciseCurrentPr).mockRejectedValueOnce(
-      new Error('Connection failure'),
-    );
-    await expect(useCase.execute({ userId, exerciseId })).rejects.toThrowError(
-      'Connection failure',
-    );
+    vi.mocked(mockWorkoutRepo.getExerciseCurrentPr).mockRejectedValueOnce(new Error('Connection failure'));
+    await expect(useCase.execute({ userId, exerciseId })).rejects.toThrowError('Connection failure');
   });
 });

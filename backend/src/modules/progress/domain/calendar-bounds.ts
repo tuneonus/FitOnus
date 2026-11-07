@@ -33,7 +33,10 @@ export function validateTimezone(tz?: string): string {
 /**
  * Returns formatted date parts in the given timezone.
  */
-export function getZonedDateParts(date: Date, timezone: string): {
+export function getZonedDateParts(
+  date: Date,
+  timezone: string,
+): {
   year: number;
   month: number; // 1-12
   day: number; // 1-31
@@ -77,7 +80,11 @@ export function getZonedDateParts(date: Date, timezone: string): {
 /**
  * Generates discrete calendar buckets for a time range ('D' = 7 days, 'W' = 8 weeks, 'M' = 6 months, 'Y' = 3 years).
  */
-export function getTimeRangeBuckets(range: TimeRange, now: Date = new Date(), timezone: string = 'UTC'): TimeBucket[] {
+export function getTimeRangeBuckets(
+  range: TimeRange,
+  now: Date = new Date(),
+  timezone: string = 'UTC',
+): TimeBucket[] {
   const tz = validateTimezone(timezone);
   const buckets: TimeBucket[] = [];
 

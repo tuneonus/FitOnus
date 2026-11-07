@@ -68,10 +68,7 @@ export interface ClaimRewardTransactionResult {
 }
 
 export class PgGamificationRepository
-  implements
-    IGamificationProfileRepository,
-    IGamificationPointsLedgerRepository,
-    IGamificationRewardPort
+  implements IGamificationProfileRepository, IGamificationPointsLedgerRepository, IGamificationRewardPort
 {
   constructor(private readonly db: SqlExecutor) {}
 
@@ -142,10 +139,10 @@ export class PgGamificationRepository
       if (updatedProfile) {
         const levelInfo = calculateLevel(updatedProfile.totalPoints);
         if (levelInfo.level !== updatedProfile.currentLevel) {
-          await this.db.query(
-            `UPDATE gamification_profiles SET current_level = $1 WHERE user_id = $2`,
-            [levelInfo.level, entry.userId],
-          );
+          await this.db.query(`UPDATE gamification_profiles SET current_level = $1 WHERE user_id = $2`, [
+            levelInfo.level,
+            entry.userId,
+          ]);
         }
       }
       return true;
@@ -267,10 +264,10 @@ export class PgGamificationRepository
     const levelInfo = calculateLevel(totalPoints);
 
     if (profile && profile.currentLevel !== levelInfo.level) {
-      await this.db.query(
-        `UPDATE gamification_profiles SET current_level = $1 WHERE user_id = $2`,
-        [levelInfo.level, input.userId],
-      );
+      await this.db.query(`UPDATE gamification_profiles SET current_level = $1 WHERE user_id = $2`, [
+        levelInfo.level,
+        input.userId,
+      ]);
     }
 
     return {
@@ -282,4 +279,3 @@ export class PgGamificationRepository
     };
   }
 }
-

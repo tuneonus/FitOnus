@@ -12,4 +12,3 @@ export * from './use-cases/get-nutrition-analytics.js';
 export * from './use-cases/get-hydration-analytics.js';
 export * from './use-cases/get-body-analytics.js';
 export * from './use-cases/get-goals-habits-analytics.js';
-

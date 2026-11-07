@@ -27,10 +27,7 @@ import {
 
 const tags = ['Progress'];
 
-export function createProgressRoutes(
-  basePath: string,
-  controller: ProgressController,
-): RouteGroup {
+export function createProgressRoutes(basePath: string, controller: ProgressController): RouteGroup {
   return {
     basePath,
     routes: [
@@ -39,7 +36,8 @@ export function createProgressRoutes(
         method: 'post',
         path: '/weight',
         summary: 'Log weight entry',
-        description: 'Record a new body weight measurement with client idempotency and profile synchronization.',
+        description:
+          'Record a new body weight measurement with client idempotency and profile synchronization.',
         tags,
         access: { kind: 'authenticated' },
         request: logWeightRequest,
@@ -229,7 +227,8 @@ export function createProgressRoutes(
         method: 'get',
         path: '/analytics',
         summary: 'Get progress analytics time-series',
-        description: 'Retrieve time-bucketed trend series, goals, and change deltas for specified health metric.',
+        description:
+          'Retrieve time-bucketed trend series, goals, and change deltas for specified health metric.',
         tags,
         access: { kind: 'authenticated' },
         request: getProgressAnalyticsRequest,
@@ -301,4 +300,3 @@ export function createProgressRoutes(
     ],
   };
 }
-

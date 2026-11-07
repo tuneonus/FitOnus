@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { badRequest } from '../errors.js';
-import { Goal, type GoalCadence, type GoalDirection, type GoalType, type TelemetrySource } from '../../domain/goal.js';
+import {
+  Goal,
+  type GoalCadence,
+  type GoalDirection,
+  type GoalType,
+  type TelemetrySource,
+} from '../../domain/goal.js';
 import { GoalCheckpoint } from '../../domain/goal-checkpoint.js';
 import type { IGoalRepository, IGoalsTelemetryPort } from '../ports.js';
 import { toGoalView, type GoalView } from '../goals-view.js';
@@ -32,18 +38,84 @@ interface GoalTypeDefaults {
 }
 
 const TYPE_DEFAULTS: Record<GoalType, GoalTypeDefaults> = {
-  weightLoss: { unit: 'kg', cadence: 'once', direction: 'decrease', telemetry: 'weight_logs', defaultTitle: 'Lose weight' },
-  muscleGain: { unit: 'kg lean', cadence: 'once', direction: 'increase', telemetry: 'weight_logs', defaultTitle: 'Gain muscle' },
-  maintain: { unit: 'kg', cadence: 'once', direction: 'maintain', telemetry: 'weight_logs', defaultTitle: 'Maintain weight' },
+  weightLoss: {
+    unit: 'kg',
+    cadence: 'once',
+    direction: 'decrease',
+    telemetry: 'weight_logs',
+    defaultTitle: 'Lose weight',
+  },
+  muscleGain: {
+    unit: 'kg lean',
+    cadence: 'once',
+    direction: 'increase',
+    telemetry: 'weight_logs',
+    defaultTitle: 'Gain muscle',
+  },
+  maintain: {
+    unit: 'kg',
+    cadence: 'once',
+    direction: 'maintain',
+    telemetry: 'weight_logs',
+    defaultTitle: 'Maintain weight',
+  },
   run5k: { unit: 'min', cadence: 'once', direction: 'decrease', telemetry: 'manual', defaultTitle: 'Run 5K' },
-  run10k: { unit: 'min', cadence: 'once', direction: 'decrease', telemetry: 'manual', defaultTitle: 'Run 10K' },
-  marathon: { unit: 'hrs', cadence: 'once', direction: 'decrease', telemetry: 'manual', defaultTitle: 'Marathon' },
-  steps: { unit: 'steps', cadence: 'daily', direction: 'increase', telemetry: 'manual', defaultTitle: 'Daily steps' },
-  water: { unit: 'L', cadence: 'daily', direction: 'increase', telemetry: 'water_intake', defaultTitle: 'Water intake' },
-  protein: { unit: 'g', cadence: 'daily', direction: 'increase', telemetry: 'nutrition_meals', defaultTitle: 'Protein intake' },
-  streak: { unit: 'days', cadence: 'streak', direction: 'increase', telemetry: 'workout_sessions', defaultTitle: 'Workout streak' },
-  workoutFrequency: { unit: 'sessions', cadence: 'weekly', direction: 'increase', telemetry: 'workout_sessions', defaultTitle: 'Weekly workout frequency' },
-  custom: { unit: 'units', cadence: 'once', direction: 'increase', telemetry: 'manual', defaultTitle: 'Custom goal' },
+  run10k: {
+    unit: 'min',
+    cadence: 'once',
+    direction: 'decrease',
+    telemetry: 'manual',
+    defaultTitle: 'Run 10K',
+  },
+  marathon: {
+    unit: 'hrs',
+    cadence: 'once',
+    direction: 'decrease',
+    telemetry: 'manual',
+    defaultTitle: 'Marathon',
+  },
+  steps: {
+    unit: 'steps',
+    cadence: 'daily',
+    direction: 'increase',
+    telemetry: 'manual',
+    defaultTitle: 'Daily steps',
+  },
+  water: {
+    unit: 'L',
+    cadence: 'daily',
+    direction: 'increase',
+    telemetry: 'water_intake',
+    defaultTitle: 'Water intake',
+  },
+  protein: {
+    unit: 'g',
+    cadence: 'daily',
+    direction: 'increase',
+    telemetry: 'nutrition_meals',
+    defaultTitle: 'Protein intake',
+  },
+  streak: {
+    unit: 'days',
+    cadence: 'streak',
+    direction: 'increase',
+    telemetry: 'workout_sessions',
+    defaultTitle: 'Workout streak',
+  },
+  workoutFrequency: {
+    unit: 'sessions',
+    cadence: 'weekly',
+    direction: 'increase',
+    telemetry: 'workout_sessions',
+    defaultTitle: 'Weekly workout frequency',
+  },
+  custom: {
+    unit: 'units',
+    cadence: 'once',
+    direction: 'increase',
+    telemetry: 'manual',
+    defaultTitle: 'Custom goal',
+  },
 };
 
 export class CreateGoalUseCase {

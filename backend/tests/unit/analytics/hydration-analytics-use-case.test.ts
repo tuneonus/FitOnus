@@ -23,9 +23,7 @@ describe('GetHydrationAnalyticsUseCase', () => {
   });
 
   it('rejects invalid range strings', async () => {
-    await expect(useCase.execute({ userId, range: 'fake' })).rejects.toThrowError(
-      /Invalid analytics period/,
-    );
+    await expect(useCase.execute({ userId, range: 'fake' })).rejects.toThrowError(/Invalid analytics period/);
   });
 
   it('returns clean truthful empty state when no water intake is logged', async () => {
@@ -86,8 +84,6 @@ describe('GetHydrationAnalyticsUseCase', () => {
     vi.mocked(mockNutritionRepo.getDailyWaterAggregates).mockRejectedValueOnce(
       new Error('Water intake query error'),
     );
-    await expect(useCase.execute({ userId, range: 'W' })).rejects.toThrowError(
-      'Water intake query error',
-    );
+    await expect(useCase.execute({ userId, range: 'W' })).rejects.toThrowError('Water intake query error');
   });
 });

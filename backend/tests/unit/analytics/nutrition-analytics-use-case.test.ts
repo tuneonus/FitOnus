@@ -130,11 +130,7 @@ describe('GetNutritionAnalyticsUseCase', () => {
   });
 
   it('propagates repository errors', async () => {
-    vi.mocked(mockNutritionRepo.getDailyMealAggregates).mockRejectedValueOnce(
-      new Error('DB Query Failed'),
-    );
-    await expect(useCase.execute({ userId, range: 'W' })).rejects.toThrowError(
-      'DB Query Failed',
-    );
+    vi.mocked(mockNutritionRepo.getDailyMealAggregates).mockRejectedValueOnce(new Error('DB Query Failed'));
+    await expect(useCase.execute({ userId, range: 'W' })).rejects.toThrowError('DB Query Failed');
   });
 });

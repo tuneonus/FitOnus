@@ -62,7 +62,7 @@ export function calculateMetricComparison(
   const delta = Math.round((current - previous) * 10) / 10;
   const pctChange = previous > 0 ? Math.round(((current - previous) / previous) * 100) : 0;
 
-  let better = true;
+  let better: boolean;
 
   if (metricType === 'weight') {
     if (options?.primaryGoal === 'gain') {
@@ -121,4 +121,3 @@ export function calculateMetricComparison(
     better,
   };
 }
-

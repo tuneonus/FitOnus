@@ -49,4 +49,3 @@ export class GetChallengeHistoryUseCase {
     return { history };
   }
 }
-

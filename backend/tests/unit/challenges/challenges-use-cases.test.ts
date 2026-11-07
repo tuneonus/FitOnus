@@ -80,7 +80,9 @@ describe('Challenges & Gamification Application Use Cases', () => {
         return null;
       }),
       listPublished: vi.fn(async () => {
-        return Array.from(challengesMap.values()).filter((c) => c.status === 'published' && c.deletedAt === null);
+        return Array.from(challengesMap.values()).filter(
+          (c) => c.status === 'published' && c.deletedAt === null,
+        );
       }),
       listAll: vi.fn(async (opts) => {
         let list = Array.from(challengesMap.values()).filter((c) => c.deletedAt === null);
@@ -175,7 +177,9 @@ describe('Challenges & Gamification Application Use Cases', () => {
 
     userBadgeRepo = {
       listByUser: vi.fn(async (uid: string) => userBadgesList.filter((ub) => ub.userId === uid)),
-      hasBadge: vi.fn(async (uid: string, bid: string) => userBadgesList.some((ub) => ub.userId === uid && ub.badgeId === bid)),
+      hasBadge: vi.fn(async (uid: string, bid: string) =>
+        userBadgesList.some((ub) => ub.userId === uid && ub.badgeId === bid),
+      ),
       awardBadge: vi.fn(async (ub: UserBadge) => {
         const exists = userBadgesList.some((x) => x.userId === ub.userId && x.badgeId === ub.badgeId);
         if (exists) return false;
@@ -194,7 +198,8 @@ describe('Challenges & Gamification Application Use Cases', () => {
     ledgerRepo = {
       recordPoints: vi.fn(async (entry: PointsLedgerEntry) => {
         const exists = ledgerList.some(
-          (l) => l.userId === entry.userId && l.sourceType === entry.sourceType && l.sourceId === entry.sourceId,
+          (l) =>
+            l.userId === entry.userId && l.sourceType === entry.sourceType && l.sourceId === entry.sourceId,
         );
         if (exists) return false;
         ledgerList.push(entry);
@@ -409,9 +414,9 @@ describe('Challenges & Gamification Application Use Cases', () => {
       expect(result.enrollment.status).toBe('in_progress');
 
       // Duplicate enrollment attempt
-      await expect(
-        useCase.execute({ userId: USER_A, occurrenceId: occurrence.id }),
-      ).rejects.toThrow(DuplicateEnrollmentError);
+      await expect(useCase.execute({ userId: USER_A, occurrenceId: occurrence.id })).rejects.toThrow(
+        DuplicateEnrollmentError,
+      );
     });
 
     it('rejects enrollment into closed or expired occurrences', async () => {
@@ -448,9 +453,9 @@ describe('Challenges & Gamification Application Use Cases', () => {
       occurrencesMap.set(expiredOcc.id, expiredOcc);
 
       const useCase = new EnrollChallengeUseCase(challengeRepo, occurrenceRepo, enrollmentRepo);
-      await expect(
-        useCase.execute({ userId: USER_A, occurrenceId: expiredOcc.id }),
-      ).rejects.toThrow(OccurrenceClosedError);
+      await expect(useCase.execute({ userId: USER_A, occurrenceId: expiredOcc.id })).rejects.toThrow(
+        OccurrenceClosedError,
+      );
     });
   });
 
@@ -663,9 +668,9 @@ describe('Challenges & Gamification Application Use Cases', () => {
         evaluatorService,
       );
 
-      await expect(
-        useCase.execute({ userId: USER_A, occurrenceId: occurrence.id }),
-      ).rejects.toThrow(IneligibleForRewardError);
+      await expect(useCase.execute({ userId: USER_A, occurrenceId: occurrence.id })).rejects.toThrow(
+        IneligibleForRewardError,
+      );
     });
 
     it('successfully claims reward when verified telemetry meets target', async () => {
@@ -749,9 +754,9 @@ describe('Challenges & Gamification Application Use Cases', () => {
       expect(result.newLevel).toBe(2); // Level 2 starts at 100 points!
 
       // Second claim attempt should fail
-      await expect(
-        useCase.execute({ userId: USER_A, occurrenceId: occurrence.id }),
-      ).rejects.toThrow(RewardAlreadyClaimedError);
+      await expect(useCase.execute({ userId: USER_A, occurrenceId: occurrence.id })).rejects.toThrow(
+        RewardAlreadyClaimedError,
+      );
     });
 
     it('enforces 7-day claim grace period', async () => {
@@ -811,9 +816,9 @@ describe('Challenges & Gamification Application Use Cases', () => {
         evaluatorService,
       );
 
-      await expect(
-        useCase.execute({ userId: USER_A, occurrenceId: expiredOcc.id }),
-      ).rejects.toThrow(OccurrenceClosedError);
+      await expect(useCase.execute({ userId: USER_A, occurrenceId: expiredOcc.id })).rejects.toThrow(
+        OccurrenceClosedError,
+      );
     });
   });
 
@@ -1006,16 +1011,12 @@ describe('Challenges & Gamification Application Use Cases', () => {
       });
       enrollmentsMap.set(`${USER_A}:${occ.id}`, enr);
 
-      const useCase = new AdminUpdateChallengeUseCase(
-        challengeRepo,
-        occurrenceRepo,
-        enrollmentRepo,
-      );
+      const useCase = new AdminUpdateChallengeUseCase(challengeRepo, occurrenceRepo, enrollmentRepo);
 
       // Unsafe target modification while enrollments are in progress
-      await expect(
-        useCase.execute({ id: challenge.id, targetValue: 10 }),
-      ).rejects.toThrow(/Cannot modify target value of a challenge with active in-progress enrollments/);
+      await expect(useCase.execute({ id: challenge.id, targetValue: 10 })).rejects.toThrow(
+        /Cannot modify target value of a challenge with active in-progress enrollments/,
+      );
 
       // Safe update (changing title and description)
       const updatedRes = await useCase.execute({

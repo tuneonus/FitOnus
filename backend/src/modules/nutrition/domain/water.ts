@@ -37,4 +37,3 @@ export class WaterIntake {
     return this.userId === userId;
   }
 }
-

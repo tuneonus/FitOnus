@@ -48,4 +48,3 @@ export class GetGamificationSummaryUseCase {
     return { profile: toGamificationProfileView(profile) };
   }
 }
-

@@ -27,11 +27,7 @@ export class GetFoodDetailsUseCase {
       if (!food) {
         // Distinguish between private custom food of another user vs truly not found
         const unconstrainedFood = await this.foodRepo.findById(input.id);
-        if (
-          unconstrainedFood &&
-          unconstrainedFood.isCustom &&
-          unconstrainedFood.createdBy !== input.userId
-        ) {
+        if (unconstrainedFood && unconstrainedFood.isCustom && unconstrainedFood.createdBy !== input.userId) {
           throw new AppError('forbidden', 'FORBIDDEN', 'Access to this custom food is forbidden');
         }
         throw new AppError('not_found', 'NOT_FOUND', 'Food not found');
@@ -51,4 +47,3 @@ export class GetFoodDetailsUseCase {
     return toFoodView(food, isFavorite);
   }
 }
-

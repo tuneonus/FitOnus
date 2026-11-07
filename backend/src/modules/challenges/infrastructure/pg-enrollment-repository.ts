@@ -136,4 +136,3 @@ export class PgChallengeEnrollmentRepository implements IChallengeEnrollmentRepo
     );
   }
 }
-

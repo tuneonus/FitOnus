@@ -33,4 +33,3 @@ export class PgFavoriteRepository implements IFoodFavoriteRepository {
     return res.rows.map((r) => r.food_id);
   }
 }
-

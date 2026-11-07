@@ -34,7 +34,7 @@ async function main() {
   // 1. Safety Check: Verify Neon Database Branch
   console.log('--- Step 0: Database Safety & Branch Verification ---');
   const branchRes = await pool.query<{ setting: string }>(
-    "SELECT setting FROM pg_settings WHERE name = 'neon.branch_id'"
+    "SELECT setting FROM pg_settings WHERE name = 'neon.branch_id'",
   );
   const currentBranch = branchRes.rows[0]?.setting;
   console.log(`Current Neon branch_id: ${currentBranch}`);
@@ -50,7 +50,7 @@ async function main() {
   assert.equal(
     currentBranch,
     APPROVED_DEV_BRANCH,
-    `Must be connected to approved development branch: ${APPROVED_DEV_BRANCH}`
+    `Must be connected to approved development branch: ${APPROVED_DEV_BRANCH}`,
   );
   console.log('✓ Safety Verified: Connected to approved dev branch (br-fragrant-morning-b35lwkjg).\n');
 
@@ -73,7 +73,7 @@ async function main() {
   const measureRequest = async (
     name: string,
     fn: () => Promise<request.Response>,
-    iterations = 3
+    iterations = 3,
   ): Promise<request.Response> => {
     let lastRes!: request.Response;
     const samples: number[] = [];
@@ -206,18 +206,16 @@ async function main() {
        ON CONFLICT (user_id) DO UPDATE SET
          current_weight_kg = 81.2, starting_weight_kg = 85.0, target_weight_kg = 78.0,
          daily_calorie_target = 2200, daily_protein_grams = 160, workout_days_per_week = 4`,
-      [userAId]
+      [userAId],
     );
 
     // 5.2 Exercise & Workouts
-    const exRes = await pool.query<{ id: string }>(
-      `SELECT id FROM exercises LIMIT 1`
-    );
+    const exRes = await pool.query<{ id: string }>(`SELECT id FROM exercises LIMIT 1`);
     let exerciseId = exRes.rows[0]?.id;
     if (!exerciseId) {
       const newEx = await pool.query<{ id: string }>(
         `INSERT INTO exercises (name, muscle_group, category)
-         VALUES ('QA Bench Press', 'chest', 'barbell') RETURNING id`
+         VALUES ('QA Bench Press', 'chest', 'barbell') RETURNING id`,
       );
       exerciseId = newEx.rows[0]!.id;
     }
@@ -234,7 +232,7 @@ async function main() {
          total_volume_kg, total_sets, total_reps, is_completed
        ) VALUES ($1, 'Push Day A', $2::timestamptz, $2::timestamptz + interval '45 minutes', 2700, 10000, 10, 50, true)
        RETURNING id`,
-      [userAId, d1]
+      [userAId, d1],
     );
     const s2 = await pool.query<{ id: string }>(
       `INSERT INTO workout_sessions (
@@ -242,7 +240,7 @@ async function main() {
          total_volume_kg, total_sets, total_reps, is_completed
        ) VALUES ($1, 'Push Day B', $2::timestamptz, $2::timestamptz + interval '50 minutes', 3000, 11000, 10, 50, true)
        RETURNING id`,
-      [userAId, d2]
+      [userAId, d2],
     );
     const s3 = await pool.query<{ id: string }>(
       `INSERT INTO workout_sessions (
@@ -250,7 +248,7 @@ async function main() {
          total_volume_kg, total_sets, total_reps, is_completed
        ) VALUES ($1, 'Push Day C', $2::timestamptz, $2::timestamptz + interval '55 minutes', 3300, 12500, 10, 50, true)
        RETURNING id`,
-      [userAId, d3]
+      [userAId, d3],
     );
 
     // Sets for Exercise Progression
@@ -260,14 +258,14 @@ async function main() {
          ($1, $4, 1, 80.0, 5, false, false),
          ($2, $4, 1, 90.0, 5, false, false),
          ($3, $4, 1, 100.0, 5, false, true)`,
-      [s1.rows[0]!.id, s2.rows[0]!.id, s3.rows[0]!.id, exerciseId]
+      [s1.rows[0]!.id, s2.rows[0]!.id, s3.rows[0]!.id, exerciseId],
     );
 
     // Personal Record
     await pool.query(
       `INSERT INTO personal_records (user_id, exercise_id, record_type, weight_kg, reps, volume_kg, estimated_1rm_kg, session_id, achieved_at)
        VALUES ($1, $2, 'estimated_1rm', 100.0, 5, 500.0, 116.7, $3, $4)`,
-      [userAId, exerciseId, s3.rows[0]!.id, d3]
+      [userAId, exerciseId, s3.rows[0]!.id, d3],
     );
 
     // 5.3 Meals & Nutrition
@@ -287,7 +285,7 @@ async function main() {
          ($1, 'breakfast', $4, 650, 48, 65, 21, 5),
          ($1, 'lunch', $4, 850, 62, 85, 26, 8),
          ($1, 'dinner', $4, 800, 55, 80, 24, 7)`,
-      [userAId, dateStr1, dateStr2, dateStr3]
+      [userAId, dateStr1, dateStr2, dateStr3],
     );
 
     // 5.4 Hydration (water_intake)
@@ -300,7 +298,7 @@ async function main() {
          ($1, 1000, $3, $6::timestamptz + interval '2 hours'),
          ($1, 1800, $4, $7::timestamptz),
          ($1, 1200, $4, $7::timestamptz + interval '2 hours')`,
-      [userAId, dateStr1, dateStr2, dateStr3, d1, d2, d3]
+      [userAId, dateStr1, dateStr2, dateStr3, d1, d2, d3],
     );
 
     // 5.5 Weight Logs & Body Measurements
@@ -310,7 +308,7 @@ async function main() {
          ($1, 84.5, $2),
          ($1, 82.8, $3),
          ($1, 81.2, $4)`,
-      [userAId, d1, d2, d3]
+      [userAId, d1, d2, d3],
     );
 
     await pool.query(
@@ -318,7 +316,7 @@ async function main() {
        VALUES
          ($1, 88.0, 102.0, 100.0, $2),
          ($1, 85.5, 103.5, 99.0, $3)`,
-      [userAId, d1, d3]
+      [userAId, d1, d3],
     );
 
     // 5.6 Goals & Habits
@@ -326,14 +324,14 @@ async function main() {
       `INSERT INTO goals (user_id, type, title, metric_unit, start_value, current_value, target_value, status, target_date)
        VALUES ($1, 'weightLoss', 'Cut to 78kg', 'kg', 85.0, 81.2, 78.0, 'active', $2)
        RETURNING id`,
-      [userAId, new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10)]
+      [userAId, new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10)],
     );
 
     const hRes = await pool.query<{ id: string }>(
       `INSERT INTO habits (user_id, title, category, frequency, target_days_per_week, current_streak, longest_streak, total_completions, icon, color)
        VALUES ($1, 'Drink 3L Water', 'wellness', 'daily', 7, 3, 5, 12, 'water', '#3b82f6')
        RETURNING id`,
-      [userAId]
+      [userAId],
     );
 
     await pool.query(
@@ -342,7 +340,7 @@ async function main() {
          ($1, $2, $3),
          ($1, $2, $4),
          ($1, $2, $5)`,
-      [hRes.rows[0]!.id, userAId, dateStr1, dateStr2, dateStr3]
+      [hRes.rows[0]!.id, userAId, dateStr1, dateStr2, dateStr3],
     );
 
     console.log('✓ Seeded complete multi-domain records for User A\n');
@@ -352,9 +350,7 @@ async function main() {
 
     // 6.1 Overview (7-day window: d2 [-5d] and d3 [-1d]; d1 [-10d] is in prior 7-day period)
     const aOverview = await measureRequest('GET /analytics/overview', () =>
-      request(app)
-        .get('/api/v1/analytics/overview')
-        .set('Authorization', `Bearer ${userAToken}`)
+      request(app).get('/api/v1/analytics/overview').set('Authorization', `Bearer ${userAToken}`),
     );
     assert.equal(aOverview.status, 200);
     assert.equal(aOverview.body.data.workoutSummary.completedSessions, 2);
@@ -369,9 +365,7 @@ async function main() {
 
     // 6.2 Workouts
     const aWorkouts = await measureRequest('GET /analytics/workouts', () =>
-      request(app)
-        .get('/api/v1/analytics/workouts?range=30d')
-        .set('Authorization', `Bearer ${userAToken}`)
+      request(app).get('/api/v1/analytics/workouts?range=30d').set('Authorization', `Bearer ${userAToken}`),
     );
     assert.equal(aWorkouts.status, 200);
     assert.equal(aWorkouts.body.data.totalSessions, 3);
@@ -385,7 +379,7 @@ async function main() {
     const aProgression = await measureRequest('GET /analytics/workouts/exercises/:id', () =>
       request(app)
         .get(`/api/v1/analytics/workouts/exercises/${exerciseId}?range=30d`)
-        .set('Authorization', `Bearer ${userAToken}`)
+        .set('Authorization', `Bearer ${userAToken}`),
     );
     assert.equal(aProgression.status, 200);
     assert.equal(aProgression.body.data.exerciseId, exerciseId);
@@ -398,9 +392,7 @@ async function main() {
 
     // 6.4 Nutrition
     const aNutrition = await measureRequest('GET /analytics/nutrition', () =>
-      request(app)
-        .get('/api/v1/analytics/nutrition?range=7d')
-        .set('Authorization', `Bearer ${userAToken}`)
+      request(app).get('/api/v1/analytics/nutrition?range=7d').set('Authorization', `Bearer ${userAToken}`),
     );
     assert.equal(aNutrition.status, 200);
     assert.ok(aNutrition.body.data.avgCalories > 2000);
@@ -411,9 +403,7 @@ async function main() {
 
     // 6.5 Hydration
     const aHydration = await measureRequest('GET /analytics/hydration', () =>
-      request(app)
-        .get('/api/v1/analytics/hydration?range=7d')
-        .set('Authorization', `Bearer ${userAToken}`)
+      request(app).get('/api/v1/analytics/hydration?range=7d').set('Authorization', `Bearer ${userAToken}`),
     );
     assert.equal(aHydration.status, 200);
     assert.ok(aHydration.body.data.avgWaterMl >= 2500);
@@ -422,9 +412,7 @@ async function main() {
 
     // 6.6 Body
     const aBody = await measureRequest('GET /analytics/body', () =>
-      request(app)
-        .get('/api/v1/analytics/body?range=30d')
-        .set('Authorization', `Bearer ${userAToken}`)
+      request(app).get('/api/v1/analytics/body?range=30d').set('Authorization', `Bearer ${userAToken}`),
     );
     assert.equal(aBody.status, 200);
     assert.equal(aBody.body.data.startingWeightKg, 85.0);
@@ -440,7 +428,7 @@ async function main() {
     const aGoals = await measureRequest('GET /analytics/goals-habits', () =>
       request(app)
         .get('/api/v1/analytics/goals-habits?windowDays=30')
-        .set('Authorization', `Bearer ${userAToken}`)
+        .set('Authorization', `Bearer ${userAToken}`),
     );
     assert.equal(aGoals.status, 200);
     assert.equal(aGoals.body.data.goalStats.totalGoals, 1);
@@ -555,7 +543,7 @@ async function main() {
         'Min (ms)': l.minMs,
         'Max (ms)': l.maxMs,
         'Avg (ms)': l.avgMs,
-      }))
+      })),
     );
 
     console.log('\n=================================================================');
@@ -575,7 +563,7 @@ async function main() {
         await pool.query(`DELETE FROM personal_records WHERE user_id = $1`, [userAId]);
         await pool.query(
           `DELETE FROM workout_session_sets WHERE session_id IN (SELECT id FROM workout_sessions WHERE user_id = $1)`,
-          [userAId]
+          [userAId],
         );
         await pool.query(`DELETE FROM workout_sessions WHERE user_id = $1`, [userAId]);
         await pool.query(`DELETE FROM meals WHERE user_id = $1`, [userAId]);

@@ -120,18 +120,22 @@ export default defineConfig(
   },
   ...boundaryConfigs,
   {
+    // Scripts and tests: disable test-specific and mock-related false positives.
+    // Production code in src/ retains the strictest type-checked rules.
     files: ['scripts/**/*.ts', 'tests/**/*.ts'],
-    rules: { 'no-console': 'off' },
-  },
-  {
-    // Supertest response bodies are untyped by design; assertions validate their shape.
-    files: ['tests/**/*.ts'],
     rules: {
+      'no-console': 'off',
+      'no-useless-assignment': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
   {

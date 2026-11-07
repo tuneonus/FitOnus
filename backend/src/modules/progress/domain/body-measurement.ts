@@ -45,7 +45,11 @@ export class BodyMeasurement {
       throw new AppError('validation', 'VALIDATION_FAILED', 'BodyMeasurement ID must be a non-empty string');
     }
     if (!props.userId || typeof props.userId !== 'string') {
-      throw new AppError('validation', 'VALIDATION_FAILED', 'BodyMeasurement userId must be a non-empty string');
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        'BodyMeasurement userId must be a non-empty string',
+      );
     }
     if (!(props.loggedAt instanceof Date) || Number.isNaN(props.loggedAt.getTime())) {
       throw new AppError('validation', 'VALIDATION_FAILED', 'BodyMeasurement loggedAt must be a valid Date');
@@ -68,7 +72,12 @@ export class BodyMeasurement {
       );
     }
 
-    const validateRange = (val: number | null | undefined, min: number, max: number, name: string): number | null => {
+    const validateRange = (
+      val: number | null | undefined,
+      min: number,
+      max: number,
+      name: string,
+    ): number | null => {
       if (val === undefined || val === null) return null;
       if (typeof val !== 'number' || Number.isNaN(val) || val < min || val > max) {
         throw new AppError(

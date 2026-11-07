@@ -30,7 +30,9 @@ async function main() {
   execSync(`/usr/lib/postgresql/16/bin/initdb -D ${PG_DIR} --no-locale -E UTF8 > /dev/null`);
 
   console.log(`-> Starting isolated PostgreSQL on port ${PG_PORT}...`);
-  execSync(`/usr/lib/postgresql/16/bin/pg_ctl -D ${PG_DIR} -o "-p ${PG_PORT} -k /tmp" -l ${PG_DIR}/server.log start`);
+  execSync(
+    `/usr/lib/postgresql/16/bin/pg_ctl -D ${PG_DIR} -o "-p ${PG_PORT} -k /tmp" -l ${PG_DIR}/server.log start`,
+  );
 
   const connectionString = `postgresql://localhost:${PG_PORT}/postgres?host=/tmp`;
   const pool = new pg.Pool({ connectionString });
@@ -45,16 +47,22 @@ async function main() {
     const user1 = '11111111-2222-4333-8444-555555555555';
     const user2 = '99999999-8888-4777-8666-555555555555';
 
-    await pool.query(`
+    await pool.query(
+      `
       INSERT INTO users (id, email, display_name, password_hash, role) VALUES 
       ($1, 'user1@test.com', 'User 1', 'hash1', 'member'),
       ($2, 'user2@test.com', 'User 2', 'hash2', 'member');
-    `, [user1, user2]);
+    `,
+      [user1, user2],
+    );
 
-    await pool.query(`
+    await pool.query(
+      `
       INSERT INTO user_profiles (user_id, height_cm, current_weight_kg, starting_weight_kg, target_weight_kg)
       VALUES ($1::uuid, 178.0, 80.0, 80.0, 72.0), ($2::uuid, 165.0, 62.0, 62.0, 58.0);
-    `, [user1, user2]);
+    `,
+      [user1, user2],
+    );
 
     console.log('✓ Seeded users and baseline profiles.');
 
@@ -92,9 +100,13 @@ async function main() {
 
     const dupRes = await weightRepo.save(duplicateLog);
     if (dupRes.isNew !== false || dupRes.log.id !== log1.id || dupRes.log.weightKg !== 79.5) {
-      throw new Error(`Idempotency failed: Expected existing log1 to be returned. Got: ${JSON.stringify(dupRes)}`);
+      throw new Error(
+        `Idempotency failed: Expected existing log1 to be returned. Got: ${JSON.stringify(dupRes)}`,
+      );
     }
-    console.log('✓ Idempotency verified: Duplicate client ID returned original record without creating duplicate.');
+    console.log(
+      '✓ Idempotency verified: Duplicate client ID returned original record without creating duplicate.',
+    );
 
     // 3. User Isolation
     console.log('-> 3. Testing user isolation on findById and findByClientId...');
@@ -132,7 +144,11 @@ async function main() {
       throw new Error(`Expected 3 logs, got total ${listAll.total}`);
     }
     // Verify descending sort order by loggedAt: Oct 5 (79.0), Oct 3 (79.2), Oct 1 (79.5)
-    if (listAll.logs[0]?.weightKg !== 79.0 || listAll.logs[1]?.weightKg !== 79.2 || listAll.logs[2]?.weightKg !== 79.5) {
+    if (
+      listAll.logs[0]?.weightKg !== 79.0 ||
+      listAll.logs[1]?.weightKg !== 79.2 ||
+      listAll.logs[2]?.weightKg !== 79.5
+    ) {
       throw new Error('Logs are not sorted in descending chronological order!');
     }
 
@@ -161,7 +177,11 @@ async function main() {
     }
 
     const summary = await weightRepo.getUserWeightSummary(user1);
-    if (summary.currentWeightKg !== 79.0 || summary.startingWeightKg !== 80.0 || summary.totalLogsCount !== 3) {
+    if (
+      summary.currentWeightKg !== 79.0 ||
+      summary.startingWeightKg !== 80.0 ||
+      summary.totalLogsCount !== 3
+    ) {
       throw new Error(`Summary error: ${JSON.stringify(summary)}`);
     }
     console.log('✓ Summary verified: current=79.0, starting=80.0, totalCount=3.');
@@ -223,7 +243,7 @@ async function main() {
       const log = new WeightLog({
         id: `c000000${i}-0000-4000-8000-00000000000${i}`,
         userId: user1,
-        weightKg: 78.0 + (i * 0.1),
+        weightKg: 78.0 + i * 0.1,
         loggedAt: new Date(`2026-10-1${i}T08:00:00Z`),
         clientId: `client-conc-${i}`,
       });
@@ -231,21 +251,22 @@ async function main() {
     });
 
     const concResults = await Promise.all(concPromises);
-    if (concResults.length !== 6 || !concResults.every(r => r.isNew)) {
+    if (concResults.length !== 6 || !concResults.every((r) => r.isNew)) {
       throw new Error('Concurrent writes failed to all complete successfully');
     }
 
     const finalSummary = await weightRepo.getUserWeightSummary(user1);
     // The latest logged entry was for 2026-10-15 (i = 5), which is 78.0 + 0.5 = 78.5 kg
     if (finalSummary.currentWeightKg !== 78.5) {
-      throw new Error(`Concurrent execution left profile in inconsistent state! Expected 78.5, got ${finalSummary.currentWeightKg}`);
+      throw new Error(
+        `Concurrent execution left profile in inconsistent state! Expected 78.5, got ${finalSummary.currentWeightKg}`,
+      );
     }
     console.log('✓ Concurrent repository writes completed safely without deadlocks.');
 
     console.log('\n======================================================');
     console.log('ALL TASK 5.2 REPOSITORY VERIFICATION CHECKS PASSED!');
     console.log('======================================================');
-
   } finally {
     await pool.end();
     console.log('-> Stopping and cleaning up isolated PostgreSQL cluster...');

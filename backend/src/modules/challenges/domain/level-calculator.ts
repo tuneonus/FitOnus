@@ -154,4 +154,3 @@ export function calculateLevel(totalPoints: number): LevelInfo {
     title: getLevelTitle(level),
   };
 }
-

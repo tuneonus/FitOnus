@@ -364,4 +364,3 @@ export class PgMealRepository implements IMealRepository {
     return parseInt(res.rows[0]?.count ?? '0', 10);
   }
 }
-

@@ -35,7 +35,9 @@ async function main() {
   execSync(`/usr/lib/postgresql/16/bin/initdb -D ${PG_DIR} --no-locale -E UTF8 > /dev/null`);
 
   console.log(`-> Starting isolated PostgreSQL on port ${PG_PORT}...`);
-  execSync(`/usr/lib/postgresql/16/bin/pg_ctl -D ${PG_DIR} -o "-p ${PG_PORT} -k /tmp" -l ${PG_DIR}/server.log start`);
+  execSync(
+    `/usr/lib/postgresql/16/bin/pg_ctl -D ${PG_DIR} -o "-p ${PG_PORT} -k /tmp" -l ${PG_DIR}/server.log start`,
+  );
 
   const connectionString = `postgresql://localhost:${PG_PORT}/postgres?host=/tmp`;
   const pool = new pg.Pool({ connectionString });
@@ -49,16 +51,22 @@ async function main() {
     const user1 = '11111111-2222-4333-8444-555555555555';
     const user2 = '99999999-8888-4777-8666-555555555555';
 
-    await pool.query(`
+    await pool.query(
+      `
       INSERT INTO users (id, email, display_name, password_hash, role) VALUES 
       ($1, 'progress.user1@test.com', 'Progress User 1', 'hash1', 'member'),
       ($2, 'progress.user2@test.com', 'Progress User 2', 'hash2', 'member');
-    `, [user1, user2]);
+    `,
+      [user1, user2],
+    );
 
-    await pool.query(`
+    await pool.query(
+      `
       INSERT INTO user_profiles (user_id, height_cm, current_weight_kg, starting_weight_kg, target_weight_kg)
       VALUES ($1::uuid, 180.0, 85.0, 85.0, 75.0), ($2::uuid, 168.0, 65.0, 65.0, 60.0);
-    `, [user1, user2]);
+    `,
+      [user1, user2],
+    );
     console.log('✓ Seeded users and baseline profiles.');
 
     // 1. Direct Repository Update Verification
@@ -103,7 +111,9 @@ async function main() {
       [user1],
     );
     if (Number(profileRes.rows[0]?.current_weight_kg) !== 83.8) {
-      throw new Error(`Profile sync failed after update: expected 83.8, got ${profileRes.rows[0]?.current_weight_kg}`);
+      throw new Error(
+        `Profile sync failed after update: expected 83.8, got ${profileRes.rows[0]?.current_weight_kg}`,
+      );
     }
     console.log('✓ Weight repository update() correctly triggered profile weight synchronization.');
 
@@ -160,15 +170,13 @@ async function main() {
 
     // 2a. POST /weight with client-idempotency
     const clientUuid = crypto.randomUUID();
-    const postRes1 = await request(app)
-      .post('/api/v1/progress/weight')
-      .send({
-        weightKg: 83.5,
-        loggedAt: '2026-11-03T09:00:00.000Z',
-        source: 'manual',
-        notes: 'Post workout',
-        clientId: clientUuid,
-      });
+    const postRes1 = await request(app).post('/api/v1/progress/weight').send({
+      weightKg: 83.5,
+      loggedAt: '2026-11-03T09:00:00.000Z',
+      source: 'manual',
+      notes: 'Post workout',
+      clientId: clientUuid,
+    });
 
     if (postRes1.status !== 201 || !postRes1.body.success || postRes1.body.data.isNew !== true) {
       throw new Error(`POST /weight failed: ${JSON.stringify(postRes1.body)}`);
@@ -177,32 +185,40 @@ async function main() {
     console.log('✓ POST /api/v1/progress/weight returned 201 with standard envelope.');
 
     // 2b. Retry with identical clientId (Idempotent replay)
-    const postRes2 = await request(app)
-      .post('/api/v1/progress/weight')
-      .send({
-        weightKg: 83.5,
-        clientId: clientUuid,
-      });
+    const postRes2 = await request(app).post('/api/v1/progress/weight').send({
+      weightKg: 83.5,
+      clientId: clientUuid,
+    });
 
-    if (postRes2.status !== 201 || postRes2.body.data.isNew !== false || postRes2.body.data.log.id !== httpWeightId) {
+    if (
+      postRes2.status !== 201 ||
+      postRes2.body.data.isNew !== false ||
+      postRes2.body.data.log.id !== httpWeightId
+    ) {
       throw new Error(`POST /weight idempotency failed: ${JSON.stringify(postRes2.body)}`);
     }
-    console.log('✓ POST /api/v1/progress/weight offline duplicate successfully returned existing record (isNew: false).');
+    console.log(
+      '✓ POST /api/v1/progress/weight offline duplicate successfully returned existing record (isNew: false).',
+    );
 
     // 2c. GET /weight history
     const getWeightRes = await request(app).get('/api/v1/progress/weight?range=W');
-    if (getWeightRes.status !== 200 || !getWeightRes.body.success || !Array.isArray(getWeightRes.body.data.points)) {
+    if (
+      getWeightRes.status !== 200 ||
+      !getWeightRes.body.success ||
+      !Array.isArray(getWeightRes.body.data.points)
+    ) {
       throw new Error(`GET /weight failed: ${JSON.stringify(getWeightRes.body)}`);
     }
-    console.log(`✓ GET /api/v1/progress/weight returned 200 with ${getWeightRes.body.data.points.length} EMA trend points.`);
+    console.log(
+      `✓ GET /api/v1/progress/weight returned 200 with ${getWeightRes.body.data.points.length} EMA trend points.`,
+    );
 
     // 2d. PUT /weight/:id
-    const putWeightRes = await request(app)
-      .put(`/api/v1/progress/weight/${httpWeightId}`)
-      .send({
-        weightKg: 83.2,
-        notes: 'Updated note via HTTP PUT',
-      });
+    const putWeightRes = await request(app).put(`/api/v1/progress/weight/${httpWeightId}`).send({
+      weightKg: 83.2,
+      notes: 'Updated note via HTTP PUT',
+    });
     if (putWeightRes.status !== 200 || putWeightRes.body.data.weightKg !== 83.2) {
       throw new Error(`PUT /weight/:id failed: ${JSON.stringify(putWeightRes.body)}`);
     }
@@ -228,14 +244,12 @@ async function main() {
 
     // 2g. POST /measurements
     const measClientUuid = crypto.randomUUID();
-    const postMeasRes = await request(app)
-      .post('/api/v1/progress/measurements')
-      .send({
-        waistCm: 85.0,
-        chestCm: 104.5,
-        bodyFatPct: 15.2,
-        clientId: measClientUuid,
-      });
+    const postMeasRes = await request(app).post('/api/v1/progress/measurements').send({
+      waistCm: 85.0,
+      chestCm: 104.5,
+      bodyFatPct: 15.2,
+      clientId: measClientUuid,
+    });
     if (postMeasRes.status !== 201 || !postMeasRes.body.success) {
       throw new Error(`POST /measurements failed: ${JSON.stringify(postMeasRes.body)}`);
     }
@@ -250,11 +264,9 @@ async function main() {
     console.log('✓ GET /api/v1/progress/measurements returned 200 with history & diffs.');
 
     // 2i. PUT /measurements/:id
-    const putMeasRes = await request(app)
-      .put(`/api/v1/progress/measurements/${httpMeasId}`)
-      .send({
-        waistCm: 84.8,
-      });
+    const putMeasRes = await request(app).put(`/api/v1/progress/measurements/${httpMeasId}`).send({
+      waistCm: 84.8,
+    });
     if (putMeasRes.status !== 200 || putMeasRes.body.data.waistCm !== 84.8) {
       throw new Error(`PUT /measurements/:id failed: ${JSON.stringify(putMeasRes.body)}`);
     }
@@ -276,28 +288,42 @@ async function main() {
 
     // 2l. GET /analytics for unsupported device metric (steps/sleep)
     const stepsRes = await request(app).get('/api/v1/progress/analytics?metric=steps&range=W');
-    if (stepsRes.status !== 200 || stepsRes.body.data.hasDeviceData !== false || stepsRes.body.data.points.length !== 0) {
+    if (
+      stepsRes.status !== 200 ||
+      stepsRes.body.data.hasDeviceData !== false ||
+      stepsRes.body.data.points.length !== 0
+    ) {
       throw new Error(`Device-dependent analytics failed: ${JSON.stringify(stepsRes.body)}`);
     }
-    console.log('✓ GET /api/v1/progress/analytics?metric=steps correctly returned hasDeviceData: false and empty series (no fake data).');
+    console.log(
+      '✓ GET /api/v1/progress/analytics?metric=steps correctly returned hasDeviceData: false and empty series (no fake data).',
+    );
 
     // 2m. GET /comparison
     const compRes = await request(app).get('/api/v1/progress/comparison?period=month');
     if (compRes.status !== 200 || !Array.isArray(compRes.body.data.comparisons)) {
       throw new Error(`GET /comparison failed: ${JSON.stringify(compRes.body)}`);
     }
-    console.log(`✓ GET /api/v1/progress/comparison returned 200 (${compRes.body.data.comparisons.length} comparison rows).`);
+    console.log(
+      `✓ GET /api/v1/progress/comparison returned 200 (${compRes.body.data.comparisons.length} comparison rows).`,
+    );
 
     // 2n. GET /achievements
     const achRes = await request(app).get('/api/v1/progress/achievements');
     if (achRes.status !== 200 || !Array.isArray(achRes.body.data.achievements)) {
       throw new Error(`GET /achievements failed: ${JSON.stringify(achRes.body)}`);
     }
-    console.log(`✓ GET /api/v1/progress/achievements returned 200 (${achRes.body.data.achievements.length} achievements).`);
+    console.log(
+      `✓ GET /api/v1/progress/achievements returned 200 (${achRes.body.data.achievements.length} achievements).`,
+    );
 
     // 2o. GET /reports
     const reportRes = await request(app).get('/api/v1/progress/reports?type=weekly');
-    if (reportRes.status !== 200 || !reportRes.body.data.headline || !Array.isArray(reportRes.body.data.stats)) {
+    if (
+      reportRes.status !== 200 ||
+      !reportRes.body.data.headline ||
+      !Array.isArray(reportRes.body.data.stats)
+    ) {
       throw new Error(`GET /reports failed: ${JSON.stringify(reportRes.body)}`);
     }
     console.log(`✓ GET /api/v1/progress/reports returned 200 (headline: "${reportRes.body.data.headline}").`);
@@ -318,4 +344,3 @@ main().catch((err) => {
   console.error('\n❌ Verification failed with error:', err);
   process.exit(1);
 });
-

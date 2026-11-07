@@ -224,11 +224,7 @@ export function summarizeBodyAnalytics(
   const effectiveStarting = startingWeightKg ?? firstLog?.weightKg ?? effectiveCurrent;
 
   const weeklyVelocityKg = calculateWeightVelocity(firstLog, lastLog);
-  const goalProgressPct = calculateGoalWeightProgress(
-    effectiveStarting,
-    effectiveCurrent,
-    targetWeightKg,
-  );
+  const goalProgressPct = calculateGoalWeightProgress(effectiveStarting, effectiveCurrent, targetWeightKg);
   const weightTrend = calculateEmaSeries(sortedLogs);
   const measurementTrends = buildMeasurementTrends(measurements);
 
@@ -242,4 +238,3 @@ export function summarizeBodyAnalytics(
     measurementTrends,
   };
 }
-

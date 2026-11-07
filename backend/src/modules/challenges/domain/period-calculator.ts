@@ -131,7 +131,11 @@ export function zonedTimeToUtc(
 /**
  * Calculates the ISO 8601 week number for a calendar date (Thursday-based).
  */
-export function getIsoWeekNumber(year: number, month: number, day: number): { week: number; weekYear: number } {
+export function getIsoWeekNumber(
+  year: number,
+  month: number,
+  day: number,
+): { week: number; weekYear: number } {
   const target = new Date(Date.UTC(year, month - 1, day));
   const dayNr = (target.getUTCDay() + 6) % 7; // Monday = 0
   target.setUTCDate(target.getUTCDate() - dayNr + 3); // Nearest Thursday
@@ -210,11 +214,7 @@ export function calculateOccurrencePeriod(
  * Checks whether an activity timestamp falls within an occurrence's period.
  * Supports late/offline synced telemetry whose actual timestamp was within the period.
  */
-export function isActivityWithinOccurrence(
-  activityDate: Date,
-  periodStart: Date,
-  periodEnd: Date,
-): boolean {
+export function isActivityWithinOccurrence(activityDate: Date, periodStart: Date, periodEnd: Date): boolean {
   const time = activityDate.getTime();
   return time >= periodStart.getTime() && time <= periodEnd.getTime();
 }
@@ -232,4 +232,3 @@ export function canClaimOccurrenceReward(
   const deadline = periodEnd.getTime() + graceMs;
   return checkDate.getTime() <= deadline;
 }
-

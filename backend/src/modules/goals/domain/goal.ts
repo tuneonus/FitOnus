@@ -17,7 +17,8 @@ export type GoalType =
   | 'custom';
 
 export type GoalStatus = 'active' | 'completed' | 'abandoned' | 'paused';
-export type TelemetrySource = 'weight_logs' | 'water_intake' | 'nutrition_meals' | 'workout_sessions' | 'manual';
+export type TelemetrySource =
+  'weight_logs' | 'water_intake' | 'nutrition_meals' | 'workout_sessions' | 'manual';
 
 export interface GoalProps {
   id: string;

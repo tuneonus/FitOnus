@@ -49,7 +49,10 @@ export class PgChallengeOccurrenceRepository implements IChallengeOccurrenceRepo
     return row ? toDomainOccurrence(row) : null;
   }
 
-  async findByChallengeAndKey(challengeId: string, occurrenceKey: string): Promise<ChallengeOccurrence | null> {
+  async findByChallengeAndKey(
+    challengeId: string,
+    occurrenceKey: string,
+  ): Promise<ChallengeOccurrence | null> {
     const res = await this.db.query<OccurrenceRow>(
       `SELECT * FROM challenge_occurrences 
        WHERE challenge_id = $1 AND occurrence_key = $2 
@@ -106,10 +109,9 @@ export class PgChallengeOccurrenceRepository implements IChallengeOccurrenceRepo
   }
 
   async updateStatus(id: string, status: OccurrenceStatus): Promise<void> {
-    await this.db.query(
-      `UPDATE challenge_occurrences SET status = $1, updated_at = now() WHERE id = $2`,
-      [status, id],
-    );
+    await this.db.query(`UPDATE challenge_occurrences SET status = $1, updated_at = now() WHERE id = $2`, [
+      status,
+      id,
+    ]);
   }
 }
-

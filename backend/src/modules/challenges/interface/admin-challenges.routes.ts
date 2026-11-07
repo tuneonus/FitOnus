@@ -36,7 +36,7 @@ export function createChallengesAdminRoutes(
           schema: z.array(challengeViewSchema),
         },
         errorStatuses: [400, 401, 403],
-        handler: controller.listChallenges,
+        handler: (req) => controller.listChallenges(req),
       }),
 
       // 2. Admin Create Challenge
@@ -55,7 +55,7 @@ export function createChallengesAdminRoutes(
           schema: challengeViewSchema,
         },
         errorStatuses: [400, 401, 403, 409],
-        handler: controller.createChallenge,
+        handler: (req) => controller.createChallenge(req),
       }),
 
       // 3. Admin Get Challenge Details
@@ -74,7 +74,7 @@ export function createChallengesAdminRoutes(
           schema: challengeViewSchema,
         },
         errorStatuses: [400, 401, 403, 404],
-        handler: controller.getChallenge,
+        handler: (req) => controller.getChallenge(req),
       }),
 
       // 4. Admin Update Challenge
@@ -93,7 +93,7 @@ export function createChallengesAdminRoutes(
           schema: challengeViewSchema,
         },
         errorStatuses: [400, 401, 403, 404, 409],
-        handler: controller.updateChallenge,
+        handler: (req) => controller.updateChallenge(req),
       }),
 
       // 5. Admin Publish Challenge
@@ -112,7 +112,7 @@ export function createChallengesAdminRoutes(
           schema: challengeViewSchema,
         },
         errorStatuses: [400, 401, 403, 404],
-        handler: controller.publishChallenge,
+        handler: (req) => controller.publishChallenge(req),
       }),
 
       // 6. Admin Archive Challenge
@@ -131,9 +131,8 @@ export function createChallengesAdminRoutes(
           schema: challengeViewSchema,
         },
         errorStatuses: [400, 401, 403, 404],
-        handler: controller.archiveChallenge,
+        handler: (req) => controller.archiveChallenge(req),
       }),
     ],
   };
 }
-

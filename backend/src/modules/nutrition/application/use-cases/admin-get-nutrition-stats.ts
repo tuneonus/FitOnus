@@ -7,4 +7,3 @@ export class AdminGetNutritionStatsUseCase {
     return this.foodRepo.getCatalogStats();
   }
 }
-

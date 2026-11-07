@@ -1,5 +1,10 @@
 import type { BadgeCategory, BadgeTier } from '../domain/badge.js';
-import type { ChallengeCadence, ChallengeCategory, ChallengeMetricType, ChallengeStatus } from '../domain/challenge.js';
+import type {
+  ChallengeCadence,
+  ChallengeCategory,
+  ChallengeMetricType,
+  ChallengeStatus,
+} from '../domain/challenge.js';
 import type { EnrollmentStatus } from '../domain/challenge-enrollment.js';
 import type { OccurrenceStatus } from '../domain/challenge-occurrence.js';
 import type { PointSourceType } from '../domain/points-ledger.js';
@@ -283,4 +288,3 @@ export function toPointsLedgerView(entry: {
     createdAt: entry.createdAt.toISOString(),
   };
 }
-

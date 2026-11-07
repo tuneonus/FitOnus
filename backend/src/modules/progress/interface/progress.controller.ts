@@ -259,4 +259,3 @@ export function createProgressController(useCases: ProgressUseCases) {
     },
   };
 }
-

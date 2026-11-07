@@ -7,9 +7,18 @@ import { createActor } from '../../../src/shared/auth/actor.js';
 import { AppError } from '../../../src/shared/errors/app-error.js';
 import { buildRouter } from '../../../src/shared/http/route.js';
 import { createLogger } from '../../../src/shared/logging/logger.js';
-import { createGoalsController, type GoalsUseCases } from '../../../src/modules/goals/interface/goals.controller.js';
+import {
+  createGoalsController,
+  type GoalsUseCases,
+} from '../../../src/modules/goals/interface/goals.controller.js';
 import { createGoalsRoutes, createHabitsRoutes } from '../../../src/modules/goals/interface/goals.routes.js';
-import type { GoalView, GoalDetailsView, GoalCheckpointView, HabitView, HabitHistoryView } from '../../../src/modules/goals/application/goals-view.js';
+import type {
+  GoalView,
+  GoalDetailsView,
+  GoalCheckpointView,
+  HabitView,
+  HabitHistoryView,
+} from '../../../src/modules/goals/application/goals-view.js';
 import type { GoalProgressResult } from '../../../src/modules/goals/application/use-cases/calculate-goal-progress.js';
 import type { SetHabitCompletionResult } from '../../../src/modules/goals/application/use-cases/set-habit-completion.js';
 import type { StreakResult } from '../../../src/modules/goals/domain/streak-calculator.js';
@@ -172,7 +181,11 @@ describe('Goals & Habits HTTP API', () => {
         { method: 'get', path: `/api/v1/habits/${habitId}` },
         { method: 'patch', path: `/api/v1/habits/${habitId}`, body: { title: 'New' } },
         { method: 'delete', path: `/api/v1/habits/${habitId}` },
-        { method: 'post', path: `/api/v1/habits/${habitId}/completion`, body: { date: '2026-11-06', completed: true } },
+        {
+          method: 'post',
+          path: `/api/v1/habits/${habitId}/completion`,
+          body: { date: '2026-11-06', completed: true },
+        },
       ];
 
       for (const ep of endpoints) {
@@ -191,17 +204,15 @@ describe('Goals & Habits HTTP API', () => {
     it('POST /api/v1/goals creates a goal successfully with 201', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .post('/api/v1/goals')
-        .send({
-          type: 'weightLoss',
-          title: 'Lose weight',
-          targetValue: 75.0,
-          startValue: 85.0,
-          deadlineLabel: 'Dec 31, 2026',
-          targetDate: '2026-12-31',
-          isPrimary: true,
-        });
+      const res = await request(app).post('/api/v1/goals').send({
+        type: 'weightLoss',
+        title: 'Lose weight',
+        targetValue: 75.0,
+        startValue: 85.0,
+        deadlineLabel: 'Dec 31, 2026',
+        targetDate: '2026-12-31',
+        isPrimary: true,
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -219,12 +230,10 @@ describe('Goals & Habits HTTP API', () => {
     it('POST /api/v1/goals validates input and rejects negative target value with 400', async () => {
       const { app } = createTestApp();
 
-      const res = await request(app)
-        .post('/api/v1/goals')
-        .send({
-          type: 'weightLoss',
-          targetValue: -10,
-        });
+      const res = await request(app).post('/api/v1/goals').send({
+        type: 'weightLoss',
+        targetValue: -10,
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -281,12 +290,10 @@ describe('Goals & Habits HTTP API', () => {
     it('PATCH /api/v1/goals/:id updates goal details with 200', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .patch(`/api/v1/goals/${goalId}`)
-        .send({
-          title: 'Updated Goal Title',
-          currentValue: 81.0,
-        });
+      const res = await request(app).patch(`/api/v1/goals/${goalId}`).send({
+        title: 'Updated Goal Title',
+        currentValue: 81.0,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -317,9 +324,7 @@ describe('Goals & Habits HTTP API', () => {
     it('POST /api/v1/goals/:id/progress calculates progress with 200', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .post(`/api/v1/goals/${goalId}/progress`)
-        .send({ candidateValue: 80.0 });
+      const res = await request(app).post(`/api/v1/goals/${goalId}/progress`).send({ candidateValue: 80.0 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -334,9 +339,7 @@ describe('Goals & Habits HTTP API', () => {
     it('GET /api/v1/goals/:id/checkpoints returns checkpoints with 200', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .get(`/api/v1/goals/${goalId}/checkpoints`)
-        .query({ limit: 10 });
+      const res = await request(app).get(`/api/v1/goals/${goalId}/checkpoints`).query({ limit: 10 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -351,13 +354,11 @@ describe('Goals & Habits HTTP API', () => {
     it('POST /api/v1/goals/:id/checkpoints logs checkpoint with 201', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .post(`/api/v1/goals/${goalId}/checkpoints`)
-        .send({
-          value: 82.5,
-          date: '2026-11-06',
-          notes: 'Morning weigh-in',
-        });
+      const res = await request(app).post(`/api/v1/goals/${goalId}/checkpoints`).send({
+        value: 82.5,
+        date: '2026-11-06',
+        notes: 'Morning weigh-in',
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -378,16 +379,14 @@ describe('Goals & Habits HTTP API', () => {
     it('POST /api/v1/habits creates a habit successfully with 201', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .post('/api/v1/habits')
-        .send({
-          title: 'Morning Sunlight',
-          category: 'wellness',
-          frequency: 'daily',
-          targetDaysPerWeek: 7,
-          icon: 'sun',
-          color: 'amber',
-        });
+      const res = await request(app).post('/api/v1/habits').send({
+        title: 'Morning Sunlight',
+        category: 'wellness',
+        frequency: 'daily',
+        targetDaysPerWeek: 7,
+        icon: 'sun',
+        color: 'amber',
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -405,12 +404,10 @@ describe('Goals & Habits HTTP API', () => {
     it('POST /api/v1/habits rejects invalid targetDaysPerWeek (> 7) with 400', async () => {
       const { app } = createTestApp();
 
-      const res = await request(app)
-        .post('/api/v1/habits')
-        .send({
-          title: 'Stretch',
-          targetDaysPerWeek: 14,
-        });
+      const res = await request(app).post('/api/v1/habits').send({
+        title: 'Stretch',
+        targetDaysPerWeek: 14,
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -438,9 +435,7 @@ describe('Goals & Habits HTTP API', () => {
     it('GET /api/v1/habits/:id returns habit history and streaks with 200', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .get(`/api/v1/habits/${habitId}`)
-        .query({ limitDays: 60 });
+      const res = await request(app).get(`/api/v1/habits/${habitId}`).query({ limitDays: 60 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -456,12 +451,10 @@ describe('Goals & Habits HTTP API', () => {
     it('PATCH /api/v1/habits/:id updates habit details with 200', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .patch(`/api/v1/habits/${habitId}`)
-        .send({
-          title: 'Updated Routine',
-          targetDaysPerWeek: 5,
-        });
+      const res = await request(app).patch(`/api/v1/habits/${habitId}`).send({
+        title: 'Updated Routine',
+        targetDaysPerWeek: 5,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -492,13 +485,11 @@ describe('Goals & Habits HTTP API', () => {
     it('POST /api/v1/habits/:id/completion explicitly sets completion=true idempotently', async () => {
       const { app, useCases } = createTestApp();
 
-      const res = await request(app)
-        .post(`/api/v1/habits/${habitId}/completion`)
-        .send({
-          date: '2026-11-06',
-          completed: true,
-          notes: 'Completed after work',
-        });
+      const res = await request(app).post(`/api/v1/habits/${habitId}/completion`).send({
+        date: '2026-11-06',
+        completed: true,
+        notes: 'Completed after work',
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -526,12 +517,10 @@ describe('Goals & Habits HTTP API', () => {
         } as any,
       });
 
-      const res = await request(app)
-        .post(`/api/v1/habits/${habitId}/completion`)
-        .send({
-          date: '2026-11-06',
-          completed: false,
-        });
+      const res = await request(app).post(`/api/v1/habits/${habitId}/completion`).send({
+        date: '2026-11-06',
+        completed: false,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -549,12 +538,10 @@ describe('Goals & Habits HTTP API', () => {
     it('POST /api/v1/habits/:id/completion rejects non-boolean completed state with 400', async () => {
       const { app } = createTestApp();
 
-      const res = await request(app)
-        .post(`/api/v1/habits/${habitId}/completion`)
-        .send({
-          date: '2026-11-06',
-          completed: 'yes', // invalid type
-        });
+      const res = await request(app).post(`/api/v1/habits/${habitId}/completion`).send({
+        date: '2026-11-06',
+        completed: 'yes', // invalid type
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);

@@ -82,7 +82,11 @@ export class LogMealUseCase {
 
     for (const item of input.items) {
       if (item.servingMultiplier <= 0) {
-        throw new AppError('bad_request', 'VALIDATION_FAILED', 'Item serving multiplier must be greater than 0');
+        throw new AppError(
+          'bad_request',
+          'VALIDATION_FAILED',
+          'Item serving multiplier must be greater than 0',
+        );
       }
 
       if (item.foodId) {

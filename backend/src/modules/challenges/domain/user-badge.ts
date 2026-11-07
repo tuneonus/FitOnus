@@ -33,4 +33,3 @@ export class UserBadge {
     this.metadata = props.metadata ?? {};
   }
 }
-

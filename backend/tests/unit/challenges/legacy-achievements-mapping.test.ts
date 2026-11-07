@@ -97,4 +97,3 @@ describe('Legacy Achievements Integration & Mapping', () => {
     expect(secondAward).toBe(false); // Idempotently skipped!
   });
 });
-

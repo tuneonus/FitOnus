@@ -327,9 +327,7 @@ describe('Analytics REST API HTTP Integration', () => {
 
     it('GET /api/v1/analytics/workouts/exercises/:exerciseId returns 200 with progression', async () => {
       const { app, useCases } = createTestApp();
-      const res = await request(app).get(
-        `/api/v1/analytics/workouts/exercises/${exerciseId}?range=all`,
-      );
+      const res = await request(app).get(`/api/v1/analytics/workouts/exercises/${exerciseId}?range=all`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -476,9 +474,7 @@ describe('Analytics REST API HTTP Integration', () => {
       await request(app).get(`/api/v1/analytics/overview?userId=${userB}`);
 
       // Controller MUST receive userA from verified actor, NEVER userB
-      expect(useCases.getOverview.execute).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: userA }),
-      );
+      expect(useCases.getOverview.execute).toHaveBeenCalledWith(expect.objectContaining({ userId: userA }));
       expect(useCases.getOverview.execute).not.toHaveBeenCalledWith(
         expect.objectContaining({ userId: userB }),
       );
@@ -489,9 +485,7 @@ describe('Analytics REST API HTTP Integration', () => {
 
       await request(app).get('/api/v1/analytics/workouts');
 
-      expect(useCases.getWorkouts.execute).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: userB }),
-      );
+      expect(useCases.getWorkouts.execute).toHaveBeenCalledWith(expect.objectContaining({ userId: userB }));
     });
   });
 

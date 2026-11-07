@@ -63,7 +63,10 @@ export class PgGoalsTelemetryAdapter implements IGoalsTelemetryPort {
         [userId],
       );
 
-      if (profileRes.rows[0]?.current_weight_kg !== null && profileRes.rows[0]?.current_weight_kg !== undefined) {
+      if (
+        profileRes.rows[0]?.current_weight_kg !== null &&
+        profileRes.rows[0]?.current_weight_kg !== undefined
+      ) {
         return Number(profileRes.rows[0].current_weight_kg);
       }
 

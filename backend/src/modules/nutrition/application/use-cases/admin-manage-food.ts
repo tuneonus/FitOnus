@@ -181,11 +181,7 @@ export class AdminManageFoodUseCase {
       servingBasis: input.servingBasis ?? '100g',
     });
 
-    validateServingDensityConsistency(
-      input.servingWeightG,
-      input.servingVolumeMl,
-      input.densityGPerMl,
-    );
+    validateServingDensityConsistency(input.servingWeightG, input.servingVolumeMl, input.densityGPerMl);
 
     if (input.barcode) {
       const existingBarcode = await this.foodRepo.findByBarcode(input.barcode);
@@ -252,8 +248,7 @@ export class AdminManageFoodUseCase {
     const servingWeightG = input.servingWeightG ?? existing.servingWeightG;
     const servingVolumeMl =
       input.servingVolumeMl !== undefined ? input.servingVolumeMl : existing.servingVolumeMl;
-    const densityGPerMl =
-      input.densityGPerMl !== undefined ? input.densityGPerMl : existing.densityGPerMl;
+    const densityGPerMl = input.densityGPerMl !== undefined ? input.densityGPerMl : existing.densityGPerMl;
 
     validateServingDensityConsistency(servingWeightG, servingVolumeMl, densityGPerMl);
 
@@ -333,12 +328,7 @@ export class AdminManageFoodUseCase {
     return toAdminFoodView(updated);
   }
 
-  async delete(
-    adminId: string,
-    foodId: string,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<void> {
+  async delete(adminId: string, foodId: string, ipAddress?: string, userAgent?: string): Promise<void> {
     const existing = await this.foodRepo.findById(foodId, undefined, false);
     if (!existing) {
       throw new AppError('not_found', 'NOT_FOUND', 'Food not found.');

@@ -36,11 +36,7 @@ describe('GetAnalyticsOverviewUseCase', () => {
       getUserProfileGoals: vi.fn(),
     };
 
-    useCase = new GetAnalyticsOverviewUseCase(
-      mockWorkoutRepo,
-      mockNutritionRepo,
-      mockBodyRepo,
-    );
+    useCase = new GetAnalyticsOverviewUseCase(mockWorkoutRepo, mockNutritionRepo, mockBodyRepo);
   });
 
   it('throws UNAUTHENTICATED error when userId is missing', async () => {
@@ -234,9 +230,7 @@ describe('GetAnalyticsOverviewUseCase', () => {
   });
 
   it('propagates repository errors', async () => {
-    vi.mocked(mockWorkoutRepo.getCompletedSessions).mockRejectedValueOnce(
-      new Error('Overview repo error'),
-    );
+    vi.mocked(mockWorkoutRepo.getCompletedSessions).mockRejectedValueOnce(new Error('Overview repo error'));
     await expect(useCase.execute({ userId })).rejects.toThrowError('Overview repo error');
   });
 });

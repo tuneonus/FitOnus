@@ -91,10 +91,7 @@ describe('Progress Application Use Cases', () => {
         totalLogsCount: 2,
       });
       vi.mocked(weightRepo.listForUser).mockResolvedValueOnce({
-        logs: [
-          mockSaved,
-          new WeightLog({ id: 'w0', userId, weightKg: 80.0, loggedAt: new Date() }),
-        ],
+        logs: [mockSaved, new WeightLog({ id: 'w0', userId, weightKg: 80.0, loggedAt: new Date() })],
         total: 2,
       });
 
@@ -123,15 +120,11 @@ describe('Progress Application Use Cases', () => {
       });
       vi.mocked(weightRepo.listForUser)
         .mockResolvedValueOnce({
-          logs: [
-            new WeightLog({ id: 'w1', userId, weightKg: 78.4, loggedAt: new Date() }),
-          ],
+          logs: [new WeightLog({ id: 'w1', userId, weightKg: 78.4, loggedAt: new Date() })],
           total: 1,
         })
         .mockResolvedValueOnce({
-          logs: [
-            new WeightLog({ id: 'w1', userId, weightKg: 78.4, loggedAt: new Date() }),
-          ],
+          logs: [new WeightLog({ id: 'w1', userId, weightKg: 78.4, loggedAt: new Date() })],
           total: 1,
         });
 

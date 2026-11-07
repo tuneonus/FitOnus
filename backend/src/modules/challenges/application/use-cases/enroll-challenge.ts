@@ -38,7 +38,11 @@ export class EnrollChallengeUseCase {
 
     // 2. Validate occurrence is active
     const now = new Date();
-    if (occurrence.status === 'closed' || occurrence.status === 'archived' || now.getTime() > occurrence.periodEnd.getTime()) {
+    if (
+      occurrence.status === 'closed' ||
+      occurrence.status === 'archived' ||
+      now.getTime() > occurrence.periodEnd.getTime()
+    ) {
       throw new OccurrenceClosedError(occurrenceId);
     }
 
@@ -72,4 +76,3 @@ export class EnrollChallengeUseCase {
     return { enrollment: toEnrollmentView(saved) };
   }
 }
-

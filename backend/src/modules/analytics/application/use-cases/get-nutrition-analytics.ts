@@ -12,10 +12,7 @@ import {
   validateTimezone,
 } from '../../domain/analytics-period.js';
 import { summarizeNutritionAnalytics } from '../../domain/nutrition-metrics.js';
-import type {
-  IAnalyticsNutritionRepository,
-  IAnalyticsBodyRepository,
-} from '../ports.js';
+import type { IAnalyticsNutritionRepository, IAnalyticsBodyRepository } from '../ports.js';
 import type { NutritionAnalyticsView } from '../dtos.js';
 import { normalizeAnalyticsRange, parseReferenceDate } from '../period-helper.js';
 

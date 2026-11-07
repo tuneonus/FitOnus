@@ -51,4 +51,3 @@ export class Badge {
     this.updatedAt = props.updatedAt;
   }
 }
-

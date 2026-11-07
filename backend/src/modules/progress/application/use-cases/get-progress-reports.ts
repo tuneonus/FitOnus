@@ -47,7 +47,7 @@ export class GetProgressReportsUseCase {
 
     let periodStart: Date;
     let periodEnd: Date;
-    let periodLabel = '';
+    let periodLabel: string;
 
     if (input.type === 'weekly') {
       // Prior 7 days ending at reference date
@@ -61,16 +61,16 @@ export class GetProgressReportsUseCase {
       const prevMonth = parts.month === 1 ? 12 : parts.month - 1;
       periodStart = new Date(Date.UTC(prevYear, prevMonth - 1, 1));
       periodEnd = new Date(Date.UTC(parts.year, parts.month - 1, 1, 0, 0, 0, -1));
-      const monthName = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(periodStart);
+      const monthName = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(
+        periodStart,
+      );
       periodLabel = `${monthName} ${prevYear}`;
     }
 
     // 1. Workouts Telemetry
     const sessions = await this.telemetryPort.getWorkoutSessions(input.userId, periodStart, periodEnd);
     const workoutCount = sessions.length;
-    const totalDurationMinutes = Math.round(
-      sessions.reduce((acc, s) => acc + s.durationSeconds, 0) / 60,
-    );
+    const totalDurationMinutes = Math.round(sessions.reduce((acc, s) => acc + s.durationSeconds, 0) / 60);
     const durationHours = Math.floor(totalDurationMinutes / 60);
     const durationRemainderMins = totalDurationMinutes % 60;
     const durationNote = `${durationHours}h ${durationRemainderMins}m total`;
@@ -146,7 +146,9 @@ export class GetProgressReportsUseCase {
       );
     }
     if (!workoutsGood) {
-      improvements.push(`Missed ${targetWorkouts - workoutCount} planned workout session(s) — schedule make-up slots.`);
+      improvements.push(
+        `Missed ${targetWorkouts - workoutCount} planned workout session(s) — schedule make-up slots.`,
+      );
     }
     if (improvements.length === 0) {
       improvements.push('Solid consistency across workouts and nutrition. Keep the momentum going!');
@@ -174,7 +176,12 @@ export class GetProgressReportsUseCase {
     const stats: ProgressReportStat[] = [
       {
         label: 'Weight',
-        value: weightDelta !== 0 ? (weightDelta > 0 ? `+${weightDelta.toFixed(1)}` : `−${Math.abs(weightDelta).toFixed(1)}`) : '0.0',
+        value:
+          weightDelta !== 0
+            ? weightDelta > 0
+              ? `+${weightDelta.toFixed(1)}`
+              : `−${Math.abs(weightDelta).toFixed(1)}`
+            : '0.0',
         unit: 'kg',
         note: weightNote || undefined,
         good: weightGood,

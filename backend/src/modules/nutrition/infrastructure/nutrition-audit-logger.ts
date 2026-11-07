@@ -23,4 +23,3 @@ export class PgNutritionAuditLogger implements INutritionAuditLogger {
     );
   }
 }
-

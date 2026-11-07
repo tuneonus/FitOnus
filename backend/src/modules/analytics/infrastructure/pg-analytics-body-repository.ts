@@ -6,23 +6,13 @@
  */
 
 import type { SqlExecutor } from '../../../database/transaction.js';
-import type {
-  IAnalyticsBodyRepository,
-  UserProfileAnalyticsGoals,
-} from '../application/ports.js';
-import type {
-  RawWeightLogRecord,
-  RawMeasurementRecord,
-} from '../domain/body-analytics-metrics.js';
+import type { IAnalyticsBodyRepository, UserProfileAnalyticsGoals } from '../application/ports.js';
+import type { RawWeightLogRecord, RawMeasurementRecord } from '../domain/body-analytics-metrics.js';
 
 export class PgAnalyticsBodyRepository implements IAnalyticsBodyRepository {
   constructor(private readonly db: SqlExecutor) {}
 
-  async getWeightLogs(
-    userId: string,
-    startUtc: Date,
-    endUtc: Date,
-  ): Promise<RawWeightLogRecord[]> {
+  async getWeightLogs(userId: string, startUtc: Date, endUtc: Date): Promise<RawWeightLogRecord[]> {
     const res = await this.db.query<{
       id: string;
       weight_kg: string | number;
@@ -45,11 +35,7 @@ export class PgAnalyticsBodyRepository implements IAnalyticsBodyRepository {
     }));
   }
 
-  async getMeasurements(
-    userId: string,
-    startUtc: Date,
-    endUtc: Date,
-  ): Promise<RawMeasurementRecord[]> {
+  async getMeasurements(userId: string, startUtc: Date, endUtc: Date): Promise<RawMeasurementRecord[]> {
     const res = await this.db.query<{
       id: string;
       logged_at: Date;
@@ -108,18 +94,12 @@ export class PgAnalyticsBodyRepository implements IAnalyticsBodyRepository {
 
     return {
       primaryGoal: row.primary_goal,
-      startingWeightKg:
-        row.starting_weight_kg !== null ? Number(row.starting_weight_kg) : null,
-      currentWeightKg:
-        row.current_weight_kg !== null ? Number(row.current_weight_kg) : null,
-      targetWeightKg:
-        row.target_weight_kg !== null ? Number(row.target_weight_kg) : null,
-      dailyCalorieTarget:
-        row.daily_calorie_target !== null ? Number(row.daily_calorie_target) : null,
-      dailyProteinGrams:
-        row.daily_protein_grams !== null ? Number(row.daily_protein_grams) : null,
-      workoutDaysPerWeek:
-        row.workout_days_per_week !== null ? Number(row.workout_days_per_week) : null,
+      startingWeightKg: row.starting_weight_kg !== null ? Number(row.starting_weight_kg) : null,
+      currentWeightKg: row.current_weight_kg !== null ? Number(row.current_weight_kg) : null,
+      targetWeightKg: row.target_weight_kg !== null ? Number(row.target_weight_kg) : null,
+      dailyCalorieTarget: row.daily_calorie_target !== null ? Number(row.daily_calorie_target) : null,
+      dailyProteinGrams: row.daily_protein_grams !== null ? Number(row.daily_protein_grams) : null,
+      workoutDaysPerWeek: row.workout_days_per_week !== null ? Number(row.workout_days_per_week) : null,
     };
   }
 }

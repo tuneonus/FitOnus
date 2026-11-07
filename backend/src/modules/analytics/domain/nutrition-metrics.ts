@@ -54,9 +54,7 @@ export interface NutritionAnalyticsSummary {
  * A user logging 2000 kcal on 3 out of 7 days has an average intake of 2000 kcal/day,
  * NOT 857 kcal/day.
  */
-export function calculateNutritionAverages(
-  entries: readonly RawMealAggregateRecord[],
-): {
+export function calculateNutritionAverages(entries: readonly RawMealAggregateRecord[]): {
   avgCalories: number;
   avgProtein: number;
   avgCarbs: number;
@@ -270,4 +268,3 @@ export function summarizeNutritionAnalytics(
     dailyTrends,
   };
 }
-

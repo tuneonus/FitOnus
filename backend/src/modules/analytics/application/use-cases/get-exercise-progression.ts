@@ -5,10 +5,7 @@
  */
 
 import { AppError } from '../../../../shared/errors/app-error.js';
-import {
-  createCalendarBuckets,
-  validateTimezone,
-} from '../../domain/analytics-period.js';
+import { createCalendarBuckets, validateTimezone } from '../../domain/analytics-period.js';
 import { buildExerciseProgression } from '../../domain/workout-metrics.js';
 import type { IAnalyticsWorkoutRepository } from '../ports.js';
 import type { ExerciseProgressionView } from '../dtos.js';
@@ -56,9 +53,7 @@ export class GetExerciseProgressionUseCase {
     ]);
 
     const progression = buildExerciseProgression(sets);
-    const exerciseName = sets.length > 0 && sets[0]?.exerciseName
-      ? sets[0].exerciseName
-      : 'Exercise';
+    const exerciseName = sets.length > 0 && sets[0]?.exerciseName ? sets[0].exerciseName : 'Exercise';
 
     return {
       exerciseId: input.exerciseId,

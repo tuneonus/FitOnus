@@ -135,8 +135,15 @@ async function main() {
     let profileA = await request(app).get('/api/v1/profile/me').set('Authorization', `Bearer ${userAToken}`);
     assert.equal(profileA.body.data.currentWeightKg, 84.5, 'Profile weight should sync to 84.5');
 
-    const dbProfile = await pool.query('SELECT starting_weight_kg, current_weight_kg FROM user_profiles WHERE user_id = $1', [userAId]);
-    assert.equal(Number(dbProfile.rows[0].starting_weight_kg), 85.0, 'Starting weight must be preserved as 85.0');
+    const dbProfile = await pool.query(
+      'SELECT starting_weight_kg, current_weight_kg FROM user_profiles WHERE user_id = $1',
+      [userAId],
+    );
+    assert.equal(
+      Number(dbProfile.rows[0].starting_weight_kg),
+      85.0,
+      'Starting weight must be preserved as 85.0',
+    );
 
     // Update weight log
     const updateWeightRes = await request(app)
@@ -177,14 +184,11 @@ async function main() {
 
     for (const h of historicalWeights) {
       const logDate = new Date(now.getTime() - h.daysAgo * 24 * 60 * 60 * 1000);
-      await request(app)
-        .post('/api/v1/progress/weight')
-        .set('Authorization', `Bearer ${userAToken}`)
-        .send({
-          weightKg: h.weight,
-          loggedAt: logDate.toISOString(),
-          clientId: crypto.randomUUID(),
-        });
+      await request(app).post('/api/v1/progress/weight').set('Authorization', `Bearer ${userAToken}`).send({
+        weightKg: h.weight,
+        loggedAt: logDate.toISOString(),
+        clientId: crypto.randomUUID(),
+      });
     }
 
     // Query D, W, M, Y ranges

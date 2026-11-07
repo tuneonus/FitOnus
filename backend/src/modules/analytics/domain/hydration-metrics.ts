@@ -29,9 +29,7 @@ export interface HydrationAnalyticsSummary {
 /**
  * Calculates average daily water intake across days that had water logged.
  */
-export function calculateHydrationAverages(
-  entries: readonly RawWaterAggregateRecord[],
-): {
+export function calculateHydrationAverages(entries: readonly RawWaterAggregateRecord[]): {
   avgWaterMl: number;
   loggedDaysCount: number;
 } {
@@ -123,4 +121,3 @@ export function summarizeHydrationAnalytics(
     points,
   };
 }
-

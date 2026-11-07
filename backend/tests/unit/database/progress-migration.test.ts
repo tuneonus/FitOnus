@@ -20,9 +20,13 @@ describe('Progress & Measurements Migration 0009', () => {
 
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS weight_logs (');
     expect(sql).toContain('user_id       uuid           NOT NULL REFERENCES users (id) ON DELETE CASCADE');
-    expect(sql).toContain('weight_kg     numeric(5, 2)  NOT NULL CHECK (weight_kg >= 25.0 AND weight_kg <= 450.0)');
+    expect(sql).toContain(
+      'weight_kg     numeric(5, 2)  NOT NULL CHECK (weight_kg >= 25.0 AND weight_kg <= 450.0)',
+    );
     expect(sql).toContain('logged_at     timestamptz    NOT NULL');
-    expect(sql).toContain("source        varchar(20)    NOT NULL DEFAULT 'manual' CHECK (source IN ('manual', 'synced'))");
+    expect(sql).toContain(
+      "source        varchar(20)    NOT NULL DEFAULT 'manual' CHECK (source IN ('manual', 'synced'))",
+    );
     expect(sql).toContain('client_id     varchar(64)');
     expect(sql).toContain('CONSTRAINT uq_weight_logs_user_client_id UNIQUE (user_id, client_id)');
     expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_weight_logs_user_logged');
@@ -39,8 +43,12 @@ describe('Progress & Measurements Migration 0009', () => {
     expect(sql).toContain('hip_cm          numeric(5, 2)  CHECK (hip_cm > 30.0 AND hip_cm < 250.0)');
     expect(sql).toContain('arm_cm          numeric(5, 2)  CHECK (arm_cm > 10.0 AND arm_cm < 100.0)');
     expect(sql).toContain('neck_cm         numeric(5, 2)  CHECK (neck_cm > 15.0 AND neck_cm < 80.0)');
-    expect(sql).toContain('body_fat_pct    numeric(4, 1)  CHECK (body_fat_pct >= 3.0 AND body_fat_pct <= 60.0)');
-    expect(sql).toContain('muscle_mass_kg  numeric(5, 2)  CHECK (muscle_mass_kg >= 10.0 AND muscle_mass_kg <= 200.0)');
+    expect(sql).toContain(
+      'body_fat_pct    numeric(4, 1)  CHECK (body_fat_pct >= 3.0 AND body_fat_pct <= 60.0)',
+    );
+    expect(sql).toContain(
+      'muscle_mass_kg  numeric(5, 2)  CHECK (muscle_mass_kg >= 10.0 AND muscle_mass_kg <= 200.0)',
+    );
     expect(sql).toContain('CONSTRAINT uq_body_measurements_user_client_id UNIQUE (user_id, client_id)');
     expect(sql).toContain('CONSTRAINT chk_at_least_one_measurement CHECK');
   });

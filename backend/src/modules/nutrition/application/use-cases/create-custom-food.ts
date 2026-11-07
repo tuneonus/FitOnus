@@ -40,7 +40,11 @@ export class CreateCustomFoodUseCase {
       throw new AppError('bad_request', 'VALIDATION_FAILED', 'Serving size must be greater than 0');
     }
     if (input.servingWeightG <= 0) {
-      throw new AppError('bad_request', 'VALIDATION_FAILED', 'Serving weight in grams must be greater than 0');
+      throw new AppError(
+        'bad_request',
+        'VALIDATION_FAILED',
+        'Serving weight in grams must be greater than 0',
+      );
     }
     if (input.calories < 0 || input.proteinG < 0 || input.carbohydratesG < 0 || input.fatG < 0) {
       throw new AppError('bad_request', 'VALIDATION_FAILED', 'Nutrient values cannot be negative');

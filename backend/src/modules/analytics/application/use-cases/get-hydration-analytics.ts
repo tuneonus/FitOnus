@@ -52,9 +52,7 @@ export class GetHydrationAnalyticsUseCase {
     const endDateStr = lastBucket.dateStrings[lastBucket.dateStrings.length - 1]!;
 
     const dateSeries = generateDateSeries(startDateStr, endDateStr);
-    const targetMl = input.customTargetMl && input.customTargetMl > 0
-      ? input.customTargetMl
-      : 3000;
+    const targetMl = input.customTargetMl && input.customTargetMl > 0 ? input.customTargetMl : 3000;
 
     const waterLogs = await this.nutritionRepo.getDailyWaterAggregates(
       input.userId,

@@ -31,7 +31,8 @@ export function createChallengesMemberRoutes(
         method: 'get',
         path: '/',
         summary: 'List Active Challenges',
-        description: 'Returns available active challenges with current occurrence, enrollment, and genuine progress.',
+        description:
+          'Returns available active challenges with current occurrence, enrollment, and genuine progress.',
         tags: challengeTags,
         access: { kind: 'authenticated' },
         request: listActiveChallengesRequest,
@@ -42,7 +43,7 @@ export function createChallengesMemberRoutes(
           schema: z.array(activeChallengeItemViewSchema),
         },
         errorStatuses: [400, 401],
-        handler: controller.listActiveChallenges,
+        handler: (req) => controller.listActiveChallenges(req),
       }),
 
       // 2. Challenge History
@@ -61,7 +62,7 @@ export function createChallengesMemberRoutes(
           schema: z.array(activeChallengeItemViewSchema),
         },
         errorStatuses: [400, 401],
-        handler: controller.getChallengeHistory,
+        handler: (req) => controller.getChallengeHistory(req),
       }),
 
       // 3. Enroll Challenge Occurrence
@@ -80,7 +81,7 @@ export function createChallengesMemberRoutes(
           schema: challengeEnrollmentViewSchema,
         },
         errorStatuses: [400, 401, 404, 409],
-        handler: controller.enrollChallenge,
+        handler: (req) => controller.enrollChallenge(req),
       }),
 
       // 4. Get Challenge Progress
@@ -99,7 +100,7 @@ export function createChallengesMemberRoutes(
           schema: challengeEnrollmentViewSchema,
         },
         errorStatuses: [400, 401, 404],
-        handler: controller.getChallengeProgress,
+        handler: (req) => controller.getChallengeProgress(req),
       }),
 
       // 5. Claim Challenge Reward
@@ -118,7 +119,7 @@ export function createChallengesMemberRoutes(
           schema: claimRewardResponseSchema,
         },
         errorStatuses: [400, 401, 404, 409],
-        handler: controller.claimChallengeReward,
+        handler: (req) => controller.claimChallengeReward(req),
       }),
     ],
   };
@@ -146,7 +147,7 @@ export function createGamificationMemberRoutes(
           schema: gamificationProfileViewSchema,
         },
         errorStatuses: [401],
-        handler: controller.getGamificationSummary,
+        handler: (req) => controller.getGamificationSummary(req),
       }),
 
       // 2. List Badges
@@ -164,7 +165,7 @@ export function createGamificationMemberRoutes(
           schema: z.array(badgeViewSchema),
         },
         errorStatuses: [401],
-        handler: controller.listUserBadges,
+        handler: (req) => controller.listUserBadges(req),
       }),
 
       // 3. Points Ledger History
@@ -183,9 +184,8 @@ export function createGamificationMemberRoutes(
           schema: z.array(pointsLedgerViewSchema),
         },
         errorStatuses: [400, 401],
-        handler: controller.getPointsHistory,
+        handler: (req) => controller.getPointsHistory(req),
       }),
     ],
   };
 }
-

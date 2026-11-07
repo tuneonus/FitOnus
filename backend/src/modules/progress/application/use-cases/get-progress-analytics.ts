@@ -3,7 +3,8 @@ import { calculateEma } from '../../domain/ema-calculator.js';
 import { getTimeRangeBuckets, type TimeRange } from '../../domain/calendar-bounds.js';
 import type { IProgressTelemetryPort, IWeightRepository } from '../ports.js';
 
-export type MetricKey = 'weight' | 'calories' | 'sleep' | 'protein' | 'workouts' | 'recovery' | 'steps' | 'water';
+export type MetricKey =
+  'weight' | 'calories' | 'sleep' | 'protein' | 'workouts' | 'recovery' | 'steps' | 'water';
 
 export interface GetProgressAnalyticsInput {
   userId: string;
@@ -141,7 +142,9 @@ export class GetProgressAnalyticsUseCase {
 
       const points = buckets.map((b) => {
         const inBucket = aggregates.filter(
-          (a) => a.date >= b.startDate.toISOString().slice(0, 10) && a.date <= b.endDate.toISOString().slice(0, 10),
+          (a) =>
+            a.date >= b.startDate.toISOString().slice(0, 10) &&
+            a.date <= b.endDate.toISOString().slice(0, 10),
         );
 
         // DATA INTEGRITY: Distinguish missing logs from zero intake!
@@ -184,7 +187,9 @@ export class GetProgressAnalyticsUseCase {
 
       const points = buckets.map((b) => {
         const inBucket = totals.filter(
-          (t) => t.date >= b.startDate.toISOString().slice(0, 10) && t.date <= b.endDate.toISOString().slice(0, 10),
+          (t) =>
+            t.date >= b.startDate.toISOString().slice(0, 10) &&
+            t.date <= b.endDate.toISOString().slice(0, 10),
         );
 
         if (inBucket.length === 0) {
@@ -215,7 +220,7 @@ export class GetProgressAnalyticsUseCase {
       };
     }
 
-    throw new AppError('validation', 'VALIDATION_FAILED', `Unsupported metric: ${input.metric}`);
+    throw new AppError('validation', 'VALIDATION_FAILED', `Unsupported metric: ${String(input.metric)}`);
   }
 }
 

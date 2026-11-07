@@ -50,7 +50,8 @@ export class LogWeightUseCase {
     const startingWeight = summary.startingWeightKg;
 
     // Change from starting weight
-    const changeFromStart = startingWeight !== null ? Math.round((currentWeight - startingWeight) * 10) / 10 : 0;
+    const changeFromStart =
+      startingWeight !== null ? Math.round((currentWeight - startingWeight) * 10) / 10 : 0;
 
     // Change from immediate previous entry
     const allRecent = await this.weightRepo.listForUser(input.userId, { limit: 2 });

@@ -1,6 +1,10 @@
 import type { SqlExecutor } from '../../../database/transaction.js';
 import type { IBodyMeasurementRepository, MeasurementFilter } from '../application/ports.js';
-import { BodyMeasurement, type MeasurementSource } from '../domain/body-measurement.js';
+import {
+  BodyMeasurement,
+  type BodyMeasurementProps,
+  type MeasurementSource,
+} from '../domain/body-measurement.js';
 
 interface MeasurementRow {
   id: string;
@@ -137,7 +141,7 @@ export class PgMeasurementRepository implements IBodyMeasurementRepository {
   async update(
     id: string,
     userId: string,
-    patch: Partial<import('../domain/body-measurement.js').BodyMeasurementProps>,
+    patch: Partial<BodyMeasurementProps>,
   ): Promise<BodyMeasurement | null> {
     const existing = await this.findById(id, userId);
     if (!existing) return null;
@@ -239,7 +243,7 @@ export class PgMeasurementRepository implements IBodyMeasurementRepository {
       SELECT * FROM body_measurements 
       WHERE ${whereClause}
       ORDER BY logged_at DESC, created_at DESC
-      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
+      LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;
     const dataValues = [...values, limit, offset];
 

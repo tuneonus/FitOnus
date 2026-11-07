@@ -44,7 +44,8 @@ export function createNutritionAdminRoutes(
         method: 'get',
         path: '/foods',
         summary: 'Admin List Foods',
-        description: 'Browse nutrition food catalog with filters by data source, verification status, custom status, and query.',
+        description:
+          'Browse nutrition food catalog with filters by data source, verification status, custom status, and query.',
         tags,
         access: { kind: 'permission', permission: 'admin:access' },
         request: adminListFoodsRequest,
@@ -156,4 +157,3 @@ export function createNutritionAdminRoutes(
     ],
   };
 }
-

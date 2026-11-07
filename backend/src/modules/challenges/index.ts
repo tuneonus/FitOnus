@@ -152,10 +152,7 @@ export function createChallengesModule(deps: CreateChallengesModuleOptions): Cha
     telemetryAdapter,
   );
 
-  const evaluationTrigger = new GamificationEvaluationTrigger(
-    evaluateChallengeProgress,
-    evaluateMilestones,
-  );
+  const evaluationTrigger = new GamificationEvaluationTrigger(evaluateChallengeProgress, evaluateMilestones);
 
   const listActiveChallenges = new ListActiveChallengesUseCase(
     challengeRepo,
@@ -164,11 +161,7 @@ export function createChallengesModule(deps: CreateChallengesModuleOptions): Cha
     evaluatorService,
   );
 
-  const enrollChallenge = new EnrollChallengeUseCase(
-    challengeRepo,
-    occurrenceRepo,
-    enrollmentRepo,
-  );
+  const enrollChallenge = new EnrollChallengeUseCase(challengeRepo, occurrenceRepo, enrollmentRepo);
 
   const claimChallengeReward = new ClaimChallengeRewardUseCase(
     challengeRepo,
@@ -178,16 +171,9 @@ export function createChallengesModule(deps: CreateChallengesModuleOptions): Cha
     evaluatorService,
   );
 
-  const getChallengeHistory = new GetChallengeHistoryUseCase(
-    challengeRepo,
-    occurrenceRepo,
-    enrollmentRepo,
-  );
+  const getChallengeHistory = new GetChallengeHistoryUseCase(challengeRepo, occurrenceRepo, enrollmentRepo);
 
-  const listUserBadges = new ListUserBadgesUseCase(
-    badgeRepo,
-    badgeRepo,
-  );
+  const listUserBadges = new ListUserBadgesUseCase(badgeRepo, badgeRepo);
 
   const getGamificationSummary = new GetGamificationSummaryUseCase(
     gamificationRepo,
@@ -198,11 +184,7 @@ export function createChallengesModule(deps: CreateChallengesModuleOptions): Cha
   const getPointsHistory = new GetPointsHistoryUseCase(gamificationRepo);
 
   const adminCreateChallenge = new AdminCreateChallengeUseCase(challengeRepo);
-  const adminUpdateChallenge = new AdminUpdateChallengeUseCase(
-    challengeRepo,
-    occurrenceRepo,
-    enrollmentRepo,
-  );
+  const adminUpdateChallenge = new AdminUpdateChallengeUseCase(challengeRepo, occurrenceRepo, enrollmentRepo);
   const adminPublishChallenge = new AdminPublishChallengeUseCase(challengeRepo);
   const adminArchiveChallenge = new AdminArchiveChallengeUseCase(challengeRepo);
   const adminListChallenges = new AdminListChallengesUseCase(challengeRepo);
@@ -228,9 +210,12 @@ export function createChallengesModule(deps: CreateChallengesModuleOptions): Cha
     adminArchiveChallenge,
   });
 
-  const memberBasePath = deps.memberBasePath ?? (deps.basePath ? `${deps.basePath}/challenges` : '/api/v1/challenges');
-  const gamificationBasePath = deps.gamificationBasePath ?? (deps.basePath ? `${deps.basePath}/gamification` : '/api/v1/gamification');
-  const adminBasePath = deps.adminBasePath ?? (deps.basePath ? `${deps.basePath}/admin/challenges` : '/api/v1/admin/challenges');
+  const memberBasePath =
+    deps.memberBasePath ?? (deps.basePath ? `${deps.basePath}/challenges` : '/api/v1/challenges');
+  const gamificationBasePath =
+    deps.gamificationBasePath ?? (deps.basePath ? `${deps.basePath}/gamification` : '/api/v1/gamification');
+  const adminBasePath =
+    deps.adminBasePath ?? (deps.basePath ? `${deps.basePath}/admin/challenges` : '/api/v1/admin/challenges');
 
   const memberChallengesRoutes = createChallengesMemberRoutes(memberBasePath, memberController);
   const memberGamificationRoutes = createGamificationMemberRoutes(gamificationBasePath, memberController);

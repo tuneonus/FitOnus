@@ -1,10 +1,6 @@
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type { IMealRepository, IUserProfileTargetPort } from '../ports.js';
-import type {
-  DailyTrendPoint,
-  MacroSplitView,
-  NutritionAnalyticsView,
-} from '../nutrition-view.js';
+import type { DailyTrendPoint, MacroSplitView, NutritionAnalyticsView } from '../nutrition-view.js';
 
 export interface GetNutritionAnalyticsInput {
   userId: string;
@@ -100,10 +96,8 @@ export class GetNutritionAnalyticsUseCase {
     }
 
     const loggedDaysCount = loggedDates.size;
-    const avgCalories =
-      loggedDaysCount > 0 ? Math.round((totalCaloriesAll / loggedDaysCount) * 10) / 10 : 0;
-    const avgProtein =
-      loggedDaysCount > 0 ? Math.round((totalProteinAll / loggedDaysCount) * 10) / 10 : 0;
+    const avgCalories = loggedDaysCount > 0 ? Math.round((totalCaloriesAll / loggedDaysCount) * 10) / 10 : 0;
+    const avgProtein = loggedDaysCount > 0 ? Math.round((totalProteinAll / loggedDaysCount) * 10) / 10 : 0;
 
     const caloriesTrend: DailyTrendPoint[] = [];
     const proteinTrend: DailyTrendPoint[] = [];
@@ -161,4 +155,3 @@ export class GetNutritionAnalyticsUseCase {
     };
   }
 }
-

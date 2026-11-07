@@ -195,7 +195,7 @@ export class PgWeightRepository implements IWeightRepository {
       SELECT * FROM weight_logs 
       WHERE ${whereClause}
       ORDER BY logged_at DESC, created_at DESC
-      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
+      LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;
     const dataValues = [...values, limit, offset];
 
@@ -269,10 +269,10 @@ export class PgWeightRepository implements IWeightRepository {
       FROM weight_logs 
       WHERE user_id = $1 AND deleted_at IS NULL;
     `;
-    const fallbackRes = await this.db.query<{ latest_logged_at: Date | null; total_logs_count: number | string }>(
-      fallbackQuery,
-      [userId],
-    );
+    const fallbackRes = await this.db.query<{
+      latest_logged_at: Date | null;
+      total_logs_count: number | string;
+    }>(fallbackQuery, [userId]);
     const fb = fallbackRes.rows[0];
     return {
       currentWeightKg: null,

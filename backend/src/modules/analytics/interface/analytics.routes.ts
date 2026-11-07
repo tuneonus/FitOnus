@@ -27,10 +27,7 @@ import {
 
 const analyticsTags = ['Analytics'];
 
-export function createAnalyticsRoutes(
-  basePath: string,
-  controller: AnalyticsController,
-): RouteGroup {
+export function createAnalyticsRoutes(basePath: string, controller: AnalyticsController): RouteGroup {
   return {
     basePath,
     routes: [
@@ -77,7 +74,8 @@ export function createAnalyticsRoutes(
         method: 'get',
         path: '/workouts/exercises/:exerciseId',
         summary: 'Get Exercise Progression',
-        description: 'Returns exercise strength progression curve (e1RM, top weight, volume) and personal records.',
+        description:
+          'Returns exercise strength progression curve (e1RM, top weight, volume) and personal records.',
         tags: analyticsTags,
         access: { kind: 'authenticated' },
         request: getExerciseProgressionRequest,
@@ -169,4 +167,3 @@ export function createAnalyticsRoutes(
     ],
   };
 }
-

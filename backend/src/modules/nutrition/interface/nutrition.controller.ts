@@ -205,11 +205,7 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
     listFavorites: async (req: Request): Promise<RouteResult<FoodView[]>> => {
       const actor = requireActor(req);
       const { query } = getValidated(req, listFavoritesRequest);
-      const res = await useCases.manageFoodFavorites.listFavorites(
-        actor.userId,
-        query.page,
-        query.limit,
-      );
+      const res = await useCases.manageFoodFavorites.listFavorites(actor.userId, query.page, query.limit);
       return {
         data: res.foods,
         message: 'Favorite foods retrieved successfully',
@@ -222,9 +218,7 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
       };
     },
 
-    addFavorite: async (
-      req: Request,
-    ): Promise<RouteResult<{ foodId: string; isFavorite: boolean }>> => {
+    addFavorite: async (req: Request): Promise<RouteResult<{ foodId: string; isFavorite: boolean }>> => {
       const actor = requireActor(req);
       const { body } = getValidated(req, addFavoriteRequest);
       await useCases.manageFoodFavorites.addFavorite(actor.userId, body.foodId);
@@ -246,4 +240,3 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
     },
   };
 }
-

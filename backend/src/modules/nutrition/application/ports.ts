@@ -68,7 +68,11 @@ export interface IWaterRepository {
   create(entry: WaterIntake): Promise<{ entry: WaterIntake; created: boolean }>;
   listByDate(userId: string, date: string): Promise<WaterIntake[]>;
   getTotalByDate(userId: string, date: string): Promise<number>;
-  getTotalDateRange(userId: string, startDate: string, endDate: string): Promise<{ date: string; totalMl: number }[]>;
+  getTotalDateRange(
+    userId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<{ date: string; totalMl: number }[]>;
 }
 
 export interface UserProfileNutritionTargets {
@@ -86,4 +90,3 @@ export interface IFoodFavoriteRepository {
   isFavorite(userId: string, foodId: string): Promise<boolean>;
   listFavoriteFoodIds(userId: string): Promise<string[]>;
 }
-

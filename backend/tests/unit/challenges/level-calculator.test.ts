@@ -170,4 +170,3 @@ describe('Level Calculator (Deterministic V1 Thresholds)', () => {
     });
   });
 });
-

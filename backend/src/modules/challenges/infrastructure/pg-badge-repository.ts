@@ -61,19 +61,15 @@ export class PgBadgeRepository implements IBadgeRepository, IUserBadgeRepository
   constructor(private readonly db: SqlExecutor) {}
 
   async findById(id: string): Promise<Badge | null> {
-    const res = await this.db.query<BadgeRow>(
-      `SELECT * FROM badges WHERE id = $1 LIMIT 1`,
-      [id],
-    );
+    const res = await this.db.query<BadgeRow>(`SELECT * FROM badges WHERE id = $1 LIMIT 1`, [id]);
     const row = res.rows[0];
     return row ? toDomainBadge(row) : null;
   }
 
   async findBySlug(slug: string): Promise<Badge | null> {
-    const res = await this.db.query<BadgeRow>(
-      `SELECT * FROM badges WHERE slug = $1 LIMIT 1`,
-      [slug.trim().toLowerCase()],
-    );
+    const res = await this.db.query<BadgeRow>(`SELECT * FROM badges WHERE slug = $1 LIMIT 1`, [
+      slug.trim().toLowerCase(),
+    ]);
     const row = res.rows[0];
     return row ? toDomainBadge(row) : null;
   }
@@ -155,4 +151,3 @@ export class PgBadgeRepository implements IBadgeRepository, IUserBadgeRepository
     return res.rows.length > 0;
   }
 }
-

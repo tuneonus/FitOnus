@@ -60,9 +60,7 @@ export class GetWeightHistoryUseCase {
 
     for (const b of buckets) {
       // Find logs falling within this bucket (chronologically)
-      const inBucket = rangeLogsRes.logs.filter(
-        (l) => l.loggedAt >= b.startDate && l.loggedAt <= b.endDate,
-      );
+      const inBucket = rangeLogsRes.logs.filter((l) => l.loggedAt >= b.startDate && l.loggedAt <= b.endDate);
 
       if (inBucket.length > 0) {
         // Latest log in bucket

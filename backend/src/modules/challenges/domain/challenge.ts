@@ -91,4 +91,3 @@ export class Challenge {
     return this.cadence === 'daily' || this.cadence === 'weekly' || this.cadence === 'monthly';
   }
 }
-

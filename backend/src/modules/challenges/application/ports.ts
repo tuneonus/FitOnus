@@ -91,4 +91,3 @@ export interface ClaimRewardTransactionResult {
 export interface IGamificationRewardPort {
   executeAtomicRewardClaim(input: ClaimRewardTransactionInput): Promise<ClaimRewardTransactionResult>;
 }
-

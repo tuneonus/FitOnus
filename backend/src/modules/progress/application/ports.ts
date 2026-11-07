@@ -1,5 +1,5 @@
-import type { WeightLog } from '../domain/weight-log.js';
-import type { BodyMeasurement } from '../domain/body-measurement.js';
+import type { WeightLog, WeightSource } from '../domain/weight-log.js';
+import type { BodyMeasurement, BodyMeasurementProps } from '../domain/body-measurement.js';
 
 export interface WeightFilter {
   startDate?: Date;
@@ -22,7 +22,7 @@ export interface IWeightRepository {
   update(
     id: string,
     userId: string,
-    patch: { weightKg?: number; loggedAt?: Date; notes?: string | null; source?: import('../domain/weight-log.js').WeightSource },
+    patch: { weightKg?: number; loggedAt?: Date; notes?: string | null; source?: WeightSource },
   ): Promise<WeightLog | null>;
   findById(id: string, userId: string): Promise<WeightLog | null>;
   findByClientId(clientId: string, userId: string): Promise<WeightLog | null>;
@@ -44,14 +44,13 @@ export interface MeasurementFilter {
 
 export interface IBodyMeasurementRepository {
   save(measurement: BodyMeasurement): Promise<{ measurement: BodyMeasurement; isNew: boolean }>;
-  update(
-    id: string,
-    userId: string,
-    patch: Partial<import('../domain/body-measurement.js').BodyMeasurementProps>,
-  ): Promise<BodyMeasurement | null>;
+  update(id: string, userId: string, patch: Partial<BodyMeasurementProps>): Promise<BodyMeasurement | null>;
   findById(id: string, userId: string): Promise<BodyMeasurement | null>;
   findByClientId(clientId: string, userId: string): Promise<BodyMeasurement | null>;
-  listForUser(userId: string, filter?: MeasurementFilter): Promise<{ measurements: BodyMeasurement[]; total: number }>;
+  listForUser(
+    userId: string,
+    filter?: MeasurementFilter,
+  ): Promise<{ measurements: BodyMeasurement[]; total: number }>;
   getLatestForUser(userId: string): Promise<BodyMeasurement | null>;
   softDelete(id: string, userId: string): Promise<boolean>;
 }
@@ -97,8 +96,15 @@ export interface PersonalRecordItem {
 export interface IProgressTelemetryPort {
   getProfileGoals(userId: string): Promise<UserProfileProgressGoals | null>;
   getWorkoutSessions(userId: string, startDate: Date, endDate: Date): Promise<WorkoutSessionSummary[]>;
-  getNutritionAggregates(userId: string, startDate: string, endDate: string): Promise<DailyNutritionAggregate[]>;
-  getWaterTotals(userId: string, startDate: string, endDate: string): Promise<{ date: string; totalMl: number }[]>;
+  getNutritionAggregates(
+    userId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<DailyNutritionAggregate[]>;
+  getWaterTotals(
+    userId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<{ date: string; totalMl: number }[]>;
   getPersonalRecords(userId: string): Promise<PersonalRecordItem[]>;
 }
-

@@ -47,7 +47,9 @@ export function toGoalView(goal: Goal, options?: { history?: number[]; hitDays?:
     targetDate: goal.targetDate,
     completedOn: goal.completedAt ? goal.completedAt.toISOString().slice(0, 10) : null,
     hitDays: options?.hitDays,
-    history: options?.history ?? (goal.cadence === 'once' ? [goal.startValue, goal.currentValue] : [goal.currentValue]),
+    history:
+      options?.history ??
+      (goal.cadence === 'once' ? [goal.startValue, goal.currentValue] : [goal.currentValue]),
     createdAt: goal.createdAt.toISOString(),
     updatedAt: goal.updatedAt.toISOString(),
   };

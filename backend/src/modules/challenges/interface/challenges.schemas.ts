@@ -242,4 +242,3 @@ export const adminPublishChallengeRequest = {
 export const adminArchiveChallengeRequest = {
   params: challengeIdParam,
 };
-

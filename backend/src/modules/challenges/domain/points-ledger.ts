@@ -1,9 +1,5 @@
 export type PointSourceType =
-  | 'challenge'
-  | 'badge'
-  | 'habit_streak'
-  | 'workout_milestone'
-  | 'admin_adjustment';
+  'challenge' | 'badge' | 'habit_streak' | 'workout_milestone' | 'admin_adjustment';
 
 export interface PointsLedgerEntryProps {
   id: string;
@@ -39,4 +35,3 @@ export class PointsLedgerEntry {
     this.createdAt = props.createdAt;
   }
 }
-

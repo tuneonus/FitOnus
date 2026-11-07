@@ -6,15 +6,9 @@
  */
 
 import { AppError } from '../../../../shared/errors/app-error.js';
-import {
-  createCalendarBuckets,
-  validateTimezone,
-} from '../../domain/analytics-period.js';
+import { createCalendarBuckets, validateTimezone } from '../../domain/analytics-period.js';
 import { summarizeWorkoutAnalytics } from '../../domain/workout-metrics.js';
-import type {
-  IAnalyticsWorkoutRepository,
-  IAnalyticsBodyRepository,
-} from '../ports.js';
+import type { IAnalyticsWorkoutRepository, IAnalyticsBodyRepository } from '../ports.js';
 import type { WorkoutAnalyticsView } from '../dtos.js';
 import { normalizeAnalyticsRange, parseReferenceDate } from '../period-helper.js';
 

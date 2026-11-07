@@ -118,4 +118,3 @@ export class ChallengeEnrollment {
     this._updatedAt = claimedAt;
   }
 }
-

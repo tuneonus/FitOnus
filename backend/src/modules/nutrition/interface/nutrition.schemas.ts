@@ -250,7 +250,10 @@ export const updateMealRequest = {
   }),
   body: z.object({
     mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'snacks']).optional(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD').optional(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+      .optional(),
     notes: z.string().trim().max(500).nullable().optional(),
     items: z.array(logMealItemInputSchema).min(1).optional(),
   }),
@@ -274,7 +277,10 @@ export const logWaterRequest = {
 export const getNutritionAnalyticsRequest = {
   query: z.object({
     range: z.enum(['week', 'month']).default('week'),
-    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD').optional(),
+    endDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+      .optional(),
   }),
 };
 
@@ -296,4 +302,3 @@ export const removeFavoriteRequest = {
     foodId: z.string().uuid(),
   }),
 };
-

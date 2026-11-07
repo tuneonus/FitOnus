@@ -280,4 +280,3 @@ describe('Challenges PostgreSQL Repositories & Concurrency Guarantees', () => {
     });
   });
 });
-

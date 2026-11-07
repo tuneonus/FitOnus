@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDailyStreak, calculateWeeklyStreak } from '../../../src/modules/goals/domain/streak-calculator.js';
+import {
+  calculateDailyStreak,
+  calculateWeeklyStreak,
+} from '../../../src/modules/goals/domain/streak-calculator.js';
 
 describe('StreakCalculator (Habit & Activity Streaks)', () => {
   describe('Daily Streak Calculations', () => {
@@ -39,13 +42,20 @@ describe('StreakCalculator (Habit & Activity Streaks)', () => {
     it('accurately identifies longest historical streak with gaps', () => {
       const dates = [
         // Run of 5 days
-        '2026-10-10', '2026-10-11', '2026-10-12', '2026-10-13', '2026-10-14',
+        '2026-10-10',
+        '2026-10-11',
+        '2026-10-12',
+        '2026-10-13',
+        '2026-10-14',
         // Gap of 3 days
         // Run of 2 days
-        '2026-10-18', '2026-10-19',
+        '2026-10-18',
+        '2026-10-19',
         // Gap of 10 days
         // Current run of 3 days
-        '2026-11-04', '2026-11-05', '2026-11-06',
+        '2026-11-04',
+        '2026-11-05',
+        '2026-11-06',
       ];
       const result = calculateDailyStreak(dates, today);
       expect(result.currentStreak).toBe(3);
@@ -70,10 +80,7 @@ describe('StreakCalculator (Habit & Activity Streaks)', () => {
       // Target: 3 days/week
       // W44 (Oct 26 - Nov 01): 3 days hit (Oct 27, 28, 30)
       // W45 (Nov 02 - Nov 08): 3 days hit (Nov 02, 04, 06)
-      const dates = [
-        '2026-10-27', '2026-10-28', '2026-10-30',
-        '2026-11-02', '2026-11-04', '2026-11-06',
-      ];
+      const dates = ['2026-10-27', '2026-10-28', '2026-10-30', '2026-11-02', '2026-11-04', '2026-11-06'];
       const result = calculateWeeklyStreak(dates, 3, today);
       expect(result.currentStreak).toBe(2);
       expect(result.longestStreak).toBe(2);
@@ -84,10 +91,7 @@ describe('StreakCalculator (Habit & Activity Streaks)', () => {
       // Target: 4 days/week
       // W44: 4 days hit (qualified)
       // W45: 2 days hit so far (still in progress)
-      const dates = [
-        '2026-10-26', '2026-10-27', '2026-10-29', '2026-10-31',
-        '2026-11-03', '2026-11-05',
-      ];
+      const dates = ['2026-10-26', '2026-10-27', '2026-10-29', '2026-10-31', '2026-11-03', '2026-11-05'];
       const result = calculateWeeklyStreak(dates, 4, today);
       expect(result.currentStreak).toBe(1);
     });
@@ -96,11 +100,7 @@ describe('StreakCalculator (Habit & Activity Streaks)', () => {
       // W43: 4 days (qualified)
       // W44: 1 day (failed target of 3)
       // W45: 1 day so far
-      const dates = [
-        '2026-10-19', '2026-10-21', '2026-10-23', '2026-10-24',
-        '2026-10-28',
-        '2026-11-04',
-      ];
+      const dates = ['2026-10-19', '2026-10-21', '2026-10-23', '2026-10-24', '2026-10-28', '2026-11-04'];
       const result = calculateWeeklyStreak(dates, 3, today);
       expect(result.currentStreak).toBe(0);
       expect(result.longestStreak).toBe(1);

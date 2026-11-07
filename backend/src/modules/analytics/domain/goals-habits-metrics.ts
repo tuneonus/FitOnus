@@ -72,10 +72,7 @@ export function calculateScheduledDays(
 /**
  * Calculates habit completion rate (% of scheduled opportunities fulfilled).
  */
-export function calculateHabitCompletionRate(
-  completionsCount: number,
-  scheduledDays: number,
-): number {
+export function calculateHabitCompletionRate(completionsCount: number, scheduledDays: number): number {
   if (scheduledDays <= 0 || completionsCount <= 0) return 0;
   const rate = (completionsCount / scheduledDays) * 100;
   return Math.min(100, Math.round(rate * 10) / 10);
@@ -84,9 +81,7 @@ export function calculateHabitCompletionRate(
 /**
  * Calculates aggregate goal completion statistics.
  */
-export function calculateGoalStats(
-  goals: readonly RawGoalRecord[],
-): {
+export function calculateGoalStats(goals: readonly RawGoalRecord[]): {
   totalGoals: number;
   active: number;
   completed: number;
@@ -178,4 +173,3 @@ export function summarizeGoalsHabitsAnalytics(
     consistencyHeatmap,
   };
 }
-

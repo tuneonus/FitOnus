@@ -1,5 +1,9 @@
 import { badRequest, notFound } from '../errors.js';
-import { calculateDailyStreak, calculateWeeklyStreak, type StreakResult } from '../../domain/streak-calculator.js';
+import {
+  calculateDailyStreak,
+  calculateWeeklyStreak,
+  type StreakResult,
+} from '../../domain/streak-calculator.js';
 import type { IHabitRepository } from '../ports.js';
 
 export interface CalculateHabitStreaksInput {

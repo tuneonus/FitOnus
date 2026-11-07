@@ -150,38 +150,49 @@ describe('Challenges & Gamification HTTP API', () => {
     createdAt: '2026-11-06T12:30:00.000Z',
   };
 
-  function createTestApp(options: {
-    memberOverrides?: Partial<ChallengesMemberUseCases>;
-    adminOverrides?: Partial<ChallengesAdminUseCases>;
-    authenticated?: boolean;
-    role?: 'member' | 'admin';
-  } = {}) {
-    const {
-      memberOverrides = {},
-      adminOverrides = {},
-      authenticated = true,
-      role = 'member',
-    } = options;
+  function createTestApp(
+    options: {
+      memberOverrides?: Partial<ChallengesMemberUseCases>;
+      adminOverrides?: Partial<ChallengesAdminUseCases>;
+      authenticated?: boolean;
+      role?: 'member' | 'admin';
+    } = {},
+  ) {
+    const { memberOverrides = {}, adminOverrides = {}, authenticated = true, role = 'member' } = options;
 
     const memberUseCases: ChallengesMemberUseCases = {
-      listActiveChallenges: { execute: vi.fn().mockResolvedValue({ challenges: [sampleActiveChallengeItem] }) } as any,
-      getChallengeHistory: { execute: vi.fn().mockResolvedValue({ history: [sampleActiveChallengeItem] }) } as any,
+      listActiveChallenges: {
+        execute: vi.fn().mockResolvedValue({ challenges: [sampleActiveChallengeItem] }),
+      } as any,
+      getChallengeHistory: {
+        execute: vi.fn().mockResolvedValue({ history: [sampleActiveChallengeItem] }),
+      } as any,
       enrollChallenge: { execute: vi.fn().mockResolvedValue({ enrollment: sampleEnrollmentView }) } as any,
-      evaluateChallengeProgress: { execute: vi.fn().mockResolvedValue({ enrollments: [sampleEnrollmentView] }) } as any,
+      evaluateChallengeProgress: {
+        execute: vi.fn().mockResolvedValue({ enrollments: [sampleEnrollmentView] }),
+      } as any,
       claimChallengeReward: { execute: vi.fn().mockResolvedValue(sampleClaimResult) } as any,
-      getGamificationSummary: { execute: vi.fn().mockResolvedValue({ profile: sampleGamificationProfileView }) } as any,
+      getGamificationSummary: {
+        execute: vi.fn().mockResolvedValue({ profile: sampleGamificationProfileView }),
+      } as any,
       listUserBadges: { execute: vi.fn().mockResolvedValue({ badges: [sampleBadgeView] }) } as any,
       getPointsHistory: { execute: vi.fn().mockResolvedValue({ points: [samplePointsLedgerView] }) } as any,
       ...memberOverrides,
     };
 
     const adminUseCases: ChallengesAdminUseCases = {
-      adminListChallenges: { execute: vi.fn().mockResolvedValue({ challenges: [sampleChallengeView] }) } as any,
+      adminListChallenges: {
+        execute: vi.fn().mockResolvedValue({ challenges: [sampleChallengeView] }),
+      } as any,
       adminGetChallenge: { execute: vi.fn().mockResolvedValue({ challenge: sampleChallengeView }) } as any,
       adminCreateChallenge: { execute: vi.fn().mockResolvedValue({ challenge: sampleChallengeView }) } as any,
       adminUpdateChallenge: { execute: vi.fn().mockResolvedValue({ challenge: sampleChallengeView }) } as any,
-      adminPublishChallenge: { execute: vi.fn().mockResolvedValue({ challenge: sampleChallengeView }) } as any,
-      adminArchiveChallenge: { execute: vi.fn().mockResolvedValue({ challenge: sampleChallengeView }) } as any,
+      adminPublishChallenge: {
+        execute: vi.fn().mockResolvedValue({ challenge: sampleChallengeView }),
+      } as any,
+      adminArchiveChallenge: {
+        execute: vi.fn().mockResolvedValue({ challenge: sampleChallengeView }),
+      } as any,
       ...adminOverrides,
     };
 
@@ -205,7 +216,10 @@ describe('Challenges & Gamification HTTP API', () => {
     };
 
     app.use(memberChallengesRoutes.basePath, buildRouter(memberChallengesRoutes.routes, { authenticate }));
-    app.use(memberGamificationRoutes.basePath, buildRouter(memberGamificationRoutes.routes, { authenticate }));
+    app.use(
+      memberGamificationRoutes.basePath,
+      buildRouter(memberGamificationRoutes.routes, { authenticate }),
+    );
     app.use(adminChallengesRoutes.basePath, buildRouter(adminChallengesRoutes.routes, { authenticate }));
 
     app.use(notFoundHandler);
@@ -328,9 +342,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('GET /api/v1/challenges returns active challenges list with 200', async () => {
       const { app, memberUseCases } = createTestApp();
 
-      const res = await request(app)
-        .get('/api/v1/challenges')
-        .query({ timezone: 'America/New_York' });
+      const res = await request(app).get('/api/v1/challenges').query({ timezone: 'America/New_York' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -346,9 +358,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('GET /api/v1/challenges/history returns challenge history with 200', async () => {
       const { app, memberUseCases } = createTestApp();
 
-      const res = await request(app)
-        .get('/api/v1/challenges/history')
-        .query({ status: 'completed' });
+      const res = await request(app).get('/api/v1/challenges/history').query({ status: 'completed' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -362,9 +372,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('GET /api/v1/challenges/history returns 400 on invalid status enum', async () => {
       const { app } = createTestApp();
 
-      const res = await request(app)
-        .get('/api/v1/challenges/history')
-        .query({ status: 'invalid_status' });
+      const res = await request(app).get('/api/v1/challenges/history').query({ status: 'invalid_status' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -374,8 +382,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('POST /api/v1/challenges/:occurrenceId/enroll enrolls member with 201', async () => {
       const { app, memberUseCases } = createTestApp();
 
-      const res = await request(app)
-        .post(`/api/v1/challenges/${occurrenceId}/enroll`);
+      const res = await request(app).post(`/api/v1/challenges/${occurrenceId}/enroll`);
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -390,8 +397,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('POST /api/v1/challenges/:occurrenceId/enroll returns 400 on non-UUID occurrenceId', async () => {
       const { app } = createTestApp();
 
-      const res = await request(app)
-        .post('/api/v1/challenges/not-a-uuid/enroll');
+      const res = await request(app).post('/api/v1/challenges/not-a-uuid/enroll');
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -407,8 +413,7 @@ describe('Challenges & Gamification HTTP API', () => {
         },
       });
 
-      const res = await request(app)
-        .post(`/api/v1/challenges/${occurrenceId}/enroll`);
+      const res = await request(app).post(`/api/v1/challenges/${occurrenceId}/enroll`);
 
       expect(res.status).toBe(409);
       expect(res.body.success).toBe(false);
@@ -424,8 +429,7 @@ describe('Challenges & Gamification HTTP API', () => {
         },
       });
 
-      const res = await request(app)
-        .post(`/api/v1/challenges/${occurrenceId}/enroll`);
+      const res = await request(app).post(`/api/v1/challenges/${occurrenceId}/enroll`);
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
@@ -435,8 +439,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('GET /api/v1/challenges/:occurrenceId/progress returns evaluated progress with 200', async () => {
       const { app, memberUseCases } = createTestApp();
 
-      const res = await request(app)
-        .get(`/api/v1/challenges/${occurrenceId}/progress`);
+      const res = await request(app).get(`/api/v1/challenges/${occurrenceId}/progress`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -457,8 +460,7 @@ describe('Challenges & Gamification HTTP API', () => {
         },
       });
 
-      const res = await request(app)
-        .get(`/api/v1/challenges/${occurrenceId}/progress`);
+      const res = await request(app).get(`/api/v1/challenges/${occurrenceId}/progress`);
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
@@ -468,8 +470,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('POST /api/v1/challenges/:occurrenceId/claim claims reward with 200', async () => {
       const { app, memberUseCases } = createTestApp();
 
-      const res = await request(app)
-        .post(`/api/v1/challenges/${occurrenceId}/claim`);
+      const res = await request(app).post(`/api/v1/challenges/${occurrenceId}/claim`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -492,8 +493,7 @@ describe('Challenges & Gamification HTTP API', () => {
         },
       });
 
-      const res = await request(app)
-        .post(`/api/v1/challenges/${occurrenceId}/claim`);
+      const res = await request(app).post(`/api/v1/challenges/${occurrenceId}/claim`);
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -509,8 +509,7 @@ describe('Challenges & Gamification HTTP API', () => {
         },
       });
 
-      const res = await request(app)
-        .post(`/api/v1/challenges/${occurrenceId}/claim`);
+      const res = await request(app).post(`/api/v1/challenges/${occurrenceId}/claim`);
 
       expect(res.status).toBe(409);
       expect(res.body.success).toBe(false);
@@ -554,9 +553,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('GET /api/v1/gamification/points/history returns points history with 200', async () => {
       const { app, memberUseCases } = createTestApp();
 
-      const res = await request(app)
-        .get('/api/v1/gamification/points/history')
-        .query({ limit: 20 });
+      const res = await request(app).get('/api/v1/gamification/points/history').query({ limit: 20 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -572,9 +569,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('GET /api/v1/gamification/points/history returns 400 on non-positive limit', async () => {
       const { app } = createTestApp();
 
-      const res = await request(app)
-        .get('/api/v1/gamification/points/history')
-        .query({ limit: -5 });
+      const res = await request(app).get('/api/v1/gamification/points/history').query({ limit: -5 });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -606,9 +601,7 @@ describe('Challenges & Gamification HTTP API', () => {
     it('GET /api/v1/admin/challenges returns 400 on invalid cadence query filter', async () => {
       const { app } = createTestApp({ authenticated: true, role: 'admin' });
 
-      const res = await request(app)
-        .get('/api/v1/admin/challenges')
-        .query({ cadence: 'hourly' });
+      const res = await request(app).get('/api/v1/admin/challenges').query({ cadence: 'hourly' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -618,22 +611,20 @@ describe('Challenges & Gamification HTTP API', () => {
     it('POST /api/v1/admin/challenges creates a challenge with 201', async () => {
       const { app, adminUseCases } = createTestApp({ authenticated: true, role: 'admin' });
 
-      const res = await request(app)
-        .post('/api/v1/admin/challenges')
-        .send({
-          slug: 'weekly-run-50k',
-          title: '50km Weekly Mileage',
-          description: 'Log 50 kilometers of outdoor running in a week',
-          cadence: 'weekly',
-          category: 'workout',
-          metricType: 'workout_count',
-          targetValue: 5,
-          rewardPoints: 200,
-          rewardBadgeId: badgeId,
-          autoEnroll: false,
-          iconName: 'run',
-          bannerColor: '#4CAF50',
-        });
+      const res = await request(app).post('/api/v1/admin/challenges').send({
+        slug: 'weekly-run-50k',
+        title: '50km Weekly Mileage',
+        description: 'Log 50 kilometers of outdoor running in a week',
+        cadence: 'weekly',
+        category: 'workout',
+        metricType: 'workout_count',
+        targetValue: 5,
+        rewardPoints: 200,
+        rewardBadgeId: badgeId,
+        autoEnroll: false,
+        iconName: 'run',
+        bannerColor: '#4CAF50',
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -645,18 +636,16 @@ describe('Challenges & Gamification HTTP API', () => {
     it('POST /api/v1/admin/challenges returns 400 when targetValue <= 0', async () => {
       const { app } = createTestApp({ authenticated: true, role: 'admin' });
 
-      const res = await request(app)
-        .post('/api/v1/admin/challenges')
-        .send({
-          slug: 'zero-target',
-          title: 'Zero Target Challenge',
-          description: 'Invalid challenge target',
-          cadence: 'weekly',
-          category: 'workout',
-          metricType: 'workout_count',
-          targetValue: 0,
-          rewardPoints: 100,
-        });
+      const res = await request(app).post('/api/v1/admin/challenges').send({
+        slug: 'zero-target',
+        title: 'Zero Target Challenge',
+        description: 'Invalid challenge target',
+        cadence: 'weekly',
+        category: 'workout',
+        metricType: 'workout_count',
+        targetValue: 0,
+        rewardPoints: 100,
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -666,18 +655,16 @@ describe('Challenges & Gamification HTTP API', () => {
     it('POST /api/v1/admin/challenges returns 400 on invalid metricType', async () => {
       const { app } = createTestApp({ authenticated: true, role: 'admin' });
 
-      const res = await request(app)
-        .post('/api/v1/admin/challenges')
-        .send({
-          slug: 'bad-metric',
-          title: 'Bad Metric',
-          description: 'Invalid metric type',
-          cadence: 'weekly',
-          category: 'workout',
-          metricType: 'swimming_laps',
-          targetValue: 10,
-          rewardPoints: 50,
-        });
+      const res = await request(app).post('/api/v1/admin/challenges').send({
+        slug: 'bad-metric',
+        title: 'Bad Metric',
+        description: 'Invalid metric type',
+        cadence: 'weekly',
+        category: 'workout',
+        metricType: 'swimming_laps',
+        targetValue: 10,
+        rewardPoints: 50,
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -735,13 +722,15 @@ describe('Challenges & Gamification HTTP API', () => {
         role: 'admin',
         adminOverrides: {
           adminUpdateChallenge: {
-            execute: vi.fn().mockRejectedValue(
-              new AppError(
-                'conflict',
-                'CONFLICT',
-                'Cannot modify metricType or targetValue for a challenge with active enrollments.',
+            execute: vi
+              .fn()
+              .mockRejectedValue(
+                new AppError(
+                  'conflict',
+                  'CONFLICT',
+                  'Cannot modify metricType or targetValue for a challenge with active enrollments.',
+                ),
               ),
-            ),
           } as any,
         },
       });

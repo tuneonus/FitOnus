@@ -89,4 +89,3 @@ export class AdminUpdateChallengeUseCase {
     return { challenge: toChallengeView(updated) };
   }
 }
-

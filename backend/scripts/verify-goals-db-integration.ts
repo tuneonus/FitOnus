@@ -66,7 +66,9 @@ async function main() {
   }
 
   if (currentBranch !== APPROVED_BRANCH_ID) {
-    throw new Error(`FATAL: Branch ${currentBranch} does not match APPROVED DEVELOPMENT BRANCH ${APPROVED_BRANCH_ID}! ABORTING.`);
+    throw new Error(
+      `FATAL: Branch ${currentBranch} does not match APPROVED DEVELOPMENT BRANCH ${APPROVED_BRANCH_ID}! ABORTING.`,
+    );
   }
 
   const goalRepo = new PgGoalRepository(db);
@@ -96,11 +98,14 @@ async function main() {
 
   try {
     console.log('-> Creating isolated test users on Neon development database...');
-    await pool.query(`
+    await pool.query(
+      `
       INSERT INTO users (id, email, display_name, password_hash, role) VALUES
       ($1, $2, 'Goals Tester 1', 'dummyhash', 'member'),
       ($3, $4, 'Goals Tester 2', 'dummyhash', 'member');
-    `, [user1Id, user1Email, user2Id, user2Email]);
+    `,
+      [user1Id, user1Email, user2Id, user2Email],
+    );
 
     console.log(`✓ Test users created: User 1 (${user1Id}), User 2 (${user2Id})\n`);
 
@@ -149,7 +154,10 @@ async function main() {
         await getGoalDetails.execute({ id: createdGoalId, userId: user2Id });
       } catch (err: any) {
         threw = true;
-        assert(err.message.includes('NOT_FOUND') || err.message.includes('not found'), 'Must throw not found');
+        assert(
+          err.message.includes('NOT_FOUND') || err.message.includes('not found'),
+          'Must throw not found',
+        );
       }
       assert(threw, 'User 2 must be blocked from reading User 1 goal');
     });
@@ -171,11 +179,14 @@ async function main() {
       assert(details.goal.progress === 0.5, 'Expected 50% progress for 85kg');
 
       // Query raw database to verify persistence in goal_checkpoints
-      const checkRes = await pool.query(`
+      const checkRes = await pool.query(
+        `
         SELECT value, notes, date 
         FROM goal_checkpoints 
         WHERE goal_id = $1 AND notes = 'Midway check-in'
-      `, [createdGoalId]);
+      `,
+        [createdGoalId],
+      );
       assert(checkRes.rows.length === 1, 'Checkpoint row must exist in DB');
       assert(Number(checkRes.rows[0].value) === 85.0, 'Checkpoint value stored accurately');
       assert(checkRes.rows[0].notes === 'Midway check-in', 'Checkpoint notes stored');
@@ -189,7 +200,7 @@ async function main() {
           userId: user2Id,
           value: 70.0,
         });
-      } catch (err: any) {
+      } catch {
         threw = true;
       }
       assert(threw, 'User 2 must not be able to log checkpoint on User 1 goal');
@@ -285,7 +296,9 @@ async function main() {
       assert(res2.habit.totalCompletions === 1, 'Total completions remains 1 on duplicate');
 
       // Verify in DB only 1 record exists
-      const dbCompletions = await pool.query('SELECT count(*) FROM habit_completions WHERE habit_id = $1', [createdHabitId]);
+      const dbCompletions = await pool.query('SELECT count(*) FROM habit_completions WHERE habit_id = $1', [
+        createdHabitId,
+      ]);
       assert(Number(dbCompletions.rows[0].count) === 1, 'Only 1 DB completion record exists');
     });
 
@@ -304,7 +317,9 @@ async function main() {
       assert(res.habit.totalCompletions === 0, 'Total completions reset to 0');
 
       // Verify row removed from DB
-      const dbCompletions = await pool.query('SELECT count(*) FROM habit_completions WHERE habit_id = $1', [createdHabitId]);
+      const dbCompletions = await pool.query('SELECT count(*) FROM habit_completions WHERE habit_id = $1', [
+        createdHabitId,
+      ]);
       assert(Number(dbCompletions.rows[0].count) === 0, 'Completion record deleted from DB');
     });
 
@@ -314,7 +329,7 @@ async function main() {
       for (const d of dates) {
         await pool.query(
           'INSERT INTO habit_completions (id, habit_id, user_id, date) VALUES ($1, $2, $3, $4)',
-          [randomUUID(), createdHabitId, user1Id, d]
+          [randomUUID(), createdHabitId, user1Id, d],
         );
       }
 
@@ -328,7 +343,10 @@ async function main() {
 
       assert(res.habit.currentStreak >= 4, `Expected streak >= 4, got ${res.habit.currentStreak}`);
       assert(res.habit.longestStreak >= 4, `Expected longest streak >= 4, got ${res.habit.longestStreak}`);
-      assert(res.habit.totalCompletions === 4, `Expected total completions 4, got ${res.habit.totalCompletions}`);
+      assert(
+        res.habit.totalCompletions === 4,
+        `Expected total completions 4, got ${res.habit.totalCompletions}`,
+      );
     });
 
     await test('Habit History Query & User Isolation', async () => {
@@ -338,7 +356,10 @@ async function main() {
       });
 
       assert(history.habit.id === createdHabitId, 'Habit ID matches');
-      assert(history.completionDates.length === 4, `Expected 4 completion dates, got ${history.completionDates.length}`);
+      assert(
+        history.completionDates.length === 4,
+        `Expected 4 completion dates, got ${history.completionDates.length}`,
+      );
 
       // User 2 cannot access User 1 habit history
       let user2Blocked = false;
@@ -380,7 +401,9 @@ async function main() {
       const user1Habits = await listHabits.execute({ userId: user1Id });
       assert(user1Habits.length === 0, 'Active list excludes soft-deleted habit');
 
-      const dbRow = await pool.query('SELECT is_archived, deleted_at FROM habits WHERE id = $1', [createdHabitId]);
+      const dbRow = await pool.query('SELECT is_archived, deleted_at FROM habits WHERE id = $1', [
+        createdHabitId,
+      ]);
       assert(dbRow.rows.length === 1, 'Row exists in DB');
       assert(dbRow.rows[0].deleted_at !== null, 'deleted_at is populated');
     });
@@ -397,13 +420,16 @@ async function main() {
       const nutrition = await telemetryAdapter.getDailyNutrition(user1Id, '2026-11-06');
       assert(nutrition.calories === 0 && nutrition.proteinG === 0, 'Nutrition should be 0');
 
-      const workouts = await telemetryAdapter.getWeeklyWorkoutCount(user1Id, new Date('2026-11-01'), new Date('2026-11-07'));
+      const workouts = await telemetryAdapter.getWeeklyWorkoutCount(
+        user1Id,
+        new Date('2026-11-01'),
+        new Date('2026-11-07'),
+      );
       assert(workouts === 0, 'Workouts should be 0 when no sessions logged');
 
       const streak = await telemetryAdapter.getWorkoutStreak(user1Id);
       assert(streak === 0, 'Workout streak should be 0');
     });
-
   } finally {
     // --- SAFE CLEANUP ---
     console.log('\n-> Cleaning up isolated test users (Cascades to test records)...');
@@ -411,13 +437,16 @@ async function main() {
       await pool.query('DELETE FROM users WHERE id IN ($1, $2)', [user1Id, user2Id]);
       console.log('✓ Test users deleted.');
 
-      const verifyClean = await pool.query(`
+      const verifyClean = await pool.query(
+        `
         SELECT 
           (SELECT count(*) FROM goals WHERE user_id IN ($1, $2)) AS goals,
           (SELECT count(*) FROM habits WHERE user_id IN ($1, $2)) AS habits,
           (SELECT count(*) FROM goal_checkpoints WHERE user_id IN ($1, $2)) AS checkpoints,
           (SELECT count(*) FROM habit_completions WHERE user_id IN ($1, $2)) AS completions;
-      `, [user1Id, user2Id]);
+      `,
+        [user1Id, user2Id],
+      );
 
       const counts = verifyClean.rows[0];
       console.log(`Cascade cleanup verification: ${JSON.stringify(counts)}`);
@@ -433,12 +462,12 @@ async function main() {
   console.log('\n===============================================================');
   console.log('         REAL POSTGRESQL INTEGRATION TEST RESULTS              ');
   console.log('===============================================================');
-  const passed = results.filter(r => r.passed).length;
-  const failed = results.filter(r => !r.passed).length;
+  const passed = results.filter((r) => r.passed).length;
+  const failed = results.filter((r) => !r.passed).length;
   console.log(`Total: ${results.length} | Passed: ${passed} | Failed: ${failed}`);
   if (failed > 0) {
     console.error('FAILED TESTS:');
-    results.filter(r => !r.passed).forEach(r => console.error(` - ${r.name}: ${r.error}`));
+    results.filter((r) => !r.passed).forEach((r) => console.error(` - ${r.name}: ${r.error}`));
     process.exit(1);
   } else {
     console.log('✓ ALL REAL POSTGRESQL INTEGRATION TESTS PASSED (100%)');

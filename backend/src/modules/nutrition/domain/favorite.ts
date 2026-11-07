@@ -26,4 +26,3 @@ export class FoodFavorite {
     return this.userId === userId;
   }
 }
-

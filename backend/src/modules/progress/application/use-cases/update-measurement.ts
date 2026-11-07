@@ -28,25 +28,69 @@ export class UpdateMeasurementUseCase {
       throw new AppError('validation', 'VALIDATION_FAILED', 'Measurement ID is required');
     }
 
-    if (input.waistCm !== undefined && input.waistCm !== null && (input.waistCm <= 30.0 || input.waistCm >= 250.0)) {
-      throw new AppError('validation', 'VALIDATION_FAILED', 'Waist circumference must be between 30.1 and 249.9 cm');
+    if (
+      input.waistCm !== undefined &&
+      input.waistCm !== null &&
+      (input.waistCm <= 30.0 || input.waistCm >= 250.0)
+    ) {
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        'Waist circumference must be between 30.1 and 249.9 cm',
+      );
     }
-    if (input.chestCm !== undefined && input.chestCm !== null && (input.chestCm <= 30.0 || input.chestCm >= 250.0)) {
-      throw new AppError('validation', 'VALIDATION_FAILED', 'Chest circumference must be between 30.1 and 249.9 cm');
+    if (
+      input.chestCm !== undefined &&
+      input.chestCm !== null &&
+      (input.chestCm <= 30.0 || input.chestCm >= 250.0)
+    ) {
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        'Chest circumference must be between 30.1 and 249.9 cm',
+      );
     }
     if (input.hipCm !== undefined && input.hipCm !== null && (input.hipCm <= 30.0 || input.hipCm >= 250.0)) {
-      throw new AppError('validation', 'VALIDATION_FAILED', 'Hip circumference must be between 30.1 and 249.9 cm');
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        'Hip circumference must be between 30.1 and 249.9 cm',
+      );
     }
     if (input.armCm !== undefined && input.armCm !== null && (input.armCm <= 10.0 || input.armCm >= 100.0)) {
-      throw new AppError('validation', 'VALIDATION_FAILED', 'Arm circumference must be between 10.1 and 99.9 cm');
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        'Arm circumference must be between 10.1 and 99.9 cm',
+      );
     }
-    if (input.neckCm !== undefined && input.neckCm !== null && (input.neckCm <= 15.0 || input.neckCm >= 80.0)) {
-      throw new AppError('validation', 'VALIDATION_FAILED', 'Neck circumference must be between 15.1 and 79.9 cm');
+    if (
+      input.neckCm !== undefined &&
+      input.neckCm !== null &&
+      (input.neckCm <= 15.0 || input.neckCm >= 80.0)
+    ) {
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        'Neck circumference must be between 15.1 and 79.9 cm',
+      );
     }
-    if (input.bodyFatPct !== undefined && input.bodyFatPct !== null && (input.bodyFatPct < 3.0 || input.bodyFatPct > 60.0)) {
-      throw new AppError('validation', 'VALIDATION_FAILED', 'Body fat percentage must be between 3.0% and 60.0%');
+    if (
+      input.bodyFatPct !== undefined &&
+      input.bodyFatPct !== null &&
+      (input.bodyFatPct < 3.0 || input.bodyFatPct > 60.0)
+    ) {
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        'Body fat percentage must be between 3.0% and 60.0%',
+      );
     }
-    if (input.muscleMassKg !== undefined && input.muscleMassKg !== null && (input.muscleMassKg < 10.0 || input.muscleMassKg > 200.0)) {
+    if (
+      input.muscleMassKg !== undefined &&
+      input.muscleMassKg !== null &&
+      (input.muscleMassKg < 10.0 || input.muscleMassKg > 200.0)
+    ) {
       throw new AppError('validation', 'VALIDATION_FAILED', 'Muscle mass must be between 10.0 and 200.0 kg');
     }
 
@@ -70,4 +114,3 @@ export class UpdateMeasurementUseCase {
     return { measurement: updated };
   }
 }
-

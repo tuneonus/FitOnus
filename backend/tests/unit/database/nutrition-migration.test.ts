@@ -42,7 +42,9 @@ describe('Nutrition Migration 0008', () => {
     expect(sql).toContain('CREATE TABLE meal_items (');
     expect(sql).toContain('food_id             uuid           REFERENCES foods (id) ON DELETE SET NULL');
     expect(sql).toContain('serving_weight_g    numeric(8, 2)  NOT NULL CHECK (serving_weight_g > 0)');
-    expect(sql).toContain('serving_multiplier  numeric(6, 2)  NOT NULL DEFAULT 1.0 CHECK (serving_multiplier > 0)');
+    expect(sql).toContain(
+      'serving_multiplier  numeric(6, 2)  NOT NULL DEFAULT 1.0 CHECK (serving_multiplier > 0)',
+    );
     expect(sql).toContain('logged_weight_g     numeric(8, 2)  NOT NULL CHECK (logged_weight_g > 0)');
     expect(sql).toContain('protein_g');
 

@@ -17,14 +17,8 @@ import {
 import { calculateWorkoutConsistency } from '../../domain/workout-metrics.js';
 import { summarizeNutritionAnalytics } from '../../domain/nutrition-metrics.js';
 import { summarizeHydrationAnalytics } from '../../domain/hydration-metrics.js';
-import {
-  calculateWeightVelocity,
-  calculateGoalWeightProgress,
-} from '../../domain/body-analytics-metrics.js';
-import {
-  calculateMetricComparison,
-  type PeriodComparisonItem,
-} from '../../domain/overview-metrics.js';
+import { calculateWeightVelocity, calculateGoalWeightProgress } from '../../domain/body-analytics-metrics.js';
+import { calculateMetricComparison, type PeriodComparisonItem } from '../../domain/overview-metrics.js';
 import type {
   IAnalyticsWorkoutRepository,
   IAnalyticsNutritionRepository,
@@ -65,8 +59,10 @@ export class GetAnalyticsOverviewUseCase {
     const currDateSeries = generateDateSeries(currStartStr, currEndStr);
     const prevDateSeries = generateDateSeries(prevStartStr, prevEndStr);
 
-    const { startUtc: totalStartUtc, endUtc: totalEndUtc } =
-      getUtcBoundsForLocalDateRange(prevStartStr, currEndStr);
+    const { startUtc: totalStartUtc, endUtc: totalEndUtc } = getUtcBoundsForLocalDateRange(
+      prevStartStr,
+      currEndStr,
+    );
 
     // 2. Fetch parallel data across repositories
     const [sessions, meals, water, weights, profileGoals] = await Promise.all([
@@ -90,9 +86,7 @@ export class GetAnalyticsOverviewUseCase {
     const currVol = Math.round(currSessions.reduce((acc, s) => acc + s.totalVolumeKg, 0) * 10) / 10;
     const prevVol = Math.round(prevSessions.reduce((acc, s) => acc + s.totalVolumeKg, 0) * 10) / 10;
 
-    const currDurationMin = Math.round(
-      currSessions.reduce((acc, s) => acc + s.durationSeconds, 0) / 60,
-    );
+    const currDurationMin = Math.round(currSessions.reduce((acc, s) => acc + s.durationSeconds, 0) / 60);
 
     const targetSessions = profileGoals?.workoutDaysPerWeek ?? 3;
     const consistencyPct = calculateWorkoutConsistency(currSessions.length, targetSessions);
@@ -140,8 +134,7 @@ export class GetAnalyticsOverviewUseCase {
         ? currWeights[currWeights.length - 1]!.weightKg
         : (profileGoals?.currentWeightKg ?? null);
 
-    const prevWeightKg =
-      prevWeights.length > 0 ? prevWeights[prevWeights.length - 1]!.weightKg : null;
+    const prevWeightKg = prevWeights.length > 0 ? prevWeights[prevWeights.length - 1]!.weightKg : null;
 
     const startWeightKg = profileGoals?.startingWeightKg ?? null;
     const targetWeightKg = profileGoals?.targetWeightKg ?? null;
@@ -151,11 +144,7 @@ export class GetAnalyticsOverviewUseCase {
     const lastWeight = sortedWeights[sortedWeights.length - 1] ?? null;
     const weeklyVelocityKg = calculateWeightVelocity(firstWeight, lastWeight);
 
-    const progressPct = calculateGoalWeightProgress(
-      startWeightKg,
-      currentWeightKg,
-      targetWeightKg,
-    );
+    const progressPct = calculateGoalWeightProgress(startWeightKg, currentWeightKg, targetWeightKg);
 
     // 7. Comparative Analytics
     const comparisonVsPriorPeriod: PeriodComparisonItem[] = [

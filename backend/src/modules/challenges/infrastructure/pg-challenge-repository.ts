@@ -82,7 +82,9 @@ export class PgChallengeRepository implements IChallengeRepository {
     return res.rows.map(toDomainChallenge);
   }
 
-  async listAll(options: { cadence?: ChallengeCadence; status?: ChallengeStatus } = {}): Promise<Challenge[]> {
+  async listAll(
+    options: { cadence?: ChallengeCadence; status?: ChallengeStatus } = {},
+  ): Promise<Challenge[]> {
     const conditions: string[] = ['deleted_at IS NULL'];
     const values: unknown[] = [];
 
@@ -155,10 +157,6 @@ export class PgChallengeRepository implements IChallengeRepository {
   }
 
   async softDelete(id: string): Promise<void> {
-    await this.db.query(
-      `UPDATE challenges SET deleted_at = now(), updated_at = now() WHERE id = $1`,
-      [id],
-    );
+    await this.db.query(`UPDATE challenges SET deleted_at = now(), updated_at = now() WHERE id = $1`, [id]);
   }
 }
-

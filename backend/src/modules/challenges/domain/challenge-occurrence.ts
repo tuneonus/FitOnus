@@ -53,4 +53,3 @@ export class ChallengeOccurrence {
     return date.getTime() <= deadline;
   }
 }
-

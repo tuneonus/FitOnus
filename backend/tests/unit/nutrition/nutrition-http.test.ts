@@ -151,13 +151,12 @@ describe('Nutrition Member HTTP API', () => {
     topFoods: [{ foodName: 'Egg, whole, raw', count: 10, totalCalories: 715 }],
   };
 
-  function createTestApp(
-    useCasesOverrides: Partial<NutritionMemberUseCases> = {},
-    authenticated = true,
-  ) {
+  function createTestApp(useCasesOverrides: Partial<NutritionMemberUseCases> = {}, authenticated = true) {
     const useCases: NutritionMemberUseCases = {
       getDailyNutrition: { execute: vi.fn().mockResolvedValue(sampleDailyView) } as any,
-      searchFoods: { execute: vi.fn().mockResolvedValue({ foods: [sampleFoodView], total: 1, page: 1, limit: 20 }) } as any,
+      searchFoods: {
+        execute: vi.fn().mockResolvedValue({ foods: [sampleFoodView], total: 1, page: 1, limit: 20 }),
+      } as any,
       getRecentFoods: { execute: vi.fn().mockResolvedValue([sampleFoodView]) } as any,
       getFoodDetails: { execute: vi.fn().mockResolvedValue(sampleFoodView) } as any,
       createCustomFood: { execute: vi.fn().mockResolvedValue(sampleFoodView) } as any,
@@ -227,25 +226,21 @@ describe('Nutrition Member HTTP API', () => {
 
     it('rejects meal logging with empty items array with 400', async () => {
       const { app } = createTestApp();
-      const res = await request(app)
-        .post('/api/v1/nutrition/meals')
-        .send({
-          mealType: 'lunch',
-          date: '2026-11-05',
-          items: [],
-        });
+      const res = await request(app).post('/api/v1/nutrition/meals').send({
+        mealType: 'lunch',
+        date: '2026-11-05',
+        items: [],
+      });
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_FAILED');
     });
 
     it('rejects water logging with non-positive amount with 400', async () => {
       const { app } = createTestApp();
-      const res = await request(app)
-        .post('/api/v1/nutrition/water')
-        .send({
-          date: '2026-11-05',
-          amountMl: -50,
-        });
+      const res = await request(app).post('/api/v1/nutrition/water').send({
+        date: '2026-11-05',
+        amountMl: -50,
+      });
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_FAILED');
     });
@@ -329,19 +324,17 @@ describe('Nutrition Member HTTP API', () => {
   describe('Custom Food Creation', () => {
     it('creates custom food and returns 201', async () => {
       const { app } = createTestApp();
-      const res = await request(app)
-        .post('/api/v1/nutrition/foods')
-        .send({
-          name: 'My Custom Oatmeal',
-          servingSize: 1,
-          servingUnit: 'bowl',
-          servingWeightG: 150,
-          calories: 220,
-          proteinG: 8,
-          carbohydratesG: 40,
-          fatG: 4,
-          fiberG: 5,
-        });
+      const res = await request(app).post('/api/v1/nutrition/foods').send({
+        name: 'My Custom Oatmeal',
+        servingSize: 1,
+        servingUnit: 'bowl',
+        servingWeightG: 150,
+        calories: 220,
+        proteinG: 8,
+        carbohydratesG: 40,
+        fatG: 4,
+        fiberG: 5,
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -492,13 +485,11 @@ describe('Nutrition Member HTTP API', () => {
   describe('Water Intake Logging', () => {
     it('logs water intake and returns 201', async () => {
       const { app } = createTestApp();
-      const res = await request(app)
-        .post('/api/v1/nutrition/water')
-        .send({
-          id: waterId,
-          date: '2026-11-05',
-          amountMl: 500,
-        });
+      const res = await request(app).post('/api/v1/nutrition/water').send({
+        id: waterId,
+        date: '2026-11-05',
+        amountMl: 500,
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.data.amountMl).toBe(500);
@@ -512,13 +503,11 @@ describe('Nutrition Member HTTP API', () => {
         } as any,
       });
 
-      const res = await request(app)
-        .post('/api/v1/nutrition/water')
-        .send({
-          id: waterId,
-          date: '2026-11-05',
-          amountMl: 500,
-        });
+      const res = await request(app).post('/api/v1/nutrition/water').send({
+        id: waterId,
+        date: '2026-11-05',
+        amountMl: 500,
+      });
 
       expect(res.status).toBe(200);
       expect(res.headers['idempotent-replayed']).toBe('true');
@@ -533,13 +522,11 @@ describe('Nutrition Member HTTP API', () => {
         } as any,
       });
 
-      const res = await request(app)
-        .post('/api/v1/nutrition/water')
-        .send({
-          id: waterId,
-          date: '2026-11-05',
-          amountMl: 500,
-        });
+      const res = await request(app).post('/api/v1/nutrition/water').send({
+        id: waterId,
+        date: '2026-11-05',
+        amountMl: 500,
+      });
 
       expect(res.status).toBe(409);
       expect(res.body.error.code).toBe('CONFLICT');
@@ -562,9 +549,7 @@ describe('Nutrition Member HTTP API', () => {
   describe('Food Favorites', () => {
     it('adds food to favorites and returns 201', async () => {
       const { app } = createTestApp();
-      const res = await request(app)
-        .post('/api/v1/nutrition/favorites')
-        .send({ foodId });
+      const res = await request(app).post('/api/v1/nutrition/favorites').send({ foodId });
 
       expect(res.status).toBe(201);
       expect(res.body.data.foodId).toBe(foodId);
@@ -595,9 +580,7 @@ describe('Nutrition Member HTTP API', () => {
         } as any,
       });
 
-      const res = await request(app)
-        .post('/api/v1/nutrition/favorites')
-        .send({ foodId });
+      const res = await request(app).post('/api/v1/nutrition/favorites').send({ foodId });
 
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe('FORBIDDEN');

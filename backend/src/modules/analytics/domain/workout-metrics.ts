@@ -179,9 +179,7 @@ export function calculateWorkoutConsistency(
  * Excludes warmups, identifies the top set (highest e1RM) per session, and
  * calculates total volume lifted for that exercise in each session.
  */
-export function buildExerciseProgression(
-  sets: readonly RawExerciseSetRecord[],
-): ExerciseProgressionPoint[] {
+export function buildExerciseProgression(sets: readonly RawExerciseSetRecord[]): ExerciseProgressionPoint[] {
   if (!sets || sets.length === 0) return [];
 
   // Group non-warmup sets by session ID
@@ -254,23 +252,17 @@ export function summarizeWorkoutAnalytics(
 ): WorkoutAnalyticsSummary {
   const completedSessions = sessions.filter((s) => s.isCompleted);
   const totalSessions = completedSessions.length;
-  const totalVolumeKg = Math.round(
-    completedSessions.reduce((sum, s) => sum + (s.totalVolumeKg || 0), 0),
-  );
-  const totalDurationSeconds = completedSessions.reduce(
-    (sum, s) => sum + (s.durationSeconds || 0),
-    0,
-  );
+  const totalVolumeKg = Math.round(completedSessions.reduce((sum, s) => sum + (s.totalVolumeKg || 0), 0));
+  const totalDurationSeconds = completedSessions.reduce((sum, s) => sum + (s.durationSeconds || 0), 0);
   const totalDurationMinutes = Math.round(totalDurationSeconds / 60);
-  const avgDurationMin =
-    totalSessions > 0 ? Math.round(totalDurationMinutes / totalSessions) : 0;
+  const avgDurationMin = totalSessions > 0 ? Math.round(totalDurationMinutes / totalSessions) : 0;
 
   const frequencySeries = calculateWorkoutFrequency(completedSessions, buckets);
   const volumeSeries = calculateTrainingVolume(completedSessions, buckets);
   const durationSeries = calculateWorkoutDuration(completedSessions, buckets);
 
   // Consistency across the full bucket range (e.g. 4 weeks for 'M')
-  const weeksCount = Math.max(1, Math.round(buckets.length * (buckets[0]?.dateStrings.length || 1) / 7));
+  const weeksCount = Math.max(1, Math.round((buckets.length * (buckets[0]?.dateStrings.length || 1)) / 7));
   const consistencyPct = calculateWorkoutConsistency(totalSessions, targetDaysPerWeek, weeksCount);
 
   return {
@@ -284,4 +276,3 @@ export function summarizeWorkoutAnalytics(
     durationSeries,
   };
 }
-

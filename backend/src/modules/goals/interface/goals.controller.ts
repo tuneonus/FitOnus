@@ -7,17 +7,32 @@ import type { ListGoalsUseCase } from '../application/use-cases/list-goals.js';
 import type { GetGoalDetailsUseCase } from '../application/use-cases/get-goal-details.js';
 import type { UpdateGoalUseCase } from '../application/use-cases/update-goal.js';
 import type { DeleteGoalUseCase } from '../application/use-cases/delete-goal.js';
-import type { CalculateGoalProgressUseCase, GoalProgressResult } from '../application/use-cases/calculate-goal-progress.js';
-import type { GetGoalCheckpointsUseCase, LogGoalCheckpointUseCase } from '../application/use-cases/goal-checkpoints.js';
+import type {
+  CalculateGoalProgressUseCase,
+  GoalProgressResult,
+} from '../application/use-cases/calculate-goal-progress.js';
+import type {
+  GetGoalCheckpointsUseCase,
+  LogGoalCheckpointUseCase,
+} from '../application/use-cases/goal-checkpoints.js';
 import type { CreateHabitUseCase } from '../application/use-cases/create-habit.js';
 import type { ListHabitsUseCase } from '../application/use-cases/list-habits.js';
 import type { GetHabitHistoryUseCase } from '../application/use-cases/get-habit-history.js';
 import type { UpdateHabitUseCase } from '../application/use-cases/update-habit.js';
 import type { DeleteHabitUseCase } from '../application/use-cases/delete-habit.js';
-import type { SetHabitCompletionUseCase, SetHabitCompletionResult } from '../application/use-cases/set-habit-completion.js';
+import type {
+  SetHabitCompletionUseCase,
+  SetHabitCompletionResult,
+} from '../application/use-cases/set-habit-completion.js';
 import type { CalculateHabitStreaksUseCase } from '../application/use-cases/calculate-habit-streaks.js';
 import type { StreakResult } from '../domain/streak-calculator.js';
-import type { GoalView, GoalDetailsView, GoalCheckpointView, HabitView, HabitHistoryView } from '../application/goals-view.js';
+import type {
+  GoalView,
+  GoalDetailsView,
+  GoalCheckpointView,
+  HabitView,
+  HabitHistoryView,
+} from '../application/goals-view.js';
 import {
   createGoalRequest,
   listGoalsRequest,
