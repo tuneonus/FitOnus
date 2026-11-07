@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppError } from '../../../src/shared/errors/app-error.js';
 import type { UnitOfWork } from '../../../src/shared/application/unit-of-work.js';
 import {
   Food,
   Meal,
-  MealItem,
   WaterIntake,
   SearchFoodsUseCase,
   GetFoodDetailsUseCase,
@@ -95,6 +93,7 @@ describe('Nutrition Application Use Cases', () => {
       softDelete: vi.fn(),
       countVerified: vi.fn(),
       countCustom: vi.fn(),
+      getCatalogStats: vi.fn(),
     };
 
     mealRepo = {
@@ -393,9 +392,7 @@ describe('Nutrition Application Use Cases', () => {
 
     it('rejects logging unauthorized custom food belonging to another user', async () => {
       vi.mocked(mealRepo.findById).mockResolvedValue(null);
-      vi.mocked(foodRepo.findById)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(user1CustomFood);
+      vi.mocked(foodRepo.findById).mockResolvedValueOnce(null).mockResolvedValueOnce(user1CustomFood);
 
       const useCase = new LogMealUseCase(mealRepo, foodRepo, uow);
       await expect(
@@ -607,8 +604,8 @@ describe('Nutrition Application Use Cases', () => {
         date: '2026-11-04',
         totalCalories: 600,
         totalProteinG: 50, // 50 * 4 = 200 kcal
-        totalCarbsG: 50,   // 50 * 4 = 200 kcal
-        totalFatG: 22.2,   // 22.2 * 9 = 200 kcal
+        totalCarbsG: 50, // 50 * 4 = 200 kcal
+        totalFatG: 22.2, // 22.2 * 9 = 200 kcal
         totalFiberG: 5,
         items: [],
       });
@@ -673,9 +670,7 @@ describe('Nutrition Application Use Cases', () => {
 
   describe('ManageFoodFavoritesUseCase', () => {
     it('toggles favorite on and off for accessible foods', async () => {
-      vi.mocked(favoriteRepo.isFavorite)
-        .mockResolvedValueOnce(false)
-        .mockResolvedValueOnce(true);
+      vi.mocked(favoriteRepo.isFavorite).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
       vi.mocked(foodRepo.findById).mockResolvedValue(verifiedEgg);
 
       const useCase = new ManageFoodFavoritesUseCase(favoriteRepo, foodRepo);
@@ -691,9 +686,7 @@ describe('Nutrition Application Use Cases', () => {
 
     it('forbids favoriting another user private custom food', async () => {
       vi.mocked(favoriteRepo.isFavorite).mockResolvedValueOnce(false);
-      vi.mocked(foodRepo.findById)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(user1CustomFood);
+      vi.mocked(foodRepo.findById).mockResolvedValueOnce(null).mockResolvedValueOnce(user1CustomFood);
 
       const useCase = new ManageFoodFavoritesUseCase(favoriteRepo, foodRepo);
       await expect(useCase.toggleFavorite(user2, customFoodId)).rejects.toMatchObject({
@@ -717,4 +710,3 @@ describe('Nutrition Application Use Cases', () => {
     });
   });
 });
-

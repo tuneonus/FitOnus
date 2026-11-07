@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import crypto from 'node:crypto';
 import { createTestDatabase, type TestDatabase } from '../../helpers/test-database.js';
 import { seedUser, type SeededUser } from '../../helpers/test-app.js';
-import { seedFoods, VERIFIED_FOODS } from '../../../scripts/seed-foods.js';
+import { seedFoods } from '../../../scripts/seed-foods.js';
 import { Database, PgUnitOfWork } from '../../../src/database/transaction.js';
 import {
   PgFoodRepository,
@@ -20,8 +20,6 @@ import {
   GetDailyNutritionUseCase,
   GetNutritionAnalyticsUseCase,
   ManageFoodFavoritesUseCase,
-  Food,
-  Meal,
 } from '../../../src/modules/nutrition/index.js';
 
 describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
@@ -116,16 +114,13 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
         [foodId],
       );
 
-      await db.pool.query(
-        `INSERT INTO food_favorites (user_id, food_id) VALUES ($1, $2)`,
-        [user1.id, foodId],
-      );
+      await db.pool.query(`INSERT INTO food_favorites (user_id, food_id) VALUES ($1, $2)`, [
+        user1.id,
+        foodId,
+      ]);
       // Duplicate must fail
       await expect(
-        db.pool.query(
-          `INSERT INTO food_favorites (user_id, food_id) VALUES ($1, $2)`,
-          [user1.id, foodId],
-        ),
+        db.pool.query(`INSERT INTO food_favorites (user_id, food_id) VALUES ($1, $2)`, [user1.id, foodId]),
       ).rejects.toThrow();
     });
 
@@ -142,11 +137,14 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
 
       // Verify specific physical densities
       const oliveOil = await foodRepo.findByBarcode('012345678901'); // Look up olive oil by source id
+      expect(oliveOil).toBeDefined();
       const { rows: oliveRows } = await db.pool.query<{
         density_g_per_ml: string;
         serving_volume_ml: string;
         serving_weight_g: string;
-      }>(`SELECT density_g_per_ml, serving_volume_ml, serving_weight_g FROM foods WHERE source_id = '171413'`);
+      }>(
+        `SELECT density_g_per_ml, serving_volume_ml, serving_weight_g FROM foods WHERE source_id = '171413'`,
+      );
       expect(oliveRows).toHaveLength(1);
       expect(Number(oliveRows[0]!.density_g_per_ml)).toBeCloseTo(0.9184, 4);
       expect(Number(oliveRows[0]!.serving_weight_g)).toBeCloseTo(13.5, 1);
@@ -205,9 +203,7 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
 
       // User 2 cannot access by ID
       const getDetailsUseCase = new GetFoodDetailsUseCase(foodRepo, favoriteRepo);
-      await expect(
-        getDetailsUseCase.execute({ userId: user2.id, id: customFood.id }),
-      ).rejects.toMatchObject({
+      await expect(getDetailsUseCase.execute({ userId: user2.id, id: customFood.id })).rejects.toMatchObject({
         kind: 'forbidden',
         code: 'FORBIDDEN',
       });
@@ -253,7 +249,11 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
       expect(dbMeals).toHaveLength(1);
       expect(Number(dbMeals[0]!.total_calories)).toBe(323.0);
 
-      const { rows: dbItems } = await db.pool.query<{ food_name: string; logged_weight_g: string; calories: string }>(
+      const { rows: dbItems } = await db.pool.query<{
+        food_name: string;
+        logged_weight_g: string;
+        calories: string;
+      }>(
         `SELECT food_name, logged_weight_g, calories FROM meal_items WHERE meal_id = $1 ORDER BY calories ASC`,
         [result.meal.id],
       );
@@ -293,7 +293,9 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
       const { rows: meals } = await db.pool.query(`SELECT id FROM meals WHERE id = $1`, [doomedMealId]);
       expect(meals).toHaveLength(0);
 
-      const { rows: items } = await db.pool.query(`SELECT id FROM meal_items WHERE meal_id = $1`, [doomedMealId]);
+      const { rows: items } = await db.pool.query(`SELECT id FROM meal_items WHERE meal_id = $1`, [
+        doomedMealId,
+      ]);
       expect(items).toHaveLength(0);
     });
 
@@ -325,10 +327,9 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
       expect(attempt2.meal.id).toBe(syncMealId);
 
       // Verify no duplicate items were inserted
-      const { rows: items } = await db.pool.query(
-        `SELECT id FROM meal_items WHERE meal_id = $1`,
-        [syncMealId],
-      );
+      const { rows: items } = await db.pool.query(`SELECT id FROM meal_items WHERE meal_id = $1`, [
+        syncMealId,
+      ]);
       expect(items).toHaveLength(1);
     });
 
@@ -415,7 +416,9 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
       const { rows: meals } = await db.pool.query(`SELECT id FROM meals WHERE id = $1`, [sharedUuid]);
       expect(meals).toHaveLength(1);
 
-      const { rows: items } = await db.pool.query(`SELECT id FROM meal_items WHERE meal_id = $1`, [sharedUuid]);
+      const { rows: items } = await db.pool.query(`SELECT id FROM meal_items WHERE meal_id = $1`, [
+        sharedUuid,
+      ]);
       expect(items).toHaveLength(1);
     });
 
@@ -543,7 +546,9 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
       expect(analytics.loggedDaysCount).toBeGreaterThanOrEqual(1);
       expect(analytics.avgCalories).toBeGreaterThan(0);
       expect(analytics.macroSplit).toHaveLength(3);
-      expect(analytics.macroSplit[0]!.pct + analytics.macroSplit[1]!.pct + analytics.macroSplit[2]!.pct).toBe(100);
+      expect(analytics.macroSplit[0]!.pct + analytics.macroSplit[1]!.pct + analytics.macroSplit[2]!.pct).toBe(
+        100,
+      );
       expect(analytics.topFoods.length).toBeGreaterThanOrEqual(1);
     });
 

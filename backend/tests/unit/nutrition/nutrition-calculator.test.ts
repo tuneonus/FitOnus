@@ -3,7 +3,6 @@ import {
   calculateByServingMultiplier,
   calculateByVolumeMl,
   calculateByWeightGrams,
-  calculatePortionNutrients,
   getStandardServingNutrients,
 } from '../../../src/modules/nutrition/domain/nutrition-calculator.js';
 import { VERIFIED_FOODS } from '../../../scripts/seed-foods.js';
@@ -169,4 +168,3 @@ describe('Nutrition Serving Calculation Contract', () => {
     });
   });
 });
-

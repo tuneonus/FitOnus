@@ -9,16 +9,10 @@ import { buildRouter } from '../../../src/shared/http/route.js';
 import { buildOpenApiDocument } from '../../../src/shared/http/openapi.js';
 import { createLogger } from '../../../src/shared/logging/logger.js';
 import { Food } from '../../../src/modules/nutrition/domain/food.js';
-import {
-  AdminManageFoodUseCase,
-} from '../../../src/modules/nutrition/application/use-cases/admin-manage-food.js';
+import { AdminManageFoodUseCase } from '../../../src/modules/nutrition/application/use-cases/admin-manage-food.js';
 import { AdminGetNutritionStatsUseCase } from '../../../src/modules/nutrition/application/use-cases/admin-get-nutrition-stats.js';
-import {
-  createNutritionAdminController,
-  type AdminNutritionUseCases,
-} from '../../../src/modules/nutrition/interface/admin-nutrition.controller.js';
+import { createNutritionAdminController } from '../../../src/modules/nutrition/interface/admin-nutrition.controller.js';
 import { createNutritionAdminRoutes } from '../../../src/modules/nutrition/interface/admin-nutrition.routes.js';
-import type { AdminFoodView } from '../../../src/modules/nutrition/application/nutrition-view.js';
 import type {
   IFoodRepository,
   INutritionAuditLogger,
@@ -181,16 +175,14 @@ describe('Admin Nutrition Module & API', () => {
   describe('GET /api/v1/admin/nutrition/foods', () => {
     it('lists foods with pagination and filters', async () => {
       const app = createTestApp('admin');
-      const res = await request(app)
-        .get('/api/v1/admin/nutrition/foods')
-        .query({
-          q: 'milk',
-          page: 1,
-          limit: 10,
-          dataSource: 'usda_fdc',
-          verificationStatus: 'verified',
-          isCustom: false,
-        });
+      const res = await request(app).get('/api/v1/admin/nutrition/foods').query({
+        q: 'milk',
+        page: 1,
+        limit: 10,
+        dataSource: 'usda_fdc',
+        verificationStatus: 'verified',
+        isCustom: false,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -216,9 +208,7 @@ describe('Admin Nutrition Module & API', () => {
 
     it('handles includeDeleted query parameter correctly', async () => {
       const app = createTestApp('admin');
-      const res = await request(app)
-        .get('/api/v1/admin/nutrition/foods')
-        .query({ includeDeleted: 'true' });
+      const res = await request(app).get('/api/v1/admin/nutrition/foods').query({ includeDeleted: 'true' });
 
       expect(res.status).toBe(200);
       expect(mockFoodRepo.search).toHaveBeenCalledWith(
@@ -286,9 +276,7 @@ describe('Admin Nutrition Module & API', () => {
 
     it('successfully creates a verified food and writes an audit log', async () => {
       const app = createTestApp('admin');
-      const res = await request(app)
-        .post('/api/v1/admin/nutrition/foods')
-        .send(validCreatePayload);
+      const res = await request(app).post('/api/v1/admin/nutrition/foods').send(validCreatePayload);
 
       expect(res.status).toBe(201);
       expect(res.body.data.name).toBe(validCreatePayload.name);
@@ -317,9 +305,7 @@ describe('Admin Nutrition Module & API', () => {
         servingWeightG: 100, // 14.7ml * 0.9184 = 13.5g != 100g
       };
 
-      const res = await request(app)
-        .post('/api/v1/admin/nutrition/foods')
-        .send(inconsistentPayload);
+      const res = await request(app).post('/api/v1/admin/nutrition/foods').send(inconsistentPayload);
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_FAILED');
@@ -335,9 +321,7 @@ describe('Admin Nutrition Module & API', () => {
         fatG: 50, // total = 150g > 105g
       };
 
-      const res = await request(app)
-        .post('/api/v1/admin/nutrition/foods')
-        .send(impossibleMacrosPayload);
+      const res = await request(app).post('/api/v1/admin/nutrition/foods').send(impossibleMacrosPayload);
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_FAILED');
@@ -363,12 +347,10 @@ describe('Admin Nutrition Module & API', () => {
   describe('PUT /api/v1/admin/nutrition/foods/:id (Update Verified Food)', () => {
     it('updates food attributes successfully and writes an audit log', async () => {
       const app = createTestApp('admin');
-      const res = await request(app)
-        .put(`/api/v1/admin/nutrition/foods/${foodId}`)
-        .send({
-          name: 'Whole Milk 3.25% (Updated)',
-          calories: 62,
-        });
+      const res = await request(app).put(`/api/v1/admin/nutrition/foods/${foodId}`).send({
+        name: 'Whole Milk 3.25% (Updated)',
+        calories: 62,
+      });
 
       expect(res.status).toBe(200);
       expect(mockFoodRepo.update).toHaveBeenCalledWith(
@@ -445,13 +427,11 @@ describe('Admin Nutrition Module & API', () => {
       vi.mocked(mockFoodRepo.findById).mockResolvedValueOnce(customFood);
 
       const app = createTestApp('admin');
-      const res = await request(app)
-        .post(`/api/v1/admin/nutrition/foods/${foodId}/verify`)
-        .send({
-          verificationStatus: 'verified',
-          dataSource: 'manufacturer_label',
-          sourceId: 'BAR-12345',
-        });
+      const res = await request(app).post(`/api/v1/admin/nutrition/foods/${foodId}/verify`).send({
+        verificationStatus: 'verified',
+        dataSource: 'manufacturer_label',
+        sourceId: 'BAR-12345',
+      });
 
       expect(res.status).toBe(200);
       expect(mockFoodRepo.update).toHaveBeenCalledWith(
@@ -491,11 +471,9 @@ describe('Admin Nutrition Module & API', () => {
       vi.mocked(mockFoodRepo.findById).mockResolvedValueOnce(customFood);
 
       const app = createTestApp('admin');
-      const res = await request(app)
-        .post(`/api/v1/admin/nutrition/foods/${foodId}/verify`)
-        .send({
-          verificationStatus: 'verified',
-        });
+      const res = await request(app).post(`/api/v1/admin/nutrition/foods/${foodId}/verify`).send({
+        verificationStatus: 'verified',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_FAILED');
@@ -504,11 +482,9 @@ describe('Admin Nutrition Module & API', () => {
 
     it('sets status to rejected and keeps isVerified as false', async () => {
       const app = createTestApp('admin');
-      const res = await request(app)
-        .post(`/api/v1/admin/nutrition/foods/${foodId}/verify`)
-        .send({
-          verificationStatus: 'rejected',
-        });
+      const res = await request(app).post(`/api/v1/admin/nutrition/foods/${foodId}/verify`).send({
+        verificationStatus: 'rejected',
+      });
 
       expect(res.status).toBe(200);
       expect(mockFoodRepo.update).toHaveBeenCalledWith(
@@ -546,12 +522,16 @@ describe('Admin Nutrition Module & API', () => {
 
       // Check stats route
       expect(openApiDoc.paths['/api/v1/admin/nutrition/stats']).toHaveProperty('get');
-      expect(openApiDoc.paths['/api/v1/admin/nutrition/stats'].get.summary).toBe('Admin Nutrition Statistics');
-      expect(openApiDoc.paths['/api/v1/admin/nutrition/stats'].get.tags).toContain('Admin Nutrition');
+      expect(openApiDoc.paths['/api/v1/admin/nutrition/stats']!.get.summary).toBe(
+        'Admin Nutrition Statistics',
+      );
+      expect(openApiDoc.paths['/api/v1/admin/nutrition/stats']!.get.tags).toContain('Admin Nutrition');
 
       // Check food create route
       expect(openApiDoc.paths['/api/v1/admin/nutrition/foods']).toHaveProperty('post');
-      expect(openApiDoc.paths['/api/v1/admin/nutrition/foods'].post.summary).toBe('Admin Create Verified Food');
+      expect(openApiDoc.paths['/api/v1/admin/nutrition/foods']!.post.summary).toBe(
+        'Admin Create Verified Food',
+      );
 
       // Check food update and delete routes
       expect(openApiDoc.paths['/api/v1/admin/nutrition/foods/{id}']).toHaveProperty('put');
@@ -559,7 +539,9 @@ describe('Admin Nutrition Module & API', () => {
 
       // Check verify route
       expect(openApiDoc.paths['/api/v1/admin/nutrition/foods/{id}/verify']).toHaveProperty('post');
-      expect(openApiDoc.paths['/api/v1/admin/nutrition/foods/{id}/verify'].post.summary).toBe('Admin Verify Food');
+      expect(openApiDoc.paths['/api/v1/admin/nutrition/foods/{id}/verify']!.post.summary).toBe(
+        'Admin Verify Food',
+      );
     });
   });
 });

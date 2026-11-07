@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SqlExecutor } from '../../../src/database/transaction.js';
-import { Food } from '../../../src/modules/nutrition/domain/food.js';
 import { Meal, MealItem } from '../../../src/modules/nutrition/domain/meal.js';
 import { WaterIntake } from '../../../src/modules/nutrition/domain/water.js';
 import { PgFoodRepository } from '../../../src/modules/nutrition/infrastructure/pg-food-repository.js';
@@ -11,7 +10,7 @@ import { PgFavoriteRepository } from '../../../src/modules/nutrition/infrastruct
 function createMockDb(): SqlExecutor & { query: ReturnType<typeof vi.fn> } {
   return {
     query: vi.fn(),
-  };
+  } as unknown as SqlExecutor & { query: ReturnType<typeof vi.fn> };
 }
 
 describe('Nutrition Repositories', () => {
@@ -58,7 +57,9 @@ describe('Nutrition Repositories', () => {
       expect(db.query).toHaveBeenCalledTimes(1);
 
       const [sql, params] = db.query.mock.calls[0]!;
-      expect(sql).toContain('WHERE id = $1 AND deleted_at IS NULL AND (is_verified = true OR created_by = $2)');
+      expect(sql).toContain(
+        'WHERE id = $1 AND deleted_at IS NULL AND (is_verified = true OR created_by = $2)',
+      );
       expect(params).toEqual([sampleFoodRow.id, 'user-123']);
     });
 
@@ -361,4 +362,3 @@ describe('Nutrition Repositories', () => {
     });
   });
 });
-
