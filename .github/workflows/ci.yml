@@ -115,8 +115,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: admin/package-lock.json
+          cache-dependency-path: |
+            admin/package-lock.json
+            backend/package-lock.json
       - run: npm ci
+      - name: Install backend dependencies for admin contract tests
+        working-directory: .
+        run: npm ci --prefix backend
       - name: Admin Production Build
         run: npm run build
       - name: Admin Automated Tests
