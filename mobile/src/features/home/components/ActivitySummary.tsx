@@ -128,32 +128,40 @@ export function ActivitySummary() {
             </Text>
           </View>
 
-          <View style={styles.barsContainer}>
-            {weeklySteps.map((d, index) => {
-              const isToday = index === weeklySteps.length - 1;
-              const hitGoal = d.steps >= activityMeta.stepGoal;
-              const barHeight = Math.max(6, (d.steps / maxSteps) * 64);
-              const barColor = isToday
-                ? colors.sky
-                : hitGoal
-                ? 'rgba(14, 150, 220, 0.45)'
-                : 'rgba(128, 128, 128, 0.18)';
+          {weeklySteps.length === 0 ? (
+            <View style={{ height: 64, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+                No wearable steps synced yet.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.barsContainer}>
+              {weeklySteps.map((d, index) => {
+                const isToday = index === weeklySteps.length - 1;
+                const hitGoal = d.steps >= activityMeta.stepGoal;
+                const barHeight = Math.max(6, (d.steps / maxSteps) * 64);
+                const barColor = isToday
+                  ? colors.sky
+                  : hitGoal
+                  ? 'rgba(14, 150, 220, 0.45)'
+                  : 'rgba(128, 128, 128, 0.18)';
 
-              return (
-                <View key={index} style={styles.barColumn}>
-                  <View
-                    style={[
-                      styles.bar,
-                      { height: barHeight, backgroundColor: barColor },
-                    ]}
-                  />
-                  <Text style={[styles.dayText, { color: colors.muted }]}>
-                    {d.day}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+                return (
+                  <View key={index} style={styles.barColumn}>
+                    <View
+                      style={[
+                        styles.bar,
+                        { height: barHeight, backgroundColor: barColor },
+                      ]}
+                    />
+                    <Text style={[styles.dayText, { color: colors.muted }]}>
+                      {d.day}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
 
           <View style={styles.bottomMeta}>
             <Text style={[styles.paceText, { color: colors.muted }]}>
@@ -241,7 +249,7 @@ const styles = StyleSheet.create({
   barsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 64,
+    height: 84,
     gap: 6,
   },
   barColumn: {

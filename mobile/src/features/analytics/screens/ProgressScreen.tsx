@@ -17,6 +17,7 @@ import { aiInsights } from '../data/insightsMock';
 import { InsightCard } from '../components/InsightCard';
 import { useTheme } from '@/hooks/use-theme';
 import { useProgressStore } from '../store/progressStore';
+import { useAdvancedAnalyticsStore } from '../store/advancedAnalyticsStore';
 
 const fmt = (v: number, unit: string) =>
   unit === 'h'
@@ -41,17 +42,73 @@ export function ProgressScreen() {
     fetchAchievements,
   } = useProgressStore();
 
+  const {
+    overview,
+    workouts: advWorkouts,
+    nutrition: advNutrition,
+    body: advBody,
+    fetchOverview,
+    fetchWorkouts: fetchAdvWorkouts,
+    fetchNutrition: fetchAdvNutrition,
+    fetchBody: fetchAdvBody,
+  } = useAdvancedAnalyticsStore();
+
   useEffect(() => {
     fetchAnalytics(metric, range).catch(() => {});
     const period = range === 'W' ? 'week' : 'month';
     fetchPeriodComparison(period).catch(() => {});
     fetchAchievements().catch(() => {});
-  }, [metric, range, fetchAnalytics, fetchPeriodComparison, fetchAchievements]);
+
+    // Phase 8 Advanced Analytics fetch
+    fetchOverview().catch(() => {});
+    if (metric === 'workouts') {
+      fetchAdvWorkouts(range).catch(() => {});
+    } else if (metric === 'calories' || metric === 'protein') {
+      fetchAdvNutrition(range).catch(() => {});
+    } else if (metric === 'weight') {
+      fetchAdvBody(range).catch(() => {});
+    }
+  }, [
+    metric,
+    range,
+    fetchAnalytics,
+    fetchPeriodComparison,
+    fetchAchievements,
+    fetchOverview,
+    fetchAdvWorkouts,
+    fetchAdvNutrition,
+    fetchAdvBody,
+  ]);
+
+  const handleRefresh = async () => {
+    await Promise.allSettled([
+      refreshAll(),
+      fetchOverview(true),
+      metric === 'workouts' ? fetchAdvWorkouts(range, true) : Promise.resolve(),
+      metric === 'calories' || metric === 'protein' ? fetchAdvNutrition(range, true) : Promise.resolve(),
+      metric === 'weight' ? fetchAdvBody(range, true) : Promise.resolve(),
+    ]);
+  };
 
   const liveData = analyticsData[`${metric}-${range}`];
   const m = progressMetrics[metric];
 
-  const points = liveData && liveData.points ? liveData.points : [];
+  let points = liveData && liveData.points ? liveData.points : [];
+  if (points.length === 0) {
+    if (metric === 'workouts' && advWorkouts[range]?.frequencySeries) {
+      points = advWorkouts[range].frequencySeries.map((s) => ({ label: s.label, value: s.value }));
+    } else if (metric === 'calories' && advNutrition[range]?.dailyTrends) {
+      points = advNutrition[range].dailyTrends.map((d) => ({ label: d.label, value: Math.round(d.calories) }));
+    } else if (metric === 'protein' && advNutrition[range]?.dailyTrends) {
+      points = advNutrition[range].dailyTrends.map((d) => ({ label: d.label, value: Math.round(d.protein) }));
+    } else if (metric === 'weight' && advBody[range]?.weightTrend) {
+      points = advBody[range].weightTrend.map((d) => ({
+        label: d.date.length > 5 ? d.date.slice(5) : d.date,
+        value: Number(d.raw.toFixed(1)),
+      }));
+    }
+  }
+
   const hasEmptyPoints = points.length === 0;
 
   const first = liveData ? liveData.firstValue : points[0]?.value ?? 0;
@@ -63,12 +120,33 @@ export function ProgressScreen() {
       (liveData && !liveData.hasDeviceData && ['sleep', 'recovery', 'steps'].includes(metric))) &&
     !hasDevice;
 
-  const comparisonTitle = periodComparison?.title ?? (range === 'W' ? 'This Week vs Last Week' : 'This Month vs Last Month');
+  const comparisonTitle =
+    periodComparison?.title ??
+    (overview?.period ? `Period Comparison (${overview.period})` : range === 'W' ? 'This Week vs Last Week' : 'This Month vs Last Month');
+
+  const advComparisons = overview?.comparisonVsPriorPeriod;
   const comparisonItems =
-    periodComparison && periodComparison.comparisons.length > 0
-      ? periodComparison.comparisons.map(
-          (c) => [c.label, c.current, c.previous, c.better] as const,
-        )
+    advComparisons && advComparisons.length > 0
+      ? advComparisons.map((c) => {
+          let currentStr = `${c.currentValue}`;
+          let priorStr = `${c.priorValue}`;
+          if (c.key.includes('weight')) {
+            currentStr = `${c.currentValue.toFixed(1)} kg`;
+            priorStr = `${c.priorValue.toFixed(1)} kg`;
+          } else if (c.key.includes('calories')) {
+            currentStr = `${Math.round(c.currentValue)} kcal`;
+            priorStr = `${Math.round(c.priorValue)} kcal`;
+          } else if (c.key.includes('protein')) {
+            currentStr = `${Math.round(c.currentValue)} g`;
+            priorStr = `${Math.round(c.priorValue)} g`;
+          } else if (c.key.includes('hydration')) {
+            currentStr = `${(c.currentValue / 1000).toFixed(1)} L`;
+            priorStr = `${(c.priorValue / 1000).toFixed(1)} L`;
+          }
+          return [c.label, currentStr, priorStr, c.isImprovement] as const;
+        })
+      : periodComparison && periodComparison.comparisons.length > 0
+      ? periodComparison.comparisons.map((c) => [c.label, c.current, c.previous, c.better] as const)
       : ([
           ['Workouts', '0', '0', true],
           ['Weight change', '0.0 kg', '0.0 kg', true],
@@ -87,7 +165,7 @@ export function ProgressScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={refreshAll}
+            onRefresh={handleRefresh}
             tintColor={colors.accent}
           />
         }

@@ -33,7 +33,7 @@ export const activityRings = [
   {
     key: 'move',
     label: 'Active calories',
-    value: 214,
+    value: 0,
     goal: 650,
     unit: 'kcal',
     color: '#F45430',
@@ -41,7 +41,7 @@ export const activityRings = [
   {
     key: 'exercise',
     label: 'Active minutes',
-    value: 18,
+    value: 0,
     goal: 45,
     unit: 'min',
     color: '#5C8000',
@@ -49,27 +49,19 @@ export const activityRings = [
   {
     key: 'steps',
     label: 'Steps',
-    value: 2180,
+    value: 0,
     goal: 10000,
     unit: '',
     color: '#0E96DC',
   },
 ];
 
-export const weeklySteps = [
-  { day: 'S', steps: 11240 },
-  { day: 'S', steps: 7310 },
-  { day: 'M', steps: 8420 },
-  { day: 'T', steps: 9870 },
-  { day: 'W', steps: 6120 },
-  { day: 'T', steps: 10450 },
-  { day: 'F', steps: 2180 },
-];
+export const weeklySteps: Array<{ day: string; steps: number }> = [];
 
 export const activityMeta = {
   stepGoal: 10000,
-  weeklyAverage: 8830,
-  pace: '540 steps ahead of your usual by now',
+  weeklyAverage: 0,
+  pace: 'No wearable step data synced yet',
 };
 
 export type BodySignal = {

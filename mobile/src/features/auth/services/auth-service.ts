@@ -10,6 +10,7 @@ import { useProgressStore } from '@/features/analytics/store/progressStore';
 import { useProfileSetupStore } from '@/features/onboarding/store/profileSetupStore';
 import { useHealthStore } from '@/features/health-integration/store/healthStore';
 import { useGoalsStore } from '@/features/goals/store/goalsStore';
+import { useAdvancedAnalyticsStore } from '@/features/analytics/store/advancedAnalyticsStore';
 
 const ACCESS_TOKEN_KEY = 'auth.access_token';
 const REFRESH_TOKEN_KEY = 'auth.refresh_token';
@@ -20,6 +21,7 @@ function resetAllUserStores() {
   useWeightStore.getState().resetStore();
   useWorkoutStore.getState().resetStore();
   useProgressStore.getState().resetStore();
+  useAdvancedAnalyticsStore.getState().resetStore();
   useGoalsStore.getState().resetStore().catch(() => {});
   useProfileSetupStore.getState().reset();
   useHealthStore.getState().resetStore();

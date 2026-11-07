@@ -8,6 +8,7 @@ import { BarChart } from '../../../shared/components/charts/BarChart';
 import { LineChart } from '../../../shared/components/charts/LineChart';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useAdvancedAnalyticsStore } from '@/features/analytics/store/advancedAnalyticsStore';
 import { useTheme } from '@/hooks/use-theme';
 
 type ViewType = 'frequency' | 'volume';
@@ -17,10 +18,14 @@ export function WorkoutAnalyticsScreen() {
   const { navigate } = useNavigation();
   const [view, setView] = useState<ViewType>('frequency');
   const { history, loadHistoryFromBackend } = useWorkoutStore();
+  const { workouts, fetchWorkouts } = useAdvancedAnalyticsStore();
 
   React.useEffect(() => {
     loadHistoryFromBackend();
-  }, [loadHistoryFromBackend]);
+    fetchWorkouts('30d').catch(() => {});
+  }, [loadHistoryFromBackend, fetchWorkouts]);
+
+  const backendWorkoutData = workouts['30d'];
 
   const now = Date.now();
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
@@ -29,15 +34,18 @@ export function WorkoutAnalyticsScreen() {
     return !isNaN(t) && t >= thirtyDaysAgo;
   });
 
-  const sessionCount = sessions30d.length;
-  const avgDurationMin =
-    sessionCount > 0
-      ? Math.round(sessions30d.reduce((sum, h) => sum + (h.durationMin || 0), 0) / sessionCount)
-      : 0;
-  const totalVolumeKg = sessions30d.reduce((sum, h) => sum + (h.volumeKg || 0), 0);
+  const sessionCount = backendWorkoutData ? backendWorkoutData.totalSessions : sessions30d.length;
+  const avgDurationMin = backendWorkoutData
+    ? backendWorkoutData.avgDurationMin
+    : sessionCount > 0
+    ? Math.round(sessions30d.reduce((sum, h) => sum + (h.durationMin || 0), 0) / sessionCount)
+    : 0;
+  const totalVolumeKg = backendWorkoutData
+    ? backendWorkoutData.totalVolumeKg
+    : sessions30d.reduce((sum, h) => sum + (h.volumeKg || 0), 0);
   const prs30d = sessions30d.reduce((sum, h) => sum + (h.prs || 0), 0);
 
-  // Weekly aggregates for the last 4 weeks
+  // Weekly aggregates for the last 4 weeks (fallback)
   const weeksData = React.useMemo(() => {
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
     return [3, 2, 1, 0].map((wOffset) => {
@@ -56,12 +64,21 @@ export function WorkoutAnalyticsScreen() {
     });
   }, [history, now]);
 
-  const frequencyChartData = weeksData.map((d) => ({ label: d.label, value: d.frequency }));
-  const volumeChartData = weeksData.map((d) => ({ label: d.label, value: d.volume }));
+  const frequencyChartData =
+    backendWorkoutData && backendWorkoutData.frequencySeries.length > 0
+      ? backendWorkoutData.frequencySeries
+      : weeksData.map((d) => ({ label: d.label, value: d.frequency }));
+
+  const volumeChartData =
+    backendWorkoutData && backendWorkoutData.volumeSeries.length > 0
+      ? backendWorkoutData.volumeSeries
+      : weeksData.map((d) => ({ label: d.label, value: d.volume }));
+
+  const hasNoWorkouts = history.length === 0 && (!backendWorkoutData || backendWorkoutData.totalSessions === 0);
 
   return (
     <Screen title="Workout analytics">
-      {history.length === 0 ? (
+      {hasNoWorkouts ? (
         <EmptyState
           icon={BarChart3}
           title="No analytics yet"

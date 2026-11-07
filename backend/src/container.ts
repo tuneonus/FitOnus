@@ -12,6 +12,7 @@ import { createNutritionModule } from './modules/nutrition/index.js';
 import { createProgressModule } from './modules/progress/index.js';
 import { createGoalsModule } from './modules/goals/index.js';
 import { createChallengesModule } from './modules/challenges/index.js';
+import { createAnalyticsModule } from './modules/analytics/index.js';
 import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
 import type { RouteGroup } from './shared/http/route.js';
@@ -122,6 +123,10 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     db: database,
     uow,
   });
+  const analytics = createAnalyticsModule({
+    basePath: `${API_PREFIX}/analytics`,
+    db: database,
+  });
 
   return {
     database,
@@ -141,6 +146,7 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
       challenges.memberChallengesRoutes,
       challenges.memberGamificationRoutes,
       challenges.adminChallengesRoutes,
+      analytics.routes,
     ],
     authenticate: createAuthenticate(auth.authenticateAccessToken),
     rateLimiters,

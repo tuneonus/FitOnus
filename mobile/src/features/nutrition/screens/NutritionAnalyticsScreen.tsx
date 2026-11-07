@@ -10,6 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { nutritionGoals } from '../constants/meals';
 import { nutritionApi } from '../api/nutrition-api';
 import type { NutritionAnalyticsView } from '../types/nutrition';
+import { useAdvancedAnalyticsStore } from '@/features/analytics/store/advancedAnalyticsStore';
 import { logger } from '@/utils/logger';
 
 type Range = 'week' | 'month';
@@ -20,11 +21,36 @@ export function NutritionAnalyticsScreen() {
   const [range, setRange] = useState<Range>('week');
   const [analytics, setAnalytics] = useState<NutritionAnalyticsView | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const { fetchNutrition: fetchAdvancedNutrition } = useAdvancedAnalyticsStore();
 
   const fetchAnalytics = async (r: Range) => {
+    const advRange = r === 'week' ? '7d' : '30d';
     try {
-      const data = await nutritionApi.getNutritionAnalytics(r);
-      setAnalytics(data);
+      const [advResult, legacyResult] = await Promise.allSettled([
+        fetchAdvancedNutrition(advRange),
+        nutritionApi.getNutritionAnalytics(r),
+      ]);
+
+      const adv = advResult.status === 'fulfilled' ? advResult.value : null;
+      const leg = legacyResult.status === 'fulfilled' ? legacyResult.value : null;
+
+      if (adv) {
+        setAnalytics({
+          ...adv,
+          avgCalories: adv.avgCalories,
+          avgProtein:
+            adv.macroSplit?.find((m) => m.label === 'Protein')?.grams ?? (leg as any)?.avgProtein ?? 0,
+          targetCalories: adv.targetCalories ?? nutritionGoals.kcal,
+          targetProtein: (leg as any)?.targetProtein ?? nutritionGoals.protein,
+          loggedDaysCount: adv.dailyTrends.filter((d) => d.logged).length,
+          totalDaysInRange: adv.dailyTrends.length,
+          caloriesTrend: adv.dailyTrends.map((d) => ({ label: d.label, value: d.calories })),
+          proteinTrend: adv.dailyTrends.map((d) => ({ label: d.label, value: d.protein })),
+          topFoods: (leg as any)?.topFoods ?? [],
+        } as any);
+      } else if (leg) {
+        setAnalytics(leg);
+      }
     } catch (err: any) {
       logger.warn('Failed to fetch nutrition analytics:', err?.message);
     }
