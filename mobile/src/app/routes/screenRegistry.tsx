@@ -48,6 +48,7 @@ import { MonthlyReportScreen } from '@/features/reports/screens/MonthlyReportScr
 import { GoalsScreen } from '@/features/goals/screens/GoalsScreen';
 import { GoalCreateScreen } from '@/features/goals/screens/GoalCreateScreen';
 import { GoalDetailScreen } from '@/features/goals/screens/GoalDetailScreen';
+import { ChallengesScreen } from '@/features/challenges/screens/ChallengesScreen';
 import { NotificationsScreen } from '@/features/notifications/screens/NotificationsScreen';
 import { NotificationPreferencesScreen } from '@/features/notifications/screens/NotificationPreferencesScreen';
 import { HealthIntegrationScreen } from '@/features/health-integration/screens/HealthIntegrationScreen';
@@ -129,6 +130,8 @@ export const registry: Record<RouteName, React.ComponentType> = {
   goals: GoalsScreen,
   goalCreate: GoalCreateScreen,
   goalDetail: GoalDetailScreen,
+  challenges: ChallengesScreen,
+  badges: ChallengesScreen,
 
   // System, Profile & Settings (49-61)
   notifications: NotificationsScreen,

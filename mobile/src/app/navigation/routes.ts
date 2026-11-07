@@ -57,6 +57,8 @@ export type RouteName =
   | 'goals'
   | 'goalCreate'
   | 'goalDetail'
+  | 'challenges'
+  | 'badges'
   // system
   | 'notifications'
   | 'notificationPreferences'

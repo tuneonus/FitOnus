@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { FileText, Medal, Scale, Target, Trophy } from 'lucide-react-native';
+import { Award, FileText, Medal, Scale, Target, Trophy } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
@@ -270,6 +270,12 @@ export function ProgressScreen() {
 
         {/* Quick Nav Links */}
         <ListGroup>
+          <ListRow
+            icon={Award}
+            title="Challenges & Badges"
+            subtitle="Earn points, level up, and unlock rewards"
+            onPress={() => navigate('challenges')}
+          />
           <ListRow
             icon={FileText}
             title="AI reports"
