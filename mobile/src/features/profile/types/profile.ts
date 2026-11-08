@@ -88,6 +88,7 @@ export interface OnboardingCompleteView {
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type UnitSystem = 'metric' | 'imperial';
+export type Language = 'en' | 'ta';
 
 export interface UserSettingsView {
   userId: string;
@@ -96,6 +97,11 @@ export interface UserSettingsView {
   healthConnectEnabled: boolean;
   smartwatchConnected: boolean;
   notificationsEnabled: boolean;
+  language?: Language;
+  privacyAnalytics?: boolean;
+  privacyPhotoRetention?: boolean;
+  privacyCoachSharing?: boolean;
+  notificationSchedule?: Record<string, unknown>;
   updatedAt: string;
 }
 
@@ -105,5 +111,10 @@ export interface UpdateSettingsPayload {
   healthConnectEnabled?: boolean;
   smartwatchConnected?: boolean;
   notificationsEnabled?: boolean;
+  language?: Language;
+  privacyAnalytics?: boolean;
+  privacyPhotoRetention?: boolean;
+  privacyCoachSharing?: boolean;
+  notificationSchedule?: Record<string, unknown>;
 }
 

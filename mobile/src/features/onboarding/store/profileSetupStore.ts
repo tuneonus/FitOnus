@@ -23,10 +23,7 @@ export type ProfileSetup = {
 
 type ProfileSetupState = ProfileSetup & {
   update: (patch: Partial<ProfileSetup>) => void;
-  toggleInList: (
-    key: 'equipment' | 'allergies' | 'cuisines',
-    value: string
-  ) => void;
+  toggleInList: (key: 'equipment' | 'allergies' | 'cuisines', value: string) => void;
   reset: () => void;
 };
 
@@ -44,7 +41,7 @@ const initialSetup: ProfileSetup = {
   daysPerWeek: 3,
   equipment: [],
   durationMin: 45,
-  diet: 'omnivore',
+  diet: 'none',
   allergies: [],
   cuisines: [],
   healthAllowed: false,
@@ -56,12 +53,22 @@ export const useProfileSetupStore = create<ProfileSetupState>((set, get) => ({
   update: (patch) => set(patch),
   toggleInList: (key, value) => {
     const list = get()[key];
+    if (key === 'equipment') {
+      set({
+        equipment:
+          value === 'None'
+            ? list.includes('None')
+              ? []
+              : ['None']
+            : list.includes(value)
+              ? list.filter((v) => v !== value)
+              : [...list.filter((v) => v !== 'None'), value],
+      });
+      return;
+    }
     set({
-      [key]: list.includes(value)
-        ? list.filter((v) => v !== value)
-        : [...list, value],
+      [key]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value],
     } as Partial<ProfileSetup>);
   },
   reset: () => set(initialSetup),
 }));
-

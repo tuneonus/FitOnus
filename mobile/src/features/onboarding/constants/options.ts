@@ -147,4 +147,3 @@ export const cuisineOptions = [
   'East Asian',
   'Continental',
 ];
-

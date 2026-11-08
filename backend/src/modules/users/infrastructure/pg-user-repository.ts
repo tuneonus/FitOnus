@@ -139,4 +139,9 @@ export class PgUserRepository implements UserRepository {
     );
     return result.rowCount === 1;
   }
+
+  async deleteById(id: string): Promise<boolean> {
+    const { rowCount } = await this.db.query(`DELETE FROM users WHERE id = $1`, [id]);
+    return (rowCount ?? 0) > 0;
+  }
 }

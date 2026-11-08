@@ -60,8 +60,10 @@ import { FitnessPreferencesScreen } from '@/features/profile/screens/FitnessPref
 import { NutritionPreferencesScreen } from '@/features/profile/screens/NutritionPreferencesScreen';
 import { SettingsScreen } from '@/features/settings/screens/SettingsScreen';
 import { AppearanceScreen } from '@/features/settings/screens/AppearanceScreen';
+import { LanguageScreen } from '@/features/settings/screens/LanguageScreen';
 import { PrivacyScreen } from '@/features/settings/screens/PrivacyScreen';
 import { AccountScreen } from '@/features/settings/screens/AccountScreen';
+import { ChangePasswordScreen } from '@/features/settings/screens/ChangePasswordScreen';
 
 /**
  * Single source of truth registering all 61 screens mapped to RouteName.
@@ -145,8 +147,10 @@ export const registry: Record<RouteName, React.ComponentType> = {
   nutritionPreferences: NutritionPreferencesScreen,
   settings: SettingsScreen,
   appearance: AppearanceScreen,
+  language: LanguageScreen,
   privacy: PrivacyScreen,
   account: AccountScreen,
+  changePassword: ChangePasswordScreen,
 };
 
 export function RouteScreen({ name }: { name: RouteName }) {

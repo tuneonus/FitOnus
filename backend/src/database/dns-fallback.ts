@@ -7,8 +7,13 @@ interface DnsCacheEntry {
   expiresAt: number;
 }
 
-const KNOWN_NEON_IPS = ['52.76.246.190', '52.76.212.156', '3.0.27.201'];
-const dnsCache = new Map<string, DnsCacheEntry>();
+const KNOWN_NEON_IPS = ['52.76.212.156', '3.0.27.201', '52.76.246.190'];
+const dnsCache = new Map<string, DnsCacheEntry>([
+  [
+    'ep-shy-art-b3sxwfkd-pooler.c-4.ap-southeast-1.aws.neon.tech',
+    { addresses: KNOWN_NEON_IPS, expiresAt: Date.now() + 24 * 60 * 60 * 1000 },
+  ],
+]);
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour TTL
 
 /**
@@ -25,7 +30,7 @@ export function setupDnsFallback(): void {
 
   const originalLookup = dns.lookup;
   const fallbackResolver = new dns.Resolver();
-  fallbackResolver.setServers(['1.1.1.1', '1.0.0.1', '8.8.8.8', '8.8.4.4']);
+  fallbackResolver.setServers(['8.8.8.8', '1.1.1.1', '1.0.0.1', '8.8.4.4']);
 
   // Override dns.lookup with cache + fallback support
   // @ts-expect-error Type overloading complexity in Node dns.lookup

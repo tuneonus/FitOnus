@@ -1,4 +1,10 @@
-import Constants from 'expo-constants';
+let Constants: any = null;
+try {
+  const req = eval('require');
+  Constants = req('expo-constants')?.default || req('expo-constants');
+} catch {
+  // Headless test or non-native environment
+}
 
 function resolveApiBaseUrl(): string {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;

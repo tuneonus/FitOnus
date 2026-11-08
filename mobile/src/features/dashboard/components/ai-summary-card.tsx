@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { AISummary } from '../api/dashboard-repository';
+import type { AISummary } from '../api/dashboard-repository';
 
 interface AISummaryCardProps {
   summary: AISummary;
@@ -13,6 +13,7 @@ interface AISummaryCardProps {
 
 export const AISummaryCard = React.memo(({ summary }: AISummaryCardProps) => {
   const { colors } = useTheme();
+  const insights = [summary.sleepInsights, summary.recoveryInsights].filter(Boolean).join(' ');
 
   return (
     <Card style={styles.container}>
@@ -22,17 +23,21 @@ export const AISummaryCard = React.memo(({ summary }: AISummaryCardProps) => {
         </View>
         <Text variant="headlineSmall">AI Coach Summary</Text>
       </View>
-      
+
       <View style={[styles.chatBubble, { backgroundColor: colors.backgroundElement }]}>
         <Text variant="bodyMedium" style={styles.textLine}>
           {summary.greeting}
         </Text>
-        <Text variant="bodyMedium" style={styles.textLine}>
-          {summary.sleepInsights} {summary.recoveryInsights}
-        </Text>
-        <Text variant="bodyMedium" color="primary" style={styles.recommendation}>
-          {summary.recommendation}
-        </Text>
+        {insights.length > 0 && (
+          <Text variant="bodyMedium" style={styles.textLine}>
+            {insights}
+          </Text>
+        )}
+        {summary.recommendation && (
+          <Text variant="bodyMedium" color="primary" style={styles.recommendation}>
+            {summary.recommendation}
+          </Text>
+        )}
       </View>
     </Card>
   );

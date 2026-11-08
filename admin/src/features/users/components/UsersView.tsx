@@ -10,9 +10,12 @@ import { UserDetailModal, useUserDetail } from '@/features/profiles';
 import { useUsers } from '../hooks/useUsers';
 import { usersApi } from '../api';
 import { ApiError } from '@/lib/api-client';
+import { useToast } from '@/context/ToastContext';
+import { downloadUsersCsv } from '../utils/exportUsersCsv';
 import type { AdminUserListItem } from '../types';
 
 export function UsersView() {
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
 
@@ -58,6 +61,23 @@ export function UsersView() {
     fetchUsers();
   };
 
+  const handleResetFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setOnboardingFilter('');
+    setRoleFilter('');
+    setPage(1);
+  };
+
+  const handleExportCsv = () => {
+    if (users.length === 0) {
+      toast.warning('No users found in current query to export.');
+      return;
+    }
+    const { filename, rowCount } = downloadUsersCsv(users);
+    toast.success(`Exported ${rowCount} user${rowCount === 1 ? '' : 's'} (current page) to ${filename}.`);
+  };
+
   const handleOpenActionModal = (
     user: AdminUserListItem,
     type: 'suspend' | 'reactivate'
@@ -70,14 +90,22 @@ export function UsersView() {
 
   const handleExecuteStatusChange = async () => {
     if (!actionTargetUser || !actionType) return;
+
+    if (actionType === 'suspend' && !actionReason.trim()) {
+      setActionError('A suspension reason is required for administrative audit logs.');
+      return;
+    }
+
     setIsSubmittingAction(true);
     setActionError(null);
 
     try {
       if (actionType === 'suspend') {
-        await usersApi.suspendUser(actionTargetUser.id, actionReason);
+        await usersApi.suspendUser(actionTargetUser.id, actionReason.trim());
+        toast.success(`User ${actionTargetUser.email} has been suspended.`);
       } else {
-        await usersApi.reactivateUser(actionTargetUser.id, actionReason);
+        await usersApi.reactivateUser(actionTargetUser.id, actionReason.trim() || undefined);
+        toast.success(`User ${actionTargetUser.email} has been reactivated.`);
       }
 
       // Close modal and refresh list
@@ -90,13 +118,12 @@ export function UsersView() {
         await refreshDetail();
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        setActionError(err.message);
-      } else if (err instanceof Error) {
-        setActionError(err.message);
-      } else {
-        setActionError('Failed to change user status.');
-      }
+      const message =
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : 'Failed to change user status.';
+      setActionError(message);
+      toast.error(message);
     } finally {
       setIsSubmittingAction(false);
     }
@@ -129,6 +156,9 @@ export function UsersView() {
             setPage(1);
           }}
           onSubmit={handleSearchSubmit}
+          onResetFilters={handleResetFilters}
+          onExportCsv={handleExportCsv}
+          totalUsersCount={meta.total || users.length}
         />
 
         <UsersTable

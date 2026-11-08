@@ -7,8 +7,7 @@ import { useSettingsStore } from '@/shared/stores/settingsStore';
 export const SETTINGS_QUERY_KEY = ['settings'] as const;
 
 export function syncStoreWithSettings(s: UserSettingsView) {
-  useSettingsStore.getState().setUnits(s.unitSystem);
-  useSettingsStore.getState().setTheme(s.themeMode);
+  void useSettingsStore.getState().syncFromServer(s);
 }
 
 export function useSettings() {
@@ -39,4 +38,3 @@ export function useUpdateSettings() {
     },
   });
 }
-

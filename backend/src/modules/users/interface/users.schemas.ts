@@ -56,3 +56,13 @@ const profileBody = z.strictObject({
 export const updateOwnProfileRequest = { body: profileBody };
 
 export const updateUserProfileRequest = { params: idParamsSchema, body: profileBody };
+
+export const deleteAccountRequest = {
+  body: z.strictObject({
+    password: z.string().min(1, 'Password is required to confirm account deletion'),
+  }),
+};
+
+export const deletedUserSchema = z.object({
+  deletedUserId: z.uuid(),
+});

@@ -3,6 +3,7 @@ import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
 import type { SessionsUseCases } from '../../auth/index.js';
+import type { AdminChangePasswordUseCase } from '../application/use-cases/admin-change-password.js';
 import type { AdminLoginUseCase } from '../application/use-cases/admin-login.js';
 import type { AdminChangeUserStatusUseCase } from '../application/use-cases/change-user-status.js';
 import type { GetAdminUserUseCase } from '../application/use-cases/get-admin-user.js';
@@ -10,6 +11,7 @@ import type { GetDashboardStatsUseCase } from '../application/use-cases/get-dash
 import type { ListAdminUsersUseCase } from '../application/use-cases/list-admin-users.js';
 import type { ListAuditLogsUseCase } from '../application/use-cases/list-audit-logs.js';
 import {
+  adminChangePasswordRequest,
   adminLoginRequest,
   changeUserStatusRequest,
   getUserRequest,
@@ -19,6 +21,7 @@ import {
 
 export interface AdminUseCases {
   login: AdminLoginUseCase;
+  changePassword: AdminChangePasswordUseCase;
   getDashboardStats: GetDashboardStatsUseCase;
   listUsers: ListAdminUsersUseCase;
   getAdminUser: GetAdminUserUseCase;
@@ -86,6 +89,20 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
         data: { message: 'Logged out successfully' },
         headers: {
           'Set-Cookie': clearCookie,
+        },
+      };
+    },
+
+    changePassword: async (req: Request): Promise<RouteResult<unknown>> => {
+      const actor = requireActor(req);
+      const { body } = getValidated(req, adminChangePasswordRequest);
+      const result = await useCases.changePassword.execute(actor, body, clientMeta(req));
+
+      return {
+        status: 200,
+        data: {
+          message: 'Password changed successfully',
+          revokedSessions: result.revokedSessions,
         },
       };
     },

@@ -5,6 +5,7 @@ import { WorkoutService } from '../services/workout-service';
 import { offlineSyncService } from '../services/offline-sync';
 import { workoutApi } from '../api/workout-api';
 import { showToast } from '../../../shared/stores/toastStore';
+import { queryClient } from '../../../providers/query-provider';
 import { logger } from '@/utils/logger';
 
 type TodayStatus = 'notStarted' | 'inProgress' | 'completed';
@@ -316,6 +317,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
           ),
           pendingSyncCount: isOffline ? state.pendingSyncCount + 1 : state.pendingSyncCount,
         }));
+        void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       })
       .catch((err) => {
         logger.error('Unexpected error saving workout session:', err);
@@ -358,6 +360,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
         const pendingCount = await offlineSyncService.getPendingCount();
         set({ pendingSyncCount: pendingCount });
         await get().loadHistoryFromBackend();
+        void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       }
     } catch (err) {
       logger.warn('Offline sync failed:', err);

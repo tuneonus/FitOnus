@@ -124,6 +124,10 @@ export class InMemoryUserRepository implements UserRepository {
     this.users.set(id, { ...user, passwordHash, version: user.version + 1 });
     return Promise.resolve(true);
   }
+
+  deleteById(id: string): Promise<boolean> {
+    return Promise.resolve(this.users.delete(id));
+  }
 }
 
 export class InMemorySessionRepository implements SessionRepository {

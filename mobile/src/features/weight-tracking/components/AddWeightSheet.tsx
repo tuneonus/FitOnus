@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BottomSheet } from '@/shared/components/ui/BottomSheet';
 import { Button } from '@/shared/components/ui/Button';
@@ -7,18 +7,35 @@ import { TextField } from '@/shared/components/ui/TextField';
 import { showToast } from '@/shared/stores/toastStore';
 import { useWeightStore } from '../store/weightStore';
 import { useTheme } from '@/hooks/use-theme';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { kgToLb, lbToKg } from '@/shared/utils/unit-conversion';
 
 export function AddWeightSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { colors } = useTheme();
+  const units = useSettingsStore((s) => s.units);
+  const isImperial = units === 'imperial';
   const { entries, addEntry, undoLast } = useWeightStore();
   const lastEntry = entries[entries.length - 1];
-  const [value, setValue] = useState(lastEntry ? lastEntry.value : 70);
+
+  const getDefaultVal = () => {
+    const baseKg = lastEntry ? lastEntry.value : 70;
+    return isImperial ? (kgToLb(baseKg) ?? 154) : baseKg;
+  };
+
+  const [value, setValue] = useState(getDefaultVal());
   const [note, setNote] = useState('');
 
+  useEffect(() => {
+    if (open) {
+      setValue(getDefaultVal());
+    }
+  }, [open, isImperial, lastEntry]);
+
   const save = () => {
-    const prev = addEntry(value, note || undefined);
+    const canonicalKg = isImperial ? (lbToKg(value) ?? value) : value;
+    const prev = addEntry(canonicalKg, note || undefined);
     showToast({
-      message: `${value.toFixed(1)} kg saved for today`,
+      message: `${value.toFixed(1)} ${isImperial ? 'lb' : 'kg'} saved for today`,
       actionLabel: 'Undo',
       onAction: () => undoLast(prev),
     });
@@ -50,11 +67,11 @@ export function AddWeightSheet({ open, onClose }: { open: boolean; onClose: () =
           label="Weight"
           value={value}
           onChange={setValue}
-          step={0.1}
+          step={isImperial ? 0.2 : 0.1}
           decimals={1}
-          min={30}
-          max={250}
-          unit="kg"
+          min={isImperial ? 66 : 30}
+          max={isImperial ? 550 : 250}
+          unit={isImperial ? 'lb' : 'kg'}
         />
       </View>
       <TextField
@@ -80,4 +97,3 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
 });
-

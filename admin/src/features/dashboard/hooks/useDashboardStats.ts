@@ -1,41 +1,62 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { dashboardApi } from '../api';
-import type { DashboardStats } from '../types';
+import type { EnhancedDashboardData, DashboardTimeframe } from '../types';
 
 export function useDashboardStats() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [data, setData] = useState<EnhancedDashboardData | null>(null);
+  const [timeframe, setTimeframe] = useState<DashboardTimeframe>('7d');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const data = await dashboardApi.getStats();
-      setStats(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard metrics.');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
+  const inFlightRef = useRef(false);
+
+  const fetchEnhancedStats = useCallback(
+    async (opts: { silent?: boolean } = {}) => {
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+
+      try {
+        const result = await dashboardApi.getEnhancedDashboard();
+        setData(result);
+        if (!opts.silent) {
+          setError(null);
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Failed to fetch dashboard metrics.',
+        );
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+        inFlightRef.current = false;
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     let isMounted = true;
+
     dashboardApi
-      .getStats()
-      .then((data) => {
+      .getEnhancedDashboard()
+      .then((res) => {
         if (isMounted) {
-          setStats(data);
-          setIsLoading(false);
+          setData(res);
+          setError(null);
         }
       })
       .catch((err) => {
         if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch dashboard metrics.');
+          setError(
+            err instanceof Error ? err.message : 'Failed to fetch dashboard metrics.',
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
           setIsLoading(false);
         }
       });
@@ -45,17 +66,18 @@ export function useDashboardStats() {
     };
   }, []);
 
-  const refresh = () => {
+  const refresh = useCallback(async () => {
     setIsRefreshing(true);
-    fetchStats();
-  };
+    await fetchEnhancedStats({ silent: true });
+  }, [fetchEnhancedStats]);
 
   return {
-    stats,
+    data,
+    timeframe,
+    setTimeframe,
     isLoading,
     isRefreshing,
     error,
     refresh,
   };
 }
-

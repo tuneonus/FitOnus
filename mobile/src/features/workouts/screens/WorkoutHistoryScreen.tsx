@@ -20,28 +20,29 @@ export function WorkoutHistoryScreen() {
     loadHistoryFromBackend();
   }, [loadHistoryFromBackend]);
 
-  const now = new Date();
+  const [now] = React.useState(() => new Date());
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
   const todayDay = now.getDate();
 
-  const monthName = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(now);
+  const monthName = React.useMemo(
+    () => new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(now),
+    [now]
+  );
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayWeekday = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7;
 
-  const trainedDays = React.useMemo(() => {
-    const daysSet = new Set<number>();
-    history.forEach((h) => {
-      const dt = new Date(h.date || (h as any).startedAt || (h as any).completedAt);
-      if (!isNaN(dt.getTime()) && dt.getFullYear() === currentYear && dt.getMonth() === currentMonth) {
-        daysSet.add(dt.getDate());
-      }
-    });
-    if (todayStatus === 'completed') {
-      daysSet.add(todayDay);
+  const daysSet = new Set<number>();
+  history.forEach((h) => {
+    const dt = new Date(h.date || (h as any).startedAt || (h as any).completedAt);
+    if (!isNaN(dt.getTime()) && dt.getFullYear() === currentYear && dt.getMonth() === currentMonth) {
+      daysSet.add(dt.getDate());
     }
-    return Array.from(daysSet);
-  }, [history, todayStatus, currentYear, currentMonth, todayDay]);
+  });
+  if (todayStatus === 'completed') {
+    daysSet.add(todayDay);
+  }
+  const trainedDays = Array.from(daysSet);
 
   return (
     <Screen

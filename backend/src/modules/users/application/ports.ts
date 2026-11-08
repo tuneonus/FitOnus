@@ -30,4 +30,5 @@ export interface UserRepository {
   /** Compare-and-set on `version`; null when the row is missing, changed, or already in `status`. */
   changeStatus(id: string, expectedVersion: number, status: UserStatus): Promise<User | null>;
   updatePasswordHash(id: string, passwordHash: string): Promise<boolean>;
+  deleteById(id: string): Promise<boolean>;
 }

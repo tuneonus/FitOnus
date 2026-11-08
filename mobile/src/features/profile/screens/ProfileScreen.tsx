@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import {
+  Award,
   Brain,
   Dumbbell,
   HeartPulse,
@@ -24,6 +25,8 @@ import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { fitnessGoals } from '../../onboarding/constants/options';
 import { useTheme } from '@/hooks/use-theme';
 import { useProfile } from '../hooks/use-profile';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { formatWeight, formatHeight } from '@/shared/utils/unit-conversion';
 
 export function ProfileScreen() {
   const { colors } = useTheme();
@@ -44,8 +47,25 @@ export function ProfileScreen() {
     .slice(0, 2)
     .toUpperCase() || 'U';
 
-  const weightVal = serverProfile?.currentWeightKg ?? (p.weightKg > 0 ? p.weightKg : '—');
-  const heightVal = serverProfile?.heightCm ?? (p.heightCm > 0 ? p.heightCm : '—');
+  const units = useSettingsStore((s) => s.units);
+  const rawWeight =
+    serverProfile?.currentWeightKg != null
+      ? Number(serverProfile.currentWeightKg)
+      : p.weightKg > 0
+        ? p.weightKg
+        : null;
+  const rawHeight =
+    serverProfile?.heightCm != null
+      ? Number(serverProfile.heightCm)
+      : p.heightCm > 0
+        ? p.heightCm
+        : null;
+
+  const displayWeight = formatWeight(rawWeight, units, { includeUnit: false });
+  const weightUnitLabel = rawWeight ? (units === 'imperial' ? 'lb' : 'kg') : '';
+
+  const displayHeight = formatHeight(rawHeight, units, { includeUnit: false, compactImperial: true });
+  const heightUnitLabel = rawHeight ? (units === 'imperial' ? '' : 'cm') : '';
 
   return (
     <Screen
@@ -70,16 +90,16 @@ export function ProfileScreen() {
           <View style={styles.statCol}>
             <Text style={[styles.statLabel, { color: colors.muted }]}>Weight</Text>
             <Text style={[styles.statVal, { color: colors.ink }]}>
-              {weightVal}
-              {weightVal !== '—' && <Text style={[styles.statUnit, { color: colors.muted }]}> kg</Text>}
+              {displayWeight}
+              {weightUnitLabel ? <Text style={[styles.statUnit, { color: colors.muted }]}> {weightUnitLabel}</Text> : null}
             </Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
           <View style={styles.statCol}>
             <Text style={[styles.statLabel, { color: colors.muted }]}>Height</Text>
             <Text style={[styles.statVal, { color: colors.ink }]}>
-              {heightVal}
-              {heightVal !== '—' && <Text style={[styles.statUnit, { color: colors.muted }]}> cm</Text>}
+              {displayHeight}
+              {heightUnitLabel ? <Text style={[styles.statUnit, { color: colors.muted }]}> {heightUnitLabel}</Text> : null}
             </Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
@@ -116,6 +136,11 @@ export function ProfileScreen() {
             title="Goals"
             value={`${activeGoals} active`}
             onPress={() => navigate('goals')}
+          />
+          <ListRow
+            icon={Award}
+            title="Challenges & Badges"
+            onPress={() => navigate('challenges')}
           />
         </ListGroup>
 

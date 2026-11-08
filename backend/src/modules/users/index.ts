@@ -6,6 +6,7 @@ import type { PasswordHasher } from '../../shared/security/password-hasher.js';
 import { createUserAccountsApi, type UserAccountsApi } from './application/accounts.js';
 import { ChangeUserStatusUseCase } from './application/use-cases/change-user-status.js';
 import { CreateUserUseCase } from './application/use-cases/create-user.js';
+import { DeleteAccountUseCase } from './application/use-cases/delete-account.js';
 import { GetUserUseCase } from './application/use-cases/get-user.js';
 import { ListUsersUseCase } from './application/use-cases/list-users.js';
 import { UpdateUserProfileUseCase } from './application/use-cases/update-user-profile.js';
@@ -48,6 +49,11 @@ export function createUsersModule(deps: {
     listUsers: new ListUsersUseCase({ users }),
     updateProfile: new UpdateUserProfileUseCase({ users }),
     changeStatus: new ChangeUserStatusUseCase({ users }),
+    deleteAccount: new DeleteAccountUseCase({
+      users,
+      passwordHasher: deps.passwordHasher,
+      uow: deps.uow,
+    }),
   });
 
   return {

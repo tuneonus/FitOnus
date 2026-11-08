@@ -66,7 +66,8 @@
     "lint": "expo lint",
     "build:android": "expo run:android",
     "build:ios": "expo run:ios",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "NODE_PATH=node_modules ../backend/node_modules/.bin/tsx --test tests/*.test.ts"
   },
   "private": true
 }

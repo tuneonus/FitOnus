@@ -1,23 +1,24 @@
 import { apiClient } from '@/services/api-client';
 
 export interface DailySummary {
-  recoveryScore: number;
-  sleepScore: number;
-  sleepDuration: string;
-  steps: number;
+  recoveryScore: number | null;
+  sleepScore: number | null;
+  sleepDuration: string | null;
+  steps: number | null;
   caloriesBurned: number;
   caloriesConsumed: number;
   activeMinutes: number;
   waterIntake: number;
-  heartRate: number;
-  weight: number;
+  waterIntakeMl?: number;
+  heartRate: number | null;
+  weight: number | null;
 }
 
 export interface AISummary {
   greeting: string;
-  sleepInsights: string;
-  recoveryInsights: string;
-  recommendation: string;
+  sleepInsights: string | null;
+  recoveryInsights: string | null;
+  recommendation: string | null;
 }
 
 export interface TodayWorkout {
@@ -53,6 +54,7 @@ export interface RecentActivity {
 }
 
 export interface DashboardData {
+  userDisplayName?: string;
   summary: DailySummary;
   aiSummary: AISummary;
   todayWorkout: TodayWorkout | null;
@@ -61,8 +63,9 @@ export interface DashboardData {
   recentActivity: RecentActivity[];
 }
 
-// Mock Data
-const MOCK_DASHBOARD_DATA: DashboardData = {
+// Mock Data preserved for offline tests or demo fixtures
+export const MOCK_DASHBOARD_DATA: DashboardData = {
+  userDisplayName: 'Athlete',
   summary: {
     recoveryScore: 84,
     sleepScore: 92,
@@ -123,20 +126,23 @@ const MOCK_DASHBOARD_DATA: DashboardData = {
       title: 'Logged Weight',
       subtitle: '75.2 kg',
       timestamp: '2 days ago',
-    }
-  ]
+    },
+  ],
 };
 
-
 export const DashboardRepository = {
-  getDashboardData: async (): Promise<DashboardData> => {
-    try {
-      const response = await apiClient.get<any>('/dashboard/summary');
-      return response.data.data as DashboardData;
-    } catch (error) {
-      console.error('Error fetching dashboard data from API', error);
-      // Fallback to mock data if API fails while in development
-      return MOCK_DASHBOARD_DATA;
+  getDashboardData: async (timezone?: string): Promise<DashboardData> => {
+    let tz = timezone;
+    if (!tz) {
+      try {
+        tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch {
+        tz = 'UTC';
+      }
     }
-  }
+    const response = await apiClient.get<{ success: boolean; data: DashboardData }>('/dashboard/summary', {
+      params: { timezone: tz || 'UTC' },
+    });
+    return response.data.data;
+  },
 };

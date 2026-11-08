@@ -15,6 +15,7 @@ import { createChallengesModule } from './modules/challenges/index.js';
 import { createAnalyticsModule } from './modules/analytics/index.js';
 import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
+import { createDashboardModule } from './modules/dashboard/index.js';
 import type { RouteGroup } from './shared/http/route.js';
 import { IdempotencyService } from './shared/idempotency/idempotency.js';
 import { PgIdempotencyStore } from './shared/idempotency/pg-idempotency-store.js';
@@ -127,6 +128,10 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     basePath: `${API_PREFIX}/analytics`,
     db: database,
   });
+  const dashboard = createDashboardModule({
+    basePath: `${API_PREFIX}/dashboard`,
+    db: database,
+  });
 
   return {
     database,
@@ -147,6 +152,7 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
       challenges.memberGamificationRoutes,
       challenges.adminChallengesRoutes,
       analytics.routes,
+      dashboard.routes,
     ],
     authenticate: createAuthenticate(auth.authenticateAccessToken),
     rateLimiters,

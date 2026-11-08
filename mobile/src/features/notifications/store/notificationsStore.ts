@@ -13,11 +13,17 @@ type NotificationsState = {
   remove: (id: string) => void;
   togglePreference: (key: string) => void;
   setPreferenceTime: (key: string, time: string) => void;
+  resetStore: () => void;
 };
 
 export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   items: initialNotifications,
   preferences: notificationPreferenceDefaults,
+  resetStore: () =>
+    set({
+      items: initialNotifications,
+      preferences: notificationPreferenceDefaults,
+    }),
   markRead: (id) =>
     set({
       items: get().items.map((n) =>

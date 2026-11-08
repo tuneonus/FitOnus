@@ -34,5 +34,19 @@ export const authApi = {
       method: 'POST',
     });
   },
+
+  async changePassword(input: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<{ message: string; revokedSessions: number }> {
+    const res = await apiClient<{ message: string; revokedSessions: number }>(
+      '/auth/change-password',
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
+    return res.data;
+  },
 };
 

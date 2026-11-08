@@ -1,6 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Sparkles, ChevronRight, Mic } from 'lucide-react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native';
+import { Sparkles, ChevronRight, Mic, ArrowUpRight, Link2 } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { ProgressRing } from '../../../shared/components/charts/ProgressRing';
 import { useHealthStore } from '../../health-integration/store/healthStore';
@@ -9,6 +16,8 @@ import { useTheme } from '@/hooks/use-theme';
 
 export function DailyBrief() {
   const { colors } = useTheme();
+  const { width, fontScale } = useWindowDimensions();
+  const compact = width < 360 || fontScale > 1.2;
   const { navigate } = useNavigation();
   const status = useHealthStore((s) => s.status);
   const hasData = status === 'synced' || status === 'offline' || status === 'error';
@@ -21,13 +30,14 @@ export function DailyBrief() {
   return (
     <View style={styles.container}>
       <View style={[styles.heroCard, { backgroundColor: colors.hero }]}>
+        <View pointerEvents="none" style={[styles.halo, { borderColor: `${colors.accent}12` }]} />
         {/* Header */}
         <View style={styles.cardHeader}>
           <View style={styles.titleRow}>
-            <Sparkles size={14} color={colors.accent} />
-            <Text style={[styles.cardTitle, { color: colors.heroMuted }]}>
-              Daily brief
-            </Text>
+            <View style={styles.sparkleBadge}>
+              <Sparkles size={14} color={colors.accent} />
+            </View>
+            <Text style={[styles.cardTitle, { color: colors.heroMuted }]}>YOUR DAILY BRIEF</Text>
           </View>
           {hasData && (
             <Text style={[styles.updatedText, { color: colors.heroMuted }]}>
@@ -40,42 +50,45 @@ export function DailyBrief() {
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => (hasData ? navigate('recovery') : navigate('healthIntegration'))}
-          style={styles.recoveryRow}
+          accessibilityRole="button"
+          accessibilityLabel={
+            hasData
+              ? `Recovery ${dailyBrief.recovery} out of 100. View recovery details`
+              : 'Connect health data'
+          }
+          style={[styles.recoveryRow, compact && styles.recoveryRowCompact]}
         >
           <ProgressRing
-            size={104}
+            size={compact ? 92 : 112}
             stroke={9}
             value={hasData ? dailyBrief.recovery / 100 : 0}
             color={colors.accent}
             trackColor="rgba(244, 244, 238, 0.1)"
           >
-            <Text style={[styles.recoveryVal, { color: colors.heroInk }]}>
-              {hasData ? dailyBrief.recovery : '—'}
-            </Text>
+            {hasData ? (
+              <Text style={[styles.recoveryVal, { color: colors.heroInk }]}>
+                {dailyBrief.recovery}
+              </Text>
+            ) : (
+              <Link2 size={28} color={colors.accent} />
+            )}
             <Text style={[styles.recoveryLabel, { color: colors.heroMuted }]}>
-              Recovery
+              {hasData ? 'Recovery' : 'Connect'}
             </Text>
           </ProgressRing>
 
-          <View style={styles.headlineColumn}>
+          <View style={[styles.headlineColumn, compact && styles.headlineColumnCompact]}>
             <Text style={[styles.headlineText, { color: colors.heroInk }]}>
               {hasData
                 ? dailyBrief.headline
                 : needsPermission
-                ? 'Sleep & HRV access is off'
-                : 'Recovery needs more data'}
+                  ? 'Sleep & HRV access is off'
+                  : 'Recovery needs more data'}
             </Text>
 
             {hasData ? (
-              <View
-                style={[
-                  styles.recPill,
-                  { backgroundColor: 'rgba(200, 245, 60, 0.15)' },
-                ]}
-              >
-                <View
-                  style={[styles.recDot, { backgroundColor: colors.accent }]}
-                />
+              <View style={[styles.recPill, { backgroundColor: 'rgba(200, 245, 60, 0.15)' }]}>
+                <View style={[styles.recDot, { backgroundColor: colors.accent }]} />
                 <Text style={[styles.recText, { color: colors.accent }]}>
                   {dailyBrief.recommendation}
                 </Text>
@@ -91,6 +104,20 @@ export function DailyBrief() {
           </View>
         </TouchableOpacity>
 
+        {!hasData && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.8}
+            onPress={() => navigate('healthIntegration')}
+            style={[styles.connectButton, { backgroundColor: colors.accent }]}
+          >
+            <Text style={[styles.connectText, { color: colors.accentInk }]}>
+              Connect health data
+            </Text>
+            <ArrowUpRight size={18} color={colors.accentInk} />
+          </TouchableOpacity>
+        )}
+
         {hasData && (
           <>
             <Text style={[styles.summaryText, { color: colors.heroInk }]}>
@@ -98,30 +125,22 @@ export function DailyBrief() {
             </Text>
 
             {/* Drivers */}
-            <View
-              style={[
-                styles.driversGrid,
-                { borderTopColor: 'rgba(244, 244, 238, 0.1)' },
-              ]}
-            >
+            <View style={[styles.driversGrid, { borderTopColor: 'rgba(244, 244, 238, 0.1)' }]}>
               {briefDrivers.map((driver) => (
                 <View key={driver.label} style={styles.driverItem}>
-                  <Text
-                    style={[styles.driverLabel, { color: colors.heroMuted }]}
-                  >
+                  <Text style={[styles.driverLabel, { color: colors.heroMuted }]}>
                     {driver.label}
                   </Text>
                   <Text style={[styles.driverVal, { color: colors.heroInk }]}>
                     {driver.value}
                     {driver.unit ? (
                       <Text style={[styles.driverUnit, { color: colors.heroMuted }]}>
-                        {' '}{driver.unit}
+                        {' '}
+                        {driver.unit}
                       </Text>
                     ) : null}
                   </Text>
-                  <Text style={[styles.driverDelta, { color: colors.accent }]}>
-                    {driver.delta}
-                  </Text>
+                  <Text style={[styles.driverDelta, { color: colors.accent }]}>{driver.delta}</Text>
                 </View>
               ))}
             </View>
@@ -129,44 +148,36 @@ export function DailyBrief() {
         )}
 
         {/* Suggested Questions */}
-        <View
-          style={[
-            styles.questionsSection,
-            { borderTopColor: 'rgba(244, 244, 238, 0.1)' },
-          ]}
-        >
+        <View style={[styles.questionsSection, { borderTopColor: 'rgba(244, 244, 238, 0.1)' }]}>
           <View style={styles.askHeader}>
-            <Text style={[styles.askTitle, { color: colors.heroMuted }]}>
-              Ask Coach
-            </Text>
+            <Text style={[styles.askTitle, { color: colors.heroMuted }]}>Ask Coach</Text>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Talk to your coach"
               onPress={() => navigate('voiceCoach')}
-              style={[
-                styles.voiceIconBtn,
-                { backgroundColor: 'rgba(244, 244, 238, 0.12)' },
-              ]}
+              style={[styles.voiceIconBtn, { backgroundColor: 'rgba(244, 244, 238, 0.12)' }]}
             >
               <Mic size={15} color={colors.heroInk} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.questionsList}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.questionsList}
+          >
             {suggestedQuestions.map((q) => (
               <TouchableOpacity
                 key={q}
                 activeOpacity={0.7}
+                accessibilityRole="button"
                 onPress={() => askCoach(q)}
-                style={[
-                  styles.questionChip,
-                  { backgroundColor: 'rgba(244, 244, 238, 0.08)' },
-                ]}
+                style={[styles.questionChip, { backgroundColor: 'rgba(244, 244, 238, 0.08)' }]}
               >
-                <Text style={[styles.questionText, { color: colors.heroInk }]}>
-                  {q}
-                </Text>
+                <Text style={[styles.questionText, { color: colors.heroInk }]}>{q}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         </View>
       </View>
     </View>
@@ -180,7 +191,38 @@ const styles = StyleSheet.create({
   heroCard: {
     borderRadius: 28,
     padding: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(244, 244, 238, 0.08)',
   },
+  halo: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    borderWidth: 35,
+    right: -115,
+    top: -100,
+  },
+  sparkleBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: 'rgba(200, 245, 60, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  connectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 48,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    marginTop: 20,
+  },
+  connectText: { fontSize: 14, fontWeight: '700', flexShrink: 1 },
+  recoveryRowCompact: { flexDirection: 'column', alignItems: 'flex-start' },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -192,11 +234,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 1.1,
   },
   updatedText: {
-    fontSize: 12,
+    fontSize: 10.5,
+    flexShrink: 1,
+    textAlign: 'right',
   },
   recoveryRow: {
     flexDirection: 'row',
@@ -216,11 +261,15 @@ const styles = StyleSheet.create({
   headlineColumn: {
     flex: 1,
   },
+  headlineColumnCompact: {
+    flex: 0,
+    alignSelf: 'stretch',
+  },
   headlineText: {
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: '700',
-    lineHeight: 25,
-    letterSpacing: -0.3,
+    lineHeight: 30,
+    letterSpacing: -0.8,
   },
   recPill: {
     flexDirection: 'row',
@@ -297,23 +346,24 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   voiceIconBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   questionsList: {
-    gap: 6,
+    gap: 8,
   },
   questionChip: {
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingVertical: 12,
     borderRadius: 16,
   },
   questionText: {
-    fontSize: 13.5,
+    fontSize: 12.5,
     fontWeight: '500',
   },
 });
-

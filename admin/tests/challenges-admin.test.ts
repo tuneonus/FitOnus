@@ -246,8 +246,9 @@ describe('Admin Challenges — Phase 7.6 Contract & Logic Tests', () => {
   it('14. Forbidden member access: handles 403 when user lacks admin:access', () => {
     const checkAdminPermission = (userRoles: string[], permissions: string[]) => {
       if (!permissions.includes('admin:access')) {
-        const error = new Error('Access denied. Administrator privileges required.');
-        (error as any).status = 403;
+        const error = Object.assign(new Error('Access denied. Administrator privileges required.'), {
+          status: 403,
+        });
         throw error;
       }
       return true;
@@ -255,7 +256,10 @@ describe('Admin Challenges — Phase 7.6 Contract & Logic Tests', () => {
 
     assert.throws(
       () => checkAdminPermission(['member'], ['member:read', 'member:write']),
-      (err: any) => err.status === 403 && err.message.includes('Administrator privileges required'),
+      (err: unknown) => {
+        const httpErr = err as { status?: number; message?: string };
+        return httpErr.status === 403 && (httpErr.message?.includes('Administrator privileges required') ?? false);
+      },
     );
     assert.equal(checkAdminPermission(['admin'], ['admin:access']), true);
   });

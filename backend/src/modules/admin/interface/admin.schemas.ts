@@ -30,6 +30,21 @@ export const adminMeResponseSchema = z.object({
   permissions: z.array(z.string()),
 });
 
+export const adminChangePasswordRequest = {
+  body: z.strictObject({
+    currentPassword: z.string().min(1, 'Current password is required').max(1_024),
+    newPassword: z
+      .string()
+      .min(12, 'Password must be at least 12 characters.')
+      .max(128, 'Password must be at most 128 characters.'),
+  }),
+};
+
+export const adminChangePasswordResponseSchema = z.object({
+  message: z.string(),
+  revokedSessions: z.number().int().nonnegative(),
+});
+
 export const dashboardStatsSchema = z.object({
   totalUsers: z.number().int(),
   activeUsers: z.number().int(),

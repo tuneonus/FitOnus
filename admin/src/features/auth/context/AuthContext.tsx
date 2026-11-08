@@ -52,6 +52,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Listen for session expiration events broadcasted by apiClient
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      setUser(null);
+      router.replace('/login');
+    };
+
+    window.addEventListener('fitonus:auth:expired', handleAuthExpired);
+    return () => {
+      window.removeEventListener('fitonus:auth:expired', handleAuthExpired);
+    };
+  }, [router]);
+
   // Route protection
   useEffect(() => {
     if (isLoading) return;

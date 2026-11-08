@@ -7,11 +7,11 @@ import {
   Lock,
   Droplets,
   AlertTriangle,
-  Check,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { StatsCard } from '@/components/ui/StatsCard';
 import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/context/ToastContext';
 import { FoodFilterBar } from './FoodFilterBar';
 import { FoodsTable } from './FoodsTable';
 import { FoodModal } from './FoodModal';
@@ -28,6 +28,8 @@ import type {
 } from '../types';
 
 export function NutritionAdminView() {
+  const { toast } = useToast();
+
   // Stats Hook
   const { stats, refresh: refreshStats } = useNutritionStats();
 
@@ -54,19 +56,6 @@ export function NutritionAdminView() {
     refresh: refreshFoods,
     fetchFoods,
   } = useNutritionFoods();
-
-  // Feedback Notification Banner
-  const [feedback, setFeedback] = useState<{
-    type: 'success' | 'error';
-    message: string;
-  } | null>(null);
-
-  const showNotification = (type: 'success' | 'error', message: string) => {
-    setFeedback({ type, message });
-    setTimeout(() => {
-      setFeedback(null);
-    }, 4500);
-  };
 
   // Food Form Modal State (Create / Edit)
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
@@ -114,15 +103,21 @@ export function NutritionAdminView() {
   };
 
   const handleSubmitFood = async (data: CreateFoodInput | UpdateFoodInput) => {
-    if (foodToEdit) {
-      await nutritionApi.updateFood(foodToEdit.id, data as UpdateFoodInput);
-      showNotification('success', `Food "${data.name || foodToEdit.name}" updated successfully.`);
-    } else {
-      await nutritionApi.createFood(data as CreateFoodInput);
-      showNotification('success', `Verified food "${data.name}" added to catalog.`);
+    try {
+      if (foodToEdit) {
+        await nutritionApi.updateFood(foodToEdit.id, data as UpdateFoodInput);
+        toast.success(`Food "${data.name || foodToEdit.name}" updated successfully.`);
+      } else {
+        await nutritionApi.createFood(data as CreateFoodInput);
+        toast.success(`Verified food "${data.name}" added to catalog.`);
+      }
+      await refreshFoods();
+      await refreshStats();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save food.';
+      toast.error(msg);
+      throw err;
     }
-    await refreshFoods();
-    await refreshStats();
   };
 
   // Details Handler
@@ -136,13 +131,16 @@ export function NutritionAdminView() {
   };
 
   const handleVerifySubmit = async (id: string, data: VerifyFoodInput) => {
-    await nutritionApi.verifyFood(id, data);
-    showNotification(
-      'success',
-      `Food verification status updated to "${data.verificationStatus}".`
-    );
-    await refreshFoods();
-    await refreshStats();
+    try {
+      await nutritionApi.verifyFood(id, data);
+      toast.success(`Food verification status updated to "${data.verificationStatus}".`);
+      await refreshFoods();
+      await refreshStats();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update verification status.';
+      toast.error(msg);
+      throw err;
+    }
   };
 
   // Soft-Delete Handler
@@ -155,18 +153,12 @@ export function NutritionAdminView() {
     setIsDeletingFood(true);
     try {
       await nutritionApi.deleteFood(foodToDelete.id);
-      showNotification(
-        'success',
-        `Food "${foodToDelete.name}" soft-deleted. Historical meal snapshots preserved.`
-      );
+      toast.success(`Food "${foodToDelete.name}" soft-deleted. Historical meal snapshots preserved.`);
       setFoodToDelete(null);
       await refreshFoods();
       await refreshStats();
     } catch (err) {
-      showNotification(
-        'error',
-        err instanceof Error ? err.message : 'Failed to delete food record.'
-      );
+      toast.error(err instanceof Error ? err.message : 'Failed to delete food record.');
     } finally {
       setIsDeletingFood(false);
     }
@@ -180,24 +172,6 @@ export function NutritionAdminView() {
       isRefreshing={isRefreshingFoods}
     >
       <div className="space-y-6">
-        {/* Feedback Alert Banner */}
-        {feedback && (
-          <div
-            className={`rounded-xl p-3 text-xs flex items-center gap-2 border animate-in fade-in duration-200 ${
-              feedback.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-            }`}
-          >
-            {feedback.type === 'success' ? (
-              <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-            ) : (
-              <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />
-            )}
-            <span>{feedback.message}</span>
-          </div>
-        )}
-
         {/* Platform Nutrition KPI Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard

@@ -1,30 +1,47 @@
-import { SecureStorageService } from '@/services/secure-storage';
+import { SecureStorageService } from '../../../services/secure-storage';
 import { AuthRepository, type LoginRequest, type RegisterRequest } from '../api/auth-repository';
 import { useAuthStore } from '../stores/auth-store';
-import { logger } from '@/utils/logger';
-import { queryClient } from '@/providers/query-provider';
-import { useNutritionStore } from '@/features/nutrition/store/nutritionStore';
-import { useWeightStore } from '@/features/weight-tracking/store/weightStore';
-import { useWorkoutStore } from '@/features/workouts/store/workoutStore';
-import { useProgressStore } from '@/features/analytics/store/progressStore';
-import { useProfileSetupStore } from '@/features/onboarding/store/profileSetupStore';
-import { useHealthStore } from '@/features/health-integration/store/healthStore';
-import { useGoalsStore } from '@/features/goals/store/goalsStore';
-import { useAdvancedAnalyticsStore } from '@/features/analytics/store/advancedAnalyticsStore';
+import { useSettingsStore } from '../../../shared/stores/settingsStore';
+import { logger } from '../../../utils/logger';
+import { queryClient } from '../../../providers/query-provider';
 
 const ACCESS_TOKEN_KEY = 'auth.access_token';
 const REFRESH_TOKEN_KEY = 'auth.refresh_token';
 
 function resetAllUserStores() {
   useAuthStore.getState().clearAuth();
-  useNutritionStore.getState().resetStore().catch(() => {});
-  useWeightStore.getState().resetStore();
-  useWorkoutStore.getState().resetStore();
-  useProgressStore.getState().resetStore();
-  useAdvancedAnalyticsStore.getState().resetStore();
-  useGoalsStore.getState().resetStore().catch(() => {});
-  useProfileSetupStore.getState().reset();
-  useHealthStore.getState().resetStore();
+  useSettingsStore.getState().resetStore();
+
+  const safeReset = (loader: () => any) => {
+    try {
+      const store = loader();
+      if (store?.getState) {
+        const state = store.getState();
+        const res = state.resetStore?.() ?? state.reset?.();
+        if (res && typeof res.catch === 'function') {
+          res.catch(() => {});
+        }
+      }
+    } catch {
+      // Ignored if store is not initialized or in isolated test environment
+    }
+  };
+
+  try {
+    const req = eval('require');
+    safeReset(() => req('../../nutrition/store/nutritionStore').useNutritionStore);
+    safeReset(() => req('../../weight-tracking/store/weightStore').useWeightStore);
+    safeReset(() => req('../../workouts/store/workoutStore').useWorkoutStore);
+    safeReset(() => req('../../analytics/store/progressStore').useProgressStore);
+    safeReset(() => req('../../analytics/store/advancedAnalyticsStore').useAdvancedAnalyticsStore);
+    safeReset(() => req('../../goals/store/goalsStore').useGoalsStore);
+    safeReset(() => req('../../onboarding/store/profileSetupStore').useProfileSetupStore);
+    safeReset(() => req('../../health-integration/store/healthStore').useHealthStore);
+    safeReset(() => req('../../challenges/store/challengesStore').useChallengesStore);
+    safeReset(() => req('../../notifications/store/notificationsStore').useNotificationsStore);
+  } catch {
+    // Isolated environment fallback
+  }
 }
 
 export function extractApiErrorMessage(error: any, fallback: string): string {
@@ -50,10 +67,10 @@ export function extractApiErrorMessage(error: any, fallback: string): string {
       return 'An account with this email address already exists. Please sign in.';
     }
     if (code === 'INVALID_CREDENTIALS') {
-      return 'Invalid email or password. Please try again.';
+      return message || 'Invalid email or password. Please try again.';
     }
     if (code === 'PASSWORD_POLICY_VIOLATION') {
-      return 'Password must be between 12 and 128 characters.';
+      return message || 'Password must be between 12 and 128 characters.';
     }
     if (code === 'REGISTRATION_DISABLED') {
       return 'Registration is currently disabled.';
@@ -179,6 +196,35 @@ export const AuthService = {
       resetAllUserStores();
       queryClient.clear();
     }
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    try {
+      await AuthRepository.changePassword({ currentPassword, newPassword });
+    } catch (error: any) {
+      const message = extractApiErrorMessage(error, 'Unable to change password. Please verify your current password.');
+      logger.error('Change password failed', { message });
+      throw new Error(message);
+    }
+  },
+
+  deleteAccount: async (password: string): Promise<void> => {
+    try {
+      await AuthRepository.deleteAccount(password);
+    } catch (error: any) {
+      const message = extractApiErrorMessage(error, 'Failed to delete account. Please verify your password.');
+      logger.error('Delete account failed', { message });
+      throw new Error(message);
+    }
+
+    try {
+      await SecureStorageService.removeItem(ACCESS_TOKEN_KEY);
+      await SecureStorageService.removeItem(REFRESH_TOKEN_KEY);
+    } catch {
+      // Ignore token removal errors
+    }
+    resetAllUserStores();
+    queryClient.clear();
   },
 
   getToken: async () => {

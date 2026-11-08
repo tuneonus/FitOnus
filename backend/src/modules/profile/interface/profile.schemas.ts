@@ -7,7 +7,7 @@ import {
   SEXES,
   WORKOUT_PLACES,
 } from '../domain/fitness-profile.js';
-import { THEME_MODES, UNIT_SYSTEMS } from '../domain/user-settings.js';
+import { SUPPORTED_LANGUAGES, THEME_MODES, UNIT_SYSTEMS } from '../domain/user-settings.js';
 
 export const metabolicMetricsSchema = z.object({
   bmr: z.number().int(),
@@ -43,6 +43,22 @@ export const userProfileSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+export const notificationScheduleSchema = z.record(
+  z.string().min(1).max(100),
+  z.union([
+    z
+      .object({
+        enabled: z.boolean().optional(),
+        time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be HH:MM in 24h format').optional(),
+        days: z.array(z.number().int().min(0).max(6)).optional(),
+      })
+      .passthrough(),
+    z.boolean(),
+    z.string(),
+    z.number(),
+  ]),
+);
+
 export const userSettingsSchema = z.object({
   userId: z.string().uuid(),
   themeMode: z.enum(THEME_MODES),
@@ -50,6 +66,11 @@ export const userSettingsSchema = z.object({
   healthConnectEnabled: z.boolean(),
   smartwatchConnected: z.boolean(),
   notificationsEnabled: z.boolean(),
+  language: z.enum(SUPPORTED_LANGUAGES),
+  privacyAnalytics: z.boolean(),
+  privacyPhotoRetention: z.boolean(),
+  privacyCoachSharing: z.boolean(),
+  notificationSchedule: z.record(z.string(), z.unknown()),
   updatedAt: z.string().datetime(),
 });
 
@@ -101,5 +122,10 @@ export const updateSettingsRequest = {
     healthConnectEnabled: z.boolean().optional(),
     smartwatchConnected: z.boolean().optional(),
     notificationsEnabled: z.boolean().optional(),
+    language: z.enum(SUPPORTED_LANGUAGES).optional(),
+    privacyAnalytics: z.boolean().optional(),
+    privacyPhotoRetention: z.boolean().optional(),
+    privacyCoachSharing: z.boolean().optional(),
+    notificationSchedule: notificationScheduleSchema.optional(),
   }),
 };

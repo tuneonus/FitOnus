@@ -40,19 +40,17 @@ export function HomeHeader() {
       <View style={styles.userRow}>
         <TouchableOpacity
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Open your profile"
           onPress={() => switchTab('profile')}
           style={[styles.avatar, { backgroundColor: colors.ink }]}
         >
-          <Text style={[styles.avatarText, { color: colors.bg }]}>
-            {initials}
-          </Text>
+          <Text style={[styles.avatarText, { color: colors.bg }]}>{initials}</Text>
         </TouchableOpacity>
 
         <View style={styles.titleColumn}>
-          <Text style={[styles.dateText, { color: colors.muted }]}>
-            {dateLabel}
-          </Text>
-          <Text style={[styles.greeting, { color: colors.ink }]}>
+          <Text style={[styles.dateText, { color: colors.muted }]}>{dateLabel}</Text>
+          <Text style={[styles.greeting, { color: colors.ink }]} numberOfLines={2}>
             {greeting}, {firstName}
           </Text>
         </View>
@@ -61,11 +59,15 @@ export function HomeHeader() {
       <View style={styles.rightActions}>
         <IconButton
           icon={Bell}
-          variant="surface"
+          variant="outline"
+          size={46}
+          accessibilityLabel={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
           onPress={() => navigate('notifications')}
         />
         {unread > 0 && (
-          <View style={[styles.badgeDot, { backgroundColor: colors.accent }]} />
+          <View
+            style={[styles.badgeDot, { backgroundColor: colors.move, borderColor: colors.bg }]}
+          />
         )}
       </View>
     </View>
@@ -77,19 +79,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 14,
+    paddingBottom: 24,
+    gap: 12,
   },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    minWidth: 0,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -98,15 +102,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   titleColumn: {
-    gap: 2,
+    flex: 1,
+    gap: 4,
   },
   dateText: {
     fontSize: 12.5,
   },
   greeting: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '700',
-    letterSpacing: -0.3,
+    letterSpacing: -0.7,
   },
   rightActions: {
     position: 'relative',
@@ -122,4 +127,3 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
   },
 });
-

@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
 import type { AdminController } from './admin.controller.js';
 import {
+  adminChangePasswordRequest,
+  adminChangePasswordResponseSchema,
   adminLoginRequest,
   adminLoginResponseSchema,
   adminMeResponseSchema,
@@ -18,6 +20,7 @@ import {
 
 export interface AdminRateLimiters {
   login: RequestHandler;
+  sensitive: RequestHandler;
 }
 
 const tags = ['Admin'];
@@ -78,6 +81,25 @@ export function createAdminRoutes(
           schema: z.object({ message: z.string() }),
         },
         handler: controller.logout,
+      }),
+      defineRoute({
+        method: 'post',
+        path: '/auth/change-password',
+        summary: 'Admin Password Change',
+        description:
+          'Changes the authenticated administrator password, enforces minimum 12-char policy, revokes other sessions, and logs an audit event.',
+        tags,
+        access: { kind: 'permission', permission: 'admin:access' },
+        middleware: [limiters.sensitive],
+        request: adminChangePasswordRequest,
+        response: {
+          status: 200,
+          description: 'Password changed successfully',
+          message: 'Password changed successfully',
+          schema: adminChangePasswordResponseSchema,
+        },
+        errorStatuses: [401, 403, 422, 429],
+        handler: controller.changePassword,
       }),
       defineRoute({
         method: 'get',

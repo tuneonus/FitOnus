@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -6,7 +6,7 @@ const barScales = [0.35, 0.6, 0.9, 0.5, 1, 0.7, 0.4, 0.85, 0.55, 0.95, 0.45, 0.7
 
 export function VoiceWaveform({ active }: { active: boolean }) {
   const { colors } = useTheme();
-  const anims = useRef(barScales.map(() => new Animated.Value(6))).current;
+  const [anims] = useState(() => barScales.map(() => new Animated.Value(6)));
 
   useEffect(() => {
     if (!active) {

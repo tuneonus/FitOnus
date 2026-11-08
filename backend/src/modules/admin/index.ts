@@ -2,6 +2,7 @@ import type { Database } from '../../database/transaction.js';
 import type { PasswordHasher } from '../../shared/security/password-hasher.js';
 import type { SessionIssuer, SessionRepository, SessionsUseCases, UserAccountsPort } from '../auth/index.js';
 import type { UserRepository } from '../users/index.js';
+import { AdminChangePasswordUseCase } from './application/use-cases/admin-change-password.js';
 import { AdminLoginUseCase } from './application/use-cases/admin-login.js';
 import { AdminChangeUserStatusUseCase } from './application/use-cases/change-user-status.js';
 import { GetAdminUserUseCase } from './application/use-cases/get-admin-user.js';
@@ -33,6 +34,12 @@ export function createAdminModule(deps: AdminModuleDependencies) {
       accounts: deps.accounts,
       passwordHasher: deps.passwordHasher,
       issuer: deps.sessionIssuer,
+      adminRepo,
+    }),
+    changePassword: new AdminChangePasswordUseCase({
+      accounts: deps.accounts,
+      sessions: deps.sessions,
+      passwordHasher: deps.passwordHasher,
       adminRepo,
     }),
     getDashboardStats: new GetDashboardStatsUseCase({ adminRepo }),

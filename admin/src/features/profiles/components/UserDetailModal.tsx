@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Activity, Info } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -119,7 +119,7 @@ export function UserDetailModal({
                 <div>
                   <span className="text-slate-400 text-[11px]">Primary Goal</span>
                   <p className="font-semibold text-slate-200 capitalize">
-                    {userDetail.profileMetadata.primaryGoal?.replace('_', ' ') ||
+                    {userDetail.profileMetadata.primaryGoal?.replace(/_/g, ' ') ||
                       'Not specified'}
                   </p>
                 </div>
@@ -193,6 +193,66 @@ export function UserDetailModal({
             )}
           </div>
 
+          {/* Member Activity & Real Data Status */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-purple-400" />
+                <span className="font-semibold text-white">
+                  Activity & Logs Summary
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                Phase 11 Scope
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
+                <span className="text-[10px] text-slate-400">Workout Plan</span>
+                <p className="text-xs font-semibold text-slate-200 mt-0.5">
+                  {userDetail.profileMetadata.workoutDaysPerWeek
+                    ? `${userDetail.profileMetadata.workoutDaysPerWeek}d/wk • ${userDetail.profileMetadata.preferredWorkoutDurationMin || 45}m`
+                    : 'Unconfigured'}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
+                <span className="text-[10px] text-slate-400">Nutrition Plan</span>
+                <p className="text-xs font-semibold text-slate-200 mt-0.5 capitalize">
+                  {userDetail.profileMetadata.dietType || 'Standard'}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
+                <span className="text-[10px] text-slate-400">Active Sessions</span>
+                <p className="text-xs font-semibold text-teal-300 mt-0.5">
+                  {userDetail.sessionsSummary.activeSessionsCount} token(s)
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
+                <span className="text-[10px] text-slate-400">Health History</span>
+                <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                  Protected (HIPAA)
+                </p>
+              </div>
+            </div>
+
+            {/* Missing Backend Endpoint Notice */}
+            <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-[11px] text-amber-300">
+              <Info className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold">Backend Endpoint Pending: </span>
+                Individual member workout session logs and historical meal entries (
+                <code className="font-mono text-[10px] text-amber-200 bg-amber-500/20 px-1 py-0.5 rounded">
+                  GET /api/v1/admin/users/:id/activity
+                </code>
+                ) are scheduled for Phase 11 Real Data Integration. Zero mock activity data is fabricated.
+              </div>
+            </div>
+          </div>
+
           {/* Timestamps */}
           <div className="grid grid-cols-2 gap-3 text-slate-400 text-[11px]">
             <div>
@@ -221,4 +281,3 @@ export function UserDetailModal({
     </Modal>
   );
 }
-

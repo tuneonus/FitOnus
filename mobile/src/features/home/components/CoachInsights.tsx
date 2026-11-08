@@ -46,7 +46,7 @@ export function CoachInsights() {
                   { backgroundColor: `${colors.accent}40` },
                 ]}
               >
-                <Icon size={17} color={colors.accentInk} />
+                <Icon size={17} color={colors.accentStrong} />
               </View>
 
               <View style={styles.contentCol}>
@@ -78,7 +78,7 @@ export function CoachInsights() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
+    marginVertical: 6,
     marginBottom: 24,
   },
   card: {

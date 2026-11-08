@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useColorScheme as useDeviceColorScheme } from 'react-native';
 import { Colors, ThemeColors } from '../constants/theme';
 import { StorageService } from '../services/storage';
+import { useSettingsStore, type ThemePreference, THEME_STORAGE_KEY } from '@/shared/stores/settingsStore';
 
-type ThemeMode = 'system' | 'light' | 'dark';
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 interface ThemeContextType {
   colors: ThemeColors;
@@ -11,8 +12,6 @@ interface ThemeContextType {
   isDark: boolean;
   setThemeMode: (mode: ThemeMode) => void;
 }
-
-const THEME_STORAGE_KEY = 'app.theme_mode';
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -22,39 +21,46 @@ interface ThemeProviderProps {
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const deviceColorScheme = useDeviceColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>('system');
-  const [isHydrated, setIsHydrated] = useState(false);
-  const isDark = mode === 'system' ? deviceColorScheme === 'dark' : mode === 'dark';
+  const theme = useSettingsStore((s) => s.theme);
+  const setTheme = useSettingsStore((s) => s.setTheme);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     void StorageService.getItem(THEME_STORAGE_KEY).then((savedMode) => {
       if (!mounted) return;
       if (savedMode === 'system' || savedMode === 'light' || savedMode === 'dark') {
-        setModeState(savedMode);
+        if (useSettingsStore.getState().theme !== savedMode) {
+          setTheme(savedMode as ThemePreference);
+        }
       }
-      setIsHydrated(true);
+      setIsReady(true);
     });
-    return () => { mounted = false; };
-  }, []);
+    return () => {
+      mounted = false;
+    };
+  }, [setTheme]);
 
-  const setThemeMode = (newMode: ThemeMode) => {
-    setModeState(newMode);
-    void StorageService.setItem(THEME_STORAGE_KEY, newMode);
-  };
+  const setThemeMode = useCallback(
+    (newMode: ThemeMode) => {
+      setTheme(newMode as ThemePreference);
+      void StorageService.setItem(THEME_STORAGE_KEY, newMode);
+    },
+    [setTheme],
+  );
 
-  if (!isHydrated) return null;
-
+  const isDark = theme === 'system' ? deviceColorScheme === 'dark' : theme === 'dark';
   const colors = isDark ? Colors.dark : Colors.light;
 
+  if (!isReady) return null;
+
   return (
-    <ThemeContext.Provider value={{ colors, mode, isDark, setThemeMode }}>
+    <ThemeContext.Provider value={{ colors, mode: theme, isDark, setThemeMode }}>
       {children}
     </ThemeContext.Provider>
   );
 };
 
-// Also create the useTheme hook here as it's tightly coupled
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (context === undefined) {

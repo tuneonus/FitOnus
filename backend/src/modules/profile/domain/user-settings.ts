@@ -4,6 +4,9 @@ export type ThemeMode = (typeof THEME_MODES)[number];
 export const UNIT_SYSTEMS = ['metric', 'imperial'] as const;
 export type UnitSystem = (typeof UNIT_SYSTEMS)[number];
 
+export const SUPPORTED_LANGUAGES = ['en', 'ta'] as const;
+export type Language = (typeof SUPPORTED_LANGUAGES)[number];
+
 export interface UserSettingsProps {
   userId: string;
   themeMode: ThemeMode;
@@ -11,6 +14,11 @@ export interface UserSettingsProps {
   healthConnectEnabled: boolean;
   smartwatchConnected: boolean;
   notificationsEnabled: boolean;
+  language: Language;
+  privacyAnalytics: boolean;
+  privacyPhotoRetention: boolean;
+  privacyCoachSharing: boolean;
+  notificationSchedule: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +35,11 @@ export class UserSettings {
       healthConnectEnabled: false,
       smartwatchConnected: false,
       notificationsEnabled: true,
+      language: 'en',
+      privacyAnalytics: true,
+      privacyPhotoRetention: true,
+      privacyCoachSharing: false,
+      notificationSchedule: {},
       createdAt: now,
       updatedAt: now,
     });
@@ -53,6 +66,21 @@ export class UserSettings {
   }
   get notificationsEnabled(): boolean {
     return this.props.notificationsEnabled;
+  }
+  get language(): Language {
+    return this.props.language;
+  }
+  get privacyAnalytics(): boolean {
+    return this.props.privacyAnalytics;
+  }
+  get privacyPhotoRetention(): boolean {
+    return this.props.privacyPhotoRetention;
+  }
+  get privacyCoachSharing(): boolean {
+    return this.props.privacyCoachSharing;
+  }
+  get notificationSchedule(): Record<string, unknown> {
+    return this.props.notificationSchedule;
   }
   get createdAt(): Date {
     return this.props.createdAt;

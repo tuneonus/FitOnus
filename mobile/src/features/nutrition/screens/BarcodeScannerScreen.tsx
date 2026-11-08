@@ -25,7 +25,7 @@ export function BarcodeScannerScreen() {
   const [product, setProduct] = useState<FoodItem | null>(null);
 
   // Scan line animation
-  const scanAnim = useRef(new Animated.Value(0)).current;
+  const [scanAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.loop(

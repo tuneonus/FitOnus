@@ -7,7 +7,7 @@ import type {
   UserProfile,
   WorkoutPlace,
 } from '../domain/fitness-profile.js';
-import type { ThemeMode, UnitSystem, UserSettings } from '../domain/user-settings.js';
+import type { Language, ThemeMode, UnitSystem, UserSettings } from '../domain/user-settings.js';
 
 export interface ProfileWithIdentity {
   profile: UserProfile;
@@ -59,6 +59,11 @@ export interface UpdateSettingsParams {
   healthConnectEnabled?: boolean;
   smartwatchConnected?: boolean;
   notificationsEnabled?: boolean;
+  language?: Language;
+  privacyAnalytics?: boolean;
+  privacyPhotoRetention?: boolean;
+  privacyCoachSharing?: boolean;
+  notificationSchedule?: Record<string, unknown>;
 }
 
 export interface SettingsRepository {

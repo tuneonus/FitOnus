@@ -9,9 +9,9 @@ export function ThinkingIndicator({ toolCalls = [] }: { toolCalls?: ToolName[] |
   const { colors } = useTheme();
   const [step, setStep] = useState(0);
 
-  const dot1 = useRef(new Animated.Value(0.3)).current;
-  const dot2 = useRef(new Animated.Value(0.3)).current;
-  const dot3 = useRef(new Animated.Value(0.3)).current;
+  const [dot1] = useState(() => new Animated.Value(0.3));
+  const [dot2] = useState(() => new Animated.Value(0.3));
+  const [dot3] = useState(() => new Animated.Value(0.3));
 
   useEffect(() => {
     if (step >= toolCalls.length) return;

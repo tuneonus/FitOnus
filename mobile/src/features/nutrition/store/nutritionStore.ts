@@ -9,6 +9,7 @@ import type {
   MealEntry,
   MealType,
   Nutrients,
+  UpdateMealInput,
 } from '../types/nutrition';
 import { toDbMealType } from '../types/nutrition';
 import { nutritionApi } from '../api/nutrition-api';
@@ -16,6 +17,7 @@ import { nutritionOfflineSync } from '../services/nutrition-offline-sync';
 import { calculatePortionNutrients, mapBackendMealToMealEntry } from '../utils/nutrition-calculator';
 import { generateUUID } from '../utils/uuid';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { queryClient } from '@/providers/query-provider';
 import { logger } from '@/utils/logger';
 
 function getCacheKey(): string {
@@ -28,6 +30,10 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 function getTodayDateString(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
+let lastWaterLogTime = 0;
+let lastWaterLogAmount = 0;
+let lastWaterLogId = '';
 
 export type NutritionState = {
   // Existing state fields preserved
@@ -62,6 +68,7 @@ export type NutritionState = {
     notes?: string;
     method?: EntryMethod;
   }) => Promise<string>;
+  updateMeal: (mealId: string, items: FoodItem[], notes?: string) => Promise<void>;
   logWater: (amountMl: number) => Promise<string>;
   toggleFavorite: (food: FoodItem) => Promise<boolean>;
   createCustomFood: (input: CreateCustomFoodInput) => Promise<FoodItem>;
@@ -109,6 +116,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
   },
 
   removeItem: (entryId, itemId) => {
+    const current = get().entries.find((e) => e.id === entryId);
     const updated = get()
       .entries.map((e) =>
         e.id === entryId ? { ...e, items: e.items.filter((i) => i.id !== itemId) } : e
@@ -116,9 +124,17 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       .filter((e) => e.items.length > 0);
     set({ entries: updated });
     saveCache(updated, get().waterMl, get().dailySummary);
+
+    if (current && UUID_REGEX.test(entryId)) {
+      const remainingItems = current.items.filter((i) => i.id !== itemId);
+      if (remainingItems.length > 0) {
+        void get().updateMeal(entryId, remainingItems, current.notes ?? undefined);
+      }
+    }
   },
 
   scaleItem: (entryId, itemId, factor) => {
+    const current = get().entries.find((e) => e.id === entryId);
     const updated = get().entries.map((e) =>
       e.id === entryId
         ? {
@@ -129,6 +145,11 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     );
     set({ entries: updated });
     saveCache(updated, get().waterMl, get().dailySummary);
+
+    if (current && UUID_REGEX.test(entryId)) {
+      const scaledItems = current.items.map((i) => (i.id === itemId ? scaleFood(i, factor) : i));
+      void get().updateMeal(entryId, scaledItems, current.notes ?? undefined);
+    }
   },
 
   setPendingAnalysis: (pendingAnalysis) => set({ pendingAnalysis }),
@@ -231,6 +252,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
       saveCache(finalized, get().waterMl, get().dailySummary);
       // Soft-refresh daily summary
       get().fetchDailyNutrition(date, true).catch(() => {});
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     } catch (error: any) {
       logger.info('Network submission failed, enqueuing meal for offline sync:', error?.message);
       await nutritionOfflineSync.enqueueMeal(payload);
@@ -240,8 +262,61 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     return mealId;
   },
 
+  updateMeal: async (mealId, items, notes) => {
+    const date = get().selectedDate || getTodayDateString();
+    const existing = get().entries.find((e) => e.id === mealId);
+    if (!existing) return;
+
+    const updatedEntry: MealEntry = {
+      ...existing,
+      items,
+      notes: notes !== undefined ? notes : existing.notes,
+    };
+
+    const finalizedEntries = get().entries.map((e) => (e.id === mealId ? updatedEntry : e));
+    set({ entries: finalizedEntries });
+    saveCache(finalizedEntries, get().waterMl, get().dailySummary);
+
+    if (UUID_REGEX.test(mealId)) {
+      const payload: UpdateMealInput = {
+        notes: notes !== undefined ? notes : existing.notes,
+        items: items.map((it) => ({
+          foodId: it.id && UUID_REGEX.test(it.id) ? it.id : null,
+          foodName: it.name,
+          foodBrand: it.brand ?? null,
+          servingSize: it.servingSize ?? 1,
+          servingUnit: it.servingUnit ?? 'serving',
+          servingWeightG: it.servingWeightG ?? 100,
+          servingMultiplier: it.servingMultiplier ?? 1.0,
+          calories: it.kcal,
+          proteinG: it.protein,
+          carbsG: it.carbs,
+          fatG: it.fat,
+          fiberG: it.fiber,
+        })),
+      };
+
+      try {
+        await nutritionApi.updateMeal(mealId, payload);
+        get().fetchDailyNutrition(date, true).catch(() => {});
+        void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      } catch (err: any) {
+        logger.warn('Failed to update meal on backend:', err?.message);
+      }
+    }
+  },
+
   logWater: async (amountMl) => {
+    const now = Date.now();
+    if (now - lastWaterLogTime < 350 && lastWaterLogAmount === amountMl) {
+      logger.info('Duplicate rapid water tap suppressed:', amountMl);
+      return lastWaterLogId;
+    }
+    lastWaterLogTime = now;
+    lastWaterLogAmount = amountMl;
+
     const waterId = generateUUID();
+    lastWaterLogId = waterId;
     const date = get().selectedDate || getTodayDateString();
     const newTotal = get().waterMl + amountMl;
 
@@ -260,6 +335,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     try {
       await nutritionApi.logWater(payload);
       get().fetchDailyNutrition(date, true).catch(() => {});
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     } catch (error: any) {
       logger.info('Direct water log failed, enqueuing offline:', error?.message);
       await nutritionOfflineSync.enqueueWater(payload);
@@ -329,6 +405,7 @@ export const useNutritionStore = create<NutritionState>((set, get) => ({
     await nutritionOfflineSync.syncAllPending();
     await get().refreshPendingSyncCount();
     await get().fetchDailyNutrition(get().selectedDate, true);
+    void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
   },
 
   resetStore: async () => {

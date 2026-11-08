@@ -5,12 +5,14 @@ import type { RouteResult } from '../../../shared/http/route.js';
 import { toPaginationMeta } from '../../../shared/pagination/pagination.js';
 import type { ChangeUserStatusUseCase } from '../application/use-cases/change-user-status.js';
 import type { CreateUserUseCase } from '../application/use-cases/create-user.js';
+import type { DeleteAccountUseCase, DeleteAccountResult } from '../application/use-cases/delete-account.js';
 import type { GetUserUseCase } from '../application/use-cases/get-user.js';
 import type { ListUsersUseCase } from '../application/use-cases/list-users.js';
 import type { UpdateUserProfileUseCase } from '../application/use-cases/update-user-profile.js';
 import type { UserView } from '../application/user-view.js';
 import {
   createUserRequest,
+  deleteAccountRequest,
   listUsersRequest,
   updateOwnProfileRequest,
   updateUserProfileRequest,
@@ -23,6 +25,7 @@ export interface UsersUseCases {
   listUsers: ListUsersUseCase;
   updateProfile: UpdateUserProfileUseCase;
   changeStatus: ChangeUserStatusUseCase;
+  deleteAccount: DeleteAccountUseCase;
 }
 
 /** Thin HTTP adapter: read validated input, call one use case, shape the result. */
@@ -52,6 +55,13 @@ export function createUsersController(useCases: UsersUseCases) {
       const { body } = getValidated(req, updateOwnProfileRequest);
       const actor = requireActor(req);
       return { data: await useCases.updateProfile.execute(actor, actor.userId, body) };
+    },
+
+    deleteMe: async (req: Request): Promise<RouteResult<DeleteAccountResult>> => {
+      const { body } = getValidated(req, deleteAccountRequest);
+      const actor = requireActor(req);
+      const data = await useCases.deleteAccount.execute(actor, body);
+      return { data, message: 'Account and all associated personal data permanently deleted.' };
     },
 
     getById: async (req: Request): Promise<RouteResult<UserView>> => {

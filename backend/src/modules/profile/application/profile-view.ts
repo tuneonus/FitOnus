@@ -7,7 +7,7 @@ import type {
   WorkoutPlace,
 } from '../domain/fitness-profile.js';
 import { MetabolicCalculator, type MetabolicMetrics } from '../domain/metabolic-calculator.js';
-import type { ThemeMode, UnitSystem, UserSettings } from '../domain/user-settings.js';
+import type { Language, ThemeMode, UnitSystem, UserSettings } from '../domain/user-settings.js';
 import type { ProfileWithIdentity } from './ports.js';
 
 export interface UserProfileView {
@@ -42,6 +42,11 @@ export interface UserSettingsView {
   healthConnectEnabled: boolean;
   smartwatchConnected: boolean;
   notificationsEnabled: boolean;
+  language: Language;
+  privacyAnalytics: boolean;
+  privacyPhotoRetention: boolean;
+  privacyCoachSharing: boolean;
+  notificationSchedule: Record<string, unknown>;
   updatedAt: string;
 }
 
@@ -104,6 +109,11 @@ export function toSettingsView(settings: UserSettings): UserSettingsView {
     healthConnectEnabled: settings.healthConnectEnabled,
     smartwatchConnected: settings.smartwatchConnected,
     notificationsEnabled: settings.notificationsEnabled,
+    language: settings.language,
+    privacyAnalytics: settings.privacyAnalytics,
+    privacyPhotoRetention: settings.privacyPhotoRetention,
+    privacyCoachSharing: settings.privacyCoachSharing,
+    notificationSchedule: settings.notificationSchedule,
     updatedAt: settings.updatedAt.toISOString(),
   };
 }

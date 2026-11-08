@@ -32,9 +32,16 @@ export async function apiClient<T>(
   headers.set('Accept', 'application/json');
   headers.set('X-Panel-Id', 'fitonus-admin');
 
+  // Enforce 15-second default timeout to prevent hanging connections
+  const timeoutSignal =
+    typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
+      ? AbortSignal.timeout(15000)
+      : undefined;
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    signal: options.signal ?? timeoutSignal,
     credentials: 'include', // Sends HttpOnly fitonus_admin_token cookie
   });
 
@@ -48,6 +55,18 @@ export async function apiClient<T>(
       errorData.message ||
       data?.message ||
       `Request failed with status ${res.status}`;
+
+    // Broadcast session expiration event for unauthenticated responses on protected endpoints
+    if (
+      res.status === 401 &&
+      typeof window !== 'undefined' &&
+      !window.location.pathname.startsWith('/login')
+    ) {
+      window.dispatchEvent(
+        new CustomEvent('fitonus:auth:expired', { detail: { message } })
+      );
+    }
+
     throw new ApiError(message, res.status, errorData.code, errorData.details);
   }
 

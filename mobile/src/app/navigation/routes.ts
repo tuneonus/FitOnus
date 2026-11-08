@@ -70,8 +70,10 @@ export type RouteName =
   | 'fitnessPreferences'
   | 'nutritionPreferences'
   | 'appearance'
+  | 'language'
   | 'privacy'
-  | 'account';
+  | 'account'
+  | 'changePassword';
 
 export type RouteParams = Record<string, string>;
 

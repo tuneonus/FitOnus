@@ -1,5 +1,5 @@
-import { apiClient } from '@/services/api-client';
-import { SecureStorageService } from '@/services/secure-storage';
+import { apiClient } from '../../../services/api-client';
+import { SecureStorageService } from '../../../services/secure-storage';
 import { z } from 'zod';
 import {
   loginSchema,
@@ -48,7 +48,7 @@ interface ApiResponse<T> {
     code: string;
     message: string;
     requestId?: string;
-    details?: Array<{ location?: string; path?: string; message: string }>;
+    details?: { location?: string; path?: string; message: string }[];
   };
 }
 
@@ -197,5 +197,23 @@ export const AuthRepository = {
     } catch {
       // Endpoint may not be active yet
     }
+  },
+
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<{ revokedSessions: number }> => {
+    const response = await apiClient.post<ApiResponse<{ revokedSessions: number }>>(
+      '/auth/change-password',
+      data,
+    );
+    return response.data.data;
+  },
+
+  deleteAccount: async (password: string): Promise<{ deletedUserId: string }> => {
+    const response = await apiClient.delete<ApiResponse<{ deletedUserId: string }>>('/users/me', {
+      data: { password },
+    });
+    return response.data.data;
   },
 };

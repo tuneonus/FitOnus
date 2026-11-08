@@ -4,6 +4,7 @@ import {
   Bell,
   Brain,
   CircleUserRound,
+  Globe,
   HeartPulse,
   LogOut,
   Palette,
@@ -25,7 +26,7 @@ import { useSettings, useUpdateSettings } from '@/features/profile/hooks/use-set
 export function SettingsScreen() {
   const { colors } = useTheme();
   const { navigate, reset } = useNavigation();
-  const { theme, units, setUnits } = useSettingsStore();
+  const { theme, units, setUnits, language } = useSettingsStore();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const currentUser = useAuthStore((s) => s.user);
@@ -39,6 +40,10 @@ export function SettingsScreen() {
     }
   };
 
+  const appearanceLabel =
+    theme === 'system' ? 'System' : theme === 'dark' ? 'Dark' : 'Light';
+  const languageLabel = language === 'ta' ? 'தமிழ்' : 'English';
+
   return (
     <Screen title="Settings">
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -49,8 +54,14 @@ export function SettingsScreen() {
             <ListRow
               icon={Palette}
               title="Appearance"
-              value={theme[0]?.toUpperCase() + theme.slice(1)}
+              value={appearanceLabel}
               onPress={() => navigate('appearance')}
+            />
+            <ListRow
+              icon={Globe}
+              title="Language"
+              value={languageLabel}
+              onPress={() => navigate('language')}
             />
             <ListRow
               icon={Bell}
@@ -111,7 +122,7 @@ export function SettingsScreen() {
             <ListRow
               icon={CircleUserRound}
               title="Account settings"
-              subtitle={currentUser?.email ?? 'aarav.mehta@gmail.com'}
+              subtitle={currentUser?.email ?? 'Not signed in'}
               onPress={() => navigate('account')}
             />
             <ListRow

@@ -67,10 +67,12 @@ export function Screen({
               {backVisible ? (
                 <TouchableOpacity
                   onPress={onBack ?? goBack}
+                  accessibilityRole="button"
+                  accessibilityLabel="Go back"
                   activeOpacity={0.7}
                   style={[
                     styles.backButton,
-                    { backgroundColor: isHero ? 'rgba(244, 244, 238, 0.1)' : 'rgba(17, 18, 16, 0.05)' },
+                    { backgroundColor: isHero ? 'rgba(244, 244, 238, 0.1)' : colors.surface2 },
                   ]}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
@@ -115,7 +117,7 @@ export function Screen({
           contentContainerStyle={[
             styles.scrollContent,
             {
-              paddingBottom: footer ? 24 : isTabRoot ? 110 : Math.max(insets.bottom + 20, 36),
+              paddingBottom: footer ? 24 : isTabRoot ? Math.max(insets.bottom, 12) + 96 : Math.max(insets.bottom + 20, 36),
             },
             contentContainerStyle,
           ]}
@@ -129,7 +131,7 @@ export function Screen({
           style={[
             styles.fixedContent,
             {
-              paddingBottom: footer ? 24 : isTabRoot ? 110 : Math.max(insets.bottom + 20, 36),
+              paddingBottom: footer ? 24 : isTabRoot ? Math.max(insets.bottom, 12) + 96 : Math.max(insets.bottom + 20, 36),
             },
             contentContainerStyle,
           ]}
@@ -145,7 +147,7 @@ export function Screen({
             {
               borderColor: isHero ? 'rgba(244, 244, 238, 0.1)' : colors.line,
               backgroundColor: bgColor,
-              paddingBottom: isTabRoot ? 90 : Math.max(insets.bottom, 16),
+              paddingBottom: isTabRoot ? Math.max(insets.bottom, 12) + 84 : Math.max(insets.bottom, 16),
             },
           ]}
         >
@@ -184,9 +186,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -50,7 +50,6 @@ export function HomeSkeleton() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
     gap: 28,
   },
   heroCard: {

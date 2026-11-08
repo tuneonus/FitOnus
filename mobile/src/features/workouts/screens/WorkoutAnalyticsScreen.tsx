@@ -27,12 +27,14 @@ export function WorkoutAnalyticsScreen() {
 
   const backendWorkoutData = workouts['30d'];
 
-  const now = Date.now();
-  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-  const sessions30d = history.filter((h) => {
-    const t = new Date(h.date || (h as any).startedAt || (h as any).completedAt).getTime();
-    return !isNaN(t) && t >= thirtyDaysAgo;
-  });
+  const [now] = useState(() => Date.now());
+  const sessions30d = React.useMemo(() => {
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    return history.filter((h) => {
+      const t = new Date(h.date || (h as any).startedAt || (h as any).completedAt).getTime();
+      return !isNaN(t) && t >= thirtyDaysAgo;
+    });
+  }, [history, now]);
 
   const sessionCount = backendWorkoutData ? backendWorkoutData.totalSessions : sessions30d.length;
   const avgDurationMin = backendWorkoutData

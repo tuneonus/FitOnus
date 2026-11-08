@@ -1,5 +1,4 @@
 import { apiClient } from '@/lib/api-client';
-import type { ApiResponse } from '@/types';
 import type {
   Challenge,
   ListChallengesQuery,

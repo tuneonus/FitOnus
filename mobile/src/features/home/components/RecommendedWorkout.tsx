@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Sparkles, CheckCircle2, Play } from 'lucide-react-native';
+import { Sparkles, CheckCircle2, Play, Dumbbell, Clock3, Zap } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { SectionHeader } from '../../../shared/components/ui/SectionHeader';
 import { Button } from '../../../shared/components/ui/Button';
@@ -31,32 +31,44 @@ export function RecommendedWorkout() {
         onAction={() => navigate('workouts')}
       />
 
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.surface, borderColor: colors.line },
-        ]}
-      >
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <TouchableOpacity
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`View workout plan: ${plannedSession.title}`}
           onPress={() => navigate('workoutPlan')}
         >
-          <Text style={[styles.focusLabel, { color: colors.muted }]}>
-            {plannedSession.focus}
-          </Text>
-          <Text style={[styles.title, { color: colors.ink }]}>
-            {plannedSession.title}
-          </Text>
-          <Text style={[styles.meta, { color: colors.muted }]}>
-            {plannedSession.durationMin} min · {plannedSession.exercises.length}{' '}
-            exercises · {plannedSession.intensity}
-          </Text>
+          <View style={styles.workoutHeader}>
+            <View style={[styles.workoutIcon, { backgroundColor: `${colors.accent}30` }]}>
+              <Dumbbell size={20} color={colors.accentStrong} />
+            </View>
+            <Text style={[styles.focusLabel, { color: colors.accentStrong }]}>
+              {plannedSession.focus}
+            </Text>
+          </View>
+          <Text style={[styles.title, { color: colors.ink }]}>{plannedSession.title}</Text>
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Clock3 size={13} color={colors.muted} />
+              <Text style={[styles.meta, { color: colors.muted }]}>
+                {plannedSession.durationMin} min
+              </Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Dumbbell size={13} color={colors.muted} />
+              <Text style={[styles.meta, { color: colors.muted }]}>
+                {plannedSession.exercises.length} exercises
+              </Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Zap size={13} color={colors.muted} />
+              <Text style={[styles.meta, { color: colors.muted }]}>{plannedSession.intensity}</Text>
+            </View>
+          </View>
         </TouchableOpacity>
 
         {/* Coach Insight Pill */}
-        <View
-          style={[styles.coachBox, { backgroundColor: colors.surface2 }]}
-        >
+        <View style={[styles.coachBox, { backgroundColor: colors.surface2 }]}>
           <Sparkles size={15} color={colors.accentStrong} style={styles.coachIcon} />
           <Text style={[styles.coachText, { color: colors.ink }]}>
             {hasDevice
@@ -72,6 +84,7 @@ export function RecommendedWorkout() {
             return (
               <TouchableOpacity
                 key={p.exerciseId}
+                accessibilityRole="button"
                 activeOpacity={0.7}
                 onPress={() => navigate('exerciseDetail', { id: p.exerciseId })}
                 style={[
@@ -79,10 +92,12 @@ export function RecommendedWorkout() {
                   idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line },
                 ]}
               >
-                <Text
-                  style={[styles.exerciseName, { color: colors.ink }]}
-                  numberOfLines={1}
-                >
+                <View style={[styles.exerciseNumber, { backgroundColor: colors.surface2 }]}>
+                  <Text style={[styles.exerciseNumberText, { color: colors.muted }]}>
+                    {String(idx + 1).padStart(2, '0')}
+                  </Text>
+                </View>
+                <Text style={[styles.exerciseName, { color: colors.ink }]} numberOfLines={1}>
                   {ex ? ex.name : p.exerciseId}
                 </Text>
                 <Text style={[styles.exerciseSets, { color: colors.muted }]}>
@@ -94,10 +109,7 @@ export function RecommendedWorkout() {
           })}
 
           {remaining > 0 && (
-            <TouchableOpacity
-              onPress={() => navigate('workoutPlan')}
-              style={styles.moreButton}
-            >
+            <TouchableOpacity onPress={() => navigate('workoutPlan')} style={styles.moreButton}>
               <Text style={[styles.moreText, { color: colors.muted }]}>
                 +{remaining} more exercises
               </Text>
@@ -106,19 +118,12 @@ export function RecommendedWorkout() {
         </View>
 
         {/* Footer Actions */}
-        <View
-          style={[
-            styles.footerRow,
-            { borderTopColor: colors.line },
-          ]}
-        >
+        <View style={[styles.footerRow, { borderTopColor: colors.line }]}>
           {todayStatus === 'completed' ? (
             <View style={styles.completedRow}>
               <View style={styles.checkRow}>
                 <CheckCircle2 size={18} color={colors.good} />
-                <Text style={[styles.completedText, { color: colors.good }]}>
-                  Completed today
-                </Text>
+                <Text style={[styles.completedText, { color: colors.good }]}>Completed today</Text>
               </View>
               <Button
                 title="View summary"
@@ -163,7 +168,18 @@ const styles = StyleSheet.create({
   focusLabel: {
     fontSize: 12,
     fontWeight: '600',
+    flex: 1,
   },
+  workoutHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  workoutIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   title: {
     fontSize: 22,
     fontWeight: '700',
@@ -171,8 +187,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   meta: {
-    fontSize: 13,
-    marginTop: 4,
+    fontSize: 12,
   },
   coachBox: {
     flexDirection: 'row',
@@ -198,7 +213,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 10,
+    minHeight: 48,
+    gap: 10,
   },
+  exerciseNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exerciseNumberText: { fontSize: 10, fontWeight: '600', fontVariant: ['tabular-nums'] },
   exerciseName: {
     flex: 1,
     fontSize: 14,
@@ -206,7 +231,9 @@ const styles = StyleSheet.create({
   },
   exerciseSets: {
     fontSize: 12.5,
-    fontFamily: 'monospace',
+    fontVariant: ['tabular-nums'],
+    flexShrink: 1,
+    textAlign: 'right',
   },
   moreButton: {
     paddingVertical: 8,
@@ -222,6 +249,8 @@ const styles = StyleSheet.create({
   },
   completedRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -236,6 +265,7 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 10,
   },
@@ -243,4 +273,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-

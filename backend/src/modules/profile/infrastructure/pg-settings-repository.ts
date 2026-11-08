@@ -1,5 +1,6 @@
 import type { SqlExecutor } from '../../../database/transaction.js';
 import {
+  type Language,
   type ThemeMode,
   type UnitSystem,
   UserSettings,
@@ -14,6 +15,11 @@ interface SettingsRow {
   health_connect_enabled: boolean;
   smartwatch_connected: boolean;
   notifications_enabled: boolean;
+  language: Language;
+  privacy_analytics: boolean;
+  privacy_photo_retention: boolean;
+  privacy_coach_sharing: boolean;
+  notification_schedule: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
 }
@@ -26,6 +32,11 @@ const SELECT_SETTINGS = `
     health_connect_enabled,
     smartwatch_connected,
     notifications_enabled,
+    language,
+    privacy_analytics,
+    privacy_photo_retention,
+    privacy_coach_sharing,
+    notification_schedule,
     created_at,
     updated_at
   FROM user_settings
@@ -39,6 +50,11 @@ const toUserSettings = (row: SettingsRow): UserSettings => {
     healthConnectEnabled: row.health_connect_enabled,
     smartwatchConnected: row.smartwatch_connected,
     notificationsEnabled: row.notifications_enabled,
+    language: row.language ?? 'en',
+    privacyAnalytics: row.privacy_analytics ?? true,
+    privacyPhotoRetention: row.privacy_photo_retention ?? true,
+    privacyCoachSharing: row.privacy_coach_sharing ?? false,
+    notificationSchedule: row.notification_schedule ?? {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -85,6 +101,15 @@ export class PgSettingsRepository implements SettingsRepository {
       addClause('smartwatch_connected', changes.smartwatchConnected);
     if (changes.notificationsEnabled !== undefined)
       addClause('notifications_enabled', changes.notificationsEnabled);
+    if (changes.language !== undefined) addClause('language', changes.language);
+    if (changes.privacyAnalytics !== undefined)
+      addClause('privacy_analytics', changes.privacyAnalytics);
+    if (changes.privacyPhotoRetention !== undefined)
+      addClause('privacy_photo_retention', changes.privacyPhotoRetention);
+    if (changes.privacyCoachSharing !== undefined)
+      addClause('privacy_coach_sharing', changes.privacyCoachSharing);
+    if (changes.notificationSchedule !== undefined)
+      addClause('notification_schedule', JSON.stringify(changes.notificationSchedule));
 
     if (setClauses.length > 0) {
       setClauses.push('updated_at = now()');

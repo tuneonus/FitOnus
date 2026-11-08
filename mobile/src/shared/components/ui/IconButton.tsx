@@ -17,7 +17,7 @@ export type IconButtonProps = {
 export function IconButton({
   icon: Icon,
   onPress,
-  size = 40,
+  size = 44,
   iconSize = 20,
   variant = 'surface',
   disabled = false,
@@ -63,6 +63,8 @@ export function IconButton({
       activeOpacity={0.7}
       disabled={disabled}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
       accessibilityLabel={a11yLabel}
       style={[
         styles.button,

@@ -17,7 +17,6 @@ export function useChallenges() {
     async (opts: { silent?: boolean } = {}) => {
       if (inFlightRef.current) return;
       inFlightRef.current = true;
-      if (!opts.silent) setError(null);
 
       try {
         const params: ListChallengesQuery = {};
@@ -25,6 +24,7 @@ export function useChallenges() {
         if (cadenceFilter) params.cadence = cadenceFilter;
         const data = await challengesApi.listChallenges(params);
         setChallenges(data);
+        if (!opts.silent) setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load challenges.');
       } finally {
@@ -37,9 +37,34 @@ export function useChallenges() {
   );
 
   useEffect(() => {
-    setIsLoading(true);
-    fetchChallenges();
-  }, [fetchChallenges]);
+    let isMounted = true;
+    const params: ListChallengesQuery = {};
+    if (statusFilter) params.status = statusFilter;
+    if (cadenceFilter) params.cadence = cadenceFilter;
+
+    challengesApi
+      .listChallenges(params)
+      .then((data) => {
+        if (isMounted) {
+          setChallenges(data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load challenges.');
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [statusFilter, cadenceFilter]);
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -64,8 +89,6 @@ export function useChallenges() {
     cadenceFilter,
     setCadenceFilter,
     refresh,
-    fetchChallenges,
     stats,
   };
 }
-

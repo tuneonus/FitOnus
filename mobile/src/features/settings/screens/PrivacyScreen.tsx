@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Download, Eye } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
@@ -8,6 +8,8 @@ import { Button } from '@/shared/components/ui/Button';
 import { ListGroup, ListRow } from '@/shared/components/ui/ListRow';
 import { showToast } from '@/shared/stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { useUpdateSettings } from '@/features/profile/hooks/use-settings';
 
 const aiAccess = [
   'Today’s health data and trends',
@@ -19,27 +21,57 @@ const aiAccess = [
 export function PrivacyScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const [prefs, setPrefs] = useState({ analytics: true, improve: false, photos: true });
-  const [exporting, setExporting] = useState(false);
 
-  const toggle = (k: keyof typeof prefs) => (v: boolean) =>
-    setPrefs({ ...prefs, [k]: v });
+  const privacyAnalytics = useSettingsStore((s) => s.privacyAnalytics);
+  const privacyPhotoRetention = useSettingsStore((s) => s.privacyPhotoRetention);
+  const privacyCoachSharing = useSettingsStore((s) => s.privacyCoachSharing);
+  const setPrivacy = useSettingsStore((s) => s.setPrivacy);
+  const updateSettings = useUpdateSettings();
 
-  const rows: { key: keyof typeof prefs; title: string; sub: string }[] = [
+  const handleToggle = async (
+    key: 'privacyAnalytics' | 'privacyPhotoRetention' | 'privacyCoachSharing',
+    nextVal: boolean,
+  ) => {
+    const prevVal =
+      key === 'privacyAnalytics'
+        ? privacyAnalytics
+        : key === 'privacyPhotoRetention'
+        ? privacyPhotoRetention
+        : privacyCoachSharing;
+
+    setPrivacy({ [key]: nextVal });
+
+    try {
+      await updateSettings.mutateAsync({ [key]: nextVal });
+    } catch {
+      setPrivacy({ [key]: prevVal });
+      showToast({ message: 'Failed to update privacy preference on server.' });
+    }
+  };
+
+  const rows: {
+    key: 'privacyPhotoRetention' | 'privacyAnalytics' | 'privacyCoachSharing';
+    title: string;
+    sub: string;
+    checked: boolean;
+  }[] = [
     {
-      key: 'photos',
+      key: 'privacyPhotoRetention',
       title: 'Keep meal photos',
       sub: 'Otherwise deleted right after analysis',
+      checked: privacyPhotoRetention,
     },
     {
-      key: 'analytics',
+      key: 'privacyAnalytics',
       title: 'App usage analytics',
       sub: 'Anonymous crash and performance data',
+      checked: privacyAnalytics,
     },
     {
-      key: 'improve',
+      key: 'privacyCoachSharing',
       title: 'Help improve the coach',
       sub: 'Share de-identified chats for quality review',
+      checked: privacyCoachSharing,
     },
   ];
 
@@ -82,7 +114,7 @@ export function PrivacyScreen() {
                 <Text style={[styles.toggleTitle, { color: colors.ink }]}>{r.title}</Text>
                 <Text style={[styles.toggleSub, { color: colors.muted }]}>{r.sub}</Text>
               </View>
-              <Toggle checked={prefs[r.key]} onChange={toggle(r.key)} />
+              <Toggle checked={r.checked} onChange={(v) => handleToggle(r.key, v)} />
             </View>
           ))}
         </View>
@@ -106,13 +138,8 @@ export function PrivacyScreen() {
             fullWidth
             variant="outline"
             icon={Download}
-            loading={exporting}
             onPress={() => {
-              setExporting(true);
-              setTimeout(() => {
-                setExporting(false);
-                showToast({ message: 'Export requested — we’ll email a download link' });
-              }, 1200);
+              showToast({ message: 'Self-service data export is planned for a future compliance release.' });
             }}
           >
             Export my data
@@ -186,4 +213,3 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
   },
 });
-

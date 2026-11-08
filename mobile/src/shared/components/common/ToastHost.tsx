@@ -3,8 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { CheckCircle, AlertTriangle, Info } from 'lucide-react-native';
 import { useToastStore } from '../../stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function ToastHost({ raised = false }: { raised?: boolean }) {
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { toasts, dismiss } = useToastStore();
   const toast = toasts[toasts.length - 1];
@@ -25,7 +27,7 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
       style={[
         styles.container,
         {
-          bottom: raised ? 100 : 36,
+          bottom: raised ? Math.max(insets.bottom, 12) + 88 : Math.max(insets.bottom + 12, 36),
           backgroundColor: colors.ink,
         },
       ]}

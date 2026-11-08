@@ -11,6 +11,7 @@ import {
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { StatsCard } from '@/components/ui/StatsCard';
 import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/context/ToastContext';
 import { ExerciseFilterBar } from './ExerciseFilterBar';
 import { ExercisesTable } from './ExercisesTable';
 import { ExerciseModal } from './ExerciseModal';
@@ -23,6 +24,7 @@ import { workoutsApi } from '../api';
 import type { Exercise, WorkoutTemplate, CreateExerciseInput, UpdateExerciseInput, CreateTemplateInput, UpdateTemplateInput } from '../types';
 
 export function WorkoutsAdminView() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'exercises' | 'templates'>('exercises');
 
   // Stats Hook
@@ -99,13 +101,21 @@ export function WorkoutsAdminView() {
   };
 
   const handleSubmitExercise = async (data: CreateExerciseInput | UpdateExerciseInput) => {
-    if (selectedExercise) {
-      await workoutsApi.updateExercise(selectedExercise.id, data as UpdateExerciseInput);
-    } else {
-      await workoutsApi.createExercise(data as CreateExerciseInput);
+    try {
+      if (selectedExercise) {
+        await workoutsApi.updateExercise(selectedExercise.id, data as UpdateExerciseInput);
+        toast.success(`Exercise "${data.name}" updated successfully.`);
+      } else {
+        await workoutsApi.createExercise(data as CreateExerciseInput);
+        toast.success(`Exercise "${data.name}" created successfully.`);
+      }
+      await refreshExercises();
+      await refreshStats();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save exercise.';
+      toast.error(msg);
+      throw err;
     }
-    await refreshExercises();
-    await refreshStats();
   };
 
   const handleDeleteExerciseConfirm = async () => {
@@ -113,9 +123,13 @@ export function WorkoutsAdminView() {
     setIsDeletingExercise(true);
     try {
       await workoutsApi.deleteExercise(exerciseToDelete.id);
+      toast.success(`Exercise "${exerciseToDelete.name}" deleted.`);
       setExerciseToDelete(null);
       await refreshExercises();
       await refreshStats();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete exercise.';
+      toast.error(msg);
     } finally {
       setIsDeletingExercise(false);
     }
@@ -133,13 +147,21 @@ export function WorkoutsAdminView() {
   };
 
   const handleSubmitTemplate = async (data: CreateTemplateInput | UpdateTemplateInput) => {
-    if (selectedTemplate) {
-      await workoutsApi.updateTemplate(selectedTemplate.id, data as UpdateTemplateInput);
-    } else {
-      await workoutsApi.createTemplate(data as CreateTemplateInput);
+    try {
+      if (selectedTemplate) {
+        await workoutsApi.updateTemplate(selectedTemplate.id, data as UpdateTemplateInput);
+        toast.success(`Template "${data.name}" updated successfully.`);
+      } else {
+        await workoutsApi.createTemplate(data as CreateTemplateInput);
+        toast.success(`Template "${data.name}" created successfully.`);
+      }
+      await refreshTemplates();
+      await refreshStats();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save template.';
+      toast.error(msg);
+      throw err;
     }
-    await refreshTemplates();
-    await refreshStats();
   };
 
   const handleDeleteTemplateConfirm = async () => {
@@ -147,9 +169,13 @@ export function WorkoutsAdminView() {
     setIsDeletingTemplate(true);
     try {
       await workoutsApi.deleteTemplate(templateToDelete.id);
+      toast.success(`Template "${templateToDelete.name}" deleted.`);
       setTemplateToDelete(null);
       await refreshTemplates();
       await refreshStats();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete template.';
+      toast.error(msg);
     } finally {
       setIsDeletingTemplate(false);
     }

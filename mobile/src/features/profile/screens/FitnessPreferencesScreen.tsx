@@ -18,6 +18,23 @@ import { useTheme } from '@/hooks/use-theme';
 import { useProfile, useUpdateProfile } from '../hooks/use-profile';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 
+function Group({
+  title,
+  children,
+  color,
+}: {
+  title: string;
+  children: React.ReactNode;
+  color?: string | undefined;
+}) {
+  return (
+    <View style={styles.groupContainer}>
+      <Text style={[styles.groupTitle, color ? { color } : null]}>{title}</Text>
+      <View style={styles.chipsRow}>{children}</View>
+    </View>
+  );
+}
+
 export function FitnessPreferencesScreen() {
   const { colors } = useTheme();
   const { goBack } = useNavigation();
@@ -85,13 +102,6 @@ export function FitnessPreferencesScreen() {
     }
   };
 
-  const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <View style={styles.groupContainer}>
-      <Text style={[styles.groupTitle, { color: colors.muted }]}>{title}</Text>
-      <View style={styles.chipsRow}>{children}</View>
-    </View>
-  );
-
   return (
     <Screen
       title="Fitness preferences"
@@ -102,7 +112,7 @@ export function FitnessPreferencesScreen() {
       }
     >
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Group title="Main goal">
+        <Group title="Main goal" color={colors.muted}>
           {fitnessGoals.map((g) => (
             <Chip
               key={g.value}
@@ -113,7 +123,7 @@ export function FitnessPreferencesScreen() {
           ))}
         </Group>
 
-        <Group title="Experience">
+        <Group title="Experience" color={colors.muted}>
           {experienceLevels.map((e) => (
             <Chip
               key={e.value}
@@ -124,7 +134,7 @@ export function FitnessPreferencesScreen() {
           ))}
         </Group>
 
-        <Group title="Where you train">
+        <Group title="Where you train" color={colors.muted}>
           {workoutPlaces.map((w) => (
             <Chip
               key={w.value}
@@ -151,7 +161,7 @@ export function FitnessPreferencesScreen() {
           </View>
         </View>
 
-        <Group title="Session length">
+        <Group title="Session length" color={colors.muted}>
           {durationOptions.map((m) => (
             <Chip
               key={m}
@@ -162,7 +172,7 @@ export function FitnessPreferencesScreen() {
           ))}
         </Group>
 
-        <Group title="Available equipment">
+        <Group title="Available equipment" color={colors.muted}>
           {equipmentOptions.map((e) => (
             <Chip
               key={e}

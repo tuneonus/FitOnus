@@ -80,7 +80,7 @@ export function Button({
       break;
   }
 
-  const height = size === 'sm' ? 36 : size === 'lg' ? 52 : 44;
+  const height = size === 'sm' ? 44 : size === 'lg' ? 56 : 48;
   const paddingH = size === 'sm' ? 14 : size === 'lg' ? 24 : 18;
   const fontSize = size === 'sm' ? 13 : size === 'lg' ? 16 : 14.5;
 
@@ -89,10 +89,13 @@ export function Button({
       activeOpacity={0.8}
       disabled={disabled || loading}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       style={[
         styles.button,
         {
-          height,
+          minHeight: height,
+          paddingVertical: 12,
           paddingHorizontal: paddingH,
           backgroundColor: bgColor,
           borderColor,
@@ -147,11 +150,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   content: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
+    flexShrink: 1,
     fontWeight: '600',
     textAlign: 'center',
     letterSpacing: -0.1,

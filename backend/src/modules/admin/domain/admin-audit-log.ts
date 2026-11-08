@@ -1,6 +1,7 @@
 export type AuditAction =
   | 'admin.login'
   | 'admin.logout'
+  | 'admin.password_change'
   | 'user.suspend'
   | 'user.reactivate'
   | 'user.role_change'

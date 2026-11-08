@@ -2,6 +2,8 @@ import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
 import type { UsersController } from './users.controller.js';
 import {
   createUserRequest,
+  deleteAccountRequest,
+  deletedUserSchema,
   listUsersRequest,
   updateOwnProfileRequest,
   updateUserProfileRequest,
@@ -80,6 +82,24 @@ export function createUsersRoutes(basePath: string, controller: UsersController)
         },
         errorStatuses: [409],
         handler: controller.updateMe,
+      }),
+      defineRoute({
+        method: 'delete',
+        path: '/me',
+        summary: 'Permanently delete current user account',
+        description:
+          'Self-service account deletion requiring password confirmation. Atomically removes all associated user data.',
+        tags,
+        access: { kind: 'authenticated' },
+        request: deleteAccountRequest,
+        response: {
+          status: 200,
+          description: 'Account deleted',
+          message: 'Account and all associated personal data permanently deleted.',
+          schema: deletedUserSchema,
+        },
+        errorStatuses: [401, 404, 422],
+        handler: controller.deleteMe,
       }),
       defineRoute({
         method: 'get',

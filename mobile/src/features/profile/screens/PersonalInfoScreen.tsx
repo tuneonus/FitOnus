@@ -11,11 +11,15 @@ import { ProfileSetup, useProfileSetupStore } from '../../onboarding/store/profi
 import { useTheme } from '@/hooks/use-theme';
 import { useProfile, useUpdateProfile } from '../hooks/use-profile';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { formatHeight, formatWeight } from '@/shared/utils/unit-conversion';
 
 export function PersonalInfoScreen() {
   const { colors } = useTheme();
   const { goBack } = useNavigation();
   const store = useProfileSetupStore();
+  const units = useSettingsStore((s) => s.units);
+  const isImperial = units === 'imperial';
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: serverProfile, refetch } = useProfile();
   const { mutateAsync: updateProfile, isPending: isSaving } = useUpdateProfile();
@@ -126,7 +130,9 @@ export function PersonalInfoScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardSubLabel, { color: colors.muted }]}>Height</Text>
+          <Text style={[styles.cardSubLabel, { color: colors.muted }]}>
+            Height {isImperial ? `(${formatHeight(draft.heightCm, 'imperial')})` : ''}
+          </Text>
           <View style={{ marginTop: 8 }}>
             <Stepper
               label="Height"
@@ -140,7 +146,9 @@ export function PersonalInfoScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardSubLabel, { color: colors.muted }]}>Starting weight</Text>
+          <Text style={[styles.cardSubLabel, { color: colors.muted }]}>
+            Starting weight {isImperial ? `(${formatWeight(draft.weightKg, 'imperial')})` : ''}
+          </Text>
           <View style={{ marginTop: 8 }}>
             <Stepper
               label="Weight"

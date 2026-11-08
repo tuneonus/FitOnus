@@ -11,12 +11,15 @@ import { LineChart } from '@/shared/components/charts/LineChart';
 import type { TimeRange } from '@/shared/types/health';
 import { useTheme } from '@/hooks/use-theme';
 import { useWeightStore } from '../store/weightStore';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { kgToLb } from '@/shared/utils/unit-conversion';
 import { AddWeightSheet } from '../components/AddWeightSheet';
 import { showToast } from '@/shared/stores/toastStore';
 
 export function WeightScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
+  const units = useSettingsStore((s) => s.units);
   const {
     entries,
     goalWeight,
@@ -44,7 +47,20 @@ export function WeightScreen() {
 
   const firstPt = points[0]?.value ?? latest?.value ?? 0;
   const lastPt = points[points.length - 1]?.value ?? latest?.value ?? 0;
-  const change = points.length > 1 ? lastPt - firstPt : 0;
+  const rawChange = points.length > 1 ? lastPt - firstPt : 0;
+
+  const displayLatest = latest
+    ? units === 'imperial'
+      ? (kgToLb(latest.value) ?? latest.value).toFixed(1)
+      : latest.value.toFixed(1)
+    : '—';
+
+  const displayChange =
+    units === 'imperial'
+      ? (kgToLb(Math.abs(rawChange)) ?? Math.abs(rawChange)).toFixed(1)
+      : Math.abs(rawChange).toFixed(1);
+
+  const weightUnit = units === 'imperial' ? 'lb' : 'kg';
   const lost = latest ? startWeight - latest.value : 0;
 
   const handleDelete = async (id?: string) => {
@@ -79,10 +95,8 @@ export function WeightScreen() {
         <View style={styles.currentSection}>
           <Text style={[styles.currentLabel, { color: colors.muted }]}>Current</Text>
           <View style={styles.weightNumberRow}>
-            <Text style={[styles.weightBig, { color: colors.ink }]}>
-              {latest ? latest.value.toFixed(1) : '—'}
-            </Text>
-            {latest && <Text style={[styles.weightUnit, { color: colors.muted }]}>kg</Text>}
+            <Text style={[styles.weightBig, { color: colors.ink }]}>{displayLatest}</Text>
+            {latest && <Text style={[styles.weightUnit, { color: colors.muted }]}>{weightUnit}</Text>}
           </View>
           <View style={styles.badgeRow}>
             {latest ? (
@@ -90,11 +104,11 @@ export function WeightScreen() {
                 <Text
                   style={[
                     styles.changeText,
-                    { color: change <= 0 ? colors.good : colors.warn },
+                    { color: rawChange <= 0 ? colors.good : colors.warn },
                   ]}
                 >
-                  {change > 0 ? '+' : ''}
-                  {change.toFixed(1)} kg this view
+                  {rawChange > 0 ? '+' : rawChange < 0 ? '-' : ''}
+                  {displayChange} {weightUnit} this view
                 </Text>
                 <SourceTag
                   source={

@@ -11,6 +11,7 @@ import { NutritionSummary } from '../components/NutritionSummary';
 import { BodySignals } from '../components/BodySignals';
 import { CoachInsights } from '../components/CoachInsights';
 import { HomeSkeleton } from '../components/HomeSkeleton';
+import { QuickActions } from '../components/QuickActions';
 
 export function HomeScreen() {
   const { status, lastSync, syncNow } = useHealthStore();
@@ -46,6 +47,7 @@ export function HomeScreen() {
           )}
 
           <DailyBrief />
+          <QuickActions />
           <RecommendedWorkout />
           <ActivitySummary />
           <NutritionSummary />
@@ -60,9 +62,9 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   body: {
     paddingBottom: 24,
+    gap: 8,
   },
   bannerWrap: {
-    paddingHorizontal: 16,
     marginBottom: 16,
   },
 });

@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-nativ
 import { Activity, Moon, Droplets, Utensils, Scale, LineChart } from 'lucide-react-native';
 import { ScreenContainer } from '@/components/shared/screen-container';
 import { ErrorState } from '@/components/shared/error-state';
+import { Card } from '@/components/ui/card';
 import { Spacing } from '@/constants/theme';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,14 +24,14 @@ import { Text } from '@/components/ui/text';
 export default function DashboardScreen() {
   const user = useAuthStore((state) => state.user);
   const { colors } = useTheme();
-  
-  const { 
-    data, 
-    isLoading, 
-    isError, 
+
+  const {
+    data,
+    isLoading,
+    isError,
     error,
     refetch,
-    isRefetching
+    isRefetching,
   } = useDashboard();
 
   const handleStartWorkout = useCallback(() => {
@@ -48,8 +49,8 @@ export default function DashboardScreen() {
   if (isError && !data) {
     return (
       <ScreenContainer edges={['top', 'bottom', 'left', 'right']}>
-        <ErrorState 
-          title="Failed to Load Dashboard" 
+        <ErrorState
+          title="Failed to Load Dashboard"
           message={error?.message || 'Please check your connection and try again.'}
           onRetry={refetch}
         />
@@ -62,11 +63,11 @@ export default function DashboardScreen() {
 
   return (
     <ScreenContainer edges={['top', 'left', 'right']} style={{ backgroundColor: colors.background }}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl 
-            refreshing={isRefetching} 
+          <RefreshControl
+            refreshing={isRefetching}
             onRefresh={() => { void refetch(); }}
             tintColor={colors.primary}
           />
@@ -75,20 +76,20 @@ export default function DashboardScreen() {
         <DashboardHeader user={user} />
 
         <View style={styles.metricsRow}>
-          <MetricCard 
-            title="Recovery" 
-            value={`${data.summary.recoveryScore}%`} 
-            icon={<Activity size={14} color={colors.primary} />} 
+          <MetricCard
+            title="Recovery"
+            value={data.summary.recoveryScore != null ? `${data.summary.recoveryScore}%` : '—'}
+            icon={<Activity size={14} color={colors.primary} />}
           />
-          <MetricCard 
-            title="Sleep" 
-            value={data.summary.sleepDuration} 
-            icon={<Moon size={14} color="#6366F1" />} 
+          <MetricCard
+            title="Sleep"
+            value={data.summary.sleepDuration ?? '—'}
+            icon={<Moon size={14} color="#6366F1" />}
           />
-          <MetricCard 
-            title="Water" 
-            value={`${data.summary.waterIntake}L`} 
-            icon={<Droplets size={14} color="#0EA5E9" />} 
+          <MetricCard
+            title="Water"
+            value={`${data.summary.waterIntake ?? 0}L`}
+            icon={<Droplets size={14} color="#0EA5E9" />}
           />
         </View>
 
@@ -111,31 +112,39 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <Text variant="headlineSmall" style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsRow}>
-            <QuickActionCard 
-              title="Log Meal" 
-              icon={<Utensils size={24} color="#F87171" />} 
-              onPress={() => handleQuickAction('Log Meal')} 
+            <QuickActionCard
+              title="Log Meal"
+              icon={<Utensils size={24} color="#F87171" />}
+              onPress={() => handleQuickAction('Log Meal')}
             />
-            <QuickActionCard 
-              title="Log Weight" 
-              icon={<Scale size={24} color="#60A5FA" />} 
-              onPress={() => handleQuickAction('Log Weight')} 
+            <QuickActionCard
+              title="Log Weight"
+              icon={<Scale size={24} color="#60A5FA" />}
+              onPress={() => handleQuickAction('Log Weight')}
             />
-            <QuickActionCard 
-              title="Reports" 
-              icon={<LineChart size={24} color="#10B981" />} 
-              onPress={() => handleQuickAction('Reports')} 
+            <QuickActionCard
+              title="Reports"
+              icon={<LineChart size={24} color="#10B981" />}
+              onPress={() => handleQuickAction('Reports')}
             />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text variant="headlineSmall" style={styles.sectionTitle}>Recent Activity</Text>
-          {data.recentActivity.map((activity) => (
-            <ActivityCard key={activity.id} activity={activity} />
-          ))}
+          {data.recentActivity.length === 0 ? (
+            <Card style={styles.emptyCard}>
+              <Text variant="bodyMedium" color="textSecondary" style={styles.emptyText}>
+                No activities logged yet today.
+              </Text>
+            </Card>
+          ) : (
+            data.recentActivity.map((activity) => (
+              <ActivityCard key={activity.id} activity={activity} />
+            ))
+          )}
         </View>
-        
+
         {/* Added bottom padding for smooth scrolling over bottom edges */}
         <View style={{ height: Spacing.xxxl }} />
       </ScrollView>
@@ -163,5 +172,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginHorizontal: -4,
+  },
+  emptyCard: {
+    padding: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
   },
 });
