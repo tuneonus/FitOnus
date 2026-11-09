@@ -7,6 +7,7 @@ import {
   Keyboard,
   Platform,
   useWindowDimensions,
+  AppState,
 } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -27,6 +28,9 @@ import { MaintenanceModal } from '@/shared/components/common/MaintenanceModal';
 import { ForceUpdateModal } from '@/shared/components/common/ForceUpdateModal';
 import { useRemoteConfigStore } from '@/features/app-config/store/remoteConfigStore';
 import { useTheme } from '@/hooks/use-theme';
+import { notificationService } from '@/services/notificationService';
+import { bindAuthToSettings, useSettingsStore } from '@/shared/stores/settingsStore';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 function AnimatedScreenWrapper({
   routeKey,
@@ -92,6 +96,28 @@ export function AppShell() {
   useEffect(() => {
     return initConfig();
   }, [initConfig]);
+
+  // Initialize notifications, sync auth lifecycle, and reconcile on app active state
+  useEffect(() => {
+    void notificationService.initializeNotifications();
+
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void notificationService.reconcileNotificationSchedules();
+      }
+    });
+
+    const unbindAuth = bindAuthToSettings(useAuthStore);
+    const currentUser = useAuthStore.getState().user;
+    if (currentUser?.id) {
+      void useSettingsStore.getState().hydrateForUser(currentUser.id);
+    }
+
+    return () => {
+      sub.remove();
+      unbindAuth();
+    };
+  }, []);
 
   // Handle hardware back button on Android
   useEffect(() => {

@@ -39,6 +39,10 @@ function resetAllUserStores() {
     safeReset(() => req('../../health-integration/store/healthStore').useHealthStore);
     safeReset(() => req('../../challenges/store/challengesStore').useChallengesStore);
     safeReset(() => req('../../notifications/store/notificationsStore').useNotificationsStore);
+    try {
+      const { notificationService } = req('../../../services/notificationService');
+      void notificationService?.cancelAllFitOnusReminders?.();
+    } catch {}
   } catch {
     // Isolated environment fallback
   }

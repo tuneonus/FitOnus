@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { UserSettingsView } from '../../features/profile/types/profile';
+import { DEFAULT_NOTIFICATION_SCHEDULE } from '../../features/notifications/types/notification';
 
 const logError = (msg: string, err?: any) => {
   if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -125,6 +126,33 @@ async function readSettings(userId: string | null): Promise<string | null | unde
   return await storage.getItem(key);
 }
 
+function safeReconcile(settings: { notificationsEnabled: boolean; notificationSchedule: Record<string, unknown> }) {
+  try {
+    const req = eval('require');
+    const { notificationService } = req('../../services/notificationService');
+    if (notificationService?.reconcileNotificationSchedules) {
+      void notificationService.reconcileNotificationSchedules({
+        notificationsEnabled: settings.notificationsEnabled,
+        schedule: settings.notificationSchedule,
+      });
+    }
+  } catch {
+    // Graceful fallback for headless or test runner
+  }
+}
+
+function safeCancelAll() {
+  try {
+    const req = eval('require');
+    const { notificationService } = req('../../services/notificationService');
+    if (notificationService?.cancelAllFitOnusReminders) {
+      void notificationService.cancelAllFitOnusReminders();
+    }
+  } catch {
+    // Graceful fallback for headless or test runner
+  }
+}
+
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   ...DEFAULT_SETTINGS,
   userId: null,
@@ -209,6 +237,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       notificationsEnabled: nextState.notificationsEnabled,
       notificationSchedule: nextState.notificationSchedule,
     });
+    safeReconcile(nextState);
   },
 
   setNotificationSchedule: (notificationSchedule: Record<string, unknown>) => {
@@ -224,6 +253,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       notificationsEnabled: nextState.notificationsEnabled,
       notificationSchedule: nextState.notificationSchedule,
     });
+    safeReconcile(nextState);
   },
 
   hydrateForUser: async (userId: string | null) => {
@@ -232,7 +262,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const raw = await readSettings(userId);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<StorableSettings>;
-        set({
+        const hydrated = {
           theme: parsed.theme ?? DEFAULT_SETTINGS.theme,
           units: parsed.units ?? DEFAULT_SETTINGS.units,
           language: parsed.language ?? DEFAULT_SETTINGS.language,
@@ -244,17 +274,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           userId,
           isHydrated: true,
           isLoading: false,
-        });
+        };
+        set(hydrated);
+        safeReconcile(hydrated);
         return;
       }
 
       // No saved record yet for this user -> initialize with clean defaults
-      set({
+      const defaults = {
         ...DEFAULT_SETTINGS,
         userId,
         isHydrated: true,
         isLoading: false,
-      });
+      };
+      set(defaults);
+      safeReconcile(defaults);
     } catch (err: any) {
       logError(`Error hydrating settings for user ${userId}`, err);
       set({
@@ -309,6 +343,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     });
 
     await persistSettings(serverSettings.userId || current.userId, merged);
+    safeReconcile(merged);
   },
 
   resetSettings: () => {
@@ -319,6 +354,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       isLoading: false,
       error: null,
     });
+    safeCancelAll();
   },
 
   resetStore: () => {
