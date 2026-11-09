@@ -27,14 +27,13 @@ export function BarChart({
   formatValue = (v) => v.toLocaleString(),
   style,
 }: BarChartProps) {
-  const { colors } = useTheme();
-  const [selected, setSelected] = useState<number>(
-    highlightIndex ?? Math.max(0, data.length - 1)
-  );
+  const { colors, isDark } = useTheme();
+  const [selected, setSelected] = useState<number>(highlightIndex ?? Math.max(0, data.length - 1));
 
   const maxValue = Math.max(...data.map((d) => d.value), goal ?? 0) * 1.08 || 1;
   const activeColor = barColor ?? color ?? colors.ink;
-  const inactiveColor = mutedBarColor ?? (colors.ink === '#F4F4EE' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)');
+  const inactiveColor =
+    mutedBarColor ?? (isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)');
 
   return (
     <View style={[styles.container, style]}>

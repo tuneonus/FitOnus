@@ -4,6 +4,9 @@ import type {
   ListChallengesQuery,
   CreateChallengeInput,
   UpdateChallengeInput,
+  AdminChallengeStats,
+  AdminBadge,
+  CreateBadgeInput,
 } from './types';
 
 export const challengesApi = {
@@ -48,6 +51,36 @@ export const challengesApi = {
   async archiveChallenge(challengeId: string): Promise<Challenge> {
     const res = await apiClient<Challenge>(`/challenges/${challengeId}/archive`, {
       method: 'POST',
+    });
+    return res.data;
+  },
+
+  async getStats(): Promise<AdminChallengeStats> {
+    const res = await apiClient<AdminChallengeStats>('/challenges/stats', {
+      method: 'GET',
+    });
+    return res.data;
+  },
+
+  async listBadges(category?: string): Promise<AdminBadge[]> {
+    const query = category ? `?category=${encodeURIComponent(category)}` : '';
+    const res = await apiClient<AdminBadge[]>(`/challenges/badges${query}`, {
+      method: 'GET',
+    });
+    return res.data;
+  },
+
+  async createBadge(data: CreateBadgeInput): Promise<AdminBadge> {
+    const res = await apiClient<AdminBadge>('/challenges/badges', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.data;
+  },
+
+  async deleteBadge(badgeId: string): Promise<{ success: boolean; message: string }> {
+    const res = await apiClient<{ success: boolean; message: string }>(`/challenges/badges/${badgeId}`, {
+      method: 'DELETE',
     });
     return res.data;
   },

@@ -80,14 +80,15 @@ export function GoalCreateScreen() {
   return (
     <Screen
       title={editing ? 'Edit goal' : 'New goal'}
+      keyboardAvoiding
       footer={
         <Button size="lg" fullWidth onPress={save} loading={saving}>
           {editing ? 'Save changes' : 'Create goal'}
         </Button>
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {!editing && (
+      {!editing && (
           <View style={styles.sectionBlock}>
             <Text style={[styles.sectionLabel, { color: colors.muted }]}>
               What are you working toward?
@@ -192,15 +193,13 @@ export function GoalCreateScreen() {
             onChangeText={setTitle}
           />
         </View>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   sectionBlock: {

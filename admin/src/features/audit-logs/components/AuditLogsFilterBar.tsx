@@ -25,6 +25,8 @@ export function AuditLogsFilterBar({
         >
           <option value="">All Security Events</option>
           <option value="admin.login">Admin Logins (admin.login)</option>
+          <option value="admin.password_change">Admin Password Changes (admin.password_change)</option>
+          <option value="admin.settings_update">Settings Updates (admin.settings_update)</option>
           <option value="user.suspend">User Suspensions (user.suspend)</option>
           <option value="user.reactivate">User Reactivations (user.reactivate)</option>
         </select>

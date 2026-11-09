@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,10 @@ import {
   StyleSheet,
   StatusBar,
   ViewStyle,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
@@ -26,6 +29,8 @@ export type ScreenProps = {
   contentContainerStyle?: ViewStyle;
   tone?: 'default' | 'hero';
   scrollable?: boolean;
+  refreshControl?: React.ReactElement;
+  keyboardAvoiding?: boolean;
 };
 
 export function Screen({
@@ -41,18 +46,88 @@ export function Screen({
   contentContainerStyle,
   tone = 'default',
   scrollable = true,
+  refreshControl,
+  keyboardAvoiding = false,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const { canGoBack, goBack, isTabRoot } = useNavigation();
+  const { canGoBack, goBack, isTabRoot, route } = useNavigation();
 
   const isHero = tone === 'hero';
-  const backVisible = showBack ?? (canGoBack && !isTabRoot);
+  const isTabScreen = ['home', 'activity', 'coach', 'progress', 'profile'].includes(route?.name);
+  const hasBottomNav = isTabRoot || isTabScreen;
+  const backVisible = showBack ?? (canGoBack && !isTabRoot && !isTabScreen);
   const hasBar = Boolean(title || backVisible || headerLeft || headerRight);
 
   const bgColor = isHero ? colors.hero : colors.bg;
   const textColor = isHero ? colors.heroInk : colors.ink;
   const mutedTextColor = isHero ? colors.heroMuted : colors.muted;
+
+  const contentBottomPadding = footer
+    ? 24
+    : hasBottomNav
+      ? Math.max(insets.bottom, 12) + 96
+      : Math.max(insets.bottom + 20, 36);
+
+  const footerBottomPadding = hasBottomNav
+    ? Math.max(insets.bottom, 12) + 84
+    : Math.max(insets.bottom, 16);
+
+  const handleBack = useCallback(() => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    } catch {}
+    if (onBack) {
+      onBack();
+    } else {
+      goBack();
+    }
+  }, [onBack, goBack]);
+
+  const bodyContent = (
+    <>
+      {scrollable ? (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: contentBottomPadding },
+            contentContainerStyle,
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={refreshControl}
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View
+          style={[
+            styles.fixedContent,
+            { paddingBottom: contentBottomPadding },
+            contentContainerStyle,
+          ]}
+        >
+          {children}
+        </View>
+      )}
+
+      {footer && (
+        <View
+          style={[
+            styles.footerContainer,
+            {
+              borderColor: isHero ? 'rgba(244, 244, 238, 0.1)' : colors.line,
+              backgroundColor: bgColor,
+              paddingBottom: footerBottomPadding,
+            },
+          ]}
+        >
+          {footer}
+        </View>
+      )}
+    </>
+  );
 
   return (
     <View style={[styles.root, { backgroundColor: bgColor }]}>
@@ -66,7 +141,7 @@ export function Screen({
             <View style={styles.headerSide}>
               {backVisible ? (
                 <TouchableOpacity
-                  onPress={onBack ?? goBack}
+                  onPress={handleBack}
                   accessibilityRole="button"
                   accessibilityLabel="Go back"
                   activeOpacity={0.7}
@@ -97,62 +172,29 @@ export function Screen({
           </View>
         )}
 
-        {largeTitle && (
+        {largeTitle ? (
           <View style={styles.largeTitleSection}>
             <Text style={[styles.largeTitle, { color: textColor }]}>
               {largeTitle}
             </Text>
-            {subtitle && (
+            {subtitle ? (
               <Text style={[styles.subtitle, { color: mutedTextColor }]}>
                 {subtitle}
               </Text>
-            )}
+            ) : null}
           </View>
-        )}
+        ) : null}
       </View>
 
-      {scrollable ? (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingBottom: footer ? 24 : isTabRoot ? Math.max(insets.bottom, 12) + 96 : Math.max(insets.bottom + 20, 36),
-            },
-            contentContainerStyle,
-          ]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+      {keyboardAvoiding || Boolean(footer) ? (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardAvoid}
         >
-          {children}
-        </ScrollView>
+          {bodyContent}
+        </KeyboardAvoidingView>
       ) : (
-        <View
-          style={[
-            styles.fixedContent,
-            {
-              paddingBottom: footer ? 24 : isTabRoot ? Math.max(insets.bottom, 12) + 96 : Math.max(insets.bottom + 20, 36),
-            },
-            contentContainerStyle,
-          ]}
-        >
-          {children}
-        </View>
-      )}
-
-      {footer && (
-        <View
-          style={[
-            styles.footerContainer,
-            {
-              borderColor: isHero ? 'rgba(244, 244, 238, 0.1)' : colors.line,
-              backgroundColor: bgColor,
-              paddingBottom: isTabRoot ? Math.max(insets.bottom, 12) + 84 : Math.max(insets.bottom, 16),
-            },
-          ]}
-        >
-          {footer}
-        </View>
+        bodyContent
       )}
     </View>
   );
@@ -160,6 +202,9 @@ export function Screen({
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
+  },
+  keyboardAvoid: {
     flex: 1,
   },
   headerContainer: {

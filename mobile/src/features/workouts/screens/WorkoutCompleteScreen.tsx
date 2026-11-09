@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { premium } from '@/shared/theme/premium';
+import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Trophy } from 'lucide-react-native';
@@ -22,6 +23,7 @@ export function WorkoutCompleteScreen() {
   const hasDevice = useHasDeviceData();
   const [feel, setFeel] = useState('Solid');
   const [discard, setDiscard] = useState(false);
+  const saved = useRef(false);
 
   if (!finished) {
     return (
@@ -41,10 +43,12 @@ export function WorkoutCompleteScreen() {
         <Text style={[styles.eyebrow, { color: colors.accent, marginBottom: 8 }]}>
           No active session
         </Text>
-        <Text style={[styles.heading, { color: colors.heroInk, textAlign: 'center', marginBottom: 24 }]}>
+        <Text
+          style={[styles.heading, { color: colors.heroInk, textAlign: 'center', marginBottom: 24 }]}
+        >
           No recently completed workout found
         </Text>
-        <Button title="Go to Workouts" onPress={() => reset('workouts')} />
+        <Button appearance="premium" title="Go to Workouts" onPress={() => reset('workouts')} />
       </View>
     );
   }
@@ -59,7 +63,10 @@ export function WorkoutCompleteScreen() {
   ];
 
   const save = () => {
+    if (saved.current) return;
+    saved.current = true;
     saveCompleted();
+    showToast({ message: 'Workout saved' });
     reset('home');
   };
 
@@ -79,37 +86,17 @@ export function WorkoutCompleteScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>
-          Workout complete
-        </Text>
-        <Text style={[styles.heading, { color: colors.heroInk }]}>
-          {lastCompleted.title}
-        </Text>
+        <Text style={[styles.eyebrow, { color: colors.accent }]}>Workout complete</Text>
+        <Text style={[styles.heading, { color: colors.heroInk }]}>{lastCompleted.title}</Text>
 
         {/* Stats Grid */}
-        <View
-          style={[
-            styles.statsGrid,
-            { backgroundColor: `${colors.heroInk}15` },
-          ]}
-        >
+        <View style={[styles.statsGrid, { backgroundColor: `${colors.heroInk}15` }]}>
           {stats.map((s) => (
-            <View
-              key={s.label}
-              style={[
-                styles.statBox,
-                { backgroundColor: colors.hero },
-              ]}
-            >
-              <Text style={[styles.statLabel, { color: colors.heroMuted }]}>
-                {s.label}
-              </Text>
+            <View key={s.label} style={[styles.statBox, { backgroundColor: colors.hero }]}>
+              <Text style={[styles.statLabel, { color: colors.heroMuted }]}>{s.label}</Text>
               <Text style={[styles.statNumber, { color: colors.heroInk }]}>
                 {s.value}
-                <Text style={[styles.statUnit, { color: colors.heroMuted }]}>
-                  {' '}
-                  {s.unit}
-                </Text>
+                <Text style={[styles.statUnit, { color: colors.heroMuted }]}> {s.unit}</Text>
               </Text>
             </View>
           ))}
@@ -118,46 +105,32 @@ export function WorkoutCompleteScreen() {
         <View style={{ marginTop: 10 }}>
           <SourceTag
             source={
-              hasDevice
-                ? { kind: 'synced', label: 'Calories & HR from Apple Watch' }
-                : {
-                    kind: 'estimated',
-                    label: 'Calories estimated from volume & body weight',
-                  }
+              lastCompleted.caloriesSource === 'wearable'
+                ? { kind: 'synced', label: 'Calories from your connected device' }
+                : { kind: 'estimated', label: 'Calories estimated from your logged session' }
             }
           />
         </View>
 
         {/* PR or Volume notice */}
         {lastCompleted.prs > 0 ? (
-          <View
-            style={[
-              styles.prNotice,
-              { backgroundColor: `${colors.accent}20` },
-            ]}
-          >
+          <View style={[styles.prNotice, { backgroundColor: `${colors.accent}20` }]}>
             <Trophy size={22} color={colors.accent} />
             <Text style={[styles.prText, { color: colors.heroInk }]}>
-              <Text style={{ fontWeight: '700' }}>New PR:</Text> Bench press 75 kg
+              {lastCompleted.prs} personal record{lastCompleted.prs === 1 ? '' : 's'} recorded
             </Text>
           </View>
         ) : (
-          <View
-            style={[
-              styles.noPrNotice,
-              { backgroundColor: `${colors.heroInk}10` },
-            ]}
-          >
+          <View style={[styles.noPrNotice, { backgroundColor: `${colors.heroInk}10` }]}>
             <Text style={[styles.noPrText, { color: colors.heroMuted }]}>
-              No new records today — volume was within 4% of Monday. Consistency like this is what drives PRs.
+              Your logged sets and training volume are ready to save. Keep building your own
+              progress.
             </Text>
           </View>
         )}
 
         {/* Exercises summary */}
-        <Text style={[styles.exercisesTitle, { color: colors.heroInk }]}>
-          Exercises
-        </Text>
+        <Text style={[styles.exercisesTitle, { color: colors.heroInk }]}>Exercises</Text>
         <View style={styles.exercisesList}>
           {lastCompleted.exercises.map((e, idx) => (
             <View
@@ -170,38 +143,29 @@ export function WorkoutCompleteScreen() {
                 },
               ]}
             >
-              <Text
-                style={[styles.exRowName, { color: colors.heroInk }]}
-                numberOfLines={1}
-              >
-                {e.name}
-              </Text>
-              <Text style={[styles.exRowBest, { color: colors.heroMuted }]}>
-                {e.best}
-              </Text>
+              <Text style={[styles.exRowName, { color: colors.heroInk }]}>{e.name}</Text>
+              <Text style={[styles.exRowBest, { color: colors.heroMuted }]}>{e.best}</Text>
             </View>
           ))}
         </View>
 
         {/* How did it feel? */}
         <View style={styles.feelSection}>
-          <Text style={[styles.feelTitle, { color: colors.heroInk }]}>
-            How did it feel?
-          </Text>
+          <Text style={[styles.feelTitle, { color: colors.heroInk }]}>How did it feel?</Text>
           <View style={styles.feelGrid}>
             {feelings.map((f) => {
               const isSelected = feel === f;
               return (
                 <TouchableOpacity
                   key={f}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
                   activeOpacity={0.7}
                   onPress={() => setFeel(f)}
                   style={[
                     styles.feelBtn,
                     {
-                      backgroundColor: isSelected
-                        ? colors.accent
-                        : `${colors.heroInk}10`,
+                      backgroundColor: isSelected ? colors.accent : `${colors.heroInk}10`,
                     },
                   ]}
                 >
@@ -225,15 +189,13 @@ export function WorkoutCompleteScreen() {
 
       {/* Bottom Save & Discard buttons */}
       <View style={styles.bottomBar}>
-        <Button size="lg" fullWidth title="Save workout" onPress={save} />
+        <Button appearance="premium" size="lg" fullWidth title="Save workout" onPress={save} />
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => setDiscard(true)}
           style={styles.discardBtn}
         >
-          <Text style={[styles.discardText, { color: colors.heroMuted }]}>
-            Discard
-          </Text>
+          <Text style={[styles.discardText, { color: colors.heroMuted }]}>Discard</Text>
         </TouchableOpacity>
       </View>
 
@@ -271,40 +233,35 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   eyebrow: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...premium.type.body,
   },
   heading: {
-    fontSize: 32,
-    fontWeight: '600',
-    letterSpacing: -0.5,
+    ...premium.type.display,
     marginTop: 4,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    borderRadius: 24,
+    borderRadius: premium.radius.card,
     overflow: 'hidden',
     marginTop: 20,
     gap: 1,
   },
   statBox: {
-    width: '49.8%',
+    flexBasis: '45%',
+    flexGrow: 1,
     padding: 16,
   },
   statLabel: {
-    fontSize: 12,
+    ...premium.type.caption,
   },
   statNumber: {
-    fontSize: 26,
-    fontWeight: '600',
+    ...premium.type.metric,
     fontVariant: ['tabular-nums'],
-    letterSpacing: -0.5,
     marginTop: 4,
   },
   statUnit: {
-    fontSize: 13,
-    fontWeight: '400',
+    ...premium.type.caption,
   },
   prNotice: {
     flexDirection: 'row',
@@ -315,7 +272,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   prText: {
-    fontSize: 14,
+    ...premium.type.body,
     flex: 1,
   },
   noPrNotice: {
@@ -324,12 +281,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   noPrText: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...premium.type.body,
   },
   exercisesTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...premium.type.body,
     marginTop: 24,
   },
   exercisesList: {
@@ -342,34 +297,34 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   exRowName: {
-    fontSize: 14,
+    ...premium.type.body,
     flex: 1,
   },
   exRowBest: {
-    fontSize: 13,
+    ...premium.type.caption,
     fontVariant: ['tabular-nums'],
   },
   feelSection: {
     marginTop: 24,
   },
   feelTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...premium.type.body,
   },
   feelGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginTop: 10,
   },
   feelBtn: {
     flex: 1,
-    height: 44,
+    minHeight: premium.layout.touch,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   feelText: {
-    fontSize: 13,
+    ...premium.type.caption,
   },
   bottomBar: {
     paddingHorizontal: 20,
@@ -377,13 +332,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   discardBtn: {
-    height: 44,
+    minHeight: premium.layout.touch,
     alignItems: 'center',
     justifyContent: 'center',
   },
   discardText: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...premium.type.body,
   },
 });
-

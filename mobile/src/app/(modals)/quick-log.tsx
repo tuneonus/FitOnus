@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { Scale, Droplets, Dumbbell, X } from 'lucide-react-native';
 import { useNutritionStore } from '@/features/nutrition/store/nutritionStore';
+import { showToast } from '@/shared/stores/toastStore';
 
 export default function QuickLogModal() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function QuickLogModal() {
           <Pressable 
             style={[styles.actionBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             onPress={() => {
-              console.log('Log Weight');
+              showToast({ message: 'Opening weight tracker...' });
               router.back();
             }}
           >
@@ -48,6 +49,7 @@ export default function QuickLogModal() {
             style={[styles.actionBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             onPress={() => {
               useNutritionStore.getState().logWater(250);
+              showToast({ message: 'Added 250 ml of water' });
               router.back();
             }}
           >
@@ -60,8 +62,8 @@ export default function QuickLogModal() {
           <Pressable 
             style={[styles.actionBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             onPress={() => {
-              console.log('Start Workout');
               router.back();
+              router.push('/(tabs)/workouts');
             }}
           >
             <View style={[styles.iconCircle, { backgroundColor: '#FCE7F3' }]}>

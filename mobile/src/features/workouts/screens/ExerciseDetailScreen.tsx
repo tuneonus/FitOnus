@@ -1,8 +1,14 @@
+import { useQuery } from '@tanstack/react-query';
+import { workoutApi } from '../api/workout-api';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { StatusBanner } from '@/shared/components/ui/StatusBanner';
+import { premium } from '@/shared/theme/premium';
 import React from 'react';
 import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
 import { Dumbbell, Sparkles } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
-import { Screen } from '../../../shared/components/ui/Screen';
+import { FeatureScreen as Screen } from '@/shared/components/ui/FeatureScreen';
 import { Badge } from '../../../shared/components/ui/Badge';
 import { Button } from '../../../shared/components/ui/Button';
 import { LineChart } from '../../../shared/components/charts/LineChart';
@@ -13,36 +19,36 @@ import { useTheme } from '@/hooks/use-theme';
 
 export function ExerciseDetailScreen() {
   const { colors } = useTheme();
-  const { id = 'e1' } = useRouteParams<{ id?: string }>();
+  const { id } = useRouteParams<{ id?: string }>();
   const { navigate } = useNavigation();
-  const getExerciseById = useWorkoutStore((s) => s.getExerciseById);
-  const ex = getExerciseById(id);
+  const catalog = useWorkoutStore((state) => state.catalog);
+  const cached = catalog.find((exercise) => exercise.id === id || exercise.slug === id);
+  const details = useQuery({ queryKey: ['exercises', 'detail', id], queryFn: () => workoutApi.getExerciseById(id!), enabled: Boolean(id && /^[0-9a-f-]{36}$/i.test(id)), retry: 1 });
+  const ex = details.data ?? cached;
   const [prRecords, setPrRecords] = React.useState<PersonalRecordView[]>([]);
 
   React.useEffect(() => {
-    WorkoutService.getPersonalRecords(ex.id).then(setPrRecords).catch(() => {});
-  }, [ex.id]);
+    if (!ex) return;
+    WorkoutService.getPersonalRecords(ex.id)
+      .then(setPrRecords)
+      .catch(() => {});
+  }, [ex?.id]);
 
   const bestPr = prRecords[0];
+  if (!ex) return <Screen title="Exercise details">{details.isLoading ? <Skeleton height={160} /> : <EmptyState appearance="premium" icon={Dumbbell} title="Exercise unavailable" body="Try loading this exercise again, or return to the library." actionLabel="Retry" onAction={() => { void details.refetch(); }} />}</Screen>;
 
   return (
     <Screen title={ex.name}>
+      {details.isError ? <StatusBanner tone="warning" title="Showing saved exercise details" actionLabel="Retry" onAction={() => { void details.refetch(); }} /> : null}
       {ex.image ? (
         <Image source={{ uri: ex.image }} style={styles.heroImage} />
       ) : (
-        <View
-          style={[
-            styles.placeholderHero,
-            { backgroundColor: colors.surface2 },
-          ]}
-        >
+        <View style={[styles.placeholderHero, { backgroundColor: colors.surface2 }]}>
           <Dumbbell size={40} color={colors.muted} />
         </View>
       )}
 
       <View style={styles.body}>
-        <Text style={[styles.title, { color: colors.ink }]}>{ex.name}</Text>
-
         <View style={styles.badgesRow}>
           <Badge tone="accent">{ex.muscle}</Badge>
           <Badge>{ex.equipment}</Badge>
@@ -63,11 +69,13 @@ export function ExerciseDetailScreen() {
             ]}
           >
             <View style={styles.prHeader}>
-              <Text style={[styles.prTitle, { color: colors.ink }]}>
-                Your top set
-              </Text>
+              <Text style={[styles.prTitle, { color: colors.ink }]}>Your top set</Text>
               <Text style={[styles.prMeta, { color: colors.muted }]}>
-                PR {bestPr.weightKg ?? bestPr.value} kg {bestPr.reps ? `× ${bestPr.reps}` : ''} · {new Date(bestPr.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                PR {bestPr.weightKg ?? bestPr.value} kg {bestPr.reps ? `× ${bestPr.reps}` : ''} ·{' '}
+                {new Date(bestPr.achievedAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </Text>
             </View>
             <View style={{ marginTop: 8 }}>
@@ -79,7 +87,7 @@ export function ExerciseDetailScreen() {
                 ariaLabel={`${ex.name} top set trend`}
                 height={120}
                 formatValue={(v) => `${v} kg`}
-                strokeColor={colors.accent}
+                strokeColor={colors.accentStrong}
               />
             </View>
           </View>
@@ -91,19 +99,10 @@ export function ExerciseDetailScreen() {
           <View style={styles.instructionsList}>
             {ex.instructions?.map((step, i) => (
               <View key={step} style={styles.stepRow}>
-                <View
-                  style={[
-                    styles.stepNumberBadge,
-                    { backgroundColor: colors.surface2 },
-                  ]}
-                >
-                  <Text style={[styles.stepNum, { color: colors.ink }]}>
-                    {i + 1}
-                  </Text>
+                <View style={[styles.stepNumberBadge, { backgroundColor: colors.surface2 }]}>
+                  <Text style={[styles.stepNum, { color: colors.ink }]}>{i + 1}</Text>
                 </View>
-                <Text style={[styles.stepText, { color: colors.ink }]}>
-                  {step}
-                </Text>
+                <Text style={[styles.stepText, { color: colors.ink }]}>{step}</Text>
               </View>
             ))}
           </View>
@@ -112,9 +111,7 @@ export function ExerciseDetailScreen() {
         {/* Coaching Cues */}
         {ex.cues && ex.cues.length > 0 && (
           <View style={[styles.cuesCard, { backgroundColor: colors.surface2 }]}>
-            <Text style={[styles.cuesTitle, { color: colors.ink }]}>
-              Coaching cues
-            </Text>
+            <Text style={[styles.cuesTitle, { color: colors.ink }]}>Coaching cues</Text>
             <View style={styles.cuesList}>
               {ex.cues.map((c) => (
                 <Text key={c} style={[styles.cueItem, { color: colors.muted }]}>
@@ -126,13 +123,12 @@ export function ExerciseDetailScreen() {
         )}
 
         <Button
+          appearance="premium"
           variant="outline"
           fullWidth
           icon={Sparkles}
           title="Ask coach about this exercise"
-          onPress={() =>
-            navigate('coach', { q: `How should I progress ${ex.name}?` })
-          }
+          onPress={() => navigate('coach', { q: `How should I progress ${ex.name}?` })}
           style={{ marginTop: 24 }}
         />
 
@@ -151,21 +147,19 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   placeholderHero: {
-    marginHorizontal: 16,
-    height: 180,
-    borderRadius: 24,
+    marginHorizontal: 0,
+    height: 100,
+    borderRadius: premium.radius.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   body: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 0,
+    paddingTop: 8,
     paddingBottom: 40,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '600',
-    letterSpacing: -0.3,
+    ...premium.type.title,
   },
   badgesRow: {
     flexDirection: 'row',
@@ -174,7 +168,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   prCard: {
-    borderRadius: 24,
+    borderRadius: premium.radius.card,
     borderWidth: 1,
     padding: 16,
     marginTop: 24,
@@ -185,18 +179,16 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   prTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...premium.type.body,
   },
   prMeta: {
-    fontSize: 12,
+    ...premium.type.caption,
   },
   section: {
     marginTop: 24,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    ...premium.type.label,
   },
   instructionsList: {
     marginTop: 12,
@@ -216,36 +208,31 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   stepNum: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...premium.type.caption,
     fontVariant: ['tabular-nums'],
   },
   stepText: {
+    ...premium.type.body,
     flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
   },
   cuesCard: {
-    borderRadius: 20,
+    borderRadius: premium.radius.card,
     padding: 16,
     marginTop: 24,
     gap: 8,
   },
   cuesTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...premium.type.body,
   },
   cuesList: {
     gap: 6,
   },
   cueItem: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...premium.type.body,
   },
   footerNote: {
+    ...premium.type.caption,
     marginTop: 12,
     textAlign: 'center',
-    fontSize: 12,
   },
 });
-

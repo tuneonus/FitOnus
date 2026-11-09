@@ -64,6 +64,8 @@ const appSchema = databaseSchema.extend({
   AUTH_RATE_LIMIT_MAX: integer(10, 1, 10_000),
   IDEMPOTENCY_TTL_HOURS: integer(24, 1, 720),
   IDEMPOTENCY_LEASE_SECONDS: integer(60, 5, 3_600),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-3.5-flash-lite'),
 });
 
 export type DatabaseConfig = {
@@ -97,6 +99,7 @@ export type AppConfig = {
     publicRegistration: boolean;
   };
   security: { hmacSecret: string };
+  gemini: { apiKey?: string; model: string };
   rateLimit: { windowMs: number; max: number; authMax: number };
   idempotency: { ttlSeconds: number; leaseSeconds: number };
 };
@@ -185,6 +188,10 @@ export function loadConfig(env: Env = process.env): AppConfig {
       publicRegistration: parsed.AUTH_PUBLIC_REGISTRATION,
     },
     security: { hmacSecret: parsed.HMAC_SECRET },
+    gemini: {
+      apiKey: parsed.GEMINI_API_KEY,
+      model: parsed.GEMINI_MODEL,
+    },
     rateLimit: {
       windowMs: parsed.RATE_LIMIT_WINDOW_MS,
       max: parsed.RATE_LIMIT_MAX,

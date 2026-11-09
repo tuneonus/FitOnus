@@ -208,6 +208,8 @@ export function createChallengesModule(deps: CreateChallengesModuleOptions): Cha
     adminUpdateChallenge,
     adminPublishChallenge,
     adminArchiveChallenge,
+    db: deps.db,
+    badgeRepo,
   });
 
   const memberBasePath =

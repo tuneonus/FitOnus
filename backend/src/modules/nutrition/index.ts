@@ -3,6 +3,8 @@ export * from './domain/meal.js';
 export * from './domain/water.js';
 export * from './domain/favorite.js';
 export * from './domain/nutrition-calculator.js';
+export * from './domain/meal-photo.types.js';
+export * from './domain/voice-meal.types.js';
 export * from './application/ports.js';
 export * from './application/nutrition-view.js';
 export * from './application/use-cases/search-foods.js';
@@ -18,15 +20,21 @@ export * from './application/use-cases/manage-food-favorites.js';
 export * from './application/use-cases/get-recent-foods.js';
 export * from './application/use-cases/admin-manage-food.js';
 export * from './application/use-cases/admin-get-nutrition-stats.js';
+export * from './application/use-cases/analyze-meal-photo.js';
+export * from './application/use-cases/parse-voice-meal.js';
 export * from './infrastructure/pg-food-repository.js';
 export * from './infrastructure/pg-meal-repository.js';
 export * from './infrastructure/pg-water-repository.js';
 export * from './infrastructure/pg-favorite-repository.js';
 export * from './infrastructure/pg-user-profile-target-adapter.js';
 export * from './infrastructure/nutrition-audit-logger.js';
+export * from './infrastructure/gemini-meal-photo-service.js';
+export * from './infrastructure/gemini-voice-meal-service.js';
 export * from './interface/nutrition.schemas.js';
 export * from './interface/nutrition.controller.js';
 export * from './interface/nutrition.routes.js';
+export * from './interface/meal-photo.schemas.js';
+export * from './interface/voice-meal.schemas.js';
 export * from './interface/admin-nutrition.schemas.js';
 export * from './interface/admin-nutrition.controller.js';
 export * from './interface/admin-nutrition.routes.js';
@@ -34,6 +42,11 @@ export * from './interface/admin-nutrition.routes.js';
 import type { SqlExecutor } from '../../database/transaction.js';
 import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
+import type { GeminiClient } from '../coach/infrastructure/gemini-client.js';
+import { GeminiMealPhotoService } from './infrastructure/gemini-meal-photo-service.js';
+import { GeminiVoiceMealService } from './infrastructure/gemini-voice-meal-service.js';
+import { AnalyzeMealPhotoUseCase } from './application/use-cases/analyze-meal-photo.js';
+import { ParseVoiceMealUseCase } from './application/use-cases/parse-voice-meal.js';
 import { GetDailyNutritionUseCase } from './application/use-cases/get-daily-nutrition.js';
 import { SearchFoodsUseCase } from './application/use-cases/search-foods.js';
 import { GetRecentFoodsUseCase } from './application/use-cases/get-recent-foods.js';
@@ -75,6 +88,7 @@ export interface CreateNutritionModuleOptions {
   adminBasePath?: string;
   db: SqlExecutor;
   uow: UnitOfWork;
+  geminiClient?: GeminiClient;
 }
 
 export function createNutritionModule(deps: CreateNutritionModuleOptions): NutritionModule {
@@ -84,6 +98,11 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
   const favoriteRepo = new PgFavoriteRepository(deps.db);
   const targetAdapter = new PgUserProfileTargetAdapter(deps.db);
   const auditLogger = new PgNutritionAuditLogger(deps.db);
+
+  const mealPhotoService = deps.geminiClient ? new GeminiMealPhotoService(deps.geminiClient) : undefined;
+  const analyzeMealPhotoUseCase = mealPhotoService ? new AnalyzeMealPhotoUseCase(mealPhotoService) : undefined;
+  const voiceMealService = deps.geminiClient ? new GeminiVoiceMealService(deps.geminiClient) : undefined;
+  const parseVoiceMealUseCase = voiceMealService ? new ParseVoiceMealUseCase(voiceMealService) : undefined;
 
   const memberController = createNutritionMemberController({
     getDailyNutrition: new GetDailyNutritionUseCase(mealRepo, waterRepo, targetAdapter),
@@ -97,6 +116,8 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
     logWater: new LogWaterUseCase(waterRepo),
     getNutritionAnalytics: new GetNutritionAnalyticsUseCase(mealRepo, targetAdapter),
     manageFoodFavorites: new ManageFoodFavoritesUseCase(favoriteRepo, foodRepo),
+    analyzeMealPhoto: analyzeMealPhotoUseCase,
+    parseVoiceMeal: parseVoiceMealUseCase,
   });
 
   const memberBasePath = deps.memberBasePath ?? deps.basePath ?? '/api/v1/nutrition';

@@ -69,85 +69,83 @@ export function ChangePasswordScreen() {
   };
 
   return (
-    <Screen title="Change Password" showBack={true}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={[styles.description, { color: colors.muted }]}>
-          Choose a secure password of at least 12 characters. For your security, other active sessions will be signed out.
-        </Text>
+    <Screen
+      title="Change Password"
+      showBack={true}
+      keyboardAvoiding
+      contentContainerStyle={styles.container}
+    >
+      <Text style={[styles.description, { color: colors.muted }]}>
+        Choose a secure password of at least 12 characters. For your security, other active sessions will be signed out.
+      </Text>
 
-        {serverError ? (
-          <StatusBanner
-            tone="error"
-            title="Could not update password"
-            body={serverError}
-            style={styles.banner}
-          />
-        ) : null}
+      {serverError ? (
+        <StatusBanner
+          tone="error"
+          title="Could not update password"
+          body={serverError}
+          style={styles.banner}
+        />
+      ) : null}
 
-        <View style={styles.formGroup}>
+      <View style={styles.formGroup}>
+        <PasswordField
+          label="Current password"
+          value={currentPassword}
+          onChange={(val) => {
+            setCurrentPassword(val);
+            if (errors.current) setErrors((prev) => ({ ...prev, current: undefined }));
+            if (serverError) setServerError(null);
+          }}
+          placeholder="Enter current password"
+          error={errors.current}
+        />
+
+        <View>
           <PasswordField
-            label="Current password"
-            value={currentPassword}
+            label="New password"
+            value={newPassword}
             onChange={(val) => {
-              setCurrentPassword(val);
-              if (errors.current) setErrors((prev) => ({ ...prev, current: undefined }));
+              setNewPassword(val);
+              if (errors.new) setErrors((prev) => ({ ...prev, new: undefined }));
               if (serverError) setServerError(null);
             }}
-            placeholder="Enter current password"
-            error={errors.current}
+            placeholder="At least 12 characters"
+            error={errors.new}
           />
-
-          <View>
-            <PasswordField
-              label="New password"
-              value={newPassword}
-              onChange={(val) => {
-                setNewPassword(val);
-                if (errors.new) setErrors((prev) => ({ ...prev, new: undefined }));
-                if (serverError) setServerError(null);
-              }}
-              placeholder="At least 12 characters"
-              error={errors.new}
-            />
-            <PasswordStrength password={newPassword} />
-          </View>
-
-          <PasswordField
-            label="Confirm new password"
-            value={confirmPassword}
-            onChange={(val) => {
-              setConfirmPassword(val);
-              if (errors.confirm) setErrors((prev) => ({ ...prev, confirm: undefined }));
-              if (serverError) setServerError(null);
-            }}
-            placeholder="Re-enter new password"
-            error={errors.confirm}
-          />
+          <PasswordStrength password={newPassword} />
         </View>
 
-        <View style={styles.actions}>
-          <Button
-            fullWidth
-            loading={loading}
-            disabled={loading}
-            onPress={handleSubmit}
-          >
-            Update password
-          </Button>
-        </View>
-      </ScrollView>
+        <PasswordField
+          label="Confirm new password"
+          value={confirmPassword}
+          onChange={(val) => {
+            setConfirmPassword(val);
+            if (errors.confirm) setErrors((prev) => ({ ...prev, confirm: undefined }));
+            if (serverError) setServerError(null);
+          }}
+          placeholder="Re-enter new password"
+          error={errors.confirm}
+        />
+      </View>
+
+      <View style={styles.actions}>
+        <Button
+          fullWidth
+          loading={loading}
+          disabled={loading}
+          onPress={handleSubmit}
+        >
+          Update password
+        </Button>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 32,
     gap: 16,
   },
   description: {

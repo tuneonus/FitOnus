@@ -121,19 +121,19 @@ export function ChallengesScreen() {
   };
 
   return (
-    <Screen title="Challenges & Badges" subtitle="Compete, earn rewards and level up">
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-          />
-        }
-      >
+    <Screen
+      title="Challenges & Badges"
+      subtitle="Compete, earn rewards and level up"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.accent}
+          colors={[colors.accent]}
+        />
+      }
+    >
+      <View style={styles.container}>
         {/* Gamification Level & Points Summary Banner */}
         <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           <View style={styles.summaryTopRow}>
@@ -550,14 +550,13 @@ export function ChallengesScreen() {
             )}
           </View>
         )}
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
     paddingBottom: 40,
     gap: 16,
   },

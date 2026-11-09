@@ -32,7 +32,7 @@ export function ResetPasswordScreen() {
   };
 
   return (
-    <Screen showBack={true}>
+    <Screen showBack={true} keyboardAvoiding={true}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.ink }]}>
           Choose a new password

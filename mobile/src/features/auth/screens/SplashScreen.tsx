@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Logo } from '../../../shared/components/common/Logo';
 import { useTheme } from '@/hooks/use-theme';
@@ -8,6 +9,7 @@ import { useAuthStore } from '../stores/auth-store';
 import { profileApi } from '@/features/profile/api/profile-api';
 
 export function SplashScreen() {
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { reset } = useNavigation();
 
@@ -63,7 +65,7 @@ export function SplashScreen() {
         </Text>
       </View>
 
-      <View style={styles.dotsRow}>
+      <View style={[styles.dotsRow, { bottom: Math.max(insets.bottom + 36, 56) }]}>
         {[0, 1, 2].map((i) => (
           <View
             key={i}
@@ -72,7 +74,12 @@ export function SplashScreen() {
         ))}
       </View>
 
-      <Text style={[styles.brandBottom, { color: colors.heroMuted }]}>
+      <Text
+        style={[
+          styles.brandBottom,
+          { color: colors.heroMuted, bottom: Math.max(insets.bottom + 8, 24) },
+        ]}
+      >
         by TuneOnus
       </Text>
     </View>

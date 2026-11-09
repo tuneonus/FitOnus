@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Brain, Lock, Pencil, Trash2 } from 'lucide-react-native';
 import { Screen } from '../../../shared/components/ui/Screen';
 import { Toggle } from '../../../shared/components/ui/Toggle';
@@ -20,6 +20,8 @@ export function AiMemoryScreen() {
     enabled,
     items,
     suggestions,
+    loading,
+    fetchMemories,
     setEnabled,
     updateItem,
     deleteItem,
@@ -28,6 +30,10 @@ export function AiMemoryScreen() {
     approveSuggestion,
     dismissSuggestion,
   } = useMemoryStore();
+
+  useEffect(() => {
+    fetchMemories();
+  }, [fetchMemories]);
 
   const [editing, setEditing] = useState<MemoryItem | null>(null);
   const [draft, setDraft] = useState('');
@@ -153,7 +159,11 @@ export function AiMemoryScreen() {
         )}
 
         {/* Saved Memories List */}
-        {items.length === 0 ? (
+        {loading && items.length === 0 ? (
+          <View style={{ padding: 32, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator size="small" color={colors.accent} />
+          </View>
+        ) : items.length === 0 ? (
           <EmptyState
             icon={Brain}
             title="No memories yet"

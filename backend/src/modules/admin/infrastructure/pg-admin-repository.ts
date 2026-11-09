@@ -5,6 +5,7 @@ import type { DashboardStats } from '../domain/dashboard-stats.js';
 import type {
   AdminAuditLogView,
   AdminRepository,
+  AdminUserActivityView,
   AdminUserDetailView,
   AdminUserListItemView,
   ListAdminUsersQuery,
@@ -14,7 +15,10 @@ import type {
 export class PgAdminRepository implements AdminRepository {
   constructor(private readonly db: Database) {}
 
-  async getDashboardStats(): Promise<DashboardStats> {
+  async getDashboardStats(timeframe = '14d'): Promise<DashboardStats> {
+    const days = timeframe === '90d' ? 90 : timeframe === '30d' ? 30 : timeframe === '7d' ? 7 : 14;
+    const intervalDays = days - 1;
+
     const totalQuery = `
       SELECT
         (SELECT count(*)::int FROM users) AS total_users,
@@ -46,7 +50,7 @@ export class PgAdminRepository implements AdminRepository {
       SELECT
         to_char(date_trunc('day', d), 'YYYY-MM-DD') AS date_label,
         count(u.id)::int AS registration_count
-      FROM generate_series(CURRENT_DATE - INTERVAL '13 days', CURRENT_DATE, '1 day'::interval) d
+      FROM generate_series(CURRENT_DATE - INTERVAL '${intervalDays} days', CURRENT_DATE, '1 day'::interval) d
       LEFT JOIN users u ON date_trunc('day', u.created_at) = d
       GROUP BY d
       ORDER BY d ASC
@@ -468,6 +472,160 @@ export class PgAdminRepository implements AdminRepository {
     return {
       items,
       meta: toPaginationMeta({ page, limit }, totalItems),
+    };
+  }
+
+  async getUserActivity(userId: string): Promise<AdminUserActivityView> {
+    const [workoutsAggRes, workoutSessionsRes, mealsAggRes, mealsRes, weightSummaryRes, weightLogsRes] =
+      await Promise.all([
+        this.db.query<{
+          total_sessions: number;
+          total_duration_min: number;
+          total_volume_kg: number;
+        }>(
+          `SELECT
+             count(*)::int AS total_sessions,
+             coalesce(sum(duration_seconds), 0)::int / 60 AS total_duration_min,
+             coalesce(sum(total_volume_kg), 0)::float AS total_volume_kg
+           FROM workout_sessions
+           WHERE user_id = $1`,
+          [userId],
+        ),
+        this.db.query<{
+          id: string;
+          workout_name: string | null;
+          started_at: Date;
+          completed_at: Date | null;
+          duration_seconds: number | null;
+          total_volume_kg: number | null;
+        }>(
+          `SELECT
+             id,
+             workout_name,
+             started_at,
+             completed_at,
+             duration_seconds,
+             total_volume_kg
+           FROM workout_sessions
+           WHERE user_id = $1
+           ORDER BY started_at DESC
+           LIMIT 10`,
+          [userId],
+        ),
+        this.db.query<{
+          total_meals: number;
+          avg_daily_calories: number;
+        }>(
+          `SELECT
+             count(*)::int AS total_meals,
+             round(coalesce(avg(total_calories), 0))::int AS avg_daily_calories
+           FROM meals
+           WHERE user_id = $1 AND deleted_at IS NULL`,
+          [userId],
+        ),
+        this.db.query<{
+          id: string;
+          meal_type: string;
+          total_calories: number;
+          total_protein_g: number;
+          total_carbs_g: number;
+          total_fat_g: number;
+          created_at: Date;
+        }>(
+          `SELECT
+             id,
+             meal_type,
+             coalesce(total_calories, 0)::int AS total_calories,
+             coalesce(total_protein_g, 0)::float AS total_protein_g,
+             coalesce(total_carbs_g, 0)::float AS total_carbs_g,
+             coalesce(total_fat_g, 0)::float AS total_fat_g,
+             created_at
+           FROM meals
+           WHERE user_id = $1 AND deleted_at IS NULL
+           ORDER BY created_at DESC
+           LIMIT 10`,
+          [userId],
+        ),
+        this.db.query<{
+          current_weight_kg: number | null;
+          starting_weight_kg: number | null;
+          total_entries: number;
+        }>(
+          `SELECT
+             p.current_weight_kg,
+             p.starting_weight_kg,
+             (SELECT count(*)::int FROM weight_logs WHERE user_id = $1 AND deleted_at IS NULL) AS total_entries
+           FROM user_profiles p
+           WHERE p.user_id = $1`,
+          [userId],
+        ),
+        this.db.query<{
+          id: string;
+          weight_kg: number;
+          logged_at: Date;
+        }>(
+          `SELECT id, weight_kg::float, logged_at
+           FROM weight_logs
+           WHERE user_id = $1 AND deleted_at IS NULL
+           ORDER BY logged_at DESC
+           LIMIT 10`,
+          [userId],
+        ),
+      ]);
+
+    const workoutAgg = workoutsAggRes.rows[0] ?? {
+      total_sessions: 0,
+      total_duration_min: 0,
+      total_volume_kg: 0,
+    };
+    const mealsAgg = mealsAggRes.rows[0] ?? {
+      total_meals: 0,
+      avg_daily_calories: 0,
+    };
+    const weightSummary = weightSummaryRes.rows[0] ?? {
+      current_weight_kg: null,
+      starting_weight_kg: null,
+      total_entries: 0,
+    };
+
+    return {
+      userId,
+      workouts: {
+        totalSessions: workoutAgg.total_sessions,
+        totalDurationMin: workoutAgg.total_duration_min,
+        totalVolumeKg: Number((workoutAgg.total_volume_kg || 0).toFixed(1)),
+        recentSessions: workoutSessionsRes.rows.map((r) => ({
+          id: r.id,
+          name: r.workout_name || 'Workout Session',
+          startedAt: r.started_at.toISOString(),
+          completedAt: r.completed_at ? r.completed_at.toISOString() : null,
+          durationMin: Math.round((r.duration_seconds || 0) / 60),
+          volumeKg: Number((r.total_volume_kg || 0).toFixed(1)),
+        })),
+      },
+      nutrition: {
+        totalMeals: mealsAgg.total_meals,
+        avgDailyCalories: mealsAgg.avg_daily_calories,
+        recentMeals: mealsRes.rows.map((r) => ({
+          id: r.id,
+          mealType: r.meal_type,
+          calories: r.total_calories,
+          proteinG: Number((r.total_protein_g || 0).toFixed(1)),
+          carbsG: Number((r.total_carbs_g || 0).toFixed(1)),
+          fatG: Number((r.total_fat_g || 0).toFixed(1)),
+          loggedAt: r.created_at.toISOString(),
+        })),
+      },
+      weight: {
+        currentWeightKg: weightSummary.current_weight_kg ? Number(weightSummary.current_weight_kg) : null,
+        startingWeightKg: weightSummary.starting_weight_kg ? Number(weightSummary.starting_weight_kg) : null,
+        totalEntries: weightSummary.total_entries,
+        recentEntries: weightLogsRes.rows.map((r) => ({
+          id: r.id,
+          weightKg: Number(r.weight_kg),
+          loggedAt: r.logged_at.toISOString(),
+        })),
+      },
     };
   }
 }

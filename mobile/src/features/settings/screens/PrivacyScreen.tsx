@@ -76,9 +76,8 @@ export function PrivacyScreen() {
   ];
 
   return (
-    <Screen title="Privacy">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* What your coach can read hero */}
+    <Screen title="Privacy" contentContainerStyle={styles.container}>
+      {/* What your coach can read hero */}
         <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
           <View style={styles.heroHeader}>
             <Eye size={16} color={colors.accent} />
@@ -145,15 +144,13 @@ export function PrivacyScreen() {
             Export my data
           </Button>
         </View>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   heroCard: {

@@ -1,9 +1,11 @@
+import { premium } from '@/shared/theme/premium';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { Minus, Plus } from 'lucide-react-native';
 import { useTheme } from '@/hooks/use-theme';
 
 export type StepperProps = {
+  appearance?: 'default' | 'premium';
   value: number;
   onChange: (value: number) => void;
   step?: number;
@@ -17,6 +19,7 @@ export type StepperProps = {
 };
 
 export function Stepper({
+  appearance = 'default',
   value,
   onChange,
   step = 1,
@@ -31,7 +34,8 @@ export function Stepper({
   const { colors } = useTheme();
 
   const isLarge = size === 'lg';
-  const buttonSize = isLarge ? 54 : 40;
+  const buttonSize =
+    appearance === 'premium' ? (isLarge ? 54 : premium.layout.touch) : isLarge ? 54 : 40;
   const iconSize = isLarge ? 22 : 18;
 
   const clamp = (val: number) => {
@@ -43,6 +47,9 @@ export function Stepper({
     <View style={[styles.container, style]}>
       <TouchableOpacity
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`Decrease ${label || unit || 'value'}`}
+        accessibilityState={{ disabled: value <= min }}
         disabled={value <= min}
         onPress={() => onChange(clamp(value - step))}
         style={[
@@ -59,7 +66,11 @@ export function Stepper({
         <Minus size={iconSize} color={colors.ink} />
       </TouchableOpacity>
 
-      <View style={styles.valueContainer}>
+      <View
+        style={[styles.valueContainer, appearance === 'premium' && { flex: 1, flexWrap: 'wrap' }]}
+        accessible
+        accessibilityLabel={`${label || 'Amount'}: ${value} ${unit || ''}`}
+      >
         <Text
           style={[
             styles.valueText,
@@ -88,6 +99,9 @@ export function Stepper({
 
       <TouchableOpacity
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`Increase ${label || unit || 'value'}`}
+        accessibilityState={{ disabled: value >= max }}
         disabled={value >= max}
         onPress={() => onChange(clamp(value + step))}
         style={[
@@ -133,4 +147,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

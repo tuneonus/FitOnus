@@ -108,3 +108,47 @@ export const STATUS_LABELS: Record<ChallengeStatus, string> = {
   archived: 'Archived',
 };
 
+// ─── Phase 11 Admin Stats & Dynamic Badges ───
+
+export interface AdminChallengeStats {
+  totalChallenges: number;
+  publishedChallenges: number;
+  draftChallenges: number;
+  archivedChallenges: number;
+  totalEnrollments: number;
+  activeParticipants: number;
+  completedEnrollments: number;
+  completionRatePct: number;
+  totalBadgesAwarded: number;
+  totalPointsAwarded: number;
+}
+
+export type BadgeCategory = 'workout' | 'streak' | 'nutrition' | 'strength' | 'milestone' | 'challenge';
+export type BadgeTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'special';
+
+export interface AdminBadge {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  category: BadgeCategory;
+  tier: BadgeTier;
+  iconName: string;
+  pointsValue: number;
+  unlockCondition: Record<string, unknown>;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBadgeInput {
+  slug: string;
+  name: string;
+  description: string;
+  category: BadgeCategory;
+  tier?: BadgeTier;
+  iconName?: string;
+  pointsValue?: number;
+  unlockCondition?: Record<string, unknown>;
+}
+

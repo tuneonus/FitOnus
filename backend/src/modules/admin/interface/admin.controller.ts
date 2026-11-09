@@ -8,12 +8,14 @@ import type { AdminLoginUseCase } from '../application/use-cases/admin-login.js'
 import type { AdminChangeUserStatusUseCase } from '../application/use-cases/change-user-status.js';
 import type { GetAdminUserUseCase } from '../application/use-cases/get-admin-user.js';
 import type { GetDashboardStatsUseCase } from '../application/use-cases/get-dashboard-stats.js';
+import type { GetUserActivityUseCase } from '../application/use-cases/get-user-activity.js';
 import type { ListAdminUsersUseCase } from '../application/use-cases/list-admin-users.js';
 import type { ListAuditLogsUseCase } from '../application/use-cases/list-audit-logs.js';
 import {
   adminChangePasswordRequest,
   adminLoginRequest,
   changeUserStatusRequest,
+  getUserActivityRequest,
   getUserRequest,
   listAdminUsersRequest,
   listAuditLogsRequest,
@@ -25,6 +27,7 @@ export interface AdminUseCases {
   getDashboardStats: GetDashboardStatsUseCase;
   listUsers: ListAdminUsersUseCase;
   getAdminUser: GetAdminUserUseCase;
+  getUserActivity: GetUserActivityUseCase;
   changeUserStatus: AdminChangeUserStatusUseCase;
   listAuditLogs: ListAuditLogsUseCase;
   sessions: SessionsUseCases;
@@ -107,8 +110,9 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
       };
     },
 
-    getDashboardStats: async (_req: Request): Promise<RouteResult<unknown>> => {
-      const stats = await useCases.getDashboardStats.execute();
+    getDashboardStats: async (req: Request): Promise<RouteResult<unknown>> => {
+      const timeframe = typeof req.query?.timeframe === 'string' ? req.query.timeframe : undefined;
+      const stats = await useCases.getDashboardStats.execute({ timeframe });
       return {
         data: {
           ...stats,
@@ -117,6 +121,14 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
             createdAt: u.createdAt.toISOString(),
           })),
         },
+      };
+    },
+
+    getUserActivity: async (req: Request): Promise<RouteResult<unknown>> => {
+      const { params } = getValidated(req, getUserActivityRequest);
+      const activity = await useCases.getUserActivity.execute({ userId: params.id });
+      return {
+        data: activity,
       };
     },
 

@@ -1,8 +1,10 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import { premium } from '@/shared/theme/premium';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ChipProps = {
+  appearance?: 'default' | 'premium';
   label?: string | undefined;
   children?: React.ReactNode | undefined;
   selected?: boolean | undefined;
@@ -12,6 +14,7 @@ export type ChipProps = {
 };
 
 export function Chip({
+  appearance = 'default',
   label,
   children,
   selected = false,
@@ -27,10 +30,19 @@ export function Chip({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={textLabel}
       activeOpacity={0.75}
       onPress={onPress}
       style={[
         styles.chip,
+        appearance === 'premium' && {
+          height: undefined,
+          minHeight: premium.layout.touch,
+          paddingVertical: 12,
+          borderRadius: premium.radius.control,
+        },
         {
           backgroundColor: bgColor,
         },

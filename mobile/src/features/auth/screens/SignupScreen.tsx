@@ -54,7 +54,7 @@ export function SignupScreen() {
   };
 
   return (
-    <Screen showBack={true}>
+    <Screen showBack={true} keyboardAvoiding={true}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.ink }]}>
           Create your account

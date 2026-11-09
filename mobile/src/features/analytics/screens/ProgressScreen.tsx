@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { Award, FileText, Medal, Scale, Target, Trophy } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
@@ -13,7 +13,7 @@ import { BarChart } from '@/shared/components/charts/BarChart';
 import type { TimeRange } from '@/shared/types/health';
 import { useHasDeviceData } from '../../health-integration/store/healthStore';
 import { MetricKey, progressMetrics, rangeLabels } from '../data/progressMock';
-import { aiInsights } from '../data/insightsMock';
+import { useCoachInsights } from '@/features/ai-coach/hooks/use-coach-insights';
 import { InsightCard } from '../components/InsightCard';
 import { useTheme } from '@/hooks/use-theme';
 import { useProgressStore } from '../store/progressStore';
@@ -46,12 +46,21 @@ export function ProgressScreen() {
     overview,
     workouts: advWorkouts,
     nutrition: advNutrition,
+    hydration: advHydration,
     body: advBody,
     fetchOverview,
     fetchWorkouts: fetchAdvWorkouts,
     fetchNutrition: fetchAdvNutrition,
+    fetchHydration: fetchAdvHydration,
     fetchBody: fetchAdvBody,
   } = useAdvancedAnalyticsStore();
+
+  const {
+    data: coachInsightsData,
+    isLoading: isCoachLoading,
+    isError: isCoachError,
+    refetch: refetchCoachInsights,
+  } = useCoachInsights();
 
   useEffect(() => {
     fetchAnalytics(metric, range).catch(() => {});
@@ -67,6 +76,8 @@ export function ProgressScreen() {
       fetchAdvNutrition(range).catch(() => {});
     } else if (metric === 'weight') {
       fetchAdvBody(range).catch(() => {});
+    } else if (metric === 'water') {
+      fetchAdvHydration(range).catch(() => {});
     }
   }, [
     metric,
@@ -77,16 +88,19 @@ export function ProgressScreen() {
     fetchOverview,
     fetchAdvWorkouts,
     fetchAdvNutrition,
+    fetchAdvHydration,
     fetchAdvBody,
   ]);
 
   const handleRefresh = async () => {
     await Promise.allSettled([
       refreshAll(),
+      refetchCoachInsights(),
       fetchOverview(true),
       metric === 'workouts' ? fetchAdvWorkouts(range, true) : Promise.resolve(),
       metric === 'calories' || metric === 'protein' ? fetchAdvNutrition(range, true) : Promise.resolve(),
       metric === 'weight' ? fetchAdvBody(range, true) : Promise.resolve(),
+      metric === 'water' ? fetchAdvHydration(range, true) : Promise.resolve(),
     ]);
   };
 
@@ -106,10 +120,15 @@ export function ProgressScreen() {
         label: d.date.length > 5 ? d.date.slice(5) : d.date,
         value: Number(d.raw.toFixed(1)),
       }));
+    } else if (metric === 'water' && advHydration[range]?.points) {
+      points = advHydration[range].points.map((p) => ({
+        label: p.label,
+        value: Math.round(p.amountMl),
+      }));
     }
   }
 
-  const hasEmptyPoints = points.length === 0;
+  const hasEmptyPoints = points.length === 0 || points.every((p) => p.value === 0);
 
   const first = liveData ? liveData.firstValue : points[0]?.value ?? 0;
   const last = liveData ? liveData.latestValue : points[points.length - 1]?.value ?? 0;
@@ -128,22 +147,26 @@ export function ProgressScreen() {
   const comparisonItems =
     advComparisons && advComparisons.length > 0
       ? advComparisons.map((c) => {
-          let currentStr = `${c.currentValue}`;
-          let priorStr = `${c.priorValue}`;
-          if (c.key.includes('weight')) {
-            currentStr = `${c.currentValue.toFixed(1)} kg`;
-            priorStr = `${c.priorValue.toFixed(1)} kg`;
-          } else if (c.key.includes('calories')) {
-            currentStr = `${Math.round(c.currentValue)} kcal`;
-            priorStr = `${Math.round(c.priorValue)} kcal`;
-          } else if (c.key.includes('protein')) {
-            currentStr = `${Math.round(c.currentValue)} g`;
-            priorStr = `${Math.round(c.priorValue)} g`;
-          } else if (c.key.includes('hydration')) {
-            currentStr = `${(c.currentValue / 1000).toFixed(1)} L`;
-            priorStr = `${(c.priorValue / 1000).toFixed(1)} L`;
+          if (c.current !== undefined && c.previous !== undefined) {
+            return [c.label, c.current, c.previous, c.better ?? c.isImprovement ?? true] as const;
           }
-          return [c.label, currentStr, priorStr, c.isImprovement] as const;
+          let currentStr = c.currentValue !== undefined ? `${c.currentValue}` : '—';
+          let priorStr = c.priorValue !== undefined ? `${c.priorValue}` : '—';
+          const k = (c.key || c.label || '').toLowerCase();
+          if (k.includes('weight') && typeof c.currentValue === 'number') {
+            currentStr = `${c.currentValue.toFixed(1)} kg`;
+            priorStr = typeof c.priorValue === 'number' ? `${c.priorValue.toFixed(1)} kg` : priorStr;
+          } else if (k.includes('calories') && typeof c.currentValue === 'number') {
+            currentStr = `${Math.round(c.currentValue)} kcal`;
+            priorStr = typeof c.priorValue === 'number' ? `${Math.round(c.priorValue)} kcal` : priorStr;
+          } else if (k.includes('protein') && typeof c.currentValue === 'number') {
+            currentStr = `${Math.round(c.currentValue)} g`;
+            priorStr = typeof c.priorValue === 'number' ? `${Math.round(c.priorValue)} g` : priorStr;
+          } else if (k.includes('hydration') && typeof c.currentValue === 'number') {
+            currentStr = `${(c.currentValue / 1000).toFixed(1)} L`;
+            priorStr = typeof c.priorValue === 'number' ? `${(c.priorValue / 1000).toFixed(1)} L` : priorStr;
+          }
+          return [c.label, currentStr, priorStr, c.isImprovement ?? c.better ?? true] as const;
         })
       : periodComparison && periodComparison.comparisons.length > 0
       ? periodComparison.comparisons.map((c) => [c.label, c.current, c.previous, c.better] as const)
@@ -158,18 +181,18 @@ export function ProgressScreen() {
   const activeAchievements = storeAchievements ?? [];
 
   return (
-    <Screen title="Progress" subtitle="Trends, goals and AI reports">
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.accent}
-          />
-        }
-      >
+    <Screen
+      title="Progress"
+      subtitle="Trends, goals and AI reports"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.accent}
+        />
+      }
+    >
+      <View style={styles.container}>
         <SegmentedControl
           options={[
             { value: 'D', label: 'Daily' },
@@ -232,6 +255,17 @@ export function ProgressScreen() {
                     <Text style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}>
                       No {m.label.toLowerCase()} entries recorded for {rangeLabels[range].toLowerCase()}.
                     </Text>
+                    <Text style={{ color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: 6, lineHeight: 16 }}>
+                      {metric === 'workouts'
+                        ? 'Complete a workout session to see frequency and volume trends.'
+                        : metric === 'calories' || metric === 'protein'
+                        ? 'Log meals to track your nutrition and macronutrient targets.'
+                        : metric === 'water'
+                        ? 'Log your daily water intake to track hydration consistency.'
+                        : metric === 'weight'
+                        ? 'Record your weigh-in to begin tracking weight progression.'
+                        : 'Connect wearable health data to display activity metrics.'}
+                    </Text>
                   </View>
                 ) : m.chart === 'line' ? (
                   <LineChart
@@ -255,6 +289,72 @@ export function ProgressScreen() {
                   />
                 )}
               </View>
+
+              {/* Macro breakdown when viewing nutrition */}
+              {(metric === 'calories' || metric === 'protein') && advNutrition[range]?.macroSplit && advNutrition[range].macroSplit.length > 0 && !hasEmptyPoints && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.line }}>
+                  {advNutrition[range].macroSplit.map((split) => (
+                    <View key={split.label} style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: 11, color: colors.muted }}>{split.label}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
+                        {split.grams}g <Text style={{ fontSize: 10, color: colors.muted }}>({split.pct}%)</Text>
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Workout performance summary */}
+              {metric === 'workouts' && advWorkouts[range] && !hasEmptyPoints && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.line }}>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, color: colors.muted }}>Avg Duration</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
+                      {advWorkouts[range].avgDurationMin} min
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, color: colors.muted }}>Consistency</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
+                      {advWorkouts[range].consistencyPct}%
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, color: colors.muted }}>Total Volume</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
+                      {advWorkouts[range].totalVolumeKg >= 1000
+                        ? `${(advWorkouts[range].totalVolumeKg / 1000).toFixed(1)} t`
+                        : `${Math.round(advWorkouts[range].totalVolumeKg)} kg`}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Hydration consistency summary */}
+              {metric === 'water' && advHydration[range] && !hasEmptyPoints && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.line }}>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, color: colors.muted }}>Daily Avg</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
+                      {advHydration[range].avgWaterMl >= 1000
+                        ? `${(advHydration[range].avgWaterMl / 1000).toFixed(1)} L`
+                        : `${advHydration[range].avgWaterMl} ml`}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, color: colors.muted }}>Goal Adherence</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
+                      {advHydration[range].adherencePct}%
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, color: colors.muted }}>Target</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
+                      {(advHydration[range].targetWaterMl / 1000).toFixed(1)} L
+                    </Text>
+                  </View>
+                </View>
+              )}
             </>
           )}
         </View>
@@ -296,17 +396,43 @@ export function ProgressScreen() {
         {/* AI Insights */}
         <View style={styles.sectionBlock}>
           <SectionHeader title="AI insights" />
-          <View style={{ gap: 10 }}>
-            {aiInsights
-              .filter((i) => hasDevice || !i.requiresDevice)
-              .map((i) => (
-                <InsightCard
-                  key={i.id}
-                  insight={i}
-                  onAsk={() => navigate('coach', { q: i.question })}
-                />
-              ))}
-          </View>
+          {isCoachLoading && !coachInsightsData ? (
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line, padding: 20, alignItems: 'center' }]}>
+              <ActivityIndicator size="small" color={colors.accentStrong} />
+              <Text style={{ color: colors.muted, marginTop: 8, fontSize: 13 }}>
+                Analyzing your progress patterns...
+              </Text>
+            </View>
+          ) : isCoachError && !coachInsightsData ? (
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line, padding: 16, alignItems: 'center' }]}>
+              <Text style={{ color: colors.muted, fontSize: 13 }}>
+                Unable to load AI insights right now.
+              </Text>
+              <TouchableOpacity onPress={() => refetchCoachInsights()} style={{ marginTop: 6 }}>
+                <Text style={{ color: colors.ink, fontWeight: '600', textDecorationLine: 'underline', fontSize: 13 }}>
+                  Tap to retry
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : !coachInsightsData?.insights || coachInsightsData.insights.length === 0 ? (
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line, padding: 16 }]}>
+              <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13, lineHeight: 18 }}>
+                No insights available yet. Log workouts, nutrition, or weight to generate AI progress insights.
+              </Text>
+            </View>
+          ) : (
+            <View style={{ gap: 10 }}>
+              {coachInsightsData.insights
+                .filter((i) => hasDevice || !i.requiresDevice)
+                .map((i) => (
+                  <InsightCard
+                    key={i.id}
+                    insight={i}
+                    onAsk={() => navigate('coach', { q: i.question })}
+                  />
+                ))}
+            </View>
+          )}
           <Text style={[styles.footnote, { color: colors.muted }]}>
             Insights are patterns in your data, not diagnoses.
           </Text>
@@ -377,14 +503,13 @@ export function ProgressScreen() {
             onPress={() => navigate('personalRecords')}
           />
         </ListGroup>
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
     paddingBottom: 32,
     gap: 18,
   },

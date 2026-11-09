@@ -1,8 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { premium } from '@/shared/theme/premium';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { Info, Plus, AlertTriangle, X } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
-import { Screen } from '@/shared/components/ui/Screen';
+import { FeatureScreen as Screen } from '@/shared/components/ui/FeatureScreen';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { BottomSheet } from '@/shared/components/ui/BottomSheet';
@@ -12,10 +21,12 @@ import { images } from '@/shared/constants/images';
 import { showToast } from '@/shared/stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
 import { ThinkingIndicator } from '../../ai-coach/components/ThinkingIndicator';
-import { mockAiTools } from '../../ai-coach/services/mockAiTools';
+import { MealPhotoApi } from '../../ai-coach/services/meal-photo-api';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 import { scaleFood, sumNutrients, useNutritionStore } from '../store/nutritionStore';
-import { foodDatabase } from '../data/foodsMock';
+import { useQuery } from '@tanstack/react-query';
+import { nutritionApi } from '../api/nutrition-api';
+import { TextField } from '@/shared/components/ui/TextField';
 import { mealLabels, mealOrder } from '../constants/meals';
 import type { FoodItem, MealType } from '../types/nutrition';
 
@@ -23,26 +34,78 @@ type Row = { base: FoodItem; factor: number };
 
 export function MealAnalysisScreen() {
   const { colors } = useTheme();
-  const { popTo } = useNavigation();
-  const params = useRouteParams<{ meal?: MealType }>();
+  const { popTo, replace } = useNavigation();
+  const params = useRouteParams<{
+    meal?: MealType;
+    imageUri?: string;
+    imageBase64?: string;
+    mimeType?: string;
+  }>();
   const mealParam = params.meal ?? 'lunch';
 
   const offline = useHealthStore((s) => s.status === 'offline');
-  const { addEntry, removeEntry } = useNutritionStore();
+  const { logMeal, removeEntry } = useNutritionStore();
+  const saveLock = useRef(false);
+  const [addingFood, setAddingFood] = useState(false);
+  const [missingQuery, setMissingQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(missingQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [missingQuery]);
+  const missingFood = useQuery({
+    queryKey: ['nutrition', 'photo-missing', debouncedQuery],
+    queryFn: () => nutritionApi.searchFoods({ q: debouncedQuery }),
+    enabled: addingFood && debouncedQuery.length >= 2,
+    retry: 1,
+  });
   const [phase, setPhase] = useState<'analyzing' | 'review' | 'error'>('analyzing');
   const [rows, setRows] = useState<Row[]>([]);
   const [meal, setMeal] = useState<MealType>(mealParam as MealType);
   const [confirming, setConfirming] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [unclearWarning, setUnclearWarning] = useState<string | null>(null);
 
   const run = async () => {
     setPhase('analyzing');
+    setErrorMessage(null);
+    setUnclearWarning(null);
+
     if (offline) {
-      setTimeout(() => setPhase('error'), 1500);
+      setErrorMessage('You are offline. Reconnect to analyze meal photos.');
+      setPhase('error');
       return;
     }
-    const res = await mockAiTools.analyzeMealImage({ imageUri: 'photo://lunch' });
-    setRows(res.items.map((base) => ({ base, factor: 1 })));
-    setPhase('review');
+
+    try {
+      if (!params.imageBase64) {
+        setErrorMessage('No meal photo data provided. Please retake the photo.');
+        setPhase('error');
+        return;
+      }
+
+      const res = await MealPhotoApi.analyzeMealPhoto({
+        image: params.imageBase64,
+        mimeType: (params.mimeType as any) || 'image/jpeg',
+        mealType: meal,
+      });
+
+      if (!res.isFood || res.items.length === 0) {
+        setUnclearWarning(res.unclearReason || 'No recognizable food detected in the photo.');
+        setRows([]);
+        setPhase('review');
+        return;
+      }
+
+      setRows(res.items.map((base) => ({ base, factor: 1 })));
+      setPhase('review');
+    } catch (err: any) {
+      setErrorMessage(
+        err?.message || 'The analysis service didn’t respond. Your photo wasn’t uploaded.',
+      );
+      setPhase('error');
+    }
   };
 
   useEffect(() => {
@@ -53,20 +116,31 @@ export function MealAnalysisScreen() {
   const items = rows.map((r) => scaleFood(r.base, r.factor));
   const totals = sumNutrients(items);
 
-  const save = () => {
-    const id = addEntry({
-      meal,
-      time: 'Just now',
-      method: 'photo',
-      items: items.map((i, idx) => ({ ...i, id: `ph-${Date.now()}-${idx}` })),
-    });
-    setConfirming(false);
-    showToast({
-      message: `Meal saved to ${mealLabels[meal]}`,
-      actionLabel: 'Undo',
-      onAction: () => removeEntry(id),
-    });
-    popTo('nutrition');
+  const save = async () => {
+    if (saveLock.current || !items.length) return;
+    saveLock.current = true;
+    try {
+      setIsSaving(true);
+      const id = await logMeal({
+        mealType: meal,
+        items,
+        method: 'photo',
+      });
+      setConfirming(false);
+      showToast({
+        message: `Meal saved to ${mealLabels[meal]}`,
+        actionLabel: 'Undo',
+        onAction: () => removeEntry(id),
+      });
+      popTo('nutrition');
+    } catch (err: any) {
+      showToast({
+        message: err?.message || 'Failed to save meal.',
+      });
+    } finally {
+      saveLock.current = false;
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -75,188 +149,251 @@ export function MealAnalysisScreen() {
       footer={
         phase === 'review' ? (
           <Button
+            appearance="premium"
             size="lg"
             fullWidth
-            disabled={!rows.length}
+            disabled={!rows.length || isSaving}
             onPress={() => setConfirming(true)}
           >
-            Review & save · {Math.round(totals.kcal)} kcal
+            {isSaving ? 'Saving meal...' : `Review & save · ${Math.round(totals.kcal)} kcal`}
           </Button>
         ) : undefined
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Photo preview */}
-        <View style={styles.imageContainer}>
-          <Image source={images.mealPhoto} style={styles.photo} resizeMode="cover" />
-        </View>
-
-        {/* Phase: Analyzing */}
-        {phase === 'analyzing' && (
-          <View style={styles.phaseBox}>
-            <Text style={[styles.phaseTitle, { color: colors.ink }]}>Identifying foods…</Text>
-            <View style={styles.thinkingWrapper}>
-              <ThinkingIndicator toolCalls={['analyzeMealImage', 'searchFood', 'getNutritionLogs']} />
-            </View>
-          </View>
+      {/* Photo preview */}
+      <View style={styles.imageContainer}>
+        {params.imageUri ? (
+          <Image source={{ uri: params.imageUri }} style={styles.photo} resizeMode="cover" />
+        ) : (
+          <Text style={{ color: colors.muted, padding: 24 }}>No meal photo selected.</Text>
         )}
+      </View>
 
-        {/* Phase: Error */}
-        {phase === 'error' && (
-          <View style={styles.phaseBox}>
-            <StatusBanner
-              tone="error"
-              title="Couldn’t analyze this photo"
-              body="The analysis service didn’t respond. Your photo wasn’t uploaded."
-              actionLabel="Retry"
-              onAction={run}
+      {/* Phase: Analyzing */}
+      {phase === 'analyzing' && (
+        <View style={styles.phaseBox}>
+          <Text style={[styles.phaseTitle, { color: colors.ink }]}>Identifying foods…</Text>
+          <View style={styles.thinkingWrapper}>
+            <ActivityIndicator
+              accessibilityLabel="Analyzing your meal photo"
+              size="large"
+              color={colors.accentStrong}
             />
-            <Button variant="outline" fullWidth onPress={() => popTo('nutrition')}>
-              Log manually instead
-            </Button>
           </View>
-        )}
+        </View>
+      )}
 
-        {/* Phase: Review */}
-        {phase === 'review' && (
-          <>
-            <View style={[styles.infoBanner, { backgroundColor: colors.surface2 }]}>
-              <View style={{ marginTop: 2 }}>
-                <Info size={16} color={colors.ink} />
-              </View>
-              <Text style={[styles.infoBannerText, { color: colors.muted }]}>
-                All values are AI estimates from the photo. Adjust portions or remove anything that’s wrong before saving.
-              </Text>
+      {/* Phase: Error */}
+      {phase === 'error' && (
+        <View style={styles.phaseBox}>
+          <StatusBanner
+            tone="error"
+            title="Couldn’t analyze this photo"
+            body={
+              errorMessage || 'The analysis service didn’t respond. Your photo wasn’t uploaded.'
+            }
+            actionLabel="Retry"
+            onAction={run}
+          />
+          <Button
+            appearance="premium"
+            variant="outline"
+            fullWidth
+            onPress={() => popTo('nutrition')}
+          >
+            Log manually instead
+          </Button>
+        </View>
+      )}
+
+      {/* Phase: Review */}
+      {phase === 'review' && (
+        <>
+          {unclearWarning && (
+            <View style={{ marginBottom: 16 }}>
+              <StatusBanner
+                tone="warning"
+                title="Unclear or Non-Food Photo"
+                body={unclearWarning}
+                actionLabel="Retake Photo"
+                onAction={() => replace('mealPhoto', { meal })}
+              />
             </View>
+          )}
 
-            {/* Food Items List */}
-            <View style={styles.itemsList}>
-              {rows.map((r, i) => {
-                const scaled = items[i]!;
-                const low = (r.base.confidence ?? 1) < 0.7;
+          <View style={[styles.infoBanner, { backgroundColor: colors.surface2 }]}>
+            <View style={{ marginTop: 2 }}>
+              <Info size={16} color={colors.ink} />
+            </View>
+            <Text style={[styles.infoBannerText, { color: colors.muted }]}>
+              All values are AI estimates from the photo. Adjust portions or remove anything that’s
+              wrong before saving.
+            </Text>
+          </View>
 
-                return (
-                  <View
-                    key={r.base.id}
-                    style={[
-                      styles.rowCard,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: low ? colors.warn : colors.line,
-                      },
-                    ]}
-                  >
-                    <View style={styles.rowHeader}>
-                      <View style={{ flex: 1, marginRight: 8 }}>
-                        <Text style={[styles.rowName, { color: colors.ink }]}>{r.base.name}</Text>
-                        <Text style={[styles.rowServing, { color: colors.muted }]}>
-                          {scaled.serving}
-                        </Text>
-                      </View>
-                      <View style={styles.rowHeaderActions}>
-                        <Badge tone={low ? 'warn' : 'neutral'}>
-                          {Math.round((r.base.confidence ?? 1) * 100)}% sure
-                        </Badge>
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={() => setRows(rows.filter((_, j) => j !== i))}
-                          style={styles.removeBtn}
-                          accessibilityLabel={`Remove ${r.base.name}`}
-                        >
-                          <X size={16} color={colors.muted} />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
+          {/* Food Items List */}
+          <View style={styles.itemsList}>
+            {rows.map((r, i) => {
+              const scaled = items[i]!;
+              const low = (r.base.confidence ?? 1) < 0.7;
 
-                    {low && (
-                      <View style={styles.warnRow}>
-                        <AlertTriangle size={13} color={colors.warn} />
-                        <Text style={[styles.warnText, { color: colors.warn }]}>
-                          Low confidence — please check this item.
-                        </Text>
-                      </View>
-                    )}
-
-                    <View style={styles.rowFooter}>
-                      <View style={styles.factorButtons}>
-                        {[0.5, 1, 1.5, 2].map((f) => (
-                          <TouchableOpacity
-                            key={f}
-                            activeOpacity={0.7}
-                            onPress={() =>
-                              setRows(rows.map((x, j) => (j === i ? { ...x, factor: f } : x)))
-                            }
-                            style={[
-                              styles.factorBtn,
-                              r.factor === f
-                                ? { backgroundColor: colors.ink }
-                                : { backgroundColor: colors.surface2 },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.factorText,
-                                { color: r.factor === f ? colors.bg : colors.ink },
-                              ]}
-                            >
-                              {f}×
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                      <Text style={[styles.rowKcalSummary, { color: colors.ink }]}>
-                        {scaled.kcal} kcal · {scaled.protein}g P
+              return (
+                <View
+                  key={r.base.id}
+                  style={[
+                    styles.rowCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: low ? colors.warn : colors.line,
+                    },
+                  ]}
+                >
+                  <View style={styles.rowHeader}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={[styles.rowName, { color: colors.ink }]}>{r.base.name}</Text>
+                      <Text style={[styles.rowServing, { color: colors.muted }]}>
+                        {scaled.serving}
                       </Text>
                     </View>
+                    <View style={styles.rowHeaderActions}>
+                      <Badge tone={low ? 'warn' : 'neutral'}>
+                        {r.base.confidence == null
+                          ? 'AI estimate'
+                          : `${Math.round(r.base.confidence * 100)}% confidence`}
+                      </Badge>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => setRows(rows.filter((_, j) => j !== i))}
+                        style={styles.removeBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${r.base.name}`}
+                      >
+                        <X size={16} color={colors.muted} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                );
-              })}
-            </View>
 
-            <Button
-              variant="outline"
-              fullWidth
-              icon={Plus}
-              onPress={() =>
-                setRows([
-                  ...rows,
-                  {
-                    base: {
-                      ...(foodDatabase[10] || foodDatabase[0]!),
-                      estimated: true,
-                      confidence: 1,
-                      id: `add-${Date.now()}`,
-                    },
-                    factor: 1,
-                  },
-                ])
-              }
-            >
-              Add missing item (roti)
-            </Button>
+                  {low && (
+                    <View style={styles.warnRow}>
+                      <AlertTriangle size={13} color={colors.warn} />
+                      <Text style={[styles.warnText, { color: colors.warn }]}>
+                        Low confidence — please check this item.
+                      </Text>
+                    </View>
+                  )}
 
-            {/* Macro Summary Hero */}
-            <View style={[styles.macroHero, { backgroundColor: colors.surface2 }]}>
-              {[
-                ['kcal', Math.round(totals.kcal)],
-                ['Protein', `${Math.round(totals.protein)}g`],
-                ['Carbs', `${Math.round(totals.carbs)}g`],
-                ['Fat', `${Math.round(totals.fat)}g`],
-                ['Fiber', `${Math.round(totals.fiber)}g`],
-              ].map(([l, v]) => (
-                <View key={String(l)} style={styles.macroHeroItem}>
-                  <Text style={[styles.macroHeroLabel, { color: colors.muted }]}>{l}</Text>
-                  <Text style={[styles.macroHeroVal, { color: colors.ink }]}>{v}</Text>
+                  <View style={styles.rowFooter}>
+                    <View style={styles.factorButtons}>
+                      {[0.5, 1, 1.5, 2].map((f) => (
+                        <TouchableOpacity
+                          key={f}
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            setRows(rows.map((x, j) => (j === i ? { ...x, factor: f } : x)))
+                          }
+                          style={[
+                            styles.factorBtn,
+                            r.factor === f
+                              ? { backgroundColor: colors.ink }
+                              : { backgroundColor: colors.surface2 },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.factorText,
+                              { color: r.factor === f ? colors.bg : colors.ink },
+                            ]}
+                          >
+                            {f}×
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    <Text style={[styles.rowKcalSummary, { color: colors.ink }]}>
+                      {scaled.kcal} kcal · {scaled.protein}g P
+                    </Text>
+                  </View>
                 </View>
-              ))}
-            </View>
-            <Text style={[styles.estFootnote, { color: colors.muted }]}>
-              Estimated · ±15–25% typical for photo analysis
-            </Text>
-          </>
-        )}
-      </ScrollView>
+              );
+            })}
+          </View>
 
+          <Button
+            appearance="premium"
+            variant="outline"
+            icon={Plus}
+            title="Add a missing food"
+            onPress={() => setAddingFood(true)}
+          />
+
+          {/* Macro Summary Hero */}
+          <View style={[styles.macroHero, { backgroundColor: colors.surface2 }]}>
+            {[
+              ['kcal', Math.round(totals.kcal)],
+              ['Protein', `${Math.round(totals.protein)}g`],
+              ['Carbs', `${Math.round(totals.carbs)}g`],
+              ['Fat', `${Math.round(totals.fat)}g`],
+              ['Fiber', `${Math.round(totals.fiber)}g`],
+            ].map(([l, v]) => (
+              <View key={String(l)} style={styles.macroHeroItem}>
+                <Text style={[styles.macroHeroLabel, { color: colors.muted }]}>{l}</Text>
+                <Text style={[styles.macroHeroVal, { color: colors.ink }]}>{v}</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={[styles.estFootnote, { color: colors.muted }]}>
+            AI estimate · Review the portions and ingredients before saving.
+          </Text>
+        </>
+      )}
+
+      <BottomSheet
+        visible={addingFood}
+        onClose={() => setAddingFood(false)}
+        title="Add a missing food"
+        description="Choose a food and review its portion."
+      >
+        <TextField
+          appearance="premium"
+          label="Search foods"
+          placeholder="Food, brand or dish"
+          value={missingQuery}
+          onChangeText={setMissingQuery}
+        />
+        {missingFood.isFetching ? (
+          <ActivityIndicator
+            accessibilityLabel="Searching missing food"
+            color={colors.accentStrong}
+          />
+        ) : null}
+        {missingFood.isError ? (
+          <StatusBanner
+            tone="error"
+            title="Couldn’t search foods"
+            actionLabel="Retry"
+            onAction={() => {
+              void missingFood.refetch();
+            }}
+          />
+        ) : null}
+        <View style={styles.confirmList}>
+          {missingFood.data?.foods.map((food) => (
+            <Button
+              appearance="premium"
+              variant="secondary"
+              fullWidth
+              key={food.id}
+              title={`${food.name} · ${food.kcal} kcal · ${food.serving}`}
+              onPress={() => {
+                setRows((previous) => [...previous, { base: food, factor: 1 }]);
+                setAddingFood(false);
+                setMissingQuery('');
+              }}
+            />
+          ))}
+        </View>
+      </BottomSheet>
       {/* Confirmation Bottom Sheet */}
       <BottomSheet
         open={confirming}
@@ -264,12 +401,13 @@ export function MealAnalysisScreen() {
         title="Save this meal?"
         description={`${rows.length} items · ${Math.round(totals.kcal)} kcal (estimated)`}
         footer={
-          <Button size="lg" fullWidth onPress={save}>
-            Save to {mealLabels[meal]}
+          <Button appearance="premium" size="lg" fullWidth disabled={isSaving} onPress={save}>
+            {isSaving ? 'Saving...' : `Save to ${mealLabels[meal]}`}
           </Button>
         }
       >
         <SegmentedControl
+          appearance="premium"
           options={mealOrder.map((m) => ({ value: m, label: mealLabels[m] }))}
           value={meal}
           onChange={(val) => setMeal(val as MealType)}
@@ -299,12 +437,11 @@ export function MealAnalysisScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   imageContainer: {
-    borderRadius: 24,
+    borderRadius: premium.radius.card,
     overflow: 'hidden',
     height: 220,
     width: '100%',
@@ -317,8 +454,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   phaseTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    ...premium.type.label,
   },
   thinkingWrapper: {
     marginTop: 4,
@@ -331,15 +467,14 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   infoBannerText: {
+    ...premium.type.caption,
     flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
   },
   itemsList: {
     gap: 10,
   },
   rowCard: {
-    borderRadius: 20,
+    borderRadius: premium.radius.card,
     borderWidth: 1,
     padding: 14,
     gap: 10,
@@ -350,11 +485,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   rowName: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...premium.type.body,
   },
   rowServing: {
-    fontSize: 12.5,
+    ...premium.type.caption,
     marginTop: 2,
   },
   rowHeaderActions: {
@@ -364,7 +498,7 @@ const styles = StyleSheet.create({
   },
   removeBtn: {
     width: 32,
-    height: 32,
+    minHeight: premium.layout.touch,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -375,7 +509,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   warnText: {
-    fontSize: 12.5,
+    ...premium.type.caption,
   },
   rowFooter: {
     flexDirection: 'row',
@@ -385,6 +519,7 @@ const styles = StyleSheet.create({
   },
   factorButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
   },
   factorBtn: {
@@ -393,13 +528,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   factorText: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...premium.type.caption,
     fontVariant: ['tabular-nums'],
   },
   rowKcalSummary: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...premium.type.caption,
     fontVariant: ['tabular-nums'],
   },
   macroHero: {
@@ -413,16 +546,15 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   macroHeroLabel: {
-    fontSize: 11,
+    ...premium.type.caption,
   },
   macroHeroVal: {
-    fontSize: 15,
-    fontWeight: '700',
+    ...premium.type.body,
     fontVariant: ['tabular-nums'],
   },
   estFootnote: {
+    ...premium.type.caption,
     textAlign: 'center',
-    fontSize: 12,
   },
   confirmList: {
     marginTop: 16,
@@ -435,16 +567,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   confirmName: {
-    fontSize: 14,
-    fontWeight: '500',
+    ...premium.type.body,
   },
   confirmKcal: {
-    fontSize: 14,
+    ...premium.type.body,
     fontVariant: ['tabular-nums'],
   },
   confirmFootnote: {
+    ...premium.type.caption,
     marginTop: 12,
-    fontSize: 12.5,
-    lineHeight: 17,
   },
 });

@@ -83,7 +83,37 @@ export type CoachMessage = {
   memoryUsed?: string | undefined;
 };
 
-export type CoachResponse = Omit<CoachMessage, 'id' | 'role' | 'status'>;
+export type CoachResponse = Omit<CoachMessage, 'id' | 'role' | 'status'> & {
+  conversationId?: string | undefined;
+};
+
+export type StoredChatMessage = {
+  id: string;
+  conversationId: string;
+  role: 'user' | 'assistant' | 'system';
+  text: string;
+  blocks?: Block[] | undefined;
+  sources?: string[] | undefined;
+  followUps?: string[] | undefined;
+  createdAt: string;
+};
+
+export type ConversationDetail = {
+  id: string;
+  title: string;
+  preview: string;
+  messages: StoredChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ConversationSummary = {
+  id: string;
+  title: string;
+  preview: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type Conversation = {
   id: string;
@@ -93,3 +123,29 @@ export type Conversation = {
   preview: string;
   questions: string[];
 };
+
+export type InsightCategory = 'workout' | 'nutrition' | 'hydration' | 'goal' | 'recovery';
+export type InsightPriority = 'high' | 'medium' | 'low';
+export type InsightSeverity = 'positive' | 'watch' | 'info';
+
+export interface CoachInsightItem {
+  id: string;
+  title: string;
+  description: string;
+  category: InsightCategory;
+  priority: InsightPriority;
+  severity: InsightSeverity;
+  action: string;
+  question: string;
+  evidence: string[];
+  confidence: 'high' | 'medium' | 'low';
+  requiresDevice: boolean;
+}
+
+export interface CoachInsightsResponse {
+  greeting: string;
+  recommendation: string | null;
+  insights: CoachInsightItem[];
+  generatedAt: string;
+  hasSufficientData: boolean;
+}

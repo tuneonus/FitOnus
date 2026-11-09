@@ -68,9 +68,9 @@ export function MonthlyReportScreen() {
           Compare with coach
         </Button>
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerBlock}>
+      <View style={styles.headerBlock}>
           <Text style={[styles.metaText, { color: colors.muted }]}>
             {period ?? r.month} · Generated {r.generated}
           </Text>
@@ -167,15 +167,13 @@ export function MonthlyReportScreen() {
             ))}
           </View>
         </View>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   headerBlock: {

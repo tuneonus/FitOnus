@@ -1,8 +1,20 @@
+import { premium } from '@/shared/theme/premium';
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, Pause, Play, Plus, SkipForward } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
+import { FeatureScreen } from '@/shared/components/ui/FeatureScreen';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { Dumbbell } from 'lucide-react-native';
 import { Button } from '../../../shared/components/ui/Button';
 import { ConfirmDialog } from '../../../shared/components/ui/ConfirmDialog';
 import { useWorkoutStore } from '../store/workoutStore';
@@ -19,13 +31,14 @@ export function ActiveWorkoutScreen() {
   const { colors } = useTheme();
   const { goBack, replace } = useNavigation();
   const store = useWorkoutStore();
+  const startSession = store.startSession;
   const { active, currentIndex, elapsedSec, paused, plannedSession, getExerciseById } = store;
   const restTimer = useRestTimer();
   const [confirmFinish, setConfirmFinish] = useState(false);
 
   useEffect(() => {
-    store.startSession();
-  }, []);
+    startSession();
+  }, [startSession]);
 
   useEffect(() => {
     const t = setInterval(() => useWorkoutStore.getState().tick(), 1000);
@@ -33,7 +46,19 @@ export function ActiveWorkoutScreen() {
   }, []);
 
   const current = active[currentIndex];
-  if (!current) return null;
+  if (!current)
+    return (
+      <FeatureScreen title="Your workout">
+        <EmptyState
+          appearance="premium"
+          icon={Dumbbell}
+          title="Choose a workout first"
+          body="Build or select a plan to start logging your sets."
+          actionLabel="Browse workouts"
+          onAction={() => replace('workouts')}
+        />
+      </FeatureScreen>
+    );
   const ex = getExerciseById(current.exerciseId);
   const doneSets = active.flatMap((e) => e.sets).filter((s) => s.done).length;
   const totalSets = active.filter((e) => !e.skipped).flatMap((e) => e.sets).length;
@@ -51,7 +76,8 @@ export function ActiveWorkoutScreen() {
   };
 
   return (
-    <View
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[
         styles.container,
         {
@@ -64,6 +90,8 @@ export function ActiveWorkoutScreen() {
       <View style={styles.topHeader}>
         <TouchableOpacity
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Back to workout plan"
           onPress={goBack}
           style={styles.headerBtn}
         >
@@ -71,32 +99,20 @@ export function ActiveWorkoutScreen() {
         </TouchableOpacity>
 
         <View style={styles.timerCol}>
-          <Text style={[styles.timerSub, { color: colors.muted }]}>
-            {plannedSession.title}
-          </Text>
-          <Text
-            style={[
-              styles.timerDigits,
-              { color: paused ? colors.warn : colors.ink },
-            ]}
-          >
+          <Text style={[styles.timerSub, { color: colors.muted }]}>{plannedSession.title}</Text>
+          <Text style={[styles.timerDigits, { color: paused ? colors.warn : colors.ink }]}>
             {fmt(elapsedSec)}
           </Text>
         </View>
 
         <TouchableOpacity
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={paused ? 'Resume workout timer' : 'Pause workout timer'}
           onPress={store.togglePause}
-          style={[
-            styles.pauseBtn,
-            { backgroundColor: colors.surface2 },
-          ]}
+          style={[styles.pauseBtn, { backgroundColor: colors.surface2 }]}
         >
-          {paused ? (
-            <Play size={18} color={colors.ink} />
-          ) : (
-            <Pause size={18} color={colors.ink} />
-          )}
+          {paused ? <Play size={18} color={colors.ink} /> : <Pause size={18} color={colors.ink} />}
         </TouchableOpacity>
       </View>
 
@@ -107,6 +123,9 @@ export function ActiveWorkoutScreen() {
           return (
             <TouchableOpacity
               key={e.exerciseId}
+              accessibilityRole="button"
+              accessibilityLabel={`Go to exercise ${i + 1}: ${getExerciseById(e.exerciseId).name}`}
+              accessibilityState={{ selected: i === currentIndex }}
               activeOpacity={0.7}
               onPress={() => store.setCurrentIndex(i)}
               style={[
@@ -116,10 +135,10 @@ export function ActiveWorkoutScreen() {
                     i === currentIndex
                       ? colors.ink
                       : complete
-                      ? colors.good
-                      : e.skipped
-                      ? `${colors.ink}15`
-                      : `${colors.ink}30`,
+                        ? colors.good
+                        : e.skipped
+                          ? `${colors.ink}15`
+                          : `${colors.ink}30`,
                 },
               ]}
             />
@@ -138,6 +157,8 @@ export function ActiveWorkoutScreen() {
       {/* Main Exercise Content */}
       <ScrollView
         style={styles.scrollArea}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -149,17 +170,6 @@ export function ActiveWorkoutScreen() {
         <Text style={[styles.exTarget, { color: colors.muted }]}>
           Target {current.sets.length} × {current.targetReps} · rest {current.restSec}s
         </Text>
-
-        <View style={styles.tableHeader}>
-          <Text style={[styles.thText, { width: 28, color: colors.muted }]}>Set</Text>
-          <View style={styles.thCols}>
-            <Text style={[styles.thText, { color: colors.muted }]}>Weight</Text>
-            <Text style={[styles.thText, { color: colors.muted }]}>Reps</Text>
-          </View>
-          <Text style={[styles.thText, { width: 40, textAlign: 'center', color: colors.muted }]}>
-            Done
-          </Text>
-        </View>
 
         <View style={styles.setsList}>
           {current.sets.map((s, i) => (
@@ -176,6 +186,7 @@ export function ActiveWorkoutScreen() {
 
         <View style={styles.setActions}>
           <Button
+            appearance="premium"
             variant="secondary"
             icon={Plus}
             title="Add set"
@@ -183,6 +194,7 @@ export function ActiveWorkoutScreen() {
             onPress={() => store.addSet(currentIndex)}
           />
           <Button
+            appearance="premium"
             variant="secondary"
             icon={SkipForward}
             title="Skip exercise"
@@ -196,6 +208,7 @@ export function ActiveWorkoutScreen() {
 
         <View style={styles.navRow}>
           <Button
+            appearance="premium"
             variant="ghost"
             icon={ChevronLeft}
             title="Previous"
@@ -203,6 +216,7 @@ export function ActiveWorkoutScreen() {
             onPress={() => store.setCurrentIndex(currentIndex - 1)}
           />
           <Button
+            appearance="premium"
             variant="ghost"
             title="Next"
             disabled={!next}
@@ -219,15 +233,10 @@ export function ActiveWorkoutScreen() {
             },
           ]}
         >
-          <Text style={[styles.progLabel, { color: colors.muted }]}>
-            Session progress
-          </Text>
+          <Text style={[styles.progLabel, { color: colors.muted }]}>Session progress</Text>
           <Text style={[styles.progNumber, { color: colors.ink }]}>
             {doneSets}
-            <Text style={[styles.progTotal, { color: colors.muted }]}>
-              {' '}
-              / {totalSets} sets
-            </Text>
+            <Text style={[styles.progTotal, { color: colors.muted }]}> / {totalSets} sets</Text>
           </Text>
         </View>
       </ScrollView>
@@ -243,7 +252,22 @@ export function ActiveWorkoutScreen() {
           },
         ]}
       >
+        {restTimer.rest ? (
+          <RestTimer
+            remaining={restTimer.rest.remaining}
+            total={restTimer.rest.total}
+            nextLabel={
+              current.sets.every((s) => s.done) && next
+                ? getExerciseById(next.exerciseId).name
+                : `Set ${current.sets.filter((s) => s.done).length + 1}`
+            }
+            onAdd={() => restTimer.add(15)}
+            onSkip={restTimer.skip}
+          />
+        ) : null}
+
         <Button
+          appearance="premium"
           size="lg"
           fullWidth
           variant="primary"
@@ -251,21 +275,6 @@ export function ActiveWorkoutScreen() {
           onPress={() => setConfirmFinish(true)}
         />
       </View>
-
-      {/* Floating Rest Timer */}
-      {restTimer.rest ? (
-        <RestTimer
-          remaining={restTimer.rest.remaining}
-          total={restTimer.rest.total}
-          nextLabel={
-            current.sets.every((s) => s.done) && next
-              ? getExerciseById(next.exerciseId).name
-              : `Set ${current.sets.filter((s) => s.done).length + 1}`
-          }
-          onAdd={() => restTimer.add(15)}
-          onSkip={restTimer.skip}
-        />
-      ) : null}
 
       <ConfirmDialog
         open={confirmFinish}
@@ -283,7 +292,7 @@ export function ActiveWorkoutScreen() {
           finish();
         }}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -296,11 +305,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    height: 52,
+    minHeight: 64,
   },
   headerBtn: {
     width: 44,
-    height: 44,
+    minHeight: premium.layout.touch,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
@@ -309,16 +318,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timerSub: {
-    fontSize: 12,
+    ...premium.type.caption,
   },
   timerDigits: {
-    fontSize: 18,
-    fontWeight: '600',
+    ...premium.type.metric,
     fontVariant: ['tabular-nums'],
   },
   pauseBtn: {
     width: 44,
-    height: 44,
+    minHeight: premium.layout.touch,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
@@ -331,7 +339,7 @@ const styles = StyleSheet.create({
   },
   stripBar: {
     flex: 1,
-    height: 5,
+    minHeight: 24,
     borderRadius: 2.5,
   },
   pausedBanner: {
@@ -342,8 +350,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pausedText: {
-    fontSize: 13,
-    fontWeight: '500',
+    ...premium.type.caption,
   },
   scrollArea: {
     flex: 1,
@@ -351,20 +358,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   exCounter: {
-    fontSize: 12,
-    fontWeight: '500',
+    ...premium.type.caption,
   },
   exTitle: {
-    fontSize: 26,
-    fontWeight: '600',
-    letterSpacing: -0.3,
+    ...premium.type.title,
     marginTop: 2,
   },
   exTarget: {
-    fontSize: 13,
+    ...premium.type.caption,
     marginTop: 2,
   },
   tableHeader: {
@@ -376,8 +380,7 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   thText: {
-    fontSize: 11,
-    fontWeight: '500',
+    ...premium.type.caption,
   },
   thCols: {
     flex: 1,
@@ -390,6 +393,7 @@ const styles = StyleSheet.create({
   },
   setActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginTop: 12,
   },
@@ -400,32 +404,25 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   progressCard: {
-    borderRadius: 20,
+    borderRadius: premium.radius.card,
     borderWidth: 1,
     padding: 16,
     marginTop: 16,
   },
   progLabel: {
-    fontSize: 13,
+    ...premium.type.caption,
   },
   progNumber: {
-    fontSize: 20,
-    fontWeight: '600',
+    ...premium.type.metric,
     fontVariant: ['tabular-nums'],
     marginTop: 2,
   },
   progTotal: {
-    fontSize: 14,
-    fontWeight: '400',
+    ...premium.type.body,
   },
   bottomFooter: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     borderTopWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
 });
-

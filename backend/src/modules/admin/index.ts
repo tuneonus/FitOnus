@@ -7,6 +7,7 @@ import { AdminLoginUseCase } from './application/use-cases/admin-login.js';
 import { AdminChangeUserStatusUseCase } from './application/use-cases/change-user-status.js';
 import { GetAdminUserUseCase } from './application/use-cases/get-admin-user.js';
 import { GetDashboardStatsUseCase } from './application/use-cases/get-dashboard-stats.js';
+import { GetUserActivityUseCase } from './application/use-cases/get-user-activity.js';
 import { ListAdminUsersUseCase } from './application/use-cases/list-admin-users.js';
 import { ListAuditLogsUseCase } from './application/use-cases/list-audit-logs.js';
 import { PgAdminRepository } from './infrastructure/pg-admin-repository.js';
@@ -45,6 +46,7 @@ export function createAdminModule(deps: AdminModuleDependencies) {
     getDashboardStats: new GetDashboardStatsUseCase({ adminRepo }),
     listUsers: new ListAdminUsersUseCase({ adminRepo }),
     getAdminUser: new GetAdminUserUseCase({ adminRepo }),
+    getUserActivity: new GetUserActivityUseCase({ adminRepo }),
     changeUserStatus: new AdminChangeUserStatusUseCase({
       users: deps.users,
       sessions: deps.sessions,

@@ -45,6 +45,9 @@ export function Composer({ onSend, onVoice, disabled }: ComposerProps) {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onVoice}
+          accessibilityRole="button"
+          accessibilityLabel="Voice coach"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.voiceButton}
         >
           <Mic size={19} color={colors.ink} />
@@ -55,6 +58,8 @@ export function Composer({ onSend, onVoice, disabled }: ComposerProps) {
         activeOpacity={0.8}
         onPress={submit}
         disabled={!canSend}
+        accessibilityRole="button"
+        accessibilityLabel="Send message"
         style={[
           styles.sendButton,
           {

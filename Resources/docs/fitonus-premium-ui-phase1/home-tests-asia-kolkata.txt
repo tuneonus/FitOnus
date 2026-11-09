@@ -1,0 +1,30 @@
+▶ Premium Home: daily data fidelity
+  ✔ does not manufacture metrics or goals when there is no daily data (7.953078ms)
+  ✔ preserves genuine zero totals from a loaded empty day (0.536631ms)
+  ✔ uses exact API targets and consumed values (10.687202ms)
+  ✔ does not display yesterday’s cache as today’s data (0.495065ms)
+  ✔ shows same-day cached data when the network is unavailable (0.429464ms)
+  ✔ includes unsynced meals exactly once without adding confirmed store entries (0.590173ms)
+  ✔ does not double count an offline meal already returned by the server (8.898782ms)
+  ✔ filters explicit historical dates even when the diary is on today (0.538034ms)
+  ✔ shows local offline meal values without inventing goals or complete server totals (4.871935ms)
+  ✔ keeps optimistic water additions visible during an older query refetch (0.783343ms)
+  ✔ ignores water from a historical diary selection (5.588621ms)
+  ✔ preserves over-goal values and treats missing or zero targets as unset (0.461249ms)
+  ✔ keeps progress finite for unknown, zero, negative, or invalid values (0.365822ms)
+  ✔ uses the local calendar instead of a UTC date slice (4.300078ms)
+✔ Premium Home: daily data fidelity (64.004755ms)
+▶ Premium Home: readable semantic palette
+  ✔ light: small text meets 4.5:1 contrast on its intended surfaces (9.781575ms)
+  ✔ light: existing theme exports agree on the palette (0.377115ms)
+  ✔ dark: small text meets 4.5:1 contrast on its intended surfaces (0.340411ms)
+  ✔ dark: existing theme exports agree on the palette (0.169923ms)
+✔ Premium Home: readable semantic palette (11.281387ms)
+ℹ tests 18
+ℹ suites 2
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1258.093776

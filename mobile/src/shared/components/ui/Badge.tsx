@@ -51,13 +51,13 @@ export function Badge({
 
   return (
     <View style={[styles.badge, { backgroundColor: bgColor }, style]}>
-      {typeof children === 'string' ? (
+      {React.isValidElement(children) ? (
+        children
+      ) : children !== null && children !== undefined ? (
         <Text style={[styles.text, { color: textColor }, textStyle]}>
           {children}
         </Text>
-      ) : (
-        children
-      )}
+      ) : null}
     </View>
   );
 }

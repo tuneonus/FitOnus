@@ -10,6 +10,7 @@ export type ProgressBarProps = {
   trackColor?: string | undefined;
   height?: number | undefined;
   style?: ViewStyle | undefined;
+  accessibilityLabel?: string | undefined;
 };
 
 export function ProgressBar({
@@ -20,6 +21,7 @@ export function ProgressBar({
   trackColor,
   height = 8,
   style,
+  accessibilityLabel,
 }: ProgressBarProps) {
   const { colors } = useTheme();
 
@@ -31,6 +33,12 @@ export function ProgressBar({
 
   return (
     <View
+      accessible={Boolean(accessibilityLabel)}
+      accessibilityRole={accessibilityLabel ? 'progressbar' : undefined}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityValue={
+        accessibilityLabel ? { min: 0, max: 100, now: Math.round(clamped * 100) } : undefined
+      }
       style={[
         styles.track,
         {

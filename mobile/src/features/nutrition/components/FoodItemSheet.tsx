@@ -1,3 +1,4 @@
+import { premium } from '@/shared/theme/premium';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
@@ -43,6 +44,7 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
       footer={
         <View style={styles.footerRow}>
           <Button
+            appearance="premium"
             variant="danger"
             size="lg"
             icon={Trash2}
@@ -61,6 +63,7 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
             }}
           />
           <Button
+            appearance="premium"
             size="lg"
             title="Save"
             style={{ flex: 1 }}
@@ -75,11 +78,10 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
       }
     >
       <View style={styles.sheetContent}>
-        <Text style={[styles.portionLabel, { color: colors.muted }]}>
-          Portion
-        </Text>
+        <Text style={[styles.portionLabel, { color: colors.muted }]}>Portion</Text>
         <View style={{ marginTop: 8 }}>
           <Stepper
+            appearance="premium"
             label="Portion multiplier"
             value={factor}
             onChange={setFactor}
@@ -91,12 +93,7 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
           />
         </View>
 
-        <View
-          style={[
-            styles.macrosGrid,
-            { backgroundColor: colors.surface2 },
-          ]}
-        >
+        <View style={[styles.macrosGrid, { backgroundColor: colors.surface2 }]}>
           {[
             ['kcal', Math.round(item.kcal * factor)],
             ['Protein', `${Math.round(item.protein * factor)}g`],
@@ -104,9 +101,7 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
             ['Fat', `${Math.round(item.fat * factor)}g`],
           ].map(([l, v]) => (
             <View key={l} style={styles.macroBox}>
-              <Text style={[styles.macroLabel, { color: colors.muted }]}>
-                {l}
-              </Text>
+              <Text style={[styles.macroLabel, { color: colors.muted }]}>{l}</Text>
               <Text style={[styles.macroVal, { color: colors.ink }]}>{v}</Text>
             </View>
           ))}
@@ -126,7 +121,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   portionLabel: {
-    fontSize: 13,
+    ...premium.type.caption,
   },
   macrosGrid: {
     flexDirection: 'row',
@@ -139,13 +134,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   macroLabel: {
-    fontSize: 11,
+    ...premium.type.caption,
   },
   macroVal: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...premium.type.body,
     fontVariant: ['tabular-nums'],
     marginTop: 2,
   },
 });
-

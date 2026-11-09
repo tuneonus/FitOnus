@@ -19,6 +19,7 @@ export interface RateLimiters {
   register: RequestHandler;
   refresh: RequestHandler;
   sensitive: RequestHandler;
+  aiCoach: RequestHandler;
 }
 
 /**
@@ -44,5 +45,14 @@ export function createRateLimiters(config: AppConfig['rateLimit']): RateLimiters
     register: rateLimit({ ...base, limit: config.authMax }),
     refresh: rateLimit({ ...base, limit: config.authMax * 6 }),
     sensitive: rateLimit({ ...base, limit: config.authMax }),
+    aiCoach: rateLimit({
+      ...base,
+      limit: 30, // 30 requests per 15-minute window
+      keyGenerator: (req) => {
+        const auth = req.headers.authorization;
+        if (auth && auth.length > 20) return auth.slice(-24);
+        return clientIp(req);
+      },
+    }),
   };
 }

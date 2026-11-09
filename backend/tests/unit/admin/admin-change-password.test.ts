@@ -5,6 +5,7 @@ import { AdminChangePasswordUseCase } from '../../../src/modules/admin/applicati
 import type {
   AdminAuditLogView,
   AdminRepository,
+  AdminUserActivityView,
   AdminUserDetailView,
   AdminUserListItemView,
   ListAdminUsersQuery,
@@ -40,6 +41,10 @@ class InMemoryAdminRepository implements AdminRepository {
   }
 
   getUserDetail(_id: string): Promise<AdminUserDetailView | null> {
+    throw new Error('Not implemented');
+  }
+
+  getUserActivity(_userId: string): Promise<AdminUserActivityView> {
     throw new Error('Not implemented');
   }
 

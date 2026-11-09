@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
 
 export type CardProps = {
   children?: React.ReactNode;
   padded?: boolean;
   tone?: 'default' | 'muted' | 'hero';
+  appearance?: 'default' | 'premium';
   style?: ViewStyle;
 };
 
@@ -13,6 +15,7 @@ export function Card({
   children,
   padded = true,
   tone = 'default',
+  appearance = 'default',
   style,
 }: CardProps) {
   const { colors } = useTheme();
@@ -39,7 +42,8 @@ export function Card({
           backgroundColor: bgColor,
           borderColor,
           borderWidth,
-          padding: padded ? 16 : 0,
+          padding: padded ? (appearance === 'premium' ? premium.space.xl : 16) : 0,
+          borderRadius: appearance === 'premium' ? premium.radius.card : 24,
         },
         style,
       ]}
@@ -55,4 +59,3 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
-

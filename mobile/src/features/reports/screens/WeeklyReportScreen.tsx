@@ -59,9 +59,9 @@ export function WeeklyReportScreen() {
           Discuss with coach
         </Button>
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header Hero Section */}
+      {/* Header Hero Section */}
         <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
           <Text style={[styles.heroMeta, { color: colors.muted }]}>
             {period ?? r.period} · Generated {r.generated}
@@ -199,15 +199,13 @@ export function WeeklyReportScreen() {
         <Text style={[styles.disclaimer, { color: colors.muted }]}>
           Generated from synced and logged data. Sleep and recovery come from Apple Watch; calories from your food logs (some estimated).
         </Text>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   heroCard: {

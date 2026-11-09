@@ -19,10 +19,10 @@ export function ActionBlock({ block, onStatusChange }: ActionBlockProps) {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
 
-  const confirm = () => {
+  const confirm = async () => {
     onStatusChange('running');
-    setTimeout(() => {
-      const result = executeAction(block.payload);
+    try {
+      const result = await executeAction(block.payload);
       if (block.payload.kind === 'startWorkout') {
         onStatusChange('confirmed', 'Workout started');
         navigate('activeWorkout');
@@ -35,7 +35,9 @@ export function ActionBlock({ block, onStatusChange }: ActionBlockProps) {
         actionLabel: result.undo ? 'Undo' : undefined,
         onAction: result.undo ? () => undo() : undefined,
       });
-    }, 700);
+    } catch (err: any) {
+      onStatusChange('cancelled', err?.message || 'Failed to complete action');
+    }
   };
 
   const undo = () => {

@@ -16,6 +16,8 @@ import { createAnalyticsModule } from './modules/analytics/index.js';
 import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
 import { createDashboardModule } from './modules/dashboard/index.js';
+import { createCoachModule, GeminiClient } from './modules/coach/index.js';
+import { createAppSettingsModule, type AppSettingsModule } from './modules/app-settings/index.js';
 import type { RouteGroup } from './shared/http/route.js';
 import { IdempotencyService } from './shared/idempotency/idempotency.js';
 import { PgIdempotencyStore } from './shared/idempotency/pg-idempotency-store.js';
@@ -31,6 +33,7 @@ export interface Container {
   authenticate: RequestHandler;
   rateLimiters: RateLimiters;
   lifecycle: { isShuttingDown: () => boolean; beginShutdown: () => void };
+  appSettings?: AppSettingsModule;
 }
 
 /**
@@ -102,11 +105,28 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     uow,
     idempotency,
   });
+  const appSettings = createAppSettingsModule({
+    adminBasePath: `${API_PREFIX}/admin/application-settings`,
+    adminAiBasePath: `${API_PREFIX}/admin/ai`,
+    publicBasePath: `${API_PREFIX}/app`,
+    db: database,
+    auditLogger: admin.repository,
+    encryptionKey: process.env.AI_ENCRYPTION_KEY || config.security.hmacSecret,
+    fallbackApiKey: config.gemini.apiKey,
+    fallbackModel: config.gemini.model,
+  });
+
+  const geminiClient = new GeminiClient({
+    ...config.gemini,
+    runtimeService: appSettings.runtimeService,
+  });
+
   const nutrition = createNutritionModule({
     memberBasePath: `${API_PREFIX}/nutrition`,
     adminBasePath: `${API_PREFIX}/admin/nutrition`,
     db: database,
     uow,
+    geminiClient,
   });
   const progress = createProgressModule({
     basePath: `${API_PREFIX}/progress`,
@@ -132,6 +152,15 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     basePath: `${API_PREFIX}/dashboard`,
     db: database,
   });
+  const coach = createCoachModule({
+    basePath: `${API_PREFIX}/coach`,
+    db: database,
+    geminiConfig: {
+      ...config.gemini,
+      runtimeService: appSettings.runtimeService,
+    },
+    rateLimiter: rateLimiters.aiCoach,
+  });
 
   return {
     database,
@@ -141,6 +170,9 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
       users.routes,
       profile.routes,
       admin.routes,
+      appSettings.adminRoutes,
+      appSettings.adminAiRoutes,
+      appSettings.publicRoutes,
       workouts.memberRoutes,
       workouts.adminRoutes,
       nutrition.memberRoutes,
@@ -153,9 +185,11 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
       challenges.adminChallengesRoutes,
       analytics.routes,
       dashboard.routes,
+      coach.routes,
     ],
     authenticate: createAuthenticate(auth.authenticateAccessToken),
     rateLimiters,
     lifecycle,
+    appSettings,
   };
 }

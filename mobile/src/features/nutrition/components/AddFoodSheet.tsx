@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import { manualFoodError } from '../utils/manual-entry-validation';
+import { premium } from '@/shared/theme/premium';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Camera, Mic, Edit3, ScanBarcode, Search } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
@@ -27,6 +29,15 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
   const [form, setForm] = useState({ name: '', kcal: '', protein: '', carbs: '', fat: '' });
   const [submitted, setSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const saveLock = useRef(false);
+  const formError = submitted ? manualFoodError(form) : null;
+  useEffect(() => {
+    if (open) {
+      setMeal(initialMeal);
+      setMode('pick');
+      setSubmitted(false);
+    }
+  }, [open, initialMeal]);
 
   const close = () => {
     setMode('pick');
@@ -44,7 +55,7 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
     {
       icon: Search,
       label: 'Search food',
-      detail: 'Database of 1M+ foods',
+      detail: 'Verified and custom foods',
       onClick: () => go(() => navigate('foodSearch', { meal: initialMeal })),
     },
     {
@@ -78,7 +89,8 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
 
   const saveManual = async () => {
     setSubmitted(true);
-    if (!form.name.trim() || !(Number(form.kcal) > 0)) return;
+    if (saveLock.current || manualFoodError(form)) return;
+    saveLock.current = true;
 
     setIsSaving(true);
     const kcal = Number(form.kcal);
@@ -105,32 +117,39 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
       // Continue offline logging even if remote custom food creation fails
     }
 
-    const id = await logMeal({
-      mealType: meal,
-      method: 'manual',
-      items: [
-        {
-          id: foodId || `q-${Date.now()}`,
-          name: form.name.trim(),
-          serving: '1 serving',
-          kcal,
-          protein,
-          carbs,
-          fat,
-          fiber: 0,
-          isCustom: true,
-        },
-      ],
-    });
+    try {
+      const id = await logMeal({
+        mealType: meal,
+        method: 'manual',
+        items: [
+          {
+            id: foodId || `q-${Date.now()}`,
+            name: form.name.trim(),
+            serving: '1 serving',
+            kcal,
+            protein,
+            carbs,
+            fat,
+            fiber: 0,
+            isCustom: true,
+          },
+        ],
+      });
 
-    showToast({
-      message: `Added to ${mealLabels[meal]}`,
-      actionLabel: 'Undo',
-      onAction: () => removeEntry(id),
-    });
+      showToast({
+        message: `Added to ${mealLabels[meal]}`,
+        actionLabel: 'Undo',
+        onAction: () => removeEntry(id),
+      });
 
-    setForm({ name: '', kcal: '', protein: '', carbs: '', fat: '' });
-    close();
+      setForm({ name: '', kcal: '', protein: '', carbs: '', fat: '' });
+      close();
+    } catch {
+      showToast({ message: 'Couldn’t save food. Please try again.' });
+    } finally {
+      saveLock.current = false;
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -141,6 +160,7 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
       footer={
         mode === 'manual' ? (
           <Button
+            appearance="premium"
             size="lg"
             fullWidth
             title={isSaving ? 'Adding...' : 'Add food'}
@@ -157,12 +177,14 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
             return (
               <TouchableOpacity
                 key={label}
+                accessibilityRole="button"
+                accessibilityLabel={label}
                 activeOpacity={0.7}
                 onPress={onClick}
                 style={[
                   styles.methodCard,
                   { backgroundColor: colors.surface2 },
-                  isFullWidth ? { width: '100%' } : { width: '48.5%' },
+                  isFullWidth ? { width: '100%' } : { flexBasis: '45%', flexGrow: 1 },
                 ]}
               >
                 <View style={[styles.iconWrapper, { backgroundColor: colors.surface }]}>
@@ -176,13 +198,23 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
         </View>
       ) : (
         <View style={styles.manualForm}>
+          {formError ? (
+            <Text accessibilityRole="alert" style={{ color: colors.bad }}>
+              {formError}
+            </Text>
+          ) : null}
+          <Text style={{ color: colors.muted }}>
+            Enter the nutrition values you know. Blank macro fields will be logged as 0 g.
+          </Text>
           <SegmentedControl
+            appearance="premium"
             options={mealOrder.map((m) => ({ value: m, label: mealLabels[m] }))}
             value={meal}
             onChange={(val) => setMeal(val as MealType)}
           />
 
           <TextField
+            appearance="premium"
             label="Food name"
             placeholder="e.g. Grandma's apple pie"
             value={form.name}
@@ -193,6 +225,7 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
           <View style={styles.macroRow}>
             <View style={{ flex: 1 }}>
               <TextField
+                appearance="premium"
                 label="Calories (kcal)"
                 placeholder="0"
                 keyboardType="numeric"
@@ -203,6 +236,7 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
             </View>
             <View style={{ flex: 1 }}>
               <TextField
+                appearance="premium"
                 label="Protein (g)"
                 placeholder="0"
                 keyboardType="numeric"
@@ -215,6 +249,7 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
           <View style={styles.macroRow}>
             <View style={{ flex: 1 }}>
               <TextField
+                appearance="premium"
                 label="Carbs (g)"
                 placeholder="0"
                 keyboardType="numeric"
@@ -224,6 +259,7 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
             </View>
             <View style={{ flex: 1 }}>
               <TextField
+                appearance="premium"
                 label="Fat (g)"
                 placeholder="0"
                 keyboardType="numeric"
@@ -246,7 +282,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   methodCard: {
-    borderRadius: 20,
+    borderRadius: premium.radius.card,
     padding: 16,
     gap: 8,
   },
@@ -258,12 +294,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   methodLabel: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...premium.type.body,
   },
   methodDetail: {
-    fontSize: 12,
-    lineHeight: 16,
+    ...premium.type.caption,
   },
   manualForm: {
     gap: 16,

@@ -4,7 +4,7 @@ import type { AdminRepository } from '../ports.js';
 export class GetDashboardStatsUseCase {
   constructor(private readonly deps: { adminRepo: AdminRepository }) {}
 
-  async execute(): Promise<DashboardStats> {
-    return this.deps.adminRepo.getDashboardStats();
+  async execute(input?: { timeframe?: string }): Promise<DashboardStats> {
+    return this.deps.adminRepo.getDashboardStats(input?.timeframe);
   }
 }

@@ -38,9 +38,8 @@ export function RecoveryScreen() {
   }
 
   return (
-    <Screen title="Recovery">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Recovery Score Hero */}
+    <Screen title="Recovery" contentContainerStyle={styles.container}>
+      {/* Recovery Score Hero */}
         <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
           <View style={styles.heroContent}>
             <ProgressRing
@@ -177,15 +176,13 @@ export function RecoveryScreen() {
         <Text style={[styles.disclaimer, { color: colors.muted }]}>
           Recovery is a training guide built from your wearable data. It is not a medical measurement.
         </Text>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   heroCard: {

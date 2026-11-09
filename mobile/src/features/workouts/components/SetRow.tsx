@@ -1,189 +1,132 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Check, Minus, Plus } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, useWindowDimensions } from 'react-native';
+import { Check } from 'lucide-react-native';
 import type { SetLog } from '../types/workout';
+import { parseWorkoutInput } from '../utils/premium-workout';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
+import { ActionButton } from '@/shared/components/ui/ActionButton';
 
-type SetRowProps = {
+type Props = {
   index: number;
   set: SetLog;
   bodyweight: boolean;
   onChange: (patch: Partial<SetLog>) => void;
   onComplete: () => void;
 };
-
-function Adjust({
+function NumericEntry({
   value,
+  label,
+  whole = false,
   onChange,
-  step,
-  unit,
 }: {
   value: number;
-  onChange: (v: number) => void;
-  step: number;
   label: string;
-  unit?: string;
+  whole?: boolean;
+  onChange: (value: number) => void;
 }) {
   const { colors } = useTheme();
-
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => {
+    if (!focused) setDraft(String(value));
+  }, [value, focused]);
   return (
-    <View style={styles.adjustRow}>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => onChange(Math.max(0, +(value - step).toFixed(1)))}
-        style={[styles.stepperBtn, { backgroundColor: colors.surface2 }]}
-      >
-        <Minus size={13} color={colors.ink} />
-      </TouchableOpacity>
-
-      <View style={styles.valueWrap}>
-        <Text style={[styles.adjustVal, { color: colors.ink }]}>
-          {value}
-          {unit ? <Text style={[styles.unit, { color: colors.muted }]}> {unit}</Text> : null}
-        </Text>
-      </View>
-
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => onChange(+(value + step).toFixed(1))}
-        style={[styles.stepperBtn, { backgroundColor: colors.surface2 }]}
-      >
-        <Plus size={13} color={colors.ink} />
-      </TouchableOpacity>
+    <View style={styles.field}>
+      <Text style={[premium.type.caption, { color: colors.muted }]}>{label}</Text>
+      <TextInput
+        accessibilityLabel={label}
+        selectTextOnFocus
+        keyboardType={whole ? 'number-pad' : 'decimal-pad'}
+        inputMode={whole ? 'numeric' : 'decimal'}
+        returnKeyType="done"
+        value={draft}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          setDraft(String(value));
+        }}
+        onChangeText={(text) => {
+          setDraft(text);
+          const next = parseWorkoutInput(text, whole);
+          if (next !== null) onChange(next);
+        }}
+        style={[
+          styles.input,
+          {
+            color: colors.ink,
+            borderColor: focused ? colors.accentStrong : colors.line,
+            backgroundColor: colors.bg,
+          },
+        ]}
+      />
     </View>
   );
 }
-
-export function SetRow({
-  index,
-  set,
-  bodyweight,
-  onChange,
-  onComplete,
-}: SetRowProps) {
+export function SetRow({ index, set, bodyweight, onChange, onComplete }: Props) {
   const { colors } = useTheme();
-
+  const { fontScale } = useWindowDimensions();
   return (
     <View
       style={[
-        styles.row,
+        styles.card,
         {
-          backgroundColor: set.done ? `${colors.good}15` : colors.surface,
-          borderColor: colors.line,
+          backgroundColor: set.done ? colors.successLight : colors.surface,
+          borderColor: set.done ? colors.good : colors.line,
         },
       ]}
     >
-      <Text style={[styles.setIndex, { color: colors.muted }]}>
-        {index + 1}
+      <Text style={[premium.type.eyebrow, { color: colors.muted }]}>
+        SET {index + 1}
+        {set.done ? ' · COMPLETE' : ''}
       </Text>
-
-      <View style={styles.adjustCol}>
+      <View style={[styles.inputs, fontScale > 1.3 && styles.stacked]}>
         {bodyweight ? (
-          <Text style={[styles.bodyweightLabel, { color: colors.muted }]}>
-            Bodyweight
-          </Text>
+          <View style={styles.field}>
+            <Text style={[premium.type.caption, { color: colors.muted }]}>Weight</Text>
+            <Text style={[styles.bodyweight, { color: colors.ink }]}>Bodyweight</Text>
+          </View>
         ) : (
-          <Adjust
+          <NumericEntry
             value={set.weight}
+            label={`Set ${index + 1} weight (kg)`}
             onChange={(weight) => onChange({ weight })}
-            step={2.5}
-            label={`Set ${index + 1} weight`}
-            unit="kg"
           />
         )}
-        <Adjust
+        <NumericEntry
           value={set.reps}
-          onChange={(reps) => onChange({ reps })}
-          step={1}
           label={`Set ${index + 1} reps`}
+          whole
+          onChange={(reps) => onChange({ reps })}
         />
       </View>
-
-      <TouchableOpacity
-        activeOpacity={0.8}
+      <ActionButton
+        icon={Check}
+        title={set.done ? `Set ${index + 1} complete · Undo` : `Complete set ${index + 1}`}
+        variant={set.done ? 'secondary' : 'primary'}
         onPress={onComplete}
-        style={[
-          styles.checkBtn,
-          {
-            borderColor: set.done ? colors.good : colors.line,
-            backgroundColor: set.done ? colors.good : 'transparent',
-          },
-        ]}
-      >
-        <Check
-          size={18}
-          strokeWidth={3}
-          color={set.done ? '#FFFFFF' : colors.muted}
-        />
-      </TouchableOpacity>
+      />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  card: {
+    padding: 16,
+    gap: 14,
     borderWidth: 1,
+    borderRadius: premium.radius.card,
     marginVertical: 4,
   },
-  setIndex: {
-    width: 24,
-    fontSize: 13,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-    textAlign: 'center',
+  inputs: { flexDirection: 'row', gap: 12 },
+  stacked: { flexDirection: 'column' },
+  field: { flex: 1, gap: 6 },
+  input: {
+    ...premium.type.metric,
+    minHeight: 56,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderRadius: premium.radius.control,
   },
-  adjustCol: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-  },
-  bodyweightLabel: {
-    width: 100,
-    textAlign: 'center',
-    fontSize: 13,
-  },
-  adjustRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  stepperBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  valueWrap: {
-    width: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  adjustVal: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-    textAlign: 'center',
-  },
-  unit: {
-    fontSize: 10,
-    fontWeight: '400',
-  },
-  checkBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  bodyweight: { ...premium.type.label, minHeight: 56, paddingVertical: 16 },
 });
-

@@ -71,7 +71,7 @@ export function ForgotPasswordScreen() {
   }
 
   return (
-    <Screen showBack={true}>
+    <Screen showBack={true} keyboardAvoiding={true}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.ink }]}>Reset password</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>

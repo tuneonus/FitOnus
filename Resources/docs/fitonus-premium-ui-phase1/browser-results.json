@@ -1,0 +1,92 @@
+[
+  {
+    "mode": "light",
+    "width": 390,
+    "homeText": "FITONUS\nMon, Nov 9\nAM\nGood morning,\nAlex.\nDAILY FUEL\nNutrition\n1,450\nkcal logged\nof 2,200 kcal daily goal\n66%\nof goal\n750 kcal remaining\nProtein\n92 g\nof 150 g\nCarbs\n160 g\nof 250 g\nFat\n43 g\nof 70 g\nToday’s logged nutrition\nLog a meal\nWorkouts\nLog weight\nReports\nYour training\nAll workouts\nWORKOUT PLAN\nChest + Triceps\n52 min plan · 6 exercises\nBarbell Bench Press\n4 × 6–8\nIncline Dumbbell Press\n3 × 10\nStart workout\nStay hydrated\n1.25 L\nof 2.5 L daily goal\nLog water\nFITONUS COACH\nYour next move,\nmade clearer.\nTalk through your training, meals and recovery with your AI Coach.\nAsk Coach\nBeyond the workout\nActivity\nDaily steps\n—\nNo synced steps\nActive time\n24 min\nLogged movement\nConnect your health data\nBring steps, sleep and recovery together.\nSleep\nNo sleep data synced yet\nRecovery\nNo recovery score available yet\nHome\nActivity\nAI Coach\nProgress\nProfile",
+    "errors": [],
+    "horizontalOverflow": false,
+    "tabs": 5
+  },
+  {
+    "mode": "light",
+    "width": 320,
+    "primaryActionBox": {
+      "x": 20,
+      "y": 584,
+      "width": 280,
+      "height": 48
+    },
+    "navigationBox": {
+      "x": 25,
+      "y": 655,
+      "width": 54,
+      "height": 56
+    },
+    "horizontalOverflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "mealScreenText": "Add to Lunch\nCATALOG\nHome\nActivity\nAI Coach\nProgress\nProfile"
+  },
+  {
+    "mode": "light",
+    "activeScreenText": "Chest + Triceps\n00:00\nExercise 1 of 6\nBarbell Bench Press\nTarget 4 × 6–8 · rest 120s\nSet\nWeight\nReps\nDone\n1\n72.5 kg\n6\n2\n72.5 kg\n6\n3\n72.5 kg\n6\n4\n72.5 kg\n6\nAdd set\nSkip exercise\nPrevious\nNext\nSession progress\n0 / 19 sets\nFinish workout\nHome\nActivity\nAI Coach\nProgress\nProfile"
+  },
+  {
+    "mode": "light",
+    "coachScreenText": "AI Coach\nHi Aarav.\nWhat’s on your mind?\nYour coach can see\nWorkouts\nMeals\nWeight\n0 memories\nConnect a device to unlock recovery and sleep answers →\nRecovery\nWhy am I feeling tired today?\nWhy is my resting heart rate increasing?\nTraining\nCreate a 45-minute fat-loss workout\nCan I skip today’s workout?\nNutrition\nHow many calories do I have left today?\nCan I eat biryani tonight?\nProgress\nShow my progress since January\nWhen will I reach 90 kg if I continue at my current pace?\nHome\nActivity\nAI Coach\nProgress\nProfile",
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "width": 390,
+    "homeText": "FITONUS\nMon, Nov 9\nAM\nGood morning,\nAlex.\nDAILY FUEL\nNutrition\n1,450\nkcal logged\nof 2,200 kcal daily goal\n66%\nof goal\n750 kcal remaining\nProtein\n92 g\nof 150 g\nCarbs\n160 g\nof 250 g\nFat\n43 g\nof 70 g\nToday’s logged nutrition\nLog a meal\nWorkouts\nLog weight\nReports\nYour training\nAll workouts\nWORKOUT PLAN\nChest + Triceps\n52 min plan · 6 exercises\nBarbell Bench Press\n4 × 6–8\nIncline Dumbbell Press\n3 × 10\nStart workout\nStay hydrated\n1.25 L\nof 2.5 L daily goal\nLog water\nFITONUS COACH\nYour next move,\nmade clearer.\nTalk through your training, meals and recovery with your AI Coach.\nAsk Coach\nBeyond the workout\nActivity\nDaily steps\n—\nNo synced steps\nActive time\n24 min\nLogged movement\nConnect your health data\nBring steps, sleep and recovery together.\nSleep\nNo sleep data synced yet\nRecovery\nNo recovery score available yet\nHome\nActivity\nAI Coach\nProgress\nProfile",
+    "errors": [],
+    "horizontalOverflow": false,
+    "tabs": 5
+  },
+  {
+    "mode": "dark",
+    "width": 320,
+    "primaryActionBox": {
+      "x": 20,
+      "y": 584,
+      "width": 280,
+      "height": 48
+    },
+    "navigationBox": {
+      "x": 25,
+      "y": 655,
+      "width": 54,
+      "height": 56
+    },
+    "horizontalOverflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "mealScreenText": "Add to Lunch\nCATALOG\nHome\nActivity\nAI Coach\nProgress\nProfile"
+  },
+  {
+    "mode": "dark",
+    "activeScreenText": "Chest + Triceps\n00:00\nExercise 1 of 6\nBarbell Bench Press\nTarget 4 × 6–8 · rest 120s\nSet\nWeight\nReps\nDone\n1\n72.5 kg\n6\n2\n72.5 kg\n6\n3\n72.5 kg\n6\n4\n72.5 kg\n6\nAdd set\nSkip exercise\nPrevious\nNext\nSession progress\n0 / 19 sets\nFinish workout\nHome\nActivity\nAI Coach\nProgress\nProfile"
+  },
+  {
+    "mode": "dark",
+    "coachScreenText": "AI Coach\nHi Aarav.\nWhat’s on your mind?\nYour coach can see\nWorkouts\nMeals\nWeight\n0 memories\nConnect a device to unlock recovery and sleep answers →\nRecovery\nWhy am I feeling tired today?\nWhy is my resting heart rate increasing?\nTraining\nCreate a 45-minute fat-loss workout\nCan I skip today’s workout?\nNutrition\nHow many calories do I have left today?\nCan I eat biryani tonight?\nProgress\nShow my progress since January\nWhen will I reach 90 kg if I continue at my current pace?\nHome\nActivity\nAI Coach\nProgress\nProfile",
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "state": "empty",
+    "homeText": "FITONUS\nMon, Nov 9\nAM\nGood morning,\nAlex.\nDAILY FUEL\nNutrition\n0\nkcal logged\nYour calorie goal isn’t set yet\nLog a meal to build your day.\nProtein\n0 g\nGoal not set\nCarbs\n0 g\nGoal not set\nFat\n0 g\nGoal not set\nToday’s logged nutrition\nSet goals\nLog a meal\nWorkouts\nLog weight\nReports\nYour training\nAll workouts\nWORKOUT PLAN\nChest + Triceps\n52 min plan · 6 exercises\nBarbell Bench Press\n4 × 6–8\nIncline Dumbbell Press\n3 × 10\nStart workout\nStay hydrated\n0 L\nDaily water goal not set\nLog water\nFITONUS COACH\nYour next move,\nmade clearer.\nTalk through your training, meals and recovery with your AI Coach.\nAsk Coach\nBeyond the workout\nActivity\nDaily steps\n—\nNo synced steps\nActive time\n24 min\nLogged movement\nConnect your health data\nBring steps, sleep and recovery together.\nSleep\nNo sleep data synced yet\nRecovery\nNo recovery score available yet\nHome\nActivity\nAI Coach\nProgress\nProfile",
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "state": "offline",
+    "homeText": "FITONUS\nMon, Nov 9\nAM\nGood morning,\nAlex.\nCouldn’t refresh nutrition\nYour latest totals aren’t available. You can still log a meal.\nRetry\nDAILY FUEL\nNutrition\n—\nkcal logged\nYour calorie goal isn’t set yet\nLog a meal to build your day.\nProtein\n— g\nGoal not set\nCarbs\n— g\nGoal not set\nFat\n— g\nGoal not set\nYour nutrition, at a glance\nSet goals\nLog a meal\nWorkouts\nLog weight\nReports\nYour training\nAll workouts\nWORKOUT PLAN\nChest + Triceps\n52 min plan · 6 exercises\nBarbell Bench Press\n4 × 6–8\nIncline Dumbbell Press\n3 × 10\nStart workout\nStay hydrated\n— L\nDaily water goal not set\nLog water\nFITONUS COACH\nYour next move,\nmade clearer.\nTalk through your training, meals and recovery with your AI Coach.\nAsk Coach\nBeyond the workout\nActivity\nDaily steps\n—\nNo synced steps\nActive time\n24 min\nLogged movement\nConnect your health data\nBring steps, sleep and recovery together.\nSleep\nNo sleep data synced yet\nRecovery\nNo recovery score available yet\nHome\nActivity\nAI Coach\nProgress\nProfile",
+    "errors": []
+  }
+]

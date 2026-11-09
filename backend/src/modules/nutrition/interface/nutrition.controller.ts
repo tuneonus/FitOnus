@@ -13,6 +13,13 @@ import type { LogWaterUseCase } from '../application/use-cases/log-water.js';
 import type { ManageFoodFavoritesUseCase } from '../application/use-cases/manage-food-favorites.js';
 import type { SearchFoodsUseCase } from '../application/use-cases/search-foods.js';
 import type { UpdateMealUseCase } from '../application/use-cases/update-meal.js';
+import type { AnalyzeMealPhotoUseCase } from '../application/use-cases/analyze-meal-photo.js';
+import type { ParseVoiceMealUseCase } from '../application/use-cases/parse-voice-meal.js';
+import type { MealPhotoAnalysisResult } from '../domain/meal-photo.types.js';
+import type { VoiceMealParseResult } from '../domain/voice-meal.types.js';
+import { analyzeMealPhotoRequest } from './meal-photo.schemas.js';
+import { parseVoiceMealRequest } from './voice-meal.schemas.js';
+import { AppError } from '../../../shared/errors/app-error.js';
 import type {
   DailyNutritionView,
   FoodView,
@@ -49,6 +56,8 @@ export interface NutritionMemberUseCases {
   logWater: LogWaterUseCase;
   getNutritionAnalytics: GetNutritionAnalyticsUseCase;
   manageFoodFavorites: ManageFoodFavoritesUseCase;
+  analyzeMealPhoto?: AnalyzeMealPhotoUseCase;
+  parseVoiceMeal?: ParseVoiceMealUseCase;
 }
 
 export type NutritionMemberController = ReturnType<typeof createNutritionMemberController>;
@@ -236,6 +245,47 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
       return {
         data: { success: true },
         message: 'Food removed from favorites',
+      };
+    },
+
+    analyzeMealPhoto: async (req: Request): Promise<RouteResult<MealPhotoAnalysisResult>> => {
+      const actor = requireActor(req);
+      const { body } = getValidated(req, analyzeMealPhotoRequest);
+      if (!useCases.analyzeMealPhoto) {
+        throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'Meal photo analysis service is not available.');
+      }
+      const data = await useCases.analyzeMealPhoto.execute({
+        userId: actor.userId,
+        imageBase64: body.image,
+        mimeType: body.mimeType,
+        mealType: body.mealType,
+        notes: body.notes,
+      });
+      return {
+        status: 200,
+        data,
+        message: 'Meal photo analyzed successfully',
+      };
+    },
+
+    parseVoiceMeal: async (req: Request): Promise<RouteResult<VoiceMealParseResult>> => {
+      const actor = requireActor(req);
+      const { body } = getValidated(req, parseVoiceMealRequest);
+      if (!useCases.parseVoiceMeal) {
+        throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'Voice meal parsing service is not available.');
+      }
+      const data = await useCases.parseVoiceMeal.execute({
+        userId: actor.userId,
+        transcript: body.transcript,
+        audioBase64: body.audio,
+        mimeType: body.mimeType,
+        lang: body.lang,
+        mealType: body.mealType,
+      });
+      return {
+        status: 200,
+        data,
+        message: 'Voice meal parsed successfully',
       };
     },
   };

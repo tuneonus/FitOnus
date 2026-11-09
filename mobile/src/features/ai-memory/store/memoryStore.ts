@@ -1,74 +1,182 @@
 import { create } from 'zustand';
+import { CoachApi } from '../../ai-coach/services/coach-api';
 
 export type MemoryCategory =
-'goals' |
-'injuries' |
-'food' |
-'workout' |
-'medical' |
-'supplements' |
-'progress' |
-'conversations';
+  | 'goals'
+  | 'injuries'
+  | 'food'
+  | 'workout'
+  | 'medical'
+  | 'supplements'
+  | 'progress'
+  | 'conversations';
 
 export type MemoryItem = {
   id: string;
   category: MemoryCategory;
   text: string;
   source: string;
-  savedOn: string;
-  sensitive?: boolean;
+  savedOn?: string | undefined;
+  sensitive?: boolean | undefined;
+  createdAt?: string | undefined;
 };
 
-export type MemorySuggestion = {id: string;category: MemoryCategory;text: string;from: string;sensitive?: boolean;};
+export type MemorySuggestion = {
+  id: string;
+  category: MemoryCategory;
+  text: string;
+  from: string;
+  sensitive?: boolean | undefined;
+};
 
 type MemoryState = {
   enabled: boolean;
   useSensitive: boolean;
+  loading: boolean;
   items: MemoryItem[];
   suggestions: MemorySuggestion[];
-  setEnabled: (v: boolean) => void;
+  fetchMemories: () => Promise<void>;
+  setEnabled: (v: boolean) => Promise<void>;
   setUseSensitive: (v: boolean) => void;
-  updateItem: (id: string, text: string) => void;
-  deleteItem: (id: string) => void;
-  restoreItem: (item: MemoryItem) => void;
-  clearAll: () => void;
-  approveSuggestion: (id: string) => void;
-  dismissSuggestion: (id: string) => void;
+  updateItem: (id: string, text: string) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
+  restoreItem: (item: MemoryItem) => Promise<void>;
+  clearAll: () => Promise<void>;
+  approveSuggestion: (id: string) => Promise<void>;
+  dismissSuggestion: (id: string) => Promise<void>;
 };
-
-const initialItems: MemoryItem[] = [
-{ id: 'mem1', category: 'goals', text: 'Wants to reach 75 kg by end of January while keeping bench strength.', source: 'Onboarding', savedOn: 'Sep 2' },
-{ id: 'mem2', category: 'food', text: 'Eggetarian — eats eggs and dairy, no meat or fish.', source: 'Onboarding', savedOn: 'Sep 2' },
-{ id: 'mem3', category: 'food', text: 'Prefers North and South Indian food. Dislikes oats with milk.', source: 'Chat · Sep 14', savedOn: 'Sep 14' },
-{ id: 'mem4', category: 'workout', text: 'Trains at a gym 5 days a week, ~60 minutes, early mornings.', source: 'Onboarding', savedOn: 'Sep 2' },
-{ id: 'mem5', category: 'workout', text: 'Prefers barbell compounds over machines.', source: 'Chat · Sep 20', savedOn: 'Sep 20' },
-{ id: 'mem6', category: 'injuries', text: 'Mild left-shoulder discomfort on overhead pressing (Aug). Avoid behind-the-neck movements.', source: 'Chat · Aug 28', savedOn: 'Aug 28', sensitive: true },
-{ id: 'mem7', category: 'supplements', text: 'Takes whey isolate (1 scoop post-workout) and creatine 5 g daily.', source: 'Chat · Sep 9', savedOn: 'Sep 9' },
-{ id: 'mem8', category: 'progress', text: 'Bench press PR 72.5 kg × 6 on Oct 5. Squat 100 kg × 5.', source: 'Workout logs', savedOn: 'Oct 5' },
-{ id: 'mem9', category: 'conversations', text: 'Asked about late-night cravings — agreed to try a 200 kcal evening snack.', source: 'Chat · Oct 2', savedOn: 'Oct 2' }];
-
 
 export const useMemoryStore = create<MemoryState>((set, get) => ({
   enabled: true,
   useSensitive: true,
-  items: initialItems,
-  suggestions: [
-  { id: 's1', category: 'medical', text: 'Mentioned a family history of high blood pressure.', from: 'Chat · Oct 7', sensitive: true },
-  { id: 's2', category: 'food', text: 'Fasts on Tuesdays — light dinner only.', from: 'Chat · Oct 6' }],
+  loading: false,
+  items: [],
+  suggestions: [],
 
-  setEnabled: (enabled) => set({ enabled }),
+  fetchMemories: async () => {
+    try {
+      set({ loading: true });
+      const res = await CoachApi.listMemories();
+
+      const items: MemoryItem[] = (res.items || []).map((i) => ({
+        id: i.id,
+        category: i.category,
+        text: i.text,
+        source: i.source || 'Conversation',
+        savedOn: i.createdAt
+          ? new Date(i.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })
+          : undefined,
+        sensitive: i.sensitive,
+        createdAt: i.createdAt,
+      }));
+
+      const suggestions: MemorySuggestion[] = (res.suggestions || []).map((s) => ({
+        id: s.id,
+        category: s.category,
+        text: s.text,
+        from: s.source || 'Conversation',
+        sensitive: s.sensitive,
+      }));
+
+      set({
+        enabled: res.enabled !== false,
+        items,
+        suggestions,
+      });
+    } catch {
+      // Leave existing state on network error
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  setEnabled: async (enabled) => {
+    set({ enabled });
+    try {
+      await CoachApi.setMemorySettings(enabled);
+    } catch {
+      // Revert on failure
+      set({ enabled: !enabled });
+    }
+  },
+
   setUseSensitive: (useSensitive) => set({ useSensitive }),
-  updateItem: (id, text) => set({ items: get().items.map((i) => i.id === id ? { ...i, text } : i) }),
-  deleteItem: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
-  restoreItem: (item) => set({ items: [item, ...get().items] }),
-  clearAll: () => set({ items: [], suggestions: [] }),
-  approveSuggestion: (id) => {
+
+  updateItem: async (id, text) => {
+    const prevItems = get().items;
+    set({ items: prevItems.map((i) => (i.id === id ? { ...i, text } : i)) });
+    try {
+      await CoachApi.updateMemory(id, text);
+    } catch {
+      set({ items: prevItems });
+    }
+  },
+
+  deleteItem: async (id) => {
+    const prevItems = get().items;
+    set({ items: prevItems.filter((i) => i.id !== id) });
+    try {
+      await CoachApi.deleteMemory(id);
+    } catch {
+      set({ items: prevItems });
+    }
+  },
+
+  restoreItem: async (item) => {
+    set({ items: [item, ...get().items] });
+    try {
+      await CoachApi.createMemory({
+        category: item.category,
+        text: item.text,
+        source: item.source,
+        sensitive: item.sensitive,
+      });
+    } catch {
+      // keep local item
+    }
+  },
+
+  clearAll: async () => {
+    const prevItems = get().items;
+    const prevSuggestions = get().suggestions;
+    set({ items: [], suggestions: [] });
+    try {
+      await CoachApi.clearAllMemories();
+    } catch {
+      set({ items: prevItems, suggestions: prevSuggestions });
+    }
+  },
+
+  approveSuggestion: async (id) => {
     const s = get().suggestions.find((x) => x.id === id);
     if (!s) return;
     set({
       suggestions: get().suggestions.filter((x) => x.id !== id),
-      items: [{ id: `mem-${Date.now()}`, category: s.category, text: s.text, source: s.from, savedOn: 'Oct 9', ...(s.sensitive !== undefined ? { sensitive: s.sensitive } : {}) }, ...get().items]
+      items: [
+        {
+          id: s.id,
+          category: s.category,
+          text: s.text,
+          source: s.from,
+          savedOn: 'Today',
+          sensitive: s.sensitive,
+        },
+        ...get().items,
+      ],
     });
+    try {
+      await CoachApi.approveMemorySuggestion(id);
+    } catch {
+      // Handled
+    }
   },
-  dismissSuggestion: (id) => set({ suggestions: get().suggestions.filter((x) => x.id !== id) })
+
+  dismissSuggestion: async (id) => {
+    set({ suggestions: get().suggestions.filter((x) => x.id !== id) });
+    try {
+      await CoachApi.dismissMemorySuggestion(id);
+    } catch {
+      // Handled
+    }
+  },
 }));

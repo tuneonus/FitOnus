@@ -49,9 +49,9 @@ export function NotificationsScreen() {
           />
         </View>
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {items.length === 0 ? (
+      {items.length === 0 ? (
           <EmptyState
             icon={BellOff}
             title="No notifications"
@@ -126,7 +126,6 @@ export function NotificationsScreen() {
             );
           })
         )}
-      </ScrollView>
 
       {/* Notification Detail BottomSheet */}
       <BottomSheet
@@ -181,8 +180,7 @@ export function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 18,
   },
   headerRight: {

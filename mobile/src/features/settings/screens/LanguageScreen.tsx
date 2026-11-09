@@ -54,35 +54,32 @@ export function LanguageScreen() {
   };
 
   return (
-    <Screen title="Language">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.optionsList}>
-          {languageOptions.map((opt) => (
-            <OptionCard
-              key={opt.value}
-              title={opt.title}
-              description={opt.description}
-              icon={opt.icon}
-              selected={language === opt.value}
-              onSelect={() => handleSelect(opt.value)}
-            />
-          ))}
-        </View>
+    <Screen title="Language" contentContainerStyle={styles.container}>
+      <View style={styles.optionsList}>
+        {languageOptions.map((opt) => (
+          <OptionCard
+            key={opt.value}
+            title={opt.title}
+            description={opt.description}
+            icon={opt.icon}
+            selected={language === opt.value}
+            onSelect={() => handleSelect(opt.value)}
+          />
+        ))}
+      </View>
 
-        <Text style={[styles.footnote, { color: colors.muted }]}>
-          English is the default active interface language. Selecting தமிழ் (Tamil) securely saves
-          your language preference to your account. Full Tamil localization is being prepared for a
-          future release.
-        </Text>
-      </ScrollView>
+      <Text style={[styles.footnote, { color: colors.muted }]}>
+        English is the default active interface language. Selecting தமிழ் (Tamil) securely saves
+        your language preference to your account. Full Tamil localization is being prepared for a
+        future release.
+      </Text>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   optionsList: {

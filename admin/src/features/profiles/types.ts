@@ -37,3 +37,43 @@ export interface AdminUserDetail {
   profileMetadata: AdminUserProfileMetadata;
 }
 
+export interface AdminUserActivity {
+  userId: string;
+  workouts: {
+    totalSessions: number;
+    totalDurationMin: number;
+    totalVolumeKg: number;
+    recentSessions: Array<{
+      id: string;
+      name: string;
+      startedAt: string;
+      completedAt: string | null;
+      durationMin: number;
+      volumeKg: number;
+    }>;
+  };
+  nutrition: {
+    totalMeals: number;
+    avgDailyCalories: number;
+    recentMeals: Array<{
+      id: string;
+      mealType: string;
+      calories: number;
+      proteinG: number;
+      carbsG: number;
+      fatG: number;
+      loggedAt: string;
+    }>;
+  };
+  weight: {
+    currentWeightKg: number | null;
+    startingWeightKg: number | null;
+    totalEntries: number;
+    recentEntries: Array<{
+      id: string;
+      weightKg: number;
+      loggedAt: string;
+    }>;
+  };
+}
+

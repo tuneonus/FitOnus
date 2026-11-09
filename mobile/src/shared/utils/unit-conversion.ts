@@ -221,3 +221,49 @@ export function parseHeightInputToCm(
   const i = input.inches !== undefined && input.inches !== null ? Number(input.inches) : 0;
   return ftInToCm(f, i, 1);
 }
+
+// ==========================================
+// BMI Calculations
+// ==========================================
+
+export type BmiCategory = 'Underweight' | 'Normal weight' | 'Overweight' | 'Obesity';
+
+/**
+ * Calculates Body Mass Index (BMI) using canonical metric units (weight in kg, height in cm).
+ * Formula: weightKg / (heightM)^2
+ * Returns rounded to 1 decimal place, or null if inputs are invalid.
+ */
+export function calculateBmi(
+  weightKg: number | null | undefined,
+  heightCm: number | null | undefined,
+): number | null {
+  if (
+    weightKg === null ||
+    weightKg === undefined ||
+    !Number.isFinite(weightKg) ||
+    weightKg <= 0 ||
+    heightCm === null ||
+    heightCm === undefined ||
+    !Number.isFinite(heightCm) ||
+    heightCm <= 0
+  ) {
+    return null;
+  }
+  const heightM = heightCm / 100;
+  const bmi = weightKg / (heightM * heightM);
+  return Number.isFinite(bmi) ? Math.round(bmi * 10) / 10 : null;
+}
+
+/**
+ * Classifies BMI according to standard WHO clinical thresholds.
+ */
+export function getBmiCategory(bmi: number | null | undefined): BmiCategory | null {
+  if (bmi === null || bmi === undefined || !Number.isFinite(bmi) || bmi <= 0) {
+    return null;
+  }
+  if (bmi < 18.5) return 'Underweight';
+  if (bmi < 25.0) return 'Normal weight';
+  if (bmi < 30.0) return 'Overweight';
+  return 'Obesity';
+}
+

@@ -69,12 +69,14 @@ export function ProfileScreen() {
 
   return (
     <Screen
+      title="Profile"
+      showBack={false}
       headerRight={
         <IconButton icon={Settings} label="Settings" onPress={() => navigate('settings')} />
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* User Card */}
+      {/* User Card */}
         <View style={styles.userSection}>
           <View style={[styles.avatarCircle, { backgroundColor: colors.ink }]}>
             <Text style={[styles.avatarText, { color: colors.bg }]}>{initials}</Text>
@@ -180,15 +182,13 @@ export function ProfileScreen() {
             onPress={() => navigate('settings')}
           />
         </ListGroup>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 18,
   },
   userSection: {

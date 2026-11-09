@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Flashlight, Keyboard, X } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import { BottomSheet } from '@/shared/components/ui/BottomSheet';

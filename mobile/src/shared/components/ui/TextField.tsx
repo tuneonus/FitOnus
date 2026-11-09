@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TextInputProps,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, TextInput, TextInputProps, StyleSheet, ViewStyle } from 'react-native';
+import { premium } from '@/shared/theme/premium';
 import { useTheme } from '@/hooks/use-theme';
 
 export type TextFieldProps = Omit<TextInputProps, 'style'> & {
+  appearance?: 'default' | 'premium';
   label?: string | undefined;
   error?: string | undefined;
   hint?: string | undefined;
@@ -20,6 +15,7 @@ export type TextFieldProps = Omit<TextInputProps, 'style'> & {
 };
 
 export function TextField({
+  appearance = 'default',
   label,
   error,
   hint,
@@ -29,39 +25,47 @@ export function TextField({
   style,
   ...inputProps
 }: TextFieldProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
+
+  const defaultPlaceholderColor = isDark ? 'rgba(164, 166, 154, 0.6)' : 'rgba(92, 93, 86, 0.6)';
 
   return (
     <View style={[styles.wrapper, style]}>
-      {!hideLabel && !!label && (
-        <Text style={[styles.label, { color: colors.ink }]}>{label}</Text>
-      )}
+      {!hideLabel && !!label && <Text style={[styles.label, { color: colors.ink }]}>{label}</Text>}
 
       <View
         style={[
           styles.inputContainer,
           {
             backgroundColor: colors.surface,
-            borderColor: error
-              ? colors.bad
-              : isFocused
-              ? colors.ink
-              : colors.line,
+            ...(appearance === 'premium'
+              ? { minHeight: 56, height: undefined, borderRadius: premium.radius.control }
+              : {}),
+            borderColor: error ? colors.bad : isFocused ? colors.ink : colors.line,
           },
         ]}
       >
         <TextInput
-          style={[styles.input, { color: colors.ink }]}
-          placeholderTextColor="rgba(92, 93, 86, 0.6)"
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          style={[
+            styles.input,
+            appearance === 'premium' && { minHeight: 52, height: undefined, paddingVertical: 12 },
+            { color: colors.ink },
+          ]}
+          placeholderTextColor={inputProps.placeholderTextColor ?? defaultPlaceholderColor}
           {...inputProps}
+          accessibilityLabel={inputProps.accessibilityLabel ?? label}
+          onFocus={(event) => {
+            setIsFocused(true);
+            inputProps.onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            setIsFocused(false);
+            inputProps.onBlur?.(event);
+          }}
         />
 
-        {suffix ? (
-          <Text style={[styles.suffix, { color: colors.muted }]}>{suffix}</Text>
-        ) : null}
+        {suffix ? <Text style={[styles.suffix, { color: colors.muted }]}>{suffix}</Text> : null}
 
         {trailing}
       </View>

@@ -1,8 +1,17 @@
+import { premium } from '@/shared/theme/premium';
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ViewStyle,
+  useWindowDimensions,
+} from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 
 export type SegmentedControlProps<T extends string> = {
+  appearance?: 'default' | 'premium';
   options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
@@ -11,17 +20,25 @@ export type SegmentedControlProps<T extends string> = {
 };
 
 export function SegmentedControl<T extends string>({
+  appearance = 'default',
   options,
   value,
   onChange,
   style,
 }: SegmentedControlProps<T>) {
   const { colors } = useTheme();
+  const { width, fontScale } = useWindowDimensions();
+  const wrapped = appearance === 'premium' && (width < 380 || fontScale > 1.2);
 
   return (
     <View
       style={[
         styles.container,
+        appearance === 'premium' && {
+          borderRadius: premium.radius.control,
+          flexWrap: 'wrap',
+          gap: 4,
+        },
         { backgroundColor: colors.surface2 },
         style,
       ]}
@@ -31,10 +48,20 @@ export function SegmentedControl<T extends string>({
         return (
           <TouchableOpacity
             key={option.value}
+            accessibilityRole="button"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected: active }}
             activeOpacity={0.8}
             onPress={() => onChange(option.value)}
             style={[
               styles.optionButton,
+              appearance === 'premium' && {
+                height: undefined,
+                minHeight: premium.layout.touch,
+                paddingVertical: 12,
+                borderRadius: premium.radius.control,
+                ...(wrapped ? { flexBasis: '45%', flexGrow: 1 } : {}),
+              },
               active && [
                 styles.activeButton,
                 {
@@ -51,7 +78,7 @@ export function SegmentedControl<T extends string>({
                   fontWeight: active ? '600' : '500',
                 },
               ]}
-              numberOfLines={1}
+              numberOfLines={appearance === 'premium' ? undefined : 1}
             >
               {option.label}
             </Text>
@@ -88,4 +115,3 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
-

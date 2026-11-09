@@ -1,82 +1,51 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Skeleton } from '../../../shared/components/ui/Skeleton';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
 
 export function HomeSkeleton() {
   const { colors } = useTheme();
-
   return (
-    <View style={styles.container}>
-      {/* Hero card skeleton */}
-      <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
-        <Skeleton width={96} height={12} radius={6} />
-        <View style={styles.heroRow}>
-          <Skeleton width={108} height={108} radius={54} />
-          <View style={styles.heroTextCol}>
-            <Skeleton width="75%" height={20} radius={6} />
-            <Skeleton width="33%" height={20} radius={6} />
+    <View
+      accessible
+      accessibilityLabel="Loading today’s nutrition"
+      accessibilityState={{ busy: true }}
+      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}
+    >
+      <View
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+        style={styles.content}
+      >
+        <Skeleton width={96} height={14} radius={4} />
+        <View style={styles.row}>
+          <View style={styles.text}>
+            <Skeleton width="85%" height={52} radius={6} />
+            <Skeleton width="75%" height={14} radius={4} />
           </View>
+          <Skeleton width={112} height={112} radius={56} />
         </View>
-        <View style={styles.heroLines}>
-          <Skeleton width="100%" height={12} radius={6} />
-          <Skeleton width="83%" height={12} radius={6} />
+        <Skeleton width="65%" height={18} radius={4} />
+        <View style={styles.row}>
+          {[0, 1, 2].map((key) => (
+            <View key={key} style={styles.text}>
+              <Skeleton width="65%" height={14} radius={4} />
+              <Skeleton width="80%" height={28} radius={4} />
+              <Skeleton width="100%" height={3} radius={2} />
+              <Skeleton width="70%" height={12} radius={4} />
+            </View>
+          ))}
         </View>
-        <Skeleton width="100%" height={52} radius={16} />
+        <Skeleton width="75%" height={12} radius={4} />
       </View>
-
-      {/* Repeating section skeletons */}
-      {[0, 1].map((key) => (
-        <View key={key} style={styles.section}>
-          <Skeleton width={128} height={16} radius={6} style={{ marginBottom: 12 }} />
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.line,
-              },
-            ]}
-          >
-            <Skeleton width="50%" height={24} radius={6} />
-            <Skeleton width="66%" height={14} radius={6} />
-            <Skeleton width="100%" height={64} radius={16} />
-          </View>
-        </View>
-      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 28,
-  },
-  heroCard: {
-    borderRadius: 28,
-    padding: 20,
-    gap: 20,
-  },
-  heroRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-  },
-  heroTextCol: {
-    flex: 1,
-    gap: 10,
-  },
-  heroLines: {
-    gap: 8,
-  },
-  section: {
-    marginTop: 8,
-  },
-  card: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 20,
-    gap: 12,
-  },
+  card: { borderWidth: 1, borderRadius: premium.radius.hero, padding: 20 },
+  content: { gap: 24 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  text: { flex: 1, gap: 12 },
 });
-

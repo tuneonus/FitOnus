@@ -90,14 +90,15 @@ export function PersonalInfoScreen() {
   return (
     <Screen
       title="Personal information"
+      keyboardAvoiding
       footer={
         <Button size="lg" fullWidth onPress={save} loading={isSaving}>
           Save
         </Button>
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <TextField
+      <TextField
           label="Full name"
           value={draft.name}
           onChangeText={(val) => {
@@ -165,15 +166,13 @@ export function PersonalInfoScreen() {
             Daily weigh-ins are logged from the Weight screen.
           </Text>
         </View>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 18,
   },
   fieldBlock: {

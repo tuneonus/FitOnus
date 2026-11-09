@@ -1,8 +1,9 @@
+import { premium } from '@/shared/theme/premium';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ChevronRight, Play, Plus, Sparkles, Trash2 } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
-import { Screen } from '../../../shared/components/ui/Screen';
+import { FeatureScreen as Screen } from '@/shared/components/ui/FeatureScreen';
 import { Button } from '../../../shared/components/ui/Button';
 import { showToast } from '../../../shared/stores/toastStore';
 import { useWorkoutStore } from '../store/workoutStore';
@@ -11,13 +12,8 @@ import { useTheme } from '@/hooks/use-theme';
 export function WorkoutPlanScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const {
-    plannedSession,
-    removePlannedExercise,
-    setPlannedSession,
-    todayStatus,
-    getExerciseById,
-  } = useWorkoutStore();
+  const { plannedSession, removePlannedExercise, setPlannedSession, todayStatus, getExerciseById } =
+    useWorkoutStore();
   const [editing, setEditing] = useState(false);
 
   const remove = (id: string) => {
@@ -46,30 +42,25 @@ export function WorkoutPlanScreen() {
       }
       footer={
         <Button
+          appearance="premium"
           size="lg"
           fullWidth
           icon={Play}
-          disabled={
-            todayStatus === 'completed' || plannedSession.exercises.length === 0
-          }
+          disabled={todayStatus === 'completed' || plannedSession.exercises.length === 0}
           title={
             todayStatus === 'inProgress'
               ? 'Resume workout'
               : todayStatus === 'completed'
-              ? 'Completed today'
-              : 'Start workout'
+                ? 'Completed today'
+                : 'Start workout'
           }
           onPress={() => navigate('activeWorkout')}
         />
       }
     >
       <View style={styles.headerArea}>
-        <Text style={[styles.focus, { color: colors.muted }]}>
-          {plannedSession.focus}
-        </Text>
-        <Text style={[styles.title, { color: colors.ink }]}>
-          {plannedSession.title}
-        </Text>
+        <Text style={[styles.focus, { color: colors.muted }]}>Workout plan</Text>
+        <Text style={[styles.title, { color: colors.ink }]}>{plannedSession.title}</Text>
 
         <View style={[styles.statsGrid, { borderColor: colors.line }]}>
           {[
@@ -84,19 +75,11 @@ export function WorkoutPlanScreen() {
           ))}
         </View>
 
-        <View
-          style={[
-            styles.progressionCard,
-            { backgroundColor: colors.surface2 },
-          ]}
-        >
-          <Sparkles
-            size={15}
-            color={colors.accent}
-            style={{ marginTop: 2 }}
-          />
+        <View style={[styles.progressionCard, { backgroundColor: colors.surface2 }]}>
+          <Sparkles size={15} color={colors.accent} style={{ marginTop: 2 }} />
           <Text style={[styles.progressionText, { color: colors.ink }]}>
-            Progression: bench target is 72.5 kg. If all 4 sets hit 8 reps, I’ll suggest 75 kg next session.
+            Progression: bench target is 72.5 kg. If all 4 sets hit 8 reps, I’ll suggest 75 kg next
+            session.
           </Text>
         </View>
       </View>
@@ -120,35 +103,21 @@ export function WorkoutPlanScreen() {
                 onPress={() => navigate('exerciseDetail', { id: p.exerciseId })}
                 style={styles.exerciseMain}
               >
-                <View
-                  style={[
-                    styles.indexCircle,
-                    { backgroundColor: colors.surface2 },
-                  ]}
-                >
-                  <Text style={[styles.indexText, { color: colors.ink }]}>
-                    {i + 1}
-                  </Text>
+                <View style={[styles.indexCircle, { backgroundColor: colors.surface2 }]}>
+                  <Text style={[styles.indexText, { color: colors.ink }]}>{i + 1}</Text>
                 </View>
 
                 <View style={styles.exerciseTextCol}>
-                  <Text
-                    style={[styles.exerciseName, { color: colors.ink }]}
-                    numberOfLines={1}
-                  >
+                  <Text style={[styles.exerciseName, { color: colors.ink }]} numberOfLines={1}>
                     {ex.name}
                   </Text>
-                  <Text
-                    style={[styles.exerciseDetails, { color: colors.muted }]}
-                  >
+                  <Text style={[styles.exerciseDetails, { color: colors.muted }]}>
                     {p.sets} × {p.reps}
                     {p.weight ? ` · ${p.weight} kg` : ' · BW'} · rest {p.restSec}s
                   </Text>
                 </View>
 
-                {!editing && (
-                  <ChevronRight size={16} color={colors.muted} />
-                )}
+                {!editing && <ChevronRight size={16} color={colors.muted} />}
               </TouchableOpacity>
 
               {editing && (
@@ -167,6 +136,7 @@ export function WorkoutPlanScreen() {
         {editing && (
           <View style={{ paddingTop: 12 }}>
             <Button
+              appearance="premium"
               variant="outline"
               fullWidth
               icon={Plus}
@@ -183,25 +153,21 @@ export function WorkoutPlanScreen() {
 const styles = StyleSheet.create({
   headerBtn: {
     paddingHorizontal: 12,
-    height: 44,
+    minHeight: premium.layout.touch,
     justifyContent: 'center',
   },
   headerBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...premium.type.body,
   },
   headerArea: {
     paddingHorizontal: 20,
     paddingTop: 4,
   },
   focus: {
-    fontSize: 13,
-    fontWeight: '500',
+    ...premium.type.caption,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '600',
-    letterSpacing: -0.5,
+    ...premium.type.display,
     marginTop: 4,
   },
   statsGrid: {
@@ -215,11 +181,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statLabel: {
-    fontSize: 12,
+    ...premium.type.caption,
   },
   statVal: {
-    fontSize: 18,
-    fontWeight: '600',
+    ...premium.type.metric,
     fontVariant: ['tabular-nums'],
     marginTop: 2,
   },
@@ -231,9 +196,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   progressionText: {
+    ...premium.type.body,
     flex: 1,
-    fontSize: 13.5,
-    lineHeight: 18,
   },
   exercisesList: {
     paddingHorizontal: 16,
@@ -263,27 +227,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   indexText: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...premium.type.caption,
   },
   exerciseTextCol: {
     flex: 1,
   },
   exerciseName: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...premium.type.body,
   },
   exerciseDetails: {
-    fontSize: 12.5,
+    ...premium.type.caption,
     fontVariant: ['tabular-nums'],
     marginTop: 2,
   },
   deleteBtn: {
     width: 44,
-    height: 44,
+    minHeight: premium.layout.touch,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 6,
   },
 });
-

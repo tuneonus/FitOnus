@@ -1,6 +1,6 @@
 import type { ChartPoint, TimeRange } from '../../../shared/types/health';
 
-export type MetricKey = 'weight' | 'calories' | 'sleep' | 'protein' | 'workouts' | 'recovery' | 'steps';
+export type MetricKey = 'weight' | 'calories' | 'sleep' | 'protein' | 'workouts' | 'recovery' | 'steps' | 'water';
 
 const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 const weeks = ['W33', 'W34', 'W35', 'W36', 'W37', 'W38', 'W39', 'W40'];
@@ -80,6 +80,18 @@ export const progressMetrics: Record<
       Y: zip(years, [6900, 8120, 8790])
     },
     goal: 10000
+  },
+  water: {
+    label: 'Water',
+    unit: 'ml',
+    chart: 'bar',
+    series: {
+      D: [],
+      W: [],
+      M: [],
+      Y: [],
+    },
+    goal: 3000,
   }
 };
 

@@ -139,6 +139,7 @@ export function calculateTotalVolumeKg(
   sets: readonly { weightKg: number; reps: number; isWarmup?: boolean }[],
 ): number {
   return sets.reduce((sum, s) => {
+    if (s.isWarmup) return sum;
     return sum + (s.weightKg > 0 && s.reps > 0 ? s.weightKg * s.reps : 0);
   }, 0);
 }

@@ -1,240 +1,227 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Plus } from 'lucide-react-native';
-import { useNavigation } from '../../../app/navigation/NavigationContext';
-import { SectionHeader } from '../../../shared/components/ui/SectionHeader';
-import { ProgressBar } from '../../../shared/components/ui/ProgressBar';
-import {
-  useDailyTotals,
-  useNutritionStore,
-} from '../../nutrition/store/nutritionStore';
-import {
-  macroMeta,
-  mealLabels,
-  mealOrder,
-  nutritionGoals,
-} from '../../nutrition/constants/meals';
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { ArrowUpRight, Utensils } from 'lucide-react-native';
+import { useNavigation } from '@/app/navigation/NavigationContext';
 import { useTheme } from '@/hooks/use-theme';
+import { Card } from '@/shared/components/ui/Card';
+import { ProgressRing } from '@/shared/components/charts/ProgressRing';
+import { ProgressBar } from '@/shared/components/ui/ProgressBar';
+import { premium } from '@/shared/theme/premium';
+import { type HomeNutrition, progressRatio } from '../utils/home-overview';
 
-export function NutritionSummary() {
+const macros = [
+  { key: 'protein', label: 'Protein' },
+  { key: 'carbs', label: 'Carbs' },
+  { key: 'fat', label: 'Fat' },
+] as const;
+const format = (value: number | null) =>
+  value === null ? '—' : Math.round(value).toLocaleString();
+
+const defaultOverview: HomeNutrition = {
+  available: false,
+  totals: { kcal: null, protein: null, carbs: null, fat: null },
+  goals: { kcal: null, protein: null, carbs: null, fat: null, waterMl: null },
+  waterMl: null,
+  remaining: null,
+  pendingMeals: 0,
+  sourceLabel: 'Your nutrition, at a glance',
+};
+
+export function NutritionSummary({
+  overview = defaultOverview,
+  onOpen,
+}: {
+  overview?: HomeNutrition;
+  onOpen?: () => void;
+} = {}) {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const totals = useDailyTotals();
-  const entries = useNutritionStore((s) => s.entries);
-  const remaining = nutritionGoals.kcal - totals.kcal;
-
+  const { width, fontScale } = useWindowDimensions();
+  const compact = width < 375 || fontScale > 1.25;
+  const handleOpen = onOpen ?? (() => navigate('nutrition'));
+  const { totals, goals, remaining } = overview;
+  const ratio = progressRatio(totals.kcal, goals.kcal);
   return (
-    <View style={styles.container}>
-      <SectionHeader
-        title="Nutrition"
-        actionLabel="Open"
-        onAction={() => navigate('nutrition')}
-      />
-
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.surface, borderColor: colors.line },
-        ]}
-      >
-        <View style={styles.kcalRow}>
-          <View>
-            <Text style={[styles.remainingLabel, { color: colors.muted }]}>
-              {remaining >= 0 ? 'Remaining today' : 'Over goal'}
-            </Text>
-            <Text style={[styles.remainingVal, { color: colors.ink }]}>
-              {Math.abs(Math.round(remaining)).toLocaleString()}
-              <Text style={[styles.kcalUnit, { color: colors.muted }]}>
-                {' '}kcal
-              </Text>
-            </Text>
-          </View>
-
-          <Text style={[styles.consumedMeta, { color: colors.muted }]}>
-            <Text style={{ fontWeight: '700', color: colors.ink }}>
-              {Math.round(totals.kcal).toLocaleString()}
-            </Text>{' '}
-            eaten{'\n'}of {nutritionGoals.kcal.toLocaleString()} goal
+    <Card
+      tone="hero"
+      appearance="premium"
+      style={{ ...styles.card, ...(compact ? styles.compactCard : {}) }}
+    >
+      <View style={styles.topRow}>
+        <Text style={[premium.type.eyebrow, { color: colors.heroMuted }]}>DAILY FUEL</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open today’s nutrition diary"
+          onPress={handleOpen}
+          style={({ pressed }) => [styles.open, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Text style={[premium.type.caption, { color: colors.heroInk }]}>Nutrition</Text>
+          <ArrowUpRight size={16} color={colors.heroInk} />
+        </Pressable>
+      </View>
+      <View style={[styles.energyRow, compact && styles.stacked]}>
+        <View style={styles.energyCopy}>
+          <Text style={[styles.energy, compact && styles.compactEnergy, { color: colors.heroInk }]}>
+            {format(totals.kcal)}
+          </Text>
+          <Text style={[premium.type.body, { color: colors.heroMuted }]}>kcal logged</Text>
+          <Text style={[styles.target, { color: colors.heroMuted }]}>
+            {goals.kcal !== null
+              ? `of ${format(goals.kcal)} kcal daily goal`
+              : 'Your calorie goal isn’t set yet'}
           </Text>
         </View>
-
-        <ProgressBar
-          value={totals.kcal / nutritionGoals.kcal}
-          height={8}
-          color={colors.accent}
-          style={styles.kcalBar}
-        />
-
-        {/* 4 Macros */}
-        <View style={styles.macrosRow}>
-          {macroMeta.map((m) => {
-            const macroVal = totals[m.key] || 0;
-            const macroGoal = nutritionGoals[m.key] || 1;
-            const macroColor =
-              m.key === 'protein'
-                ? colors.move
-                : m.key === 'carbs'
-                ? colors.sky
-                : m.key === 'fat'
-                ? colors.warn
-                : colors.accentStrong;
-
-            return (
-              <View key={m.key} style={styles.macroCol}>
-                <Text style={[styles.macroLabel, { color: colors.muted }]}>
-                  {m.label}
-                </Text>
-                <Text style={[styles.macroVal, { color: colors.ink }]}>
-                  {Math.round(macroVal)}
-                  <Text style={{ fontSize: 10.5, color: colors.muted }}>
-                    /{macroGoal}g
+        {!compact && (
+          <View
+            accessible
+            accessibilityLabel={
+              goals.kcal !== null && totals.kcal !== null
+                ? `${Math.round(ratio * 100)} percent of calorie goal logged`
+                : 'Calorie goal unavailable'
+            }
+          >
+            <ProgressRing
+              size={112}
+              stroke={7}
+              value={ratio}
+              color={colors.accent}
+              trackColor="rgba(244,244,238,0.12)"
+            >
+              {goals.kcal !== null && totals.kcal !== null ? (
+                <>
+                  <Text style={[styles.percent, { color: colors.heroInk }]}>
+                    {Math.round(ratio * 100)}%
                   </Text>
-                </Text>
-                <ProgressBar
-                  value={macroVal / macroGoal}
-                  height={4}
-                  color={macroColor}
-                  style={styles.macroBar}
-                />
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Meal slots grid */}
-        <View style={styles.mealsGrid}>
-          {mealOrder.map((meal) => {
-            const kcal = entries
-              .filter((e) => e.meal === meal)
-              .flatMap((e) => e.items)
-              .reduce((s, i) => s + i.kcal, 0);
-
-            return (
-              <TouchableOpacity
-                key={meal}
-                activeOpacity={0.7}
-                onPress={() =>
-                  kcal
-                    ? navigate('nutrition')
-                    : navigate('foodSearch', { meal })
-                }
-                style={[
-                  styles.mealBox,
-                  kcal
-                    ? { backgroundColor: colors.surface2 }
-                    : {
-                        borderColor: colors.line,
-                        borderWidth: 1,
-                        borderStyle: 'dashed',
-                      },
-                ]}
-              >
-                <Text style={[styles.mealLabel, { color: colors.muted }]}>
-                  {mealLabels[meal]}
-                </Text>
-                {kcal > 0 ? (
-                  <Text style={[styles.mealKcal, { color: colors.ink }]}>
-                    {Math.round(kcal)}
-                  </Text>
-                ) : (
-                  <View style={styles.logRow}>
-                    <Plus size={12} color={colors.ink} />
-                    <Text style={[styles.logText, { color: colors.ink }]}>
-                      Log
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <Text style={[premium.type.caption, { color: colors.heroMuted }]}>of goal</Text>
+                </>
+              ) : (
+                <Utensils size={25} color={colors.accent} />
+              )}
+            </ProgressRing>
+          </View>
+        )}
       </View>
-    </View>
+      {compact ? (
+        <ProgressBar
+          value={ratio}
+          color={colors.accent}
+          trackColor="rgba(244,244,238,0.12)"
+          height={5}
+          style={styles.compactProgress}
+        />
+      ) : null}
+      <Text
+        style={[styles.remaining, compact && styles.compactRemaining, { color: colors.accent }]}
+      >
+        {remaining === null
+          ? 'Log a meal to build your day.'
+          : remaining >= 0
+            ? `${format(remaining)} kcal remaining`
+            : `${format(Math.abs(remaining))} kcal above goal`}
+      </Text>
+      <View
+        style={[
+          styles.macros,
+          compact && styles.compactMacros,
+          { borderTopColor: 'rgba(244,244,238,0.16)' },
+        ]}
+      >
+        {macros.map(({ key, label }) => (
+          <View key={key} style={[styles.macro, fontScale > 1.25 && styles.macroLarge]}>
+            <Text style={[premium.type.caption, { color: colors.heroMuted }]}>{label}</Text>
+            <Text style={[styles.macroValue, { color: colors.heroInk }]}>
+              {format(totals[key])}
+              <Text style={styles.grams}> g</Text>
+            </Text>
+            <ProgressBar
+              value={progressRatio(totals[key], goals[key])}
+              color={
+                key === 'protein'
+                  ? colors.accent
+                  : key === 'carbs'
+                    ? premium.chart.inverseCarbs
+                    : premium.chart.inverseFat
+              }
+              trackColor="rgba(244,244,238,0.12)"
+              height={4}
+              style={styles.bar}
+            />
+            <Text style={[premium.type.caption, { color: colors.heroMuted }]}>
+              {goals[key] !== null ? `of ${format(goals[key])} g` : 'Goal not set'}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <View style={[styles.bottomRow, compact && styles.compactBottomRow]}>
+        <Text style={[styles.source, { color: colors.heroMuted }]}>
+          {overview.sourceLabel}
+          {overview.pendingMeals > 0 ? ' · Sync pending' : ''}
+        </Text>
+        {goals.kcal === null ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigate('nutritionPreferences')}
+            style={styles.goalAction}
+          >
+            <Text style={[premium.type.caption, { color: colors.accent }]}>Set goals</Text>
+            <ArrowUpRight size={14} color={colors.accent} />
+          </Pressable>
+        ) : null}
+      </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginVertical: 6,
-  },
-  card: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 18,
-    marginTop: 4,
-  },
-  kcalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  remainingLabel: {
-    fontSize: 12,
-  },
-  remainingVal: {
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    marginTop: 2,
-  },
-  kcalUnit: {
-    fontSize: 14,
-    fontWeight: '400',
-  },
-  consumedMeta: {
-    fontSize: 12,
-    lineHeight: 16,
-    textAlign: 'right',
-  },
-  kcalBar: {
-    marginTop: 14,
-  },
-  macrosRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 18,
-  },
-  macroCol: {
-    flex: 1,
-  },
-  macroLabel: {
-    fontSize: 11,
-  },
-  macroVal: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  macroBar: {
-    marginTop: 6,
-  },
-  mealsGrid: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 18,
-  },
-  mealBox: {
-    flex: 1,
-    height: 60,
-    borderRadius: 16,
-    padding: 8,
-    justifyContent: 'space-between',
-  },
-  mealLabel: {
-    fontSize: 11,
-  },
-  mealKcal: {
-    fontSize: 13.5,
-    fontWeight: '700',
-  },
-  logRow: {
+  card: { borderRadius: premium.radius.hero, padding: 20 },
+  compactCard: { padding: 16 },
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: -8,
   },
-  logText: {
-    fontSize: 11.5,
-    fontWeight: '600',
+  open: { minHeight: 48, flexDirection: 'row', gap: 6, alignItems: 'center', paddingLeft: 8 },
+  energyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    marginTop: 8,
   },
+  energyCopy: { flex: 1, minWidth: 0 },
+  energy: { ...premium.type.number },
+  compactEnergy: { fontSize: 36, lineHeight: 44 },
+  target: { ...premium.type.caption, marginTop: 8 },
+  stacked: { flexDirection: 'column', alignItems: 'flex-start' },
+  remaining: { ...premium.type.label, marginTop: 16 },
+  compactRemaining: { marginTop: 12 },
+  percent: { ...premium.type.metric },
+  macros: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  macro: { flex: 1, minWidth: 65, gap: 4 },
+  compactMacros: { marginTop: 16, paddingTop: 16 },
+  macroLarge: { minWidth: 104 },
+  compactProgress: { marginTop: 16 },
+  macroValue: { ...premium.type.metric, fontSize: 22 },
+  grams: { ...premium.type.caption },
+  bar: { marginVertical: 4 },
+  bottomRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    gap: 8,
+  },
+  source: { ...premium.type.caption, flexShrink: 1 },
+  compactBottomRow: { marginTop: 12 },
+  goalAction: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 4 },
 });
-

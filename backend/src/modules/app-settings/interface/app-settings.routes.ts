@@ -1,0 +1,266 @@
+import { z } from 'zod';
+import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
+import type { AppSettingsController } from './app-settings.controller.js';
+import {
+  appSettingRecordSchema,
+  geminiAdminConfigResponseSchema,
+  geminiDailyTrendItemSchema,
+  geminiFeatureUsageSchema,
+  geminiModelInfoSchema,
+  geminiModelUsageSchema,
+  getGeminiUsageEventsResponseSchema,
+  geminiUsageSummaryResponseSchema,
+  getAppSettingsResponseSchema,
+  getGeminiUsageEventsRequest,
+  publicAppConfigSchema,
+  rollbackGeminiKeyRequest,
+  testGeminiConnectionRequest,
+  testGeminiConnectionResponseSchema,
+  updateAppSettingsRequest,
+  updateGeminiConfigRequest,
+} from './app-settings.schemas.js';
+
+export function createAdminAppSettingsRoutes(
+  basePath: string,
+  controller: AppSettingsController,
+): RouteGroup {
+  return {
+    basePath,
+    routes: [
+      defineRoute({
+        method: 'get',
+        path: '/',
+        summary: 'Get All Application Settings and AI Usage Analytics',
+        description: 'Returns all system application settings and live AI quota usage analytics for administrators.',
+        tags: ['Admin Settings'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        response: {
+          status: 200,
+          description: 'Application settings retrieved',
+          message: 'Application settings retrieved successfully',
+          schema: getAppSettingsResponseSchema,
+        },
+        errorStatuses: [401, 403],
+        handler: controller.getAdminSettings,
+      }),
+      defineRoute({
+        method: 'patch',
+        path: '/',
+        summary: 'Batch Update Application Settings with Concurrency Lock',
+        description: 'Updates one or more application settings with strict validation, optimistic locking, and audit trail.',
+        tags: ['Admin Settings'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        request: updateAppSettingsRequest,
+        response: {
+          status: 200,
+          description: 'Application settings updated',
+          message: 'Application settings updated successfully',
+          schema: z.array(appSettingRecordSchema),
+        },
+        errorStatuses: [400, 401, 403, 404, 409],
+        handler: controller.updateAdminSettings,
+      }),
+    ],
+  };
+}
+
+export function createAdminAiRoutes(
+  basePath: string,
+  controller: AppSettingsController,
+): RouteGroup {
+  return {
+    basePath,
+    routes: [
+      defineRoute({
+        method: 'get',
+        path: '/configuration',
+        summary: 'Get Current Gemini Configuration',
+        description: 'Returns active Gemini model configuration, masked API key, and connection status.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        response: {
+          status: 200,
+          description: 'Gemini configuration retrieved',
+          message: 'Gemini configuration retrieved',
+          schema: geminiAdminConfigResponseSchema,
+        },
+        errorStatuses: [401, 403],
+        handler: controller.getGeminiConfig,
+      }),
+      defineRoute({
+        method: 'patch',
+        path: '/configuration',
+        summary: 'Update Gemini Models and API Key',
+        description: 'Updates default model, per-feature overrides, or rotates encrypted Gemini API key with optimistic locking.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        request: updateGeminiConfigRequest,
+        response: {
+          status: 200,
+          description: 'Gemini configuration updated',
+          message: 'Gemini configuration updated successfully',
+          schema: geminiAdminConfigResponseSchema,
+        },
+        errorStatuses: [400, 401, 403, 409],
+        handler: controller.updateGeminiConfig,
+      }),
+      defineRoute({
+        method: 'post',
+        path: '/test-connection',
+        summary: 'Test Gemini API Key Connection',
+        description: 'Sends a lightweight ping to the Gemini API using the specified or active API key to verify connectivity.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        request: testGeminiConnectionRequest,
+        response: {
+          status: 200,
+          description: 'Connection test result',
+          message: 'Gemini connection tested',
+          schema: testGeminiConnectionResponseSchema,
+        },
+        errorStatuses: [401, 403],
+        handler: controller.testGeminiConnection,
+      }),
+      defineRoute({
+        method: 'post',
+        path: '/rollback-key',
+        summary: 'Rollback to Previous Gemini API Key',
+        description: 'Restores the previously verified Gemini API key if rotation caused downstream issues.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        request: rollbackGeminiKeyRequest,
+        response: {
+          status: 200,
+          description: 'API key rolled back',
+          message: 'Gemini API key rolled back to previous version',
+          schema: geminiAdminConfigResponseSchema,
+        },
+        errorStatuses: [400, 401, 403, 409],
+        handler: controller.rollbackGeminiKey,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/models',
+        summary: 'Get Supported Gemini Models and Pricing',
+        description: 'Lists supported Gemini models, capabilities (vision, audio), and pricing per million tokens.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        response: {
+          status: 200,
+          description: 'Gemini models retrieved',
+          message: 'Gemini models and pricing retrieved',
+          schema: z.array(geminiModelInfoSchema),
+        },
+        errorStatuses: [401, 403],
+        handler: controller.getGeminiModels,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/usage/summary',
+        summary: 'Get High-Level AI Usage Summary',
+        description: 'Returns aggregated KPI metrics: today and monthly requests, token totals, estimated cost, and error counts.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        response: {
+          status: 200,
+          description: 'Usage summary retrieved',
+          message: 'Gemini usage summary retrieved',
+          schema: geminiUsageSummaryResponseSchema,
+        },
+        errorStatuses: [401, 403],
+        handler: controller.getGeminiUsageSummary,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/usage/by-feature',
+        summary: 'Get AI Token Usage Grouped by Feature',
+        description: 'Returns token consumption and cost breakdown across AI Coach, Meal Scanner, Voice Meal, etc.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        response: {
+          status: 200,
+          description: 'Usage by feature retrieved',
+          message: 'Gemini usage by feature retrieved',
+          schema: z.array(geminiFeatureUsageSchema),
+        },
+        errorStatuses: [401, 403],
+        handler: controller.getGeminiUsageByFeature,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/usage/by-model',
+        summary: 'Get AI Token Usage Grouped by Model',
+        description: 'Returns token consumption and cost breakdown across configured Gemini models.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        response: {
+          status: 200,
+          description: 'Usage by model retrieved',
+          message: 'Gemini usage by model retrieved',
+          schema: z.array(geminiModelUsageSchema),
+        },
+        errorStatuses: [401, 403],
+        handler: controller.getGeminiUsageByModel,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/usage/trends',
+        summary: 'Get Daily AI Usage and Cost Trends',
+        description: 'Returns daily request count, token volume, and estimated cost for charting.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        response: {
+          status: 200,
+          description: 'Daily trends retrieved',
+          message: 'Gemini daily trends retrieved',
+          schema: z.array(geminiDailyTrendItemSchema),
+        },
+        errorStatuses: [401, 403],
+        handler: controller.getGeminiDailyTrends,
+      }),
+      defineRoute({
+        method: 'get',
+        path: '/usage',
+        summary: 'Get Paginated Gemini API Usage Events',
+        description: 'Returns granular request-level telemetry logs with token counts, latency, and estimated cost.',
+        tags: ['Admin AI'],
+        access: { kind: 'permission', permission: 'admin:access' },
+        request: getGeminiUsageEventsRequest,
+        response: {
+          status: 200,
+          description: 'Usage events retrieved',
+          message: 'Gemini usage events retrieved',
+          schema: getGeminiUsageEventsResponseSchema,
+        },
+        errorStatuses: [400, 401, 403],
+        handler: controller.getGeminiUsageEvents,
+      }),
+    ],
+  };
+}
+
+export function createPublicAppConfigRoutes(
+  basePath: string,
+  controller: AppSettingsController,
+): RouteGroup {
+  return {
+    basePath,
+    routes: [
+      defineRoute({
+        method: 'get',
+        path: '/config',
+        summary: 'Get Public Mobile Application Configuration',
+        description: 'Returns mobile-safe remote application configuration, maintenance state, minimum version, and feature toggles.',
+        tags: ['App Config'],
+        access: { kind: 'public' },
+        response: {
+          status: 200,
+          description: 'Application configuration',
+          message: 'Application configuration retrieved',
+          schema: publicAppConfigSchema,
+        },
+        handler: controller.getPublicConfig,
+      }),
+    ],
+  };
+}

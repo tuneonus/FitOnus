@@ -57,9 +57,8 @@ export function AccountScreen() {
   };
 
   return (
-    <Screen title="Account">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <ListGroup>
+    <Screen title="Account" contentContainerStyle={styles.container}>
+      <ListGroup>
           <ListRow
             icon={UserIcon}
             title="Name"
@@ -116,7 +115,6 @@ export function AccountScreen() {
             Delete account
           </Button>
         </View>
-      </ScrollView>
 
       {/* Logout dialog */}
       <ConfirmDialog
@@ -230,8 +228,7 @@ export function AccountScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   subCard: {

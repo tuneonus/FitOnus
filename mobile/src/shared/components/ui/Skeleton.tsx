@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
+import { useReducedMotion } from 'react-native-reanimated';
 
 export type SkeletonProps = {
   width?: number | string;
@@ -18,10 +19,15 @@ export function Skeleton({
   style,
 }: SkeletonProps) {
   const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
   const effectiveRadius = radius !== undefined ? radius : borderRadius;
   const [opacityAnim] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
+    if (reducedMotion) {
+      opacityAnim.setValue(0.7);
+      return;
+    }
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(opacityAnim, {
@@ -34,11 +40,11 @@ export function Skeleton({
           duration: 800,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     pulse.start();
     return () => pulse.stop();
-  }, [opacityAnim]);
+  }, [opacityAnim, reducedMotion]);
 
   return (
     <Animated.View

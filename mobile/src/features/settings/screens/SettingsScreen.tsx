@@ -45,9 +45,8 @@ export function SettingsScreen() {
   const languageLabel = language === 'ta' ? 'தமிழ்' : 'English';
 
   return (
-    <Screen title="Settings">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* General */}
+    <Screen title="Settings" contentContainerStyle={styles.container}>
+      {/* General */}
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionHeading, { color: colors.muted }]}>General</Text>
           <ListGroup>
@@ -138,7 +137,6 @@ export function SettingsScreen() {
         <Text style={[styles.footerText, { color: colors.muted }]}>
           FitOnus 1.0 (prototype) · by TuneOnus
         </Text>
-      </ScrollView>
 
       <ConfirmDialog
         open={confirmLogout}
@@ -159,8 +157,7 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 18,
   },
   sectionBlock: {

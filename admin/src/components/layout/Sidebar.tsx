@@ -11,6 +11,7 @@ import {
   Dumbbell,
   Utensils,
   Trophy,
+  Sliders,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 
@@ -29,6 +30,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: 'Workouts', href: '/workouts', icon: Dumbbell },
     { name: 'Nutrition', href: '/nutrition', icon: Utensils },
     { name: 'Challenges', href: '/challenges', icon: Trophy },
+    { name: 'Settings', href: '/settings', icon: Sliders },
     { name: 'Audit Logs', href: '/audit-logs', icon: ScrollText },
   ];
 

@@ -2,13 +2,18 @@ import { z } from 'zod';
 import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
 import type { ChallengesAdminController } from './admin-challenges.controller.js';
 import {
-  challengeViewSchema,
-  adminListChallengesRequest,
-  adminGetChallengeRequest,
-  adminCreateChallengeRequest,
-  adminUpdateChallengeRequest,
-  adminPublishChallengeRequest,
   adminArchiveChallengeRequest,
+  adminBadgeViewSchema,
+  adminChallengeStatsSchema,
+  adminCreateBadgeRequest,
+  adminCreateChallengeRequest,
+  adminDeleteBadgeRequest,
+  adminGetChallengeRequest,
+  adminListBadgesRequest,
+  adminListChallengesRequest,
+  adminPublishChallengeRequest,
+  adminUpdateChallengeRequest,
+  challengeViewSchema,
 } from './challenges.schemas.js';
 
 const tags = ['Admin Challenges'];
@@ -58,7 +63,82 @@ export function createChallengesAdminRoutes(
         handler: (req) => controller.createChallenge(req),
       }),
 
-      // 3. Admin Get Challenge Details
+      // 3. Admin Challenge Statistics
+      defineRoute({
+        method: 'get',
+        path: '/stats',
+        summary: 'Admin Challenge Statistics',
+        description: 'Aggregate platform challenge statistics, participation, and completion metrics.',
+        tags,
+        access: { kind: 'permission', permission: 'admin:access' },
+        response: {
+          status: 200,
+          description: 'Challenge statistics',
+          message: 'Admin challenge statistics retrieved successfully',
+          schema: adminChallengeStatsSchema,
+        },
+        errorStatuses: [401, 403],
+        handler: (req) => controller.getStats(req),
+      }),
+
+      // 4. Admin List Badges
+      defineRoute({
+        method: 'get',
+        path: '/badges',
+        summary: 'Admin List Badges',
+        description: 'Browse standard and custom gamification badges catalog.',
+        tags,
+        access: { kind: 'permission', permission: 'admin:access' },
+        request: adminListBadgesRequest,
+        response: {
+          status: 200,
+          description: 'Badges list',
+          message: 'Admin badges retrieved successfully',
+          schema: z.array(adminBadgeViewSchema),
+        },
+        errorStatuses: [400, 401, 403],
+        handler: (req) => controller.listBadges(req),
+      }),
+
+      // 5. Admin Create Custom Badge
+      defineRoute({
+        method: 'post',
+        path: '/badges',
+        summary: 'Admin Create Custom Badge',
+        description: 'Register a new gamification achievement badge into the catalog.',
+        tags,
+        access: { kind: 'permission', permission: 'admin:access' },
+        request: adminCreateBadgeRequest,
+        response: {
+          status: 201,
+          description: 'Badge created',
+          message: 'Badge created successfully',
+          schema: adminBadgeViewSchema,
+        },
+        errorStatuses: [400, 401, 403, 409],
+        handler: (req) => controller.createBadge(req),
+      }),
+
+      // 6. Admin Deactivate Badge
+      defineRoute({
+        method: 'delete',
+        path: '/badges/:id',
+        summary: 'Admin Deactivate Badge',
+        description: 'Deactivates a gamification badge from future challenge rewards.',
+        tags,
+        access: { kind: 'permission', permission: 'admin:access' },
+        request: adminDeleteBadgeRequest,
+        response: {
+          status: 200,
+          description: 'Badge deactivated',
+          message: 'Badge deactivated successfully',
+          schema: z.object({ id: z.string().uuid(), deleted: z.boolean() }),
+        },
+        errorStatuses: [400, 401, 403, 404],
+        handler: (req) => controller.deleteBadge(req),
+      }),
+
+      // 7. Admin Get Challenge Details
       defineRoute({
         method: 'get',
         path: '/:challengeId',

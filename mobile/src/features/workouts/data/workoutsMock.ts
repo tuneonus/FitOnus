@@ -33,7 +33,27 @@ export const exercises: Exercise[] = [
 { id: 'kb-swing', name: 'Kettlebell Swing', muscle: 'Full body', equipment: 'Kettlebell', level: 'Intermediate', secondary: ['Glutes', 'Hamstrings'], instructions: ['Hinge and hike the bell back.', 'Snap hips to float bell to chest height.'], cues: ['Hips, not arms'] }];
 
 
-export const exerciseById = (id: string): Exercise => exercises.find((e) => e.id === id) ?? exercises[0]!;
+export const SEED_UUID_TO_SLUG: Record<string, string> = {
+  'e0000000-0000-4000-8000-000000000001': 'bench',
+  'e0000000-0000-4000-8000-000000000002': 'incline-db',
+  'e0000000-0000-4000-8000-000000000003': 'cable-fly',
+  'e0000000-0000-4000-8000-000000000004': 'oh-tricep',
+  'e0000000-0000-4000-8000-000000000005': 'dips',
+  'e0000000-0000-4000-8000-000000000006': 'lateral',
+  'e0000000-0000-4000-8000-000000000007': 'squat',
+  'e0000000-0000-4000-8000-000000000008': 'rdl',
+  'e0000000-0000-4000-8000-000000000009': 'pullup',
+  'e0000000-0000-4000-8000-000000000010': 'row',
+  'e0000000-0000-4000-8000-000000000011': 'goblet',
+  'e0000000-0000-4000-8000-000000000012': 'plank',
+  'e0000000-0000-4000-8000-000000000013': 'burpee',
+  'e0000000-0000-4000-8000-000000000014': 'kb-swing',
+};
+
+export const exerciseById = (id: string): Exercise => {
+  const resolvedId = SEED_UUID_TO_SLUG[id] ?? id;
+  return exercises.find((e) => e.id === resolvedId || (e as any).uuid === id) ?? exercises[0]!;
+};
 
 export const todaySession: WorkoutSession = {
   id: 'push-a',

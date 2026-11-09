@@ -1,58 +1,64 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { Utensils, Dumbbell, Scale, ChartNoAxesCombined } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { useTheme } from '@/hooks/use-theme';
-import type { RouteName } from '@/app/navigation/routes';
+import { premium } from '@/shared/theme/premium';
+import { ActionButton } from '@/shared/components/ui/ActionButton';
 
-const actions = [
-  { label: 'Log meal', icon: Utensils, route: 'foodSearch', color: 'move' },
-  { label: 'Workouts', icon: Dumbbell, route: 'workouts', color: 'accentStrong' },
-  { label: 'Weight', icon: Scale, route: 'weight', color: 'sky' },
-  { label: 'Reports', icon: ChartNoAxesCombined, route: 'reports', color: 'sleep' },
-] as const satisfies readonly {
-  label: string;
-  icon: typeof Scale;
-  route: RouteName;
-  color: 'move' | 'accentStrong' | 'sky' | 'sleep';
-}[];
-
-export function QuickActions() {
+export function QuickActions({ onLogMeal }: { onLogMeal?: () => void } = {}) {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-
+  const { width, fontScale } = useWindowDimensions();
+  const compact = width < 375 || fontScale > 1.2;
+  const handleLogMeal = onLogMeal ?? (() => navigate('foodSearch'));
   return (
     <View style={styles.container}>
-      {actions.map(({ label, icon: Icon, route, color }) => (
-        <TouchableOpacity
-          key={route}
-          accessibilityRole="button"
-          accessibilityLabel={label}
-          activeOpacity={0.7}
-          onPress={() => navigate(route)}
-          style={[styles.action, { backgroundColor: colors.surface, borderColor: colors.line }]}
-        >
-          <View style={[styles.icon, { backgroundColor: `${colors[color]}15` }]}>
-            <Icon size={21} color={colors[color]} strokeWidth={1.8} />
-          </View>
-          <Text style={[styles.label, { color: colors.ink }]}>{label}</Text>
-        </TouchableOpacity>
-      ))}
+      <ActionButton title="Log a meal" icon={Utensils} onPress={handleLogMeal} />
+      <View style={[styles.secondary, compact && styles.wrap]}>
+        {(
+          [
+            { label: 'Workouts', icon: Dumbbell, route: 'workouts' },
+            { label: 'Log weight', icon: Scale, route: 'weight' },
+            { label: 'Reports', icon: ChartNoAxesCombined, route: 'reports' },
+          ] as const
+        ).map(({ label, icon: Icon, route }) => (
+          <Pressable
+            key={route}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            onPress={() => navigate(route)}
+            style={({ pressed }) => [
+              styles.action,
+              compact && styles.compactAction,
+              { borderColor: colors.line, opacity: pressed ? 0.6 : 1 },
+            ]}
+          >
+            <Icon size={18} strokeWidth={1.7} color={colors.ink} />
+            <Text style={[styles.label, { color: colors.ink }]}>{label}</Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', gap: 8, marginTop: 10, marginBottom: 12 },
+  container: { gap: 8 },
+  secondary: { flexDirection: 'row', gap: 8 },
+  wrap: { flexWrap: 'wrap' },
   action: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 3,
+    justifyContent: 'center',
+    gap: 7,
+    minHeight: 48,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderRadius: 22,
-    gap: 9,
+    borderRadius: premium.radius.control,
   },
-  icon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 11.5, fontWeight: '600', textAlign: 'center' },
+  compactAction: { flexGrow: 1, flexBasis: '40%' },
+  label: { ...premium.type.caption, flexShrink: 1 },
 });

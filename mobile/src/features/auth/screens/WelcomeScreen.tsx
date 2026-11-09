@@ -4,6 +4,7 @@ import {
   Text,
   Image,
   TouchableOpacity,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,58 +21,64 @@ export function WelcomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.hero }]}>
-      {/* Hero Image */}
-      <View style={styles.imageContainer}>
-        <Image
-          source={images.welcomeHero}
-          style={styles.heroImage}
-          resizeMode="cover"
-        />
-        <View style={[styles.logoOverlay, { top: Math.max(insets.top + 8, 48) }]}>
-          <Logo size={38} withWordmark tone="hero" />
-        </View>
-      </View>
-
-      {/* Content Section */}
-      <View
-        style={[
-          styles.contentSection,
-          { paddingBottom: Math.max(insets.bottom, 24) },
-        ]}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.headline, { color: colors.heroInk }]}>
-          A coach that reads your body, not just your steps.
-        </Text>
-        <Text style={[styles.subheadline, { color: colors.heroMuted }]}>
-          FitOnus turns sleep, recovery, training and meals into one clear plan
-          — and answers your questions in plain language.
-        </Text>
-
-        <View style={styles.buttonStack}>
-          <Button
-            title="Create account"
-            size="lg"
-            fullWidth
-            onPress={() => navigate('signup')}
+        {/* Hero Image */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={images.welcomeHero}
+            style={styles.heroImage}
+            resizeMode="cover"
           />
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => navigate('login')}
-            style={[
-              styles.secondaryButton,
-              { borderColor: 'rgba(244, 244, 238, 0.2)' },
-            ]}
-          >
-            <Text style={[styles.secondaryButtonText, { color: colors.heroInk }]}>
-              I already have an account
-            </Text>
-          </TouchableOpacity>
+          <View style={[styles.logoOverlay, { top: Math.max(insets.top + 8, 48) }]}>
+            <Logo size={38} withWordmark tone="hero" />
+          </View>
         </View>
 
-        <Text style={[styles.legalText, { color: colors.heroMuted }]}>
-          By continuing you agree to our Terms and Privacy Policy.
-        </Text>
-      </View>
+        {/* Content Section */}
+        <View
+          style={[
+            styles.contentSection,
+            { paddingBottom: Math.max(insets.bottom, 24) },
+          ]}
+        >
+          <Text style={[styles.headline, { color: colors.heroInk }]}>
+            A coach that reads your body, not just your steps.
+          </Text>
+          <Text style={[styles.subheadline, { color: colors.heroMuted }]}>
+            FitOnus turns sleep, recovery, training and meals into one clear plan
+            — and answers your questions in plain language.
+          </Text>
+
+          <View style={styles.buttonStack}>
+            <Button
+              title="Create account"
+              size="lg"
+              fullWidth
+              onPress={() => navigate('signup')}
+            />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => navigate('login')}
+              style={[
+                styles.secondaryButton,
+                { borderColor: 'rgba(244, 244, 238, 0.2)' },
+              ]}
+            >
+              <Text style={[styles.secondaryButtonText, { color: colors.heroInk }]}>
+                I already have an account
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[styles.legalText, { color: colors.heroMuted }]}>
+            By continuing you agree to our Terms and Privacy Policy.
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -80,8 +87,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+  },
   imageContainer: {
     flex: 1,
+    minHeight: 280,
     position: 'relative',
     overflow: 'hidden',
   },

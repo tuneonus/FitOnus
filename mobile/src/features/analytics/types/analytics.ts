@@ -144,14 +144,18 @@ export interface GoalsHabitsAnalyticsView {
 }
 
 export interface PeriodComparisonItem {
-  key: string;
+  key?: string;
   label: string;
-  currentValue: number;
-  priorValue: number;
-  delta: number;
-  deltaPct: number | null;
-  trend: 'up' | 'down' | 'neutral';
-  isImprovement: boolean;
+  current?: string;
+  previous?: string;
+  currentValue?: number;
+  priorValue?: number;
+  delta?: number;
+  deltaPct?: number | null;
+  pctChange?: number;
+  trend?: 'up' | 'down' | 'neutral';
+  isImprovement?: boolean;
+  better?: boolean;
 }
 
 export interface ActivityOverviewView {

@@ -48,19 +48,16 @@ export function GoalsScreen() {
       headerRight={
         <IconButton icon={Plus} label="Create goal" onPress={() => navigate('goalCreate')} />
       }
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.accent}
+          colors={[colors.accent]}
+        />
+      }
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-          />
-        }
-      >
+      <View style={styles.container}>
         <SegmentedControl
           options={[
             {
@@ -151,7 +148,7 @@ export function GoalsScreen() {
             )}
           </View>
         )}
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
@@ -301,7 +298,6 @@ function HabitRow({ habit, onToggle }: { habit: Habit; onToggle: () => void }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
     paddingBottom: 32,
     gap: 16,
   },

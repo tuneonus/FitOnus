@@ -55,34 +55,42 @@ export function formatComparisonValue(item: PeriodComparisonItem): {
   currentFormatted: string;
   priorFormatted: string;
 } {
-  const k = item.key.toLowerCase();
+  if (typeof item.current === 'string' && typeof item.previous === 'string') {
+    return {
+      currentFormatted: item.current,
+      priorFormatted: item.previous,
+    };
+  }
+  const k = (item.key || item.label || '').toLowerCase();
+  const curr = typeof item.currentValue === 'number' ? item.currentValue : 0;
+  const prior = typeof item.priorValue === 'number' ? item.priorValue : 0;
   if (k.includes('weight')) {
     return {
-      currentFormatted: `${item.currentValue.toFixed(1)} kg`,
-      priorFormatted: `${item.priorValue.toFixed(1)} kg`,
+      currentFormatted: `${curr.toFixed(1)} kg`,
+      priorFormatted: `${prior.toFixed(1)} kg`,
     };
   }
   if (k.includes('cal')) {
     return {
-      currentFormatted: `${Math.round(item.currentValue).toLocaleString()} kcal`,
-      priorFormatted: `${Math.round(item.priorValue).toLocaleString()} kcal`,
+      currentFormatted: `${Math.round(curr).toLocaleString()} kcal`,
+      priorFormatted: `${Math.round(prior).toLocaleString()} kcal`,
     };
   }
   if (k.includes('pro')) {
     return {
-      currentFormatted: `${Math.round(item.currentValue)} g`,
-      priorFormatted: `${Math.round(item.priorValue)} g`,
+      currentFormatted: `${Math.round(curr)} g`,
+      priorFormatted: `${Math.round(prior)} g`,
     };
   }
   if (k.includes('water') || k.includes('hydration')) {
     return {
-      currentFormatted: `${(item.currentValue / 1000).toFixed(1)} L`,
-      priorFormatted: `${(item.priorValue / 1000).toFixed(1)} L`,
+      currentFormatted: `${(curr / 1000).toFixed(1)} L`,
+      priorFormatted: `${(prior / 1000).toFixed(1)} L`,
     };
   }
   return {
-    currentFormatted: item.currentValue.toLocaleString(),
-    priorFormatted: item.priorValue.toLocaleString(),
+    currentFormatted: curr.toLocaleString(),
+    priorFormatted: prior.toLocaleString(),
   };
 }
 

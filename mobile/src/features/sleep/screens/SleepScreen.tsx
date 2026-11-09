@@ -48,9 +48,8 @@ export function SleepScreen() {
   ];
 
   return (
-    <Screen title="Sleep">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <SegmentedControl
+    <Screen title="Sleep" contentContainerStyle={styles.container}>
+      <SegmentedControl
           options={[
             { value: 'night', label: 'Last night' },
             { value: 'trends', label: 'Trends' },
@@ -226,15 +225,13 @@ export function SleepScreen() {
             </View>
           </View>
         )}
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   viewContent: {

@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
-import { Dumbbell, Activity, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Dumbbell, Activity, CheckCircle, Flame, Scale } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { AdminUserDetail } from '../types';
+import { profilesApi } from '../api';
+import type { AdminUserDetail, AdminUserActivity } from '../types';
 
 interface UserDetailModalProps {
   isOpen: boolean;
@@ -20,6 +21,31 @@ export function UserDetailModal({
   userDetail,
   isLoading,
 }: UserDetailModalProps) {
+  const [activity, setActivity] = useState<AdminUserActivity | null>(null);
+  const [isLoadingActivity, setIsLoadingActivity] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isOpen && userDetail?.user?.id) {
+      setIsLoadingActivity(true);
+      profilesApi
+        .getUserActivity(userDetail.user.id)
+        .then((data) => {
+          if (isMounted) setActivity(data);
+        })
+        .catch(() => {
+          if (isMounted) setActivity(null);
+        })
+        .finally(() => {
+          if (isMounted) setIsLoadingActivity(false);
+        });
+    } else {
+      setActivity(null);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, userDetail?.user?.id]);
   return (
     <Modal
       isOpen={isOpen}
@@ -199,58 +225,111 @@ export function UserDetailModal({
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-purple-400" />
                 <span className="font-semibold text-white">
-                  Activity & Logs Summary
+                  Real Activity & Logs Summary
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                Phase 11 Scope
+              <span className="text-[10px] font-semibold text-teal-400 bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" /> Live Data Connected
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
-                <span className="text-[10px] text-slate-400">Workout Plan</span>
-                <p className="text-xs font-semibold text-slate-200 mt-0.5">
-                  {userDetail.profileMetadata.workoutDaysPerWeek
-                    ? `${userDetail.profileMetadata.workoutDaysPerWeek}d/wk • ${userDetail.profileMetadata.preferredWorkoutDurationMin || 45}m`
-                    : 'Unconfigured'}
-                </p>
+            {isLoadingActivity ? (
+              <div className="py-6 flex justify-center">
+                <LoadingSpinner size="sm" label="Fetching user activity..." />
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <Dumbbell className="h-3 w-3 text-teal-400" />
+                      <span>Workouts</span>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-200 mt-0.5">
+                      {activity?.workouts.totalSessions ?? 0} sessions
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {activity?.workouts.totalDurationMin ?? 0}m • {activity?.workouts.totalVolumeKg ?? 0}kg
+                    </p>
+                  </div>
 
-              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
-                <span className="text-[10px] text-slate-400">Nutrition Plan</span>
-                <p className="text-xs font-semibold text-slate-200 mt-0.5 capitalize">
-                  {userDetail.profileMetadata.dietType || 'Standard'}
-                </p>
-              </div>
+                  <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <Flame className="h-3 w-3 text-amber-400" />
+                      <span>Nutrition</span>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-200 mt-0.5">
+                      {activity?.nutrition.totalMeals ?? 0} meals logged
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {activity?.nutrition.avgDailyCalories ?? 0} kcal avg
+                    </p>
+                  </div>
 
-              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
-                <span className="text-[10px] text-slate-400">Active Sessions</span>
-                <p className="text-xs font-semibold text-teal-300 mt-0.5">
-                  {userDetail.sessionsSummary.activeSessionsCount} token(s)
-                </p>
-              </div>
+                  <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <Scale className="h-3 w-3 text-sky-400" />
+                      <span>Body Weight</span>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-200 mt-0.5">
+                      {activity?.weight.currentWeightKg != null
+                        ? `${activity.weight.currentWeightKg} kg`
+                        : 'No weight logged'}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {activity?.weight.totalEntries ?? 0} check-ins
+                    </p>
+                  </div>
 
-              <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
-                <span className="text-[10px] text-slate-400">Health History</span>
-                <p className="text-xs font-semibold text-slate-400 mt-0.5">
-                  Protected (HIPAA)
-                </p>
-              </div>
-            </div>
+                  <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2.5">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <Activity className="h-3 w-3 text-indigo-400" />
+                      <span>Active Sessions</span>
+                    </div>
+                    <p className="text-xs font-semibold text-teal-300 mt-0.5">
+                      {userDetail.sessionsSummary.activeSessionsCount} active
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {userDetail.sessionsSummary.lastActiveAt
+                        ? 'Recently active'
+                        : 'No active session'}
+                    </p>
+                  </div>
+                </div>
 
-            {/* Missing Backend Endpoint Notice */}
-            <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-[11px] text-amber-300">
-              <Info className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold">Backend Endpoint Pending: </span>
-                Individual member workout session logs and historical meal entries (
-                <code className="font-mono text-[10px] text-amber-200 bg-amber-500/20 px-1 py-0.5 rounded">
-                  GET /api/v1/admin/users/:id/activity
-                </code>
-                ) are scheduled for Phase 11 Real Data Integration. Zero mock activity data is fabricated.
-              </div>
-            </div>
+                {/* Recent Activity Items */}
+                {activity && (activity.workouts.recentSessions.length > 0 || activity.nutrition.recentMeals.length > 0) ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    {activity.workouts.recentSessions.length > 0 && (
+                      <div className="rounded-lg bg-slate-900/40 border border-slate-800/80 p-2.5 space-y-1.5">
+                        <span className="text-[11px] font-semibold text-teal-400">Recent Workouts</span>
+                        {activity.workouts.recentSessions.slice(0, 3).map((s) => (
+                          <div key={s.id} className="flex items-center justify-between text-[11px] text-slate-300 border-b border-slate-800/40 pb-1 last:border-none">
+                            <span className="truncate max-w-[140px]">{s.name}</span>
+                            <span className="text-slate-400">{s.durationMin}m • {new Date(s.startedAt).toLocaleDateString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {activity.nutrition.recentMeals.length > 0 && (
+                      <div className="rounded-lg bg-slate-900/40 border border-slate-800/80 p-2.5 space-y-1.5">
+                        <span className="text-[11px] font-semibold text-amber-400">Recent Meals</span>
+                        {activity.nutrition.recentMeals.slice(0, 3).map((m) => (
+                          <div key={m.id} className="flex items-center justify-between text-[11px] text-slate-300 border-b border-slate-800/40 pb-1 last:border-none">
+                            <span className="capitalize">{m.mealType}</span>
+                            <span className="text-slate-400">{m.calories} kcal • {new Date(m.loggedAt).toLocaleDateString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-lg bg-slate-900/40 border border-slate-800/60 p-2.5 text-center text-[11px] text-slate-400">
+                    No workout sessions or meal logs recorded for this user yet.
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Timestamps */}

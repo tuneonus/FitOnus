@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
 
 export type SectionHeaderProps = {
   title: string;
@@ -9,6 +10,7 @@ export type SectionHeaderProps = {
   action?: string;
   onAction?: () => void;
   style?: ViewStyle;
+  appearance?: 'default' | 'premium';
 };
 
 export function SectionHeader({
@@ -18,6 +20,7 @@ export function SectionHeader({
   action,
   onAction,
   style,
+  appearance = 'default',
 }: SectionHeaderProps) {
   const { colors } = useTheme();
   const label = actionLabel || action;
@@ -25,11 +28,18 @@ export function SectionHeader({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.titleColumn}>
-        <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
+        <Text
+          accessibilityRole="header"
+          style={[
+            styles.title,
+            appearance === 'premium' && premium.type.title,
+            { color: colors.ink },
+          ]}
+        >
+          {title}
+        </Text>
         {subtitle ? (
-          <Text style={[styles.subtitle, { color: colors.muted }]}>
-            {subtitle}
-          </Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>{subtitle}</Text>
         ) : null}
       </View>
 
@@ -37,11 +47,12 @@ export function SectionHeader({
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onAction}
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: ${title}`}
+          style={appearance === 'premium' ? styles.premiumAction : undefined}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.action, { color: colors.ink }]}>
-            {label}
-          </Text>
+          <Text style={[styles.action, { color: colors.ink }]}>{label}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -70,5 +81,12 @@ const styles = StyleSheet.create({
   action: {
     fontSize: 13.5,
     fontWeight: '600',
+  },
+  premiumAction: {
+    minHeight: premium.layout.touch,
+    minWidth: premium.layout.touch,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginLeft: premium.space.md,
   },
 });

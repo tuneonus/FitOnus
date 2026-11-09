@@ -49,33 +49,30 @@ export function AppearanceScreen() {
   };
 
   return (
-    <Screen title="Appearance">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.optionsList}>
-          {options.map((o) => (
-            <OptionCard
-              key={o.value}
-              title={o.title}
-              description={o.description}
-              icon={o.icon}
-              selected={theme === o.value}
-              onSelect={() => handleSelect(o.value)}
-            />
-          ))}
-        </View>
+    <Screen title="Appearance" contentContainerStyle={styles.container}>
+      <View style={styles.optionsList}>
+        {options.map((o) => (
+          <OptionCard
+            key={o.value}
+            title={o.title}
+            description={o.description}
+            icon={o.icon}
+            selected={theme === o.value}
+            onSelect={() => handleSelect(o.value)}
+          />
+        ))}
+      </View>
 
-        <Text style={[styles.footnote, { color: colors.muted }]}>
-          Changes apply immediately. Chart colors are tuned for contrast in both themes.
-        </Text>
-      </ScrollView>
+      <Text style={[styles.footnote, { color: colors.muted }]}>
+        Changes apply immediately. Chart colors are tuned for contrast in both themes.
+      </Text>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   optionsList: {

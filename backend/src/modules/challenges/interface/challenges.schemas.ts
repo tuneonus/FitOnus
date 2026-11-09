@@ -242,3 +242,61 @@ export const adminPublishChallengeRequest = {
 export const adminArchiveChallengeRequest = {
   params: challengeIdParam,
 };
+
+export const adminChallengeStatsSchema = z.object({
+  totalChallenges: z.number().int().nonnegative(),
+  publishedChallenges: z.number().int().nonnegative(),
+  totalEnrollments: z.number().int().nonnegative(),
+  activeParticipants: z.number().int().nonnegative(),
+  completedEnrollments: z.number().int().nonnegative(),
+  completionRatePct: z.number().min(0).max(100),
+  totalBadgesAwarded: z.number().int().nonnegative(),
+  totalPointsAwarded: z.number().int().nonnegative(),
+});
+
+export const adminBadgeViewSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string(),
+  name: z.string(),
+  description: z.string(),
+  category: z.enum(['workout', 'streak', 'nutrition', 'strength', 'milestone', 'challenge']),
+  tier: z.enum(['bronze', 'silver', 'gold', 'platinum', 'special']),
+  iconName: z.string(),
+  pointsValue: z.number().int().nonnegative(),
+  unlockCondition: z.record(z.string(), z.unknown()),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const adminCreateBadgeRequest = {
+  body: z
+    .object({
+      slug: z
+        .string()
+        .trim()
+        .min(3)
+        .max(100)
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase alphanumeric with single hyphens'),
+      name: z.string().trim().min(2).max(120),
+      description: z.string().trim().min(5).max(1000),
+      category: z.enum(['workout', 'streak', 'nutrition', 'strength', 'milestone', 'challenge']),
+      tier: z.enum(['bronze', 'silver', 'gold', 'platinum', 'special']).default('bronze').optional(),
+      iconName: z.string().trim().min(1).max(50).default('medal').optional(),
+      pointsValue: z.number().int().min(0).max(10000).default(50).optional(),
+      unlockCondition: z.record(z.string(), z.unknown()).default({}).optional(),
+    })
+    .strict(),
+};
+
+export const adminListBadgesRequest = {
+  query: z.object({
+    category: z.enum(['workout', 'streak', 'nutrition', 'strength', 'milestone', 'challenge']).optional(),
+  }),
+};
+
+export const adminDeleteBadgeRequest = {
+  params: z.object({
+    id: z.string().uuid('Invalid badge ID'),
+  }),
+};

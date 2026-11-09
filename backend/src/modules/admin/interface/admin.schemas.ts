@@ -45,6 +45,12 @@ export const adminChangePasswordResponseSchema = z.object({
   revokedSessions: z.number().int().nonnegative(),
 });
 
+export const getDashboardStatsRequest = {
+  query: z.object({
+    timeframe: z.enum(['7d', '14d', '30d', '90d']).default('14d').optional(),
+  }),
+};
+
 export const dashboardStatsSchema = z.object({
   totalUsers: z.number().int(),
   activeUsers: z.number().int(),
@@ -88,6 +94,56 @@ export const listAdminUsersRequest = {
 export const getUserRequest = {
   params: idParamsSchema,
 };
+
+export const getUserActivityRequest = {
+  params: idParamsSchema,
+};
+
+export const adminUserActivitySchema = z.object({
+  userId: z.uuid(),
+  workouts: z.object({
+    totalSessions: z.number().int().nonnegative(),
+    totalDurationMin: z.number().int().nonnegative(),
+    totalVolumeKg: z.number().nonnegative(),
+    recentSessions: z.array(
+      z.object({
+        id: z.uuid(),
+        name: z.string(),
+        startedAt: z.iso.datetime(),
+        completedAt: z.iso.datetime().nullable(),
+        durationMin: z.number().int().nonnegative(),
+        volumeKg: z.number().nonnegative(),
+      }),
+    ),
+  }),
+  nutrition: z.object({
+    totalMeals: z.number().int().nonnegative(),
+    avgDailyCalories: z.number().int().nonnegative(),
+    recentMeals: z.array(
+      z.object({
+        id: z.uuid(),
+        mealType: z.string(),
+        calories: z.number().int().nonnegative(),
+        proteinG: z.number().nonnegative(),
+        carbsG: z.number().nonnegative(),
+        fatG: z.number().nonnegative(),
+        loggedAt: z.iso.datetime(),
+      }),
+    ),
+  }),
+  weight: z.object({
+    currentWeightKg: z.number().nullable(),
+    startingWeightKg: z.number().nullable(),
+    totalEntries: z.number().int().nonnegative(),
+    recentEntries: z.array(
+      z.object({
+        id: z.uuid(),
+        weightKg: z.number(),
+        loggedAt: z.iso.datetime(),
+      }),
+    ),
+  }),
+});
 
 export const adminUserListItemSchema = z.object({
   id: z.uuid(),

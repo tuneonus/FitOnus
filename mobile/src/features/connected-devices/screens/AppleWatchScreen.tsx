@@ -64,9 +64,8 @@ export function AppleWatchScreen() {
   }
 
   return (
-    <Screen title="Apple Watch">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Watch Hero Card */}
+    <Screen title="Apple Watch" contentContainerStyle={styles.container}>
+      {/* Watch Hero Card */}
         <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
           <View style={[styles.heroIconBox, { backgroundColor: colors.surface }]}>
             <Watch size={28} color={colors.accent} />
@@ -199,15 +198,13 @@ export function AppleWatchScreen() {
             Stop using this watch
           </Button>
         </View>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   heroCard: {

@@ -1,41 +1,49 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import { Dumbbell, Plus, Search, SearchX } from 'lucide-react-native';
-import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
-import { Screen } from '../../../shared/components/ui/Screen';
-import { TextField } from '../../../shared/components/ui/TextField';
-import { Chip } from '../../../shared/components/ui/Chip';
-import { EmptyState } from '../../../shared/components/ui/EmptyState';
-import { showToast } from '../../../shared/stores/toastStore';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
+import { FeatureScreen } from '@/shared/components/ui/FeatureScreen';
+import { TextField } from '@/shared/components/ui/TextField';
+import { Chip } from '@/shared/components/ui/Chip';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { StatusBanner } from '@/shared/components/ui/StatusBanner';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { showToast } from '@/shared/stores/toastStore';
 import { useWorkoutStore } from '../store/workoutStore';
+import { workoutApi } from '../api/workout-api';
+import { filterExercises } from '../utils/premium-workout';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
 
 const muscles = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Full body'];
-
 export function ExerciseLibraryScreen() {
   const { colors } = useTheme();
   const { navigate, goBack } = useNavigation();
   const { pick } = useRouteParams<{ pick?: string }>();
-  const { plannedSession, setPlannedSession, catalog, loadExercises } = useWorkoutStore();
+  const { plannedSession, setPlannedSession, catalog: savedCatalog } = useWorkoutStore();
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState('All');
-
-  React.useEffect(() => {
-    loadExercises();
-  }, [loadExercises]);
-
-  const results = catalog.filter(
-    (e) =>
-      (muscle === 'All' ||
-        e.muscle === muscle ||
-        e.primaryMuscles?.some((m) => m.toLowerCase() === muscle.toLowerCase())) &&
-      e.name.toLowerCase().includes(query.toLowerCase())
-  );
-
+  const [equipment, setEquipment] = useState('All');
+  const library = useQuery({
+    queryKey: ['exercises', 'premium-library'],
+    queryFn: () => workoutApi.getExercises({ limit: 100 }),
+    retry: 1,
+  });
+  const catalog = library.data?.exercises ?? savedCatalog;
+  useEffect(() => {
+    if (library.data) useWorkoutStore.setState({ catalog: library.data.exercises });
+  }, [library.data]);
+  const equipmentOptions = ['All', ...new Set(catalog.map((exercise) => exercise.equipment))];
+  const results = filterExercises(catalog, query, muscle, equipment);
+  const clear = () => {
+    setQuery('');
+    setMuscle('All');
+    setEquipment('All');
+  };
   const add = (id: string) => {
-    if (plannedSession.exercises.some((e) => e.exerciseId === id)) {
+    if (plannedSession.exercises.some((exercise) => exercise.exerciseId === id))
       return showToast({ message: 'Already in this workout', tone: 'info' });
-    }
     setPlannedSession({
       ...plannedSession,
       exercises: [
@@ -46,161 +54,161 @@ export function ExerciseLibraryScreen() {
     showToast({ message: 'Exercise added' });
     goBack();
   };
-
   return (
-    <Screen title={pick ? 'Add exercise' : 'Exercise library'}>
-      <View style={styles.searchWrap}>
-        <TextField
-          label="Search exercises"
-          hideLabel
-          placeholder="Search exercises"
-          value={query}
-          onChangeText={setQuery}
-          trailing={<Search size={18} color={colors.muted} />}
-        />
-      </View>
-
+    <FeatureScreen title={pick ? 'Add a movement' : 'Exercise library'}>
+      <TextField
+        appearance="premium"
+        label="Search exercises"
+        hideLabel
+        placeholder="Search by exercise name"
+        value={query}
+        onChangeText={setQuery}
+        autoCorrect={false}
+        trailing={<Search size={20} color={colors.muted} />}
+      />
+      <Text style={[styles.filterLabel, { color: colors.muted }]}>MUSCLE GROUP</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsScroll}
+        contentContainerStyle={styles.filters}
       >
-        {muscles.map((m) => (
+        {muscles.map((value) => (
           <Chip
-            key={m}
-            selected={muscle === m}
-            label={m}
-            onPress={() => setMuscle(m)}
+            appearance="premium"
+            key={value}
+            selected={muscle === value}
+            label={value}
+            onPress={() => setMuscle(value)}
           />
         ))}
       </ScrollView>
-
-      {results.length === 0 ? (
-        <EmptyState
-          icon={SearchX}
-          title="No exercises found"
-          body="Try another name or clear the muscle filter."
-          actionLabel="Clear filters"
+      <Text style={[styles.filterLabel, { color: colors.muted }]}>EQUIPMENT</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filters}
+      >
+        {equipmentOptions.map((value) => (
+          <Chip
+            appearance="premium"
+            key={value}
+            selected={equipment === value}
+            label={value}
+            onPress={() => setEquipment(value)}
+          />
+        ))}
+      </ScrollView>
+      {library.isError ? (
+        <StatusBanner
+          tone="error"
+          title="Couldn’t refresh the library"
+          body="Showing available exercise options. Try again to load the latest catalog."
+          actionLabel="Retry"
           onAction={() => {
-            setQuery('');
-            setMuscle('All');
+            void library.refetch();
           }}
+          style={styles.notice}
+        />
+      ) : null}
+      {library.isLoading ? (
+        <View
+          accessibilityLabel="Loading exercises"
+          accessibilityState={{ busy: true }}
+          style={styles.list}
+        >
+          {[0, 1, 2].map((key) => (
+            <Skeleton key={key} height={96} radius={premium.radius.card} />
+          ))}
+        </View>
+      ) : results.length === 0 ? (
+        <EmptyState
+          appearance="premium"
+          icon={SearchX}
+          title="No matching exercises"
+          body="Try another name, muscle group or equipment filter."
+          actionLabel="Clear filters"
+          onAction={clear}
         />
       ) : (
-        <View style={styles.listContainer}>
-          {results.map((e, idx) => (
+        <View style={styles.list}>
+          <Text
+            accessibilityLiveRegion="polite"
+            style={[premium.type.caption, { color: colors.muted }]}
+          >
+            {results.length} {results.length === 1 ? 'exercise' : 'exercises'}
+          </Text>
+          {results.map((exercise) => (
             <View
-              key={e.id}
-              style={[
-                styles.itemRow,
-                idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line },
-              ]}
+              key={exercise.id}
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}
             >
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`View ${exercise.name}`}
                 activeOpacity={0.7}
-                onPress={() => navigate('exerciseDetail', { id: e.id })}
-                style={styles.itemMain}
+                onPress={() => navigate('exerciseDetail', { id: exercise.id })}
+                style={styles.main}
               >
-                {e.image ? (
-                  <Image source={{ uri: e.image }} style={styles.thumbImage} />
+                {exercise.image ? (
+                  <Image source={{ uri: exercise.image }} style={styles.thumb} />
                 ) : (
-                  <View
-                    style={[
-                      styles.thumbBox,
-                      { backgroundColor: colors.surface2 },
-                    ]}
-                  >
-                    <Dumbbell size={20} color={colors.muted} />
+                  <View style={[styles.thumb, { backgroundColor: colors.surface2 }]}>
+                    <Dumbbell size={23} color={colors.accentStrong} />
                   </View>
                 )}
-                <View style={styles.itemTextCol}>
-                  <Text
-                    style={[styles.itemName, { color: colors.ink }]}
-                    numberOfLines={1}
-                  >
-                    {e.name}
-                  </Text>
-                  <Text style={[styles.itemSub, { color: colors.muted }]}>
-                    {e.muscle} · {e.equipment} · {e.level}
+                <View style={styles.copy}>
+                  <Text style={[premium.type.label, { color: colors.ink }]}>{exercise.name}</Text>
+                  <Text style={[premium.type.caption, { color: colors.muted }]}>
+                    {[exercise.muscle, exercise.equipment, exercise.level]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </Text>
                 </View>
               </TouchableOpacity>
-
-              {Boolean(pick) && (
+              {pick ? (
                 <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => add(e.id)}
-                  style={[
-                    styles.addBtn,
-                    { backgroundColor: colors.accent },
-                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add ${exercise.name} to workout`}
+                  onPress={() => add(exercise.id)}
+                  style={[styles.add, { backgroundColor: colors.accent }]}
                 >
-                  <Plus size={18} color={colors.accentInk} />
+                  <Plus size={20} color={colors.accentInk} />
                 </TouchableOpacity>
-              )}
+              ) : null}
             </View>
           ))}
         </View>
       )}
-    </Screen>
+    </FeatureScreen>
   );
 }
-
 const styles = StyleSheet.create({
-  searchWrap: {
-    paddingHorizontal: 16,
-  },
-  chipsScroll: {
-    paddingHorizontal: 16,
+  filterLabel: { ...premium.type.eyebrow, marginTop: 20, marginBottom: 10 },
+  filters: { gap: 8, paddingBottom: 4 },
+  notice: { marginTop: 20 },
+  list: { gap: 12, marginTop: 24, paddingBottom: 24 },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: premium.radius.card,
+    padding: 16,
   },
-  listContainer: {
-    paddingHorizontal: 16,
-    marginTop: 16,
-    paddingBottom: 32,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    gap: 12,
-  },
-  itemMain: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  thumbImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-  },
-  thumbBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64 },
+  thumb: {
+    width: 52,
+    height: 64,
+    borderRadius: premium.radius.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  itemTextCol: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  itemSub: {
-    fontSize: 12.5,
-    marginTop: 2,
-  },
-  addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  copy: { flex: 1, gap: 6 },
+  add: {
+    width: 48,
+    height: 48,
+    borderRadius: premium.radius.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
 });
-

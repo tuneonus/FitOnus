@@ -9,6 +9,7 @@ import { ListAuditLogsUseCase } from '../../../src/modules/admin/application/use
 import type {
   AdminAuditLogView,
   AdminRepository,
+  AdminUserActivityView,
   AdminUserDetailView,
   AdminUserListItemView,
   ListAdminUsersQuery,
@@ -61,6 +62,29 @@ class InMemoryAdminRepository implements AdminRepository {
 
   getUserDetail(id: string): Promise<AdminUserDetailView | null> {
     return Promise.resolve(this.userDetails.get(id) ?? null);
+  }
+
+  getUserActivity(userId: string): Promise<AdminUserActivityView> {
+    return Promise.resolve({
+      userId,
+      workouts: {
+        totalSessions: 0,
+        totalDurationMin: 0,
+        totalVolumeKg: 0,
+        recentSessions: [],
+      },
+      nutrition: {
+        totalMeals: 0,
+        avgDailyCalories: 0,
+        recentMeals: [],
+      },
+      weight: {
+        currentWeightKg: null,
+        startingWeightKg: null,
+        totalEntries: 0,
+        recentEntries: [],
+      },
+    });
   }
 
   recordAuditLog(log: {

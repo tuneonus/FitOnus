@@ -31,9 +31,8 @@ export function WearOsScreen() {
   const { navigate } = useNavigation();
 
   return (
-    <Screen title="Wear OS">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Future Preview Header Card */}
+    <Screen title="Wear OS" contentContainerStyle={styles.container}>
+      {/* Future Preview Header Card */}
         <View style={[styles.previewCard, { borderColor: colors.line }]}>
           <View style={styles.cardTopRow}>
             <View style={[styles.iconCircle, { backgroundColor: colors.surface2 }]}>
@@ -104,15 +103,13 @@ export function WearOsScreen() {
         >
           Notify me
         </Button>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   previewCard: {

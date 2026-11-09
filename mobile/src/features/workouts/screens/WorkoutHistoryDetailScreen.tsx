@@ -1,7 +1,8 @@
+import { premium } from '@/shared/theme/premium';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
-import { Screen } from '../../../shared/components/ui/Screen';
+import { FeatureScreen as Screen } from '@/shared/components/ui/FeatureScreen';
 import { SourceTag } from '../../../shared/components/ui/SourceTag';
 import { Dumbbell } from 'lucide-react-native';
 import { Button } from '../../../shared/components/ui/Button';
@@ -19,6 +20,7 @@ export function WorkoutHistoryDetailScreen() {
     return (
       <Screen title="Workout detail">
         <EmptyState
+          appearance="premium"
           icon={Dumbbell}
           title="Workout not found"
           body="This workout session does not exist or has been removed."
@@ -48,7 +50,7 @@ export function WorkoutHistoryDetailScreen() {
           {[
             ['Duration', `${log.durationMin} min`],
             ['Volume', log.volumeKg ? `${(log.volumeKg / 1000).toFixed(1)} t` : '—'],
-            ['Avg HR', log.avgHr ? `${log.avgHr}` : '—'],
+            ['Avg HR', synced && log.avgHr ? `${log.avgHr}` : '—'],
             ['Sets', log.sets ? `${log.sets}` : '—'],
             ['Calories', `${log.calories}`],
             ['PRs', `${log.prs}`],
@@ -66,17 +68,12 @@ export function WorkoutHistoryDetailScreen() {
           </Text>
         )}
 
-        <Text style={[styles.exercisesTitle, { color: colors.ink }]}>
-          Exercises
-        </Text>
+        <Text style={[styles.exercisesTitle, { color: colors.ink }]}>Exercises</Text>
         <View style={styles.exercisesList}>
           {log.exercises.map((e, idx) => (
             <View
               key={e.name}
-              style={[
-                styles.exRow,
-                idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line },
-              ]}
+              style={[styles.exRow, idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line }]}
             >
               <Text style={[styles.exName, { color: colors.ink }]}>{e.name}</Text>
               <Text style={[styles.exBest, { color: colors.muted }]}>{e.best}</Text>
@@ -85,6 +82,7 @@ export function WorkoutHistoryDetailScreen() {
         </View>
 
         <Button
+          appearance="premium"
           variant="outline"
           fullWidth
           title="Ask coach to review"
@@ -98,13 +96,11 @@ export function WorkoutHistoryDetailScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingBottom: 32,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '600',
-    letterSpacing: -0.3,
+    ...premium.type.title,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -119,21 +115,19 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   statLabel: {
-    fontSize: 12,
+    ...premium.type.caption,
   },
   statVal: {
-    fontSize: 18,
-    fontWeight: '600',
+    ...premium.type.metric,
     fontVariant: ['tabular-nums'],
     marginTop: 2,
   },
   calorieHint: {
-    fontSize: 12,
+    ...premium.type.caption,
     marginTop: 8,
   },
   exercisesTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    ...premium.type.label,
     marginTop: 24,
   },
   exercisesList: {
@@ -146,12 +140,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   exName: {
-    fontSize: 15,
+    ...premium.type.body,
     flex: 1,
   },
   exBest: {
-    fontSize: 13,
+    ...premium.type.caption,
     fontVariant: ['tabular-nums'],
   },
 });
-

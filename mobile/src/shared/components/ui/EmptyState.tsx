@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Button } from './Button';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
+import { ActionButton } from './ActionButton';
 
 export type EmptyStateProps = {
   icon: React.ComponentType<{ size?: number; color?: string }>;
@@ -12,6 +14,7 @@ export type EmptyStateProps = {
   onAction?: (() => void) | undefined;
   compact?: boolean | undefined;
   style?: ViewStyle | undefined;
+  appearance?: 'default' | 'premium';
 };
 
 export function EmptyState({
@@ -23,31 +26,45 @@ export function EmptyState({
   onAction,
   compact = false,
   style,
+  appearance = 'default',
 }: EmptyStateProps) {
   const { colors } = useTheme();
   const textBody = body || description || '';
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingVertical: compact ? 24 : 48 },
-        style,
-      ]}
-    >
+    <View style={[styles.container, { paddingVertical: compact ? 24 : 48 }, style]}>
       <View style={[styles.iconBox, { backgroundColor: colors.surface2 }]}>
         <Icon size={26} color={colors.ink} />
       </View>
 
-      <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
-      <Text style={[styles.body, { color: colors.muted }]}>{textBody}</Text>
+      <Text
+        accessibilityRole="header"
+        style={[
+          styles.title,
+          appearance === 'premium' && premium.type.title,
+          { color: colors.ink },
+        ]}
+      >
+        {title}
+      </Text>
+      {textBody ? (
+        <Text
+          style={[
+            styles.body,
+            appearance === 'premium' && premium.type.body,
+            { color: colors.muted },
+          ]}
+        >
+          {textBody}
+        </Text>
+      ) : null}
 
       {actionLabel && onAction ? (
-        <Button
-          title={actionLabel}
-          onPress={onAction}
-          style={styles.actionButton}
-        />
+        appearance === 'premium' ? (
+          <ActionButton title={actionLabel} onPress={onAction} style={styles.actionButton} />
+        ) : (
+          <Button title={actionLabel} onPress={onAction} style={styles.actionButton} />
+        )
       ) : null}
     </View>
   );

@@ -1,132 +1,55 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ProgressRing } from '../../../shared/components/charts/ProgressRing';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
+import { ActionButton } from '@/shared/components/ui/ActionButton';
+import { ProgressBar } from '@/shared/components/ui/ProgressBar';
 
-type RestTimerProps = {
+type Props = {
   remaining: number;
   total: number;
   nextLabel: string;
   onAdd: () => void;
   onSkip: () => void;
 };
-
-export function RestTimer({
-  remaining,
-  total,
-  nextLabel,
-  onAdd,
-  onSkip,
-}: RestTimerProps) {
+/** In-flow rest controls never cover the session completion action. */
+export function RestTimer({ remaining, total, nextLabel, onAdd, onSkip }: Props) {
   const { colors } = useTheme();
-  const mm = Math.floor(remaining / 60);
-  const ss = String(remaining % 60).padStart(2, '0');
-
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.hero,
-        },
-      ]}
-    >
-      <ProgressRing
-        size={58}
-        strokeWidth={5}
-        value={total > 0 ? remaining / total : 0}
-        color={colors.accent}
-        trackColor={`${colors.heroInk}20`}
-      >
-        <Text style={[styles.timerDigits, { color: colors.heroInk }]}>
-          {mm}:{ss}
-        </Text>
-      </ProgressRing>
-
-      <View style={styles.textCol}>
-        <Text style={[styles.title, { color: colors.heroInk }]}>Rest</Text>
+    <View style={[styles.card, { backgroundColor: colors.hero }]}>
+      <View style={styles.row}>
+        <View style={styles.copy}>
+          <Text style={[premium.type.caption, { color: colors.heroMuted }]}>
+            REST · NEXT: {nextLabel}
+          </Text>
+        </View>
         <Text
-          style={[styles.nextLabel, { color: colors.heroMuted }]}
-          numberOfLines={1}
+          accessibilityLabel={`${remaining} seconds rest remaining`}
+          style={[premium.type.metric, { color: colors.heroInk }]}
         >
-          Next: {nextLabel}
+          {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}
         </Text>
       </View>
-
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={onAdd}
-        style={[styles.addBtn, { backgroundColor: `${colors.heroInk}15` }]}
-      >
-        <Text style={[styles.addBtnText, { color: colors.heroInk }]}>+15s</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={onSkip}
-        style={[styles.skipBtn, { backgroundColor: colors.accent }]}
-      >
-        <Text style={[styles.skipBtnText, { color: colors.accentInk }]}>Skip</Text>
-      </TouchableOpacity>
+      <ProgressBar
+        value={total > 0 ? remaining / total : 0}
+        height={3}
+        color={colors.accent}
+        trackColor="rgba(255,255,255,0.12)"
+      />
+      <View style={styles.row}>
+        <ActionButton
+          title="Add 15 seconds"
+          variant="inverse"
+          onPress={onAdd}
+          style={styles.copy}
+        />
+        <ActionButton title="Skip rest" onPress={onSkip} style={styles.copy} />
+      </View>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
-    zIndex: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 28,
-    padding: 14,
-    gap: 12,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-  },
-  timerDigits: {
-    fontSize: 13,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-  },
-  textCol: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  nextLabel: {
-    fontSize: 12.5,
-    marginTop: 2,
-  },
-  addBtn: {
-    height: 38,
-    borderRadius: 19,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  skipBtn: {
-    height: 38,
-    borderRadius: 19,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  skipBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  card: { padding: 16, gap: 12, borderRadius: premium.radius.card, marginBottom: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  copy: { flex: 1 },
 });
-

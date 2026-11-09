@@ -4,6 +4,7 @@ import { Route, RouteName, RouteParams, TabKey, tabForRoute, tabRoots } from './
 type NavigationState = {
   stack: Route[];
   direction: number;
+  tabStacks: Partial<Record<TabKey, Route[]>>;
 };
 
 export type NavigationValue = {
@@ -46,47 +47,100 @@ export function NavigationProvider({
   initialParams,
   children,
 }: NavigationProviderProps) {
-  const [state, setState] = useState<NavigationState>(() => ({
-    stack: [makeRoute(initialRoute, initialParams)],
-    direction: 0,
-  }));
+  const [state, setState] = useState<NavigationState>(() => {
+    const initial = makeRoute(initialRoute, initialParams);
+    const initialTab = tabForRoute(initialRoute);
+    return {
+      stack: [initial],
+      direction: 0,
+      tabStacks: initialTab ? { [initialTab]: [initial] } : {},
+    };
+  });
 
   const navigate = useCallback((name: RouteName, params?: RouteParams) => {
-    setState((s) => ({ stack: [...s.stack, makeRoute(name, params)], direction: 1 }));
+    setState((s) => {
+      const nextStack = [...s.stack, makeRoute(name, params)];
+      const currentTab = s.stack[0] ? tabForRoute(s.stack[0].name) : null;
+      const tabStacks = currentTab ? { ...s.tabStacks, [currentTab]: nextStack } : s.tabStacks;
+      return { stack: nextStack, direction: 1, tabStacks };
+    });
   }, []);
 
   const replace = useCallback((name: RouteName, params?: RouteParams) => {
-    setState((s) => ({
-      stack: [...s.stack.slice(0, -1), makeRoute(name, params)],
-      direction: 1,
-    }));
+    setState((s) => {
+      const nextStack = [...s.stack.slice(0, -1), makeRoute(name, params)];
+      const currentTab = s.stack[0] ? tabForRoute(s.stack[0].name) : null;
+      const tabStacks = currentTab ? { ...s.tabStacks, [currentTab]: nextStack } : s.tabStacks;
+      return { stack: nextStack, direction: 1, tabStacks };
+    });
   }, []);
 
   const goBack = useCallback(() => {
-    setState((s) =>
-      s.stack.length > 1 ? { stack: s.stack.slice(0, -1), direction: -1 } : s
-    );
+    setState((s) => {
+      if (s.stack.length <= 1) return s;
+      const nextStack = s.stack.slice(0, -1);
+      const currentTab = s.stack[0] ? tabForRoute(s.stack[0].name) : null;
+      const tabStacks = currentTab ? { ...s.tabStacks, [currentTab]: nextStack } : s.tabStacks;
+      return { stack: nextStack, direction: -1, tabStacks };
+    });
   }, []);
 
   const popTo = useCallback((name: RouteName) => {
     setState((s) => {
       const idx = s.stack.map((r) => r.name).lastIndexOf(name);
-      if (idx >= 0) return { stack: s.stack.slice(0, idx + 1), direction: -1 };
-      return { stack: [...s.stack.slice(0, -1), makeRoute(name)], direction: -1 };
+      const nextStack =
+        idx >= 0 ? s.stack.slice(0, idx + 1) : [...s.stack.slice(0, -1), makeRoute(name)];
+      const currentTab = s.stack[0] ? tabForRoute(s.stack[0].name) : null;
+      const tabStacks = currentTab ? { ...s.tabStacks, [currentTab]: nextStack } : s.tabStacks;
+      return { stack: nextStack, direction: -1, tabStacks };
     });
   }, []);
 
   const reset = useCallback((name: RouteName, params?: RouteParams) => {
-    setState({ stack: [makeRoute(name, params)], direction: 0 });
+    const newRoute = makeRoute(name, params);
+    const targetTab = tabForRoute(name);
+    setState((s) => {
+      const tabStacks = targetTab ? { ...s.tabStacks, [targetTab]: [newRoute] } : s.tabStacks;
+      return { stack: [newRoute], direction: 0, tabStacks };
+    });
   }, []);
 
   const switchTab = useCallback((tab: TabKey) => {
     setState((s) => {
-      const first = s.stack[0];
-      if (s.stack.length === 1 && first && first.name === tabRoots[tab]) {
+      const currentTab = s.stack[0] ? tabForRoute(s.stack[0].name) : null;
+
+      // Reselection of currently active tab:
+      if (currentTab === tab) {
+        // If deep in the hierarchy, pop back to tab root
+        if (s.stack.length > 1 && s.stack[0]) {
+          const rootStack: Route[] = [s.stack[0]];
+          return {
+            stack: rootStack,
+            direction: -1,
+            tabStacks: { ...s.tabStacks, [tab]: rootStack },
+          };
+        }
+        // Already at root of active tab: prevent duplicate navigation
         return s;
       }
-      return { stack: [makeRoute(tabRoots[tab])], direction: 0 };
+
+      // Switching to a different tab:
+      const updatedTabStacks = { ...s.tabStacks };
+      if (currentTab) {
+        updatedTabStacks[currentTab] = s.stack;
+      }
+
+      const targetStack =
+        updatedTabStacks[tab] && updatedTabStacks[tab]!.length > 0
+          ? updatedTabStacks[tab]!
+          : [makeRoute(tabRoots[tab])];
+      updatedTabStacks[tab] = targetStack;
+
+      return {
+        stack: targetStack,
+        direction: 0,
+        tabStacks: updatedTabStacks,
+      };
     });
   }, []);
 

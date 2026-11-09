@@ -79,18 +79,15 @@ export function WeightScreen() {
           Log weight
         </Button>
       }
+      refreshControl={
+        <RefreshControl
+          refreshing={isLoading}
+          onRefresh={() => fetchWeightHistory(range, true)}
+          tintColor={colors.accent}
+        />
+      }
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={() => fetchWeightHistory(range, true)}
-            tintColor={colors.accent}
-          />
-        }
-      >
+      <View style={styles.container}>
         {/* Current Weight Hero */}
         <View style={styles.currentSection}>
           <Text style={[styles.currentLabel, { color: colors.muted }]}>Current</Text>
@@ -282,7 +279,7 @@ export function WeightScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       <AddWeightSheet open={adding} onClose={() => setAdding(false)} />
     </Screen>
@@ -291,7 +288,6 @@ export function WeightScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
     paddingBottom: 32,
     gap: 16,
   },

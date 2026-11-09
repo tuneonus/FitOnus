@@ -24,6 +24,14 @@ import {
   updateMealRequest,
   waterIntakeViewSchema,
 } from './nutrition.schemas.js';
+import {
+  analyzeMealPhotoRequest,
+  mealPhotoResponseSchema,
+} from './meal-photo.schemas.js';
+import {
+  parseVoiceMealRequest,
+  voiceMealResponseSchema,
+} from './voice-meal.schemas.js';
 
 const tags = ['Nutrition'];
 
@@ -298,6 +306,44 @@ export function createNutritionMemberRoutes(
           schema: deleteFavoriteResultSchema,
         },
         handler: controller.removeFavorite,
+      }),
+
+      // 15. Analyze Meal Photo
+      defineRoute({
+        method: 'post',
+        path: '/meal-photo/analyze',
+        summary: 'Analyze food photograph using Gemini multimodal AI',
+        description:
+          'Detects foods on plate, estimates portion weights, calories, and macronutrients with AI estimate flagging.',
+        tags,
+        access: { kind: 'authenticated' },
+        request: analyzeMealPhotoRequest,
+        response: {
+          status: 200,
+          description: 'Meal photo analysis result',
+          message: 'Meal photo analyzed successfully',
+          schema: mealPhotoResponseSchema,
+        },
+        handler: controller.analyzeMealPhoto,
+      }),
+
+      // 16. Parse Voice Meal
+      defineRoute({
+        method: 'post',
+        path: '/voice-meal/parse',
+        summary: 'Parse spoken or written meal description using Gemini AI',
+        description:
+          'Transcribes audio or processes text, detecting food items, portion quantities, and macronutrients in English, Tamil, and Tanglish.',
+        tags,
+        access: { kind: 'authenticated' },
+        request: parseVoiceMealRequest,
+        response: {
+          status: 200,
+          description: 'Voice meal parse result',
+          message: 'Voice meal parsed successfully',
+          schema: voiceMealResponseSchema,
+        },
+        handler: controller.parseVoiceMeal,
       }),
     ],
   };

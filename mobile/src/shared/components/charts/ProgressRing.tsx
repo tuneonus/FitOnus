@@ -24,7 +24,7 @@ export function ProgressRing({
   style,
   children,
 }: ProgressRingProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const effectiveStroke = strokeWidth ?? stroke;
   const radius = (size - effectiveStroke) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -32,12 +32,12 @@ export function ProgressRing({
   const strokeDashoffset = circumference * (1 - progress);
 
   const ringColor = color ?? colors.accent;
-  const track = trackColor ?? (colors.ink === '#F4F4EE' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)');
+  const track = trackColor ?? (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)');
 
   return (
     <View style={[{ width: size, height: size }, styles.container, style]}>
       <Svg width={size} height={size}>
-        <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
+        <G transform={`rotate(-90 ${size / 2} ${size / 2})`}>
           {/* Background track */}
           <Circle
             cx={size / 2}

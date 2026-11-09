@@ -5,12 +5,15 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Sparkline } from '@/shared/components/charts/Sparkline';
 import { useTheme } from '@/hooks/use-theme';
 import type { AiInsight } from '../data/insightsMock';
+import type { CoachInsightItem } from '@/features/ai-coach/types/coach';
+
+export type InsightCardItem = AiInsight | CoachInsightItem;
 
 export function InsightCard({
   insight,
   onAsk,
 }: {
-  insight: AiInsight;
+  insight: InsightCardItem;
   onAsk: () => void;
 }) {
   const { colors } = useTheme();
@@ -19,9 +22,12 @@ export function InsightCard({
     positive: { Icon: CheckCircle2, color: colors.good },
     watch: { Icon: Eye, color: colors.warn },
     info: { Icon: Info, color: '#38BDF8' },
-  }[insight.severity];
+  }[insight.severity] || { Icon: Info, color: '#38BDF8' };
 
   const Icon = iconInfo.Icon;
+  const explanation = ('explanation' in insight ? insight.explanation : insight.description) || '';
+  const evidence = insight.evidence || [];
+  const series = 'series' in insight ? insight.series : undefined;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
@@ -33,9 +39,9 @@ export function InsightCard({
         <View style={styles.contentCol}>
           <View style={styles.titleRow}>
             <Text style={[styles.title, { color: colors.ink }]}>{insight.title}</Text>
-            {insight.series && (
+            {series && (
               <Sparkline
-                values={insight.series.map((p) => p.value)}
+                values={series.map((p) => p.value)}
                 width={56}
                 height={22}
                 color={colors.ink}
@@ -44,17 +50,19 @@ export function InsightCard({
           </View>
 
           <Text style={[styles.explanation, { color: colors.muted }]}>
-            {insight.explanation}
+            {explanation}
           </Text>
 
           {/* Evidence tags */}
-          <View style={styles.evidenceRow}>
-            {insight.evidence.map((e) => (
-              <View key={e} style={[styles.evidencePill, { backgroundColor: colors.surface2 }]}>
-                <Text style={[styles.evidenceText, { color: colors.ink }]}>{e}</Text>
-              </View>
-            ))}
-          </View>
+          {evidence.length > 0 && (
+            <View style={styles.evidenceRow}>
+              {evidence.map((e) => (
+                <View key={e} style={[styles.evidencePill, { backgroundColor: colors.surface2 }]}>
+                  <Text style={[styles.evidenceText, { color: colors.ink }]}>{e}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Footer with confidence badge and action button */}
           <View style={styles.cardFooter}>

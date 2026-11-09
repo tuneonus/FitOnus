@@ -11,6 +11,7 @@ import { Mic, MicOff, Square, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
 import { Button } from '../../../shared/components/ui/Button';
+import { CoachApi } from '../../ai-coach/services/coach-api';
 import { buildCoachResponse } from '../../ai-coach/services/mockCoachEngine';
 import { ActionBlock } from '../../ai-coach/components/blocks/ActionBlock';
 import { MetricsBlock } from '../../ai-coach/components/blocks/MetricsBlock';
@@ -58,10 +59,16 @@ export function VoiceCoachScreen() {
     const doneAt = 500 + words.length * 260 + 500;
     timers.current.push(
       setTimeout(() => setPhase('processing'), doneAt),
-      setTimeout(() => {
-        setResponse(buildCoachResponse(command));
-        setPhase('response');
-      }, doneAt + 1300)
+      setTimeout(async () => {
+        try {
+          const realResponse = await CoachApi.sendMessage({ message: command });
+          setResponse(realResponse);
+          setPhase('response');
+        } catch {
+          setResponse(buildCoachResponse(command));
+          setPhase('response');
+        }
+      }, doneAt + 600)
     );
   };
 

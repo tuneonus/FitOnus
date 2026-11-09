@@ -82,9 +82,9 @@ export function GoalDetailScreen() {
           </Button>
         ) : undefined
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Top Summary Card */}
+      {/* Top Summary Card */}
         <View style={styles.summaryRow}>
           <ProgressRing
             size={112}
@@ -177,7 +177,6 @@ export function GoalDetailScreen() {
             Delete goal
           </Button>
         </View>
-      </ScrollView>
 
       {/* Delete confirmation dialog */}
       <ConfirmDialog
@@ -219,8 +218,7 @@ export function GoalDetailScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   summaryRow: {

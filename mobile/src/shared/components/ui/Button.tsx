@@ -8,12 +8,14 @@ import {
   TextStyle,
   View,
 } from 'react-native';
+import { premium } from '@/shared/theme/premium';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'inverse';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export type ButtonProps = {
+  appearance?: 'default' | 'premium';
   title?: string;
   children?: React.ReactNode;
   variant?: ButtonVariant;
@@ -29,6 +31,7 @@ export type ButtonProps = {
 };
 
 export function Button({
+  appearance = 'default',
   title,
   children,
   variant = 'primary',
@@ -94,13 +97,13 @@ export function Button({
       style={[
         styles.button,
         {
-          minHeight: height,
+          minHeight: appearance === 'premium' ? Math.max(premium.layout.touch, height) : height,
           paddingVertical: 12,
           paddingHorizontal: paddingH,
           backgroundColor: bgColor,
           borderColor,
           borderWidth,
-          borderRadius: height / 2,
+          borderRadius: appearance === 'premium' ? premium.radius.control : height / 2,
           opacity: disabled ? 0.45 : 1,
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
@@ -130,9 +133,22 @@ export function Button({
             >
               {title}
             </Text>
-          ) : (
+          ) : React.isValidElement(children) ? (
             children
-          )}
+          ) : children !== null && children !== undefined ? (
+            <Text
+              style={[
+                styles.text,
+                {
+                  color: textColor,
+                  fontSize,
+                },
+                textStyle,
+              ]}
+            >
+              {children}
+            </Text>
+          ) : null}
           {IconRight ? (
             <View style={styles.rightIcon}>
               <IconRight size={iconSize} color={textColor} />
@@ -168,4 +184,3 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-

@@ -80,9 +80,9 @@ export function NutritionPreferencesScreen() {
           Save preferences
         </Button>
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Diet */}
+      {/* Diet */}
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionHeading, { color: colors.muted }]}>Diet</Text>
           <View style={styles.chipsRow}>
@@ -153,15 +153,13 @@ export function NutritionPreferencesScreen() {
             Calculated from your goal, weight and activity. Ask your coach to adjust them.
           </Text>
         </View>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 18,
   },
   sectionBlock: {

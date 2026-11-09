@@ -30,9 +30,8 @@ export function ReportsScreen() {
   };
 
   return (
-    <Screen title="AI reports">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Weekly Report Hero Card */}
+    <Screen title="AI reports" contentContainerStyle={styles.container}>
+      {/* Weekly Report Hero Card */}
         {activeWeekly ? (
           <TouchableOpacity
             activeOpacity={0.85}
@@ -138,15 +137,13 @@ export function ReportsScreen() {
             </Text>
           </View>
         </View>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   heroCard: {

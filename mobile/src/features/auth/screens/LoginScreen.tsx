@@ -61,7 +61,7 @@ export function LoginScreen() {
   };
 
   return (
-    <Screen showBack={true}>
+    <Screen showBack={true} keyboardAvoiding={true}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.ink }]}>Welcome back</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>

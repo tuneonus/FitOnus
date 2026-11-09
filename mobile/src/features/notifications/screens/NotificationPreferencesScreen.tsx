@@ -21,9 +21,8 @@ export function NotificationPreferencesScreen() {
   const current = preferences.find((p) => p.key === editing);
 
   return (
-    <Screen title="Notification settings">
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+    <Screen title="Notification settings" contentContainerStyle={styles.container}>
+      <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
           {preferences.map((p, idx) => {
             const Icon = notificationIcons[p.key];
             return (
@@ -76,7 +75,6 @@ export function NotificationPreferencesScreen() {
         <Text style={[styles.footnote, { color: colors.muted }]}>
           Reminders adapt to your data — e.g. no walk nudge if you’ve already hit your steps.
         </Text>
-      </ScrollView>
 
       {/* Time Picker Sheet */}
       <BottomSheet
@@ -113,8 +111,7 @@ export function NotificationPreferencesScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 16,
   },
   listCard: {

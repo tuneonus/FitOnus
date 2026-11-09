@@ -1,6 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView } from 'react-native';
+import { FeatureScreen } from '@/shared/components/ui/FeatureScreen';
+import { Card } from '@/shared/components/ui/Card';
+import { ActionButton } from '@/shared/components/ui/ActionButton';
+import { premium } from '@/shared/theme/premium';
+import { useTheme } from '@/hooks/use-theme';
+import { Camera } from 'lucide-react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ImageIcon, X } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import { images } from '@/shared/constants/images';
 import type { MealType } from '../types/nutrition';
@@ -9,156 +17,127 @@ export function MealPhotoScreen() {
   const { goBack, replace } = useNavigation();
   const params = useRouteParams<{ meal?: MealType }>();
   const meal = params.meal ?? 'lunch';
+  const { colors } = useTheme();
+  const [opening, setOpening] = useState<'camera' | 'library' | null>(null);
+  const openingRef = useRef(false);
 
-  const analyze = () => replace('mealAnalysis', { meal });
+  const takePhoto = async () => {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Camera Access Required',
+          'Please enable camera permissions to take meal photos.',
+        );
+        return;
+      }
 
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0]!;
+        replace('mealAnalysis', {
+          meal,
+          imageUri: asset.uri,
+          imageBase64: asset.base64 ?? '',
+          mimeType: asset.mimeType ?? 'image/jpeg',
+        });
+      }
+    } catch (err: any) {
+      Alert.alert('Camera Error', err?.message || 'Could not open camera.');
+    }
+  };
+
+  const pickFromGallery = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Gallery Access Required',
+          'Please enable photo library permissions to select meal photos.',
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0]!;
+        replace('mealAnalysis', {
+          meal,
+          imageUri: asset.uri,
+          imageBase64: asset.base64 ?? '',
+          mimeType: asset.mimeType ?? 'image/jpeg',
+        });
+      }
+    } catch (err: any) {
+      Alert.alert('Gallery Error', err?.message || 'Could not open gallery.');
+    }
+  };
+
+  const open = async (source: 'camera' | 'library') => {
+    if (openingRef.current) return;
+    openingRef.current = true;
+    setOpening(source);
+    try {
+      await (source === 'camera' ? takePhoto() : pickFromGallery());
+    } finally {
+      openingRef.current = false;
+      setOpening(null);
+    }
+  };
   return (
-    <View style={styles.container}>
-      <Image source={images.mealPhoto} style={styles.bgImage} resizeMode="cover" />
-      <View style={styles.overlay} />
-
-      <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={goBack}
-            style={styles.iconCircle}
-            accessibilityLabel="Close camera"
-          >
-            <X size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.pillBanner}>
-            <Text style={styles.pillText}>Fit the whole plate in frame</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        {/* Viewfinder frame */}
-        <View style={styles.viewfinderWrapper}>
-          <View style={styles.viewfinder} />
-        </View>
-
-        {/* Bottom controls */}
-        <View style={styles.bottomControls}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={analyze}
-            style={styles.galleryBtn}
-            accessibilityLabel="Upload from photo library"
-          >
-            <ImageIcon size={22} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={analyze}
-            style={styles.shutterOuter}
-            accessibilityLabel="Take photo"
-          >
-            <View style={styles.shutterInner} />
-          </TouchableOpacity>
-
-          <View style={styles.dummySpacer} />
-        </View>
-      </SafeAreaView>
-    </View>
+    <FeatureScreen title="Meal photo">
+      <View style={styles.content}>
+        <Card appearance="premium" tone="muted" style={styles.guide}>
+          <Camera size={44} color={colors.accentStrong} strokeWidth={1.5} />
+          <Text style={[premium.type.title, { color: colors.ink }]}>
+            The whole plate. One photo.
+          </Text>
+          <Text style={[premium.type.body, { color: colors.muted }]}>
+            Use good light and keep the full meal in view. You’ll review the foods and portions
+            before saving anything.
+          </Text>
+        </Card>
+        <ActionButton
+          title="Take a meal photo"
+          icon={Camera}
+          loading={opening === 'camera'}
+          disabled={opening !== null}
+          onPress={() => {
+            void open('camera');
+          }}
+        />
+        <ActionButton
+          title="Choose from photo library"
+          icon={ImageIcon}
+          variant="secondary"
+          loading={opening === 'library'}
+          disabled={opening !== null}
+          onPress={() => {
+            void open('library');
+          }}
+        />
+        <Text style={[premium.type.caption, { color: colors.muted }]}>
+          AI nutrition values are estimates. Nothing is logged until you review and confirm.
+        </Text>
+      </View>
+    </FeatureScreen>
   );
 }
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  bgImage: {
-    ...StyleSheet.absoluteFill,
-    width: '100%',
-    height: '100%',
-    opacity: 0.9,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  safeArea: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pillBanner: {
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  pillText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  headerSpacer: {
-    width: 44,
-  },
-  viewfinderWrapper: {
-    flex: 1,
-    marginHorizontal: 32,
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  viewfinder: {
-    flex: 1,
-    borderRadius: 32,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255, 255, 255, 0.7)',
-  },
-  bottomControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 36,
-    paddingBottom: 32,
-    paddingTop: 12,
-  },
-  galleryBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shutterOuter: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shutterInner: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FFFFFF',
-  },
-  dummySpacer: {
-    width: 48,
-  },
+  content: { gap: 16, paddingBottom: 24 },
+  guide: { gap: 20, paddingVertical: 32 },
 });

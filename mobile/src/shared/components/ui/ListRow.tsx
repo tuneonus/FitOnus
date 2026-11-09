@@ -49,8 +49,8 @@ export function ListRow({
 
       <View style={styles.textColumn}>
         <Text style={[styles.title, { color: titleColor }]}>{title}</Text>
-        {subtitle ? (
-          typeof subtitle === 'string' ? (
+        {subtitle !== undefined && subtitle !== null && subtitle !== '' ? (
+          typeof subtitle === 'string' || typeof subtitle === 'number' ? (
             <Text style={[styles.subtitle, { color: colors.muted }]}>
               {subtitle}
             </Text>
@@ -60,8 +60,8 @@ export function ListRow({
         ) : null}
       </View>
 
-      {value ? (
-        typeof value === 'string' ? (
+      {value !== undefined && value !== null && value !== '' ? (
+        typeof value === 'string' || typeof value === 'number' ? (
           <Text style={[styles.value, { color: colors.muted }]}>{value}</Text>
         ) : (
           value

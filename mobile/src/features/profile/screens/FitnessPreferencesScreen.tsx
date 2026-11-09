@@ -110,9 +110,9 @@ export function FitnessPreferencesScreen() {
           Save preferences
         </Button>
       }
+      contentContainerStyle={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Group title="Main goal" color={colors.muted}>
+      <Group title="Main goal" color={colors.muted}>
           {fitnessGoals.map((g) => (
             <Chip
               key={g.value}
@@ -182,15 +182,13 @@ export function FitnessPreferencesScreen() {
             />
           ))}
         </Group>
-      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     gap: 18,
   },
   groupContainer: {

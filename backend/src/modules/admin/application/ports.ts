@@ -84,10 +84,51 @@ export interface ListAuditLogsQuery {
   targetUserId?: string;
 }
 
+export interface AdminUserActivityView {
+  userId: string;
+  workouts: {
+    totalSessions: number;
+    totalDurationMin: number;
+    totalVolumeKg: number;
+    recentSessions: Array<{
+      id: string;
+      name: string;
+      startedAt: string;
+      completedAt: string | null;
+      durationMin: number;
+      volumeKg: number;
+    }>;
+  };
+  nutrition: {
+    totalMeals: number;
+    avgDailyCalories: number;
+    recentMeals: Array<{
+      id: string;
+      mealType: string;
+      calories: number;
+      proteinG: number;
+      carbsG: number;
+      fatG: number;
+      loggedAt: string;
+    }>;
+  };
+  weight: {
+    currentWeightKg: number | null;
+    startingWeightKg: number | null;
+    totalEntries: number;
+    recentEntries: Array<{
+      id: string;
+      weightKg: number;
+      loggedAt: string;
+    }>;
+  };
+}
+
 export interface AdminRepository {
-  getDashboardStats(): Promise<DashboardStats>;
+  getDashboardStats(timeframe?: string): Promise<DashboardStats>;
   listUsers(query: ListAdminUsersQuery): Promise<{ items: AdminUserListItemView[]; meta: PaginationMeta }>;
   getUserDetail(userId: string): Promise<AdminUserDetailView | null>;
+  getUserActivity(userId: string): Promise<AdminUserActivityView>;
   recordAuditLog(entry: {
     adminId: string;
     action: AuditAction;
