@@ -10,13 +10,24 @@ import { buildRouter } from './shared/http/route.js';
 import type { Logger } from './shared/logging/logger.js';
 import './shared/types/express.js';
 
-function corsMiddleware(origins: readonly string[]) {
-  const allowed = new Set(origins);
+export const DEFAULT_ALLOWED_ORIGINS: readonly string[] = [
+  'https://fit-onus.vercel.app',
+];
+
+export function corsMiddleware(origins: readonly string[]) {
+  const allowed = new Set([...origins, ...DEFAULT_ALLOWED_ORIGINS]);
   return cors({
     // Unlisted origins get no CORS headers (the browser blocks them); requests without Origin pass.
     origin: (origin, callback) => callback(null, origin === undefined || allowed.has(origin)),
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Request-Id', 'X-Panel-Id'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    allowedHeaders: [
+      'Authorization',
+      'Content-Type',
+      'Accept',
+      'Idempotency-Key',
+      'X-Request-Id',
+      'X-Panel-Id',
+    ],
     exposedHeaders: ['X-Request-Id', 'Idempotent-Replayed', 'RateLimit', 'RateLimit-Policy', 'Retry-After'],
     credentials: true,
     maxAge: 600,

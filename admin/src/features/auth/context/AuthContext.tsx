@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authApi } from '../api';
+import { getAuthToken, clearAuthToken } from '@/lib/token-storage';
 import type { AdminUser, LoginCredentials } from '../types';
 
 interface AuthContextType {
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const me = await authApi.getMe();
       setUser(me);
     } catch {
+      clearAuthToken();
       setUser(null);
     }
   }, []);
@@ -35,10 +37,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
 
     async function initAuth() {
+      const token = getAuthToken();
+      if (!token) {
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       try {
         const me = await authApi.getMe();
         if (isMounted) setUser(me);
       } catch {
+        clearAuthToken();
         if (isMounted) setUser(null);
       } finally {
         if (isMounted) setIsLoading(false);
@@ -55,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Listen for session expiration events broadcasted by apiClient
   useEffect(() => {
     const handleAuthExpired = () => {
+      clearAuthToken();
       setUser(null);
       router.replace('/login');
     };
@@ -96,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Logout error:', e);
     } finally {
+      clearAuthToken();
       setUser(null);
       setIsLoading(false);
       router.replace('/login');

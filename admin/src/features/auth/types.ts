@@ -15,5 +15,6 @@ export interface AdminLoginResult {
   user: AdminUser;
   tokenType: string;
   accessTokenExpiresAt: string;
+  accessToken?: string;
 }
 

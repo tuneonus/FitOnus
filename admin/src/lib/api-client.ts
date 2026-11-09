@@ -1,4 +1,5 @@
 import type { ApiResponse } from '@/types';
+import { getAuthToken } from './token-storage';
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1/admin';
@@ -19,7 +20,8 @@ export class ApiError extends Error {
 
 /**
  * Enterprise API client for FitOnus Admin.
- * Relies on secure HttpOnly session cookies with SameSite=Lax.
+ * Uses Bearer token authentication (via Authorization header) and supports
+ * credentials (cookies) as defense-in-depth across cross-origin deployments.
  * Custom headers ('X-Panel-Id') enforce CORS preflights against CSRF.
  */
 export async function apiClient<T>(
@@ -31,6 +33,11 @@ export async function apiClient<T>(
   headers.set('Content-Type', 'application/json');
   headers.set('Accept', 'application/json');
   headers.set('X-Panel-Id', 'fitonus-admin');
+
+  const token = getAuthToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
 
   // Enforce 15-second default timeout to prevent hanging connections
   const timeoutSignal =

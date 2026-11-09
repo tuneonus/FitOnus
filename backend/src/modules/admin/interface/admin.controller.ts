@@ -41,14 +41,15 @@ const clientMeta = (req: Request) => ({
 export type AdminController = ReturnType<typeof createAdminController>;
 
 export function createAdminController(useCases: AdminUseCases, isProduction: boolean) {
-  const cookieSecurity = isProduction ? '; Secure' : '';
+  const sameSite = isProduction ? 'None' : 'Lax';
+  const cookieSecurity = isProduction ? '; Secure; Partitioned' : '';
 
   return {
     login: async (req: Request): Promise<RouteResult<unknown>> => {
       const { body } = getValidated(req, adminLoginRequest);
       const result = await useCases.login.execute(body, clientMeta(req));
 
-      const cookieHeader = `fitonus_admin_token=${result.tokens.accessToken}; HttpOnly; SameSite=Lax; Path=/; Max-Age=900${cookieSecurity}`;
+      const cookieHeader = `fitonus_admin_token=${result.tokens.accessToken}; HttpOnly; SameSite=${sameSite}; Path=/; Max-Age=900${cookieSecurity}`;
 
       return {
         data: {
@@ -86,7 +87,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
       const actor = requireActor(req);
       await useCases.sessions.logout(actor);
 
-      const clearCookie = `fitonus_admin_token=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${cookieSecurity}`;
+      const clearCookie = `fitonus_admin_token=; HttpOnly; SameSite=${sameSite}; Path=/; Max-Age=0${cookieSecurity}`;
 
       return {
         data: { message: 'Logged out successfully' },

@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import { setAuthToken, clearAuthToken } from '@/lib/token-storage';
 import type { AdminLoginResult, AdminUser, LoginCredentials } from './types';
 
 export const authApi = {
@@ -15,10 +16,15 @@ export const authApi = {
       body: JSON.stringify(credentials),
     });
 
+    if (res.data.accessToken) {
+      setAuthToken(res.data.accessToken);
+    }
+
     return {
       user: res.data.user,
       tokenType: res.data.tokenType,
       accessTokenExpiresAt: res.data.accessTokenExpiresAt,
+      accessToken: res.data.accessToken,
     };
   },
 
@@ -30,9 +36,13 @@ export const authApi = {
   },
 
   async logout(): Promise<void> {
-    await apiClient('/auth/logout', {
-      method: 'POST',
-    });
+    try {
+      await apiClient('/auth/logout', {
+        method: 'POST',
+      });
+    } finally {
+      clearAuthToken();
+    }
   },
 
   async changePassword(input: {
