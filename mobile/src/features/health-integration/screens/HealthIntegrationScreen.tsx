@@ -39,12 +39,9 @@ export function HealthIntegrationScreen() {
   const connected = connection === 'connected';
 
   const connect = () => {
-    setConnection('connecting');
-    setTimeout(() => {
-      setAllPermissions(true);
-      setConnection('connected');
-      showToast({ message: `${name} connected · first sync running` });
-    }, 1400);
+    showToast({
+      message: `${name} syncing is not available in this build yet. Your manually logged data is available.`,
+    });
   };
 
   return (
@@ -60,7 +57,9 @@ export function HealthIntegrationScreen() {
         />
 
         {/* Status card */}
-        <View style={[styles.statusCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <View
+          style={[styles.statusCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+        >
           <View style={styles.platformRow}>
             <View style={[styles.iconSquare, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
               <HeartPulse size={24} color="#EF4444" />
@@ -68,7 +67,9 @@ export function HealthIntegrationScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.platformName, { color: colors.ink }]}>{name}</Text>
               <Text style={[styles.platformSub, { color: colors.muted }]}>
-                {platform === 'ios' ? 'HealthKit on this iPhone' : 'Android’s shared health data hub'}
+                {platform === 'ios'
+                  ? 'HealthKit on this iPhone'
+                  : 'Android’s shared health data hub'}
               </Text>
             </View>
             {connected && <Badge tone="good">Connected</Badge>}
@@ -95,8 +96,8 @@ export function HealthIntegrationScreen() {
           {connection === 'disconnected' && (
             <View style={{ gap: 12, marginTop: 14 }}>
               <Text style={[styles.disconnectedBody, { color: colors.ink }]}>
-                FitOnus reads your health data to personalize recovery, sleep and coaching. You choose each data type, and can turn any off later in{' '}
-                {platform === 'ios' ? 'iOS Settings → Health' : 'Health Connect settings'}.
+                Wearable health syncing is not available in this build yet. Workouts, nutrition and
+                body measurements you log in FitOnus are saved to your account.
               </Text>
               <Button size="lg" fullWidth onPress={connect}>
                 Connect {name}
@@ -121,8 +122,7 @@ export function HealthIntegrationScreen() {
                 body={`${name} didn’t respond. Data from ${lastSync} is still shown.`}
                 actionLabel="Retry"
                 onAction={() => {
-                  setConnection('connected');
-                  syncNow();
+                  connect();
                 }}
               />
             </View>
@@ -185,9 +185,7 @@ export function HealthIntegrationScreen() {
             <ListRow
               icon={Watch}
               title="Apple Watch"
-              subtitle={
-                watchConnected ? 'Series 9 · synced through Apple Health' : 'Not paired'
-              }
+              subtitle={watchConnected ? 'Series 9 · synced through Apple Health' : 'Not paired'}
               onPress={() => navigate('appleWatch')}
             />
           </ListGroup>
@@ -200,7 +198,12 @@ export function HealthIntegrationScreen() {
             return (
               <View key={g} style={styles.groupSection}>
                 <Text style={[styles.groupHeading, { color: colors.muted }]}>{g}</Text>
-                <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+                <View
+                  style={[
+                    styles.listCard,
+                    { backgroundColor: colors.surface, borderColor: colors.line },
+                  ]}
+                >
                   {list.map((m, idx) => (
                     <View
                       key={m.key}
@@ -247,11 +250,7 @@ export function HealthIntegrationScreen() {
         {/* Disconnect action */}
         {connected && (
           <View style={styles.disconnectBlock}>
-            <Button
-              fullWidth
-              variant="danger"
-              onPress={() => setConfirmDisconnect(true)}
-            >
+            <Button fullWidth variant="danger" onPress={() => setConfirmDisconnect(true)}>
               Disconnect {name}
             </Button>
             <Text style={[styles.disconnectFootnote, { color: colors.muted }]}>
@@ -386,4 +385,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

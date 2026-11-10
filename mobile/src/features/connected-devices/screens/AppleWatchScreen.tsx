@@ -20,31 +20,18 @@ import { showToast } from '@/shared/stores/toastStore';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 import { useTheme } from '@/hooks/use-theme';
 
-const synced = [
-  { icon: Heart, label: 'Heart rate', value: '52 bpm resting' },
-  { icon: Dumbbell, label: 'Workouts', value: '3 this week' },
-  { icon: Footprints, label: 'Steps', value: '2,180 today' },
-  { icon: Flame, label: 'Active calories', value: '148 kcal' },
-  { icon: Timer, label: 'Exercise minutes', value: '12 min' },
-];
-
-const watchWorkouts = [
-  { title: 'Outdoor run · 5.2 km', when: 'Thu 6:12 AM', status: 'synced' as const },
-  { title: 'Traditional strength · 54 min', when: 'Wed 6:30 AM', status: 'synced' as const },
-  { title: 'Outdoor walk · 2.1 km', when: 'Today 8:40 AM', status: 'pending' as const },
-];
+const synced = [Heart, Dumbbell, Footprints, Flame, Timer].map((icon, index) => ({
+  icon,
+  label: ['Heart rate', 'Workouts', 'Steps', 'Active calories', 'Exercise minutes'][index],
+  value: '—',
+}));
+const watchWorkouts: { title: string; when: string; status: 'synced' | 'pending' }[] = [];
 
 export function AppleWatchScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const {
-    watchConnected,
-    setWatchConnected,
-    lastSync,
-    syncNow,
-    status,
-    connection,
-  } = useHealthStore();
+  const { watchConnected, setWatchConnected, lastSync, syncNow, status, connection } =
+    useHealthStore();
 
   if (!watchConnected) {
     return (
@@ -52,11 +39,10 @@ export function AppleWatchScreen() {
         <EmptyState
           icon={Watch}
           title="No Apple Watch found"
-          body="Pair your watch in the iPhone Watch app. FitOnus reads its data through Apple Health — no separate app needed yet."
-          actionLabel="I’ve paired it"
+          body="Apple Watch syncing is not available in this build yet. Your manually logged workouts remain available."
+          actionLabel="Health connections"
           onAction={() => {
-            setWatchConnected(true);
-            showToast({ message: 'Apple Watch found' });
+            navigate('healthIntegration');
           }}
         />
       </Screen>
@@ -66,138 +52,142 @@ export function AppleWatchScreen() {
   return (
     <Screen title="Apple Watch" contentContainerStyle={styles.container}>
       {/* Watch Hero Card */}
-        <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
-          <View style={[styles.heroIconBox, { backgroundColor: colors.surface }]}>
-            <Watch size={28} color={colors.accent} />
-          </View>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[styles.heroTitle, { color: colors.ink }]}>Aarav’s Apple Watch</Text>
-            <Text style={[styles.heroSub, { color: colors.muted }]}>Series 9 · via Apple Health</Text>
-            <Text style={[styles.heroSync, { color: colors.muted }]}>
-              {status === 'loading' ? 'Syncing…' : `Last synced ${lastSync}`}
-            </Text>
-          </View>
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={RefreshCw}
-            loading={status === 'loading'}
-            onPress={syncNow}
-          >
-            Sync
-          </Button>
+      <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
+        <View style={[styles.heroIconBox, { backgroundColor: colors.surface }]}>
+          <Watch size={28} color={colors.accent} />
         </View>
-
-        {connection !== 'connected' && (
-          <StatusBanner
-            tone="warning"
-            title="Apple Health is disconnected"
-            body="Watch data reaches FitOnus through Apple Health."
-            actionLabel="Fix"
-            onAction={() => navigate('healthIntegration')}
-          />
-        )}
-
-        {/* Synced metrics */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Synced from your watch</Text>
-          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            {synced.map((s, idx) => {
-              const Icon = s.icon;
-              return (
-                <View
-                  key={s.label}
-                  style={[
-                    styles.metricRow,
-                    { borderBottomColor: colors.line },
-                    idx === synced.length - 1 && { borderBottomWidth: 0 },
-                  ]}
-                >
-                  <Icon size={17} color={colors.ink} />
-                  <Text style={[styles.metricLabel, { color: colors.ink }]}>{s.label}</Text>
-                  <Text style={[styles.metricVal, { color: colors.muted }]}>{s.value}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Watch-started workouts */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Watch-started workouts</Text>
-          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            {watchWorkouts.map((w, idx) => (
-              <View
-                key={w.title}
-                style={[
-                  styles.workoutRow,
-                  { borderBottomColor: colors.line },
-                  idx === watchWorkouts.length - 1 && { borderBottomWidth: 0 },
-                ]}
-              >
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={[styles.workoutTitle, { color: colors.ink }]}>{w.title}</Text>
-                  <Text style={[styles.workoutWhen, { color: colors.muted }]}>{w.when}</Text>
-                </View>
-                {w.status === 'synced' ? (
-                  <Badge tone="good">In history</Badge>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onPress={() => {
-                      syncNow();
-                      showToast({ message: 'Walk added to workout history' });
-                    }}
-                  >
-                    Import
-                  </Button>
-                )}
-              </View>
-            ))}
-          </View>
-          <Text style={[styles.footnote, { color: colors.muted }]}>
-            Workouts recorded on the watch become workout records here, with heart rate attached.
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={[styles.heroTitle, { color: colors.ink }]}>Apple Watch</Text>
+          <Text style={[styles.heroSub, { color: colors.muted }]}>Via Apple Health</Text>
+          <Text style={[styles.heroSync, { color: colors.muted }]}>
+            {status === 'loading' ? 'Syncing…' : `Last synced ${lastSync}`}
           </Text>
         </View>
+        <Button
+          size="sm"
+          variant="secondary"
+          icon={RefreshCw}
+          loading={status === 'loading'}
+          onPress={syncNow}
+        >
+          Sync
+        </Button>
+      </View>
 
-        {/* Future support */}
-        <View style={[styles.futureCard, { borderColor: colors.line }]}>
-          <View style={styles.futureHeader}>
-            <Text style={[styles.futureTitle, { color: colors.ink }]}>Coming later</Text>
-            <Badge>Future</Badge>
-          </View>
-          <View style={styles.futureList}>
-            <Text style={[styles.futureItem, { color: colors.muted }]}>
-              • FitOnus watch app with live set logging
-            </Text>
-            <Text style={[styles.futureItem, { color: colors.muted }]}>
-              • Wear OS companion via Health Connect
-            </Text>
-            <Text style={[styles.futureItem, { color: colors.muted }]}>
-              • Live Activities and Dynamic Island during workouts
-            </Text>
-          </View>
-          <View style={{ alignSelf: 'flex-start', marginTop: 10 }}>
-            <Button size="sm" variant="secondary" onPress={() => navigate('wearOs')}>
-              Wear OS plans
-            </Button>
-          </View>
+      {connection !== 'connected' && (
+        <StatusBanner
+          tone="warning"
+          title="Apple Health is disconnected"
+          body="Watch data reaches FitOnus through Apple Health."
+          actionLabel="Fix"
+          onAction={() => navigate('healthIntegration')}
+        />
+      )}
+
+      {/* Synced metrics */}
+      <View style={styles.sectionBlock}>
+        <Text style={[styles.sectionHeading, { color: colors.ink }]}>Synced from your watch</Text>
+        <View
+          style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+        >
+          {synced.map((s, idx) => {
+            const Icon = s.icon;
+            return (
+              <View
+                key={s.label}
+                style={[
+                  styles.metricRow,
+                  { borderBottomColor: colors.line },
+                  idx === synced.length - 1 && { borderBottomWidth: 0 },
+                ]}
+              >
+                <Icon size={17} color={colors.ink} />
+                <Text style={[styles.metricLabel, { color: colors.ink }]}>{s.label}</Text>
+                <Text style={[styles.metricVal, { color: colors.muted }]}>{s.value}</Text>
+              </View>
+            );
+          })}
         </View>
+      </View>
 
-        {/* Remove watch */}
-        <View style={{ marginTop: 4 }}>
-          <Button
-            fullWidth
-            variant="ghost"
-            onPress={() => {
-              setWatchConnected(false);
-              showToast({ message: 'Apple Watch removed from FitOnus' });
-            }}
-          >
-            Stop using this watch
+      {/* Watch-started workouts */}
+      <View style={styles.sectionBlock}>
+        <Text style={[styles.sectionHeading, { color: colors.ink }]}>Watch-started workouts</Text>
+        <View
+          style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+        >
+          {watchWorkouts.map((w, idx) => (
+            <View
+              key={w.title}
+              style={[
+                styles.workoutRow,
+                { borderBottomColor: colors.line },
+                idx === watchWorkouts.length - 1 && { borderBottomWidth: 0 },
+              ]}
+            >
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.workoutTitle, { color: colors.ink }]}>{w.title}</Text>
+                <Text style={[styles.workoutWhen, { color: colors.muted }]}>{w.when}</Text>
+              </View>
+              {w.status === 'synced' ? (
+                <Badge tone="good">In history</Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onPress={() => {
+                    syncNow();
+                    showToast({ message: 'Walk added to workout history' });
+                  }}
+                >
+                  Import
+                </Button>
+              )}
+            </View>
+          ))}
+        </View>
+        <Text style={[styles.footnote, { color: colors.muted }]}>
+          Workouts recorded on the watch become workout records here, with heart rate attached.
+        </Text>
+      </View>
+
+      {/* Future support */}
+      <View style={[styles.futureCard, { borderColor: colors.line }]}>
+        <View style={styles.futureHeader}>
+          <Text style={[styles.futureTitle, { color: colors.ink }]}>Coming later</Text>
+          <Badge>Future</Badge>
+        </View>
+        <View style={styles.futureList}>
+          <Text style={[styles.futureItem, { color: colors.muted }]}>
+            • FitOnus watch app with live set logging
+          </Text>
+          <Text style={[styles.futureItem, { color: colors.muted }]}>
+            • Wear OS companion via Health Connect
+          </Text>
+          <Text style={[styles.futureItem, { color: colors.muted }]}>
+            • Live Activities and Dynamic Island during workouts
+          </Text>
+        </View>
+        <View style={{ alignSelf: 'flex-start', marginTop: 10 }}>
+          <Button size="sm" variant="secondary" onPress={() => navigate('wearOs')}>
+            Wear OS plans
           </Button>
         </View>
+      </View>
+
+      {/* Remove watch */}
+      <View style={{ marginTop: 4 }}>
+        <Button
+          fullWidth
+          variant="ghost"
+          onPress={() => {
+            setWatchConnected(false);
+            showToast({ message: 'Apple Watch removed from FitOnus' });
+          }}
+        >
+          Stop using this watch
+        </Button>
+      </View>
     </Screen>
   );
 }
@@ -306,4 +296,3 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 });
-

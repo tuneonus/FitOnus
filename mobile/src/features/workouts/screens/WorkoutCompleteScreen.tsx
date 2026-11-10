@@ -24,6 +24,7 @@ export function WorkoutCompleteScreen() {
   const [feel, setFeel] = useState('Solid');
   const [discard, setDiscard] = useState(false);
   const saved = useRef(false);
+  const [saving, setSaving] = useState(false);
 
   if (!finished) {
     return (
@@ -59,14 +60,21 @@ export function WorkoutCompleteScreen() {
     { label: 'Duration', value: `${lastCompleted.durationMin}`, unit: 'min' },
     { label: 'Volume', value: lastCompleted.volumeKg.toLocaleString(), unit: 'kg' },
     { label: 'Sets', value: `${lastCompleted.sets}`, unit: '' },
-    { label: 'Calories', value: `${lastCompleted.calories}`, unit: 'kcal' },
+    {
+      label: 'Calories',
+      value: lastCompleted.pendingSync ? '—' : `${lastCompleted.calories}`,
+      unit: lastCompleted.pendingSync ? '' : 'kcal',
+    },
   ];
 
-  const save = () => {
+  const save = async () => {
     if (saved.current || lastCompleted.sets <= 0) return;
     saved.current = true;
-    saveCompleted();
-    reset('home');
+    setSaving(true);
+    const success = await saveCompleted(`Effort: ${feel}`);
+    setSaving(false);
+    if (success) reset('home');
+    else saved.current = false;
   };
 
   return (
@@ -107,7 +115,12 @@ export function WorkoutCompleteScreen() {
             source={
               lastCompleted.caloriesSource === 'wearable'
                 ? { kind: 'synced', label: 'Calories from your connected device' }
-                : { kind: 'estimated', label: 'Calories estimated from your logged session' }
+                : {
+                    kind: 'estimated',
+                    label: lastCompleted.pendingSync
+                      ? 'Calories available after sync'
+                      : 'Calories estimated from your logged session',
+                  }
             }
           />
         </View>
@@ -194,6 +207,7 @@ export function WorkoutCompleteScreen() {
           size="lg"
           fullWidth
           disabled={lastCompleted.sets <= 0}
+          loading={saving}
           title="Save workout"
           onPress={save}
         />

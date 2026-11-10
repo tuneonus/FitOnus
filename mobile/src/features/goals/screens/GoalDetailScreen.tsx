@@ -15,14 +15,13 @@ import { showToast } from '@/shared/stores/toastStore';
 import { goalProgress, useGoalsStore } from '../store/goalsStore';
 import { useTheme } from '@/hooks/use-theme';
 
-const days = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-
 export function GoalDetailScreen() {
   const { colors } = useTheme();
   const params = useRouteParams<{ id?: string }>();
   const id = params.id;
   const { navigate, goBack } = useNavigation();
-  const { goals, deleteGoal, completeGoal, addGoal, fetchGoalDetails, activeGoalDetails } = useGoalsStore();
+  const { goals, deleteGoal, completeGoal, addGoal, fetchGoalDetails, activeGoalDetails } =
+    useGoalsStore();
   const goal = goals.find((g) => g.id === id);
   const [confirm, setConfirm] = useState<'delete' | 'complete' | null>(null);
 
@@ -48,10 +47,13 @@ export function GoalDetailScreen() {
 
   const p = goalProgress(goal);
   const done = goal.status === 'completed';
-  const historyData = activeGoalDetails?.recentHistory?.length ? activeGoalDetails.recentHistory : goal.history;
+  const historyData =
+    activeGoalDetails?.goal?.id === goal.id && activeGoalDetails.recentHistory?.length
+      ? activeGoalDetails.recentHistory
+      : goal.history;
 
-  const points = (historyData.length > 0 ? historyData : [goal.start, goal.current]).map((v, i) => ({
-    label: goal.cadence === 'once' ? `W${i + 1}` : days[i % 7] ?? `${i + 1}`,
+  const points = historyData.map((v, i) => ({
+    label: `${i + 1}`,
     value: v,
   }));
 
@@ -73,9 +75,7 @@ export function GoalDetailScreen() {
             size="lg"
             fullWidth
             variant="secondary"
-            onPress={() =>
-              navigate('coach', { q: `How do I stay on track for "${goal.title}"?` })
-            }
+            onPress={() => navigate('coach', { q: `How do I stay on track for "${goal.title}"?` })}
             icon={Sparkles}
           >
             Ask coach about this goal
@@ -85,98 +85,96 @@ export function GoalDetailScreen() {
       contentContainerStyle={styles.container}
     >
       {/* Top Summary Card */}
-        <View style={styles.summaryRow}>
-          <ProgressRing
-            size={112}
-            strokeWidth={11}
-            value={p}
-            color={colors.accent}
-            trackColor={colors.surface2}
-          >
-            <View style={styles.ringCenter}>
-              <Text style={[styles.ringNumber, { color: colors.ink }]}>{Math.round(p * 100)}%</Text>
-            </View>
-          </ProgressRing>
-
-          <View style={styles.summaryDetails}>
-            {done ? (
-              <Badge tone="good">{`Completed ${goal.completedOn ?? ''}`}</Badge>
-            ) : (
-              <Badge tone="neutral">
-                {goal.deadline === 'Ongoing' ? 'Ongoing' : `By ${goal.deadline}`}
-              </Badge>
-            )}
-            <Text style={[styles.goalTitle, { color: colors.ink }]}>{goal.title}</Text>
-            <Text style={[styles.goalNumbers, { color: colors.muted }]}>
-              {goal.cadence === 'once'
-                ? `${goal.start} → ${goal.current} → ${goal.target} ${goal.unit}`
-                : `Today ${goal.current} / ${goal.target} ${goal.unit}`}
-            </Text>
+      <View style={styles.summaryRow}>
+        <ProgressRing
+          size={112}
+          strokeWidth={11}
+          value={p}
+          color={colors.accent}
+          trackColor={colors.surface2}
+        >
+          <View style={styles.ringCenter}>
+            <Text style={[styles.ringNumber, { color: colors.ink }]}>{Math.round(p * 100)}%</Text>
           </View>
-        </View>
+        </ProgressRing>
 
-        {/* Progress History Card */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>
-            {goal.cadence === 'daily' ? 'Last 7 days' : 'Progress over time'}
+        <View style={styles.summaryDetails}>
+          {done ? (
+            <Badge tone="good">{`Completed ${goal.completedOn ?? ''}`}</Badge>
+          ) : (
+            <Badge tone="neutral">
+              {goal.deadline === 'Ongoing' ? 'Ongoing' : `By ${goal.deadline}`}
+            </Badge>
+          )}
+          <Text style={[styles.goalTitle, { color: colors.ink }]}>{goal.title}</Text>
+          <Text style={[styles.goalNumbers, { color: colors.muted }]}>
+            {goal.cadence === 'once'
+              ? `${goal.start} → ${goal.current} → ${goal.target} ${goal.unit}`
+              : `Today ${goal.current} / ${goal.target} ${goal.unit}`}
           </Text>
-          <View style={{ marginTop: 8 }}>
-            {goal.cadence === 'daily' ? (
-              <BarChart
-                data={points}
-                goal={goal.target}
-                barColor={colors.accent}
-                height={120}
-                formatValue={(v) => `${v.toLocaleString()} ${goal.unit}`}
-              />
-            ) : (
-              <LineChart
-                points={points}
-                target={goal.target}
-                targetLabel={`Target ${goal.target}`}
-                height={150}
-                strokeColor={colors.accent}
-                formatValue={(v) => `${v} ${goal.unit}`}
-              />
-            )}
-          </View>
-          {goal.cadence === 'daily' && (
-            <Text style={[styles.footnote, { color: colors.muted }]}>
-              Hit on {goal.hitDays ?? 0} of the last 7 days
-            </Text>
+        </View>
+      </View>
+
+      {/* Progress History Card */}
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>
+          {goal.cadence === 'daily' ? 'Last 7 days' : 'Progress over time'}
+        </Text>
+        <View style={{ marginTop: 8 }}>
+          {goal.cadence === 'daily' ? (
+            <BarChart
+              data={points}
+              goal={goal.target}
+              barColor={colors.accent}
+              height={120}
+              formatValue={(v) => `${v.toLocaleString()} ${goal.unit}`}
+            />
+          ) : (
+            <LineChart
+              points={points}
+              target={goal.target}
+              targetLabel={`Target ${goal.target}`}
+              height={150}
+              strokeColor={colors.accent}
+              formatValue={(v) => `${v} ${goal.unit}`}
+            />
           )}
         </View>
-
-        {/* AI Forecast Card */}
-        {!done && (
-          <View style={[styles.forecastCard, { backgroundColor: colors.surface2 }]}>
-            <View style={styles.forecastHeader}>
-              <Sparkles size={13} color={colors.accent} />
-              <Text style={[styles.forecastLabel, { color: colors.muted }]}>
-                Forecast · estimate, not a guarantee
-              </Text>
-            </View>
-            <Text style={[styles.forecastText, { color: colors.ink }]}>
-              {goal.type === 'weightLoss'
-                ? `At your active pace you're aiming for ${goal.target} ${goal.unit} by ${goal.deadline}.`
-                : goal.cadence === 'daily'
-                ? 'You’re hitting this most on training days. Rest days are where it slips.'
-                : `${Math.abs(goal.target - goal.current).toFixed(1)} ${goal.unit} to go. Keep going to stay on track.`}
-            </Text>
-          </View>
+        {goal.cadence === 'daily' && (
+          <Text style={[styles.footnote, { color: colors.muted }]}>
+            Hit on {goal.hitDays ?? 0} of the last 7 days
+          </Text>
         )}
+      </View>
 
-        {/* Actions */}
-        <View style={styles.actionsBlock}>
-          {!done && (
-            <Button fullWidth variant="outline" onPress={() => setConfirm('complete')}>
-              Mark as complete
-            </Button>
-          )}
-          <Button fullWidth variant="danger" onPress={() => setConfirm('delete')}>
-            Delete goal
-          </Button>
+      {/* AI Forecast Card */}
+      {!done && (
+        <View style={[styles.forecastCard, { backgroundColor: colors.surface2 }]}>
+          <View style={styles.forecastHeader}>
+            <Sparkles size={13} color={colors.accent} />
+            <Text style={[styles.forecastLabel, { color: colors.muted }]}>Goal progress</Text>
+          </View>
+          <Text style={[styles.forecastText, { color: colors.ink }]}>
+            {goal.type === 'weightLoss'
+              ? `Your target is ${goal.target} ${goal.unit} by ${goal.deadline}.`
+              : goal.cadence === 'daily'
+                ? 'Log consistently to track your progress toward this daily goal.'
+                : `${Math.abs(goal.target - goal.current).toFixed(1)} ${goal.unit} to go. Keep going to stay on track.`}
+          </Text>
         </View>
+      )}
+
+      {/* Actions */}
+      <View style={styles.actionsBlock}>
+        {!done && (
+          <Button fullWidth variant="outline" onPress={() => setConfirm('complete')}>
+            Mark as complete
+          </Button>
+        )}
+        <Button fullWidth variant="danger" onPress={() => setConfirm('delete')}>
+          Delete goal
+        </Button>
+      </View>
 
       {/* Delete confirmation dialog */}
       <ConfirmDialog

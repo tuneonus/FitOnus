@@ -1,5 +1,9 @@
 import { premium } from '@/shared/theme/premium';
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { workoutApi } from '../api/workout-api';
+import { historyForPresentation } from '../utils/premium-workout';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
 import { FeatureScreen as Screen } from '@/shared/components/ui/FeatureScreen';
@@ -14,7 +18,32 @@ export function WorkoutHistoryDetailScreen() {
   const { colors } = useTheme();
   const { id } = useRouteParams<{ id?: string }>();
   const { navigate } = useNavigation();
-  const log = useWorkoutStore((s) => (id ? s.history.find((h) => h.id === id) : s.history[0]));
+  const saved = useWorkoutStore((s) => (id ? s.history.find((h) => h.id === id) : s.history[0]));
+
+  const userId = useAuthStore((state) => state.user?.id);
+  const detail = useQuery({
+    queryKey: ['dashboard', 'workout-detail', userId, id],
+    queryFn: () => workoutApi.getSessionById(id!),
+    enabled: !!userId && !!id && !saved?.pendingSync,
+  });
+  const record = detail.data;
+  const log = record
+    ? {
+        ...historyForPresentation([record], [])[0]!,
+        prs: record.personalRecords?.length ?? 0,
+        isCaloriesEstimated: record.isCaloriesEstimated,
+        caloriesSource: record.caloriesSource,
+        exercises: Array.from(new Set(record.sets.map((set) => set.exerciseId))).map(
+          (exerciseId) => {
+            const sets = record.sets.filter((set) => set.exerciseId === exerciseId);
+            const best = [...sets].sort(
+              (left, right) => right.weightKg * right.reps - left.weightKg * left.reps,
+            )[0]!;
+            return { name: best.exerciseName, best: `${best.weightKg} kg × ${best.reps}` };
+          },
+        ),
+      }
+    : saved;
 
   if (!log) {
     return (
@@ -22,7 +51,13 @@ export function WorkoutHistoryDetailScreen() {
         <EmptyState
           appearance="premium"
           icon={Dumbbell}
-          title="Workout not found"
+          title={
+            detail.isLoading
+              ? 'Loading workout…'
+              : detail.isError
+                ? 'Could not load workout'
+                : 'Workout not found'
+          }
           body="This workout session does not exist or has been removed."
           actionLabel="View all workouts"
           onAction={() => navigate('workoutHistory')}

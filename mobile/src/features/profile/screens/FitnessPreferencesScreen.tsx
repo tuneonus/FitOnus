@@ -60,7 +60,10 @@ export function FitnessPreferencesScreen() {
         place: serverProfile.preferredWorkoutPlace || store.place,
         daysPerWeek: serverProfile.workoutDaysPerWeek ?? store.daysPerWeek,
         durationMin: serverProfile.preferredWorkoutDurationMin ?? store.durationMin,
-        equipment: serverProfile.availableEquipment.length > 0 ? [...serverProfile.availableEquipment] : store.equipment,
+        equipment:
+          serverProfile.availableEquipment.length > 0
+            ? [...serverProfile.availableEquipment]
+            : store.equipment,
       });
     }
   }, [serverProfile]);
@@ -68,12 +71,14 @@ export function FitnessPreferencesScreen() {
   const toggleEq = (e: string) =>
     setD({
       ...d,
-      equipment: d.equipment.includes(e)
-        ? d.equipment.filter((x) => x !== e)
-        : [...d.equipment, e],
+      equipment: d.equipment.includes(e) ? d.equipment.filter((x) => x !== e) : [...d.equipment, e],
     });
 
   const save = async () => {
+    if (isAuthenticated && !serverProfile) {
+      showToast({ message: 'Your profile could not be loaded. Please try again before saving.' });
+      return;
+    }
     if (isAuthenticated && serverProfile) {
       try {
         await updateProfile({
@@ -113,75 +118,68 @@ export function FitnessPreferencesScreen() {
       contentContainerStyle={styles.container}
     >
       <Group title="Main goal" color={colors.muted}>
-          {fitnessGoals.map((g) => (
-            <Chip
-              key={g.value}
-              label={g.label}
-              selected={d.goal === g.value}
-              onPress={() => setD({ ...d, goal: g.value })}
-            />
-          ))}
-        </Group>
+        {fitnessGoals.map((g) => (
+          <Chip
+            key={g.value}
+            label={g.label}
+            selected={d.goal === g.value}
+            onPress={() => setD({ ...d, goal: g.value })}
+          />
+        ))}
+      </Group>
 
-        <Group title="Experience" color={colors.muted}>
-          {experienceLevels.map((e) => (
-            <Chip
-              key={e.value}
-              label={e.label}
-              selected={d.experience === e.value}
-              onPress={() => setD({ ...d, experience: e.value })}
-            />
-          ))}
-        </Group>
+      <Group title="Experience" color={colors.muted}>
+        {experienceLevels.map((e) => (
+          <Chip
+            key={e.value}
+            label={e.label}
+            selected={d.experience === e.value}
+            onPress={() => setD({ ...d, experience: e.value })}
+          />
+        ))}
+      </Group>
 
-        <Group title="Where you train" color={colors.muted}>
-          {workoutPlaces.map((w) => (
-            <Chip
-              key={w.value}
-              label={w.label}
-              selected={d.place === w.value}
-              onPress={() => setD({ ...d, place: w.value })}
-            />
-          ))}
-        </Group>
+      <Group title="Where you train" color={colors.muted}>
+        {workoutPlaces.map((w) => (
+          <Chip
+            key={w.value}
+            label={w.label}
+            selected={d.place === w.value}
+            onPress={() => setD({ ...d, place: w.value })}
+          />
+        ))}
+      </Group>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardSubLabel, { color: colors.muted }]}>
-            Training days per week
-          </Text>
-          <View style={{ marginTop: 8 }}>
-            <Stepper
-              label="Days per week"
-              value={d.daysPerWeek}
-              onChange={(v) => setD({ ...d, daysPerWeek: v })}
-              min={1}
-              max={7}
-              unit="days"
-            />
-          </View>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardSubLabel, { color: colors.muted }]}>Training days per week</Text>
+        <View style={{ marginTop: 8 }}>
+          <Stepper
+            label="Days per week"
+            value={d.daysPerWeek}
+            onChange={(v) => setD({ ...d, daysPerWeek: v })}
+            min={1}
+            max={7}
+            unit="days"
+          />
         </View>
+      </View>
 
-        <Group title="Session length" color={colors.muted}>
-          {durationOptions.map((m) => (
-            <Chip
-              key={m}
-              label={`${m} min`}
-              selected={d.durationMin === m}
-              onPress={() => setD({ ...d, durationMin: m })}
-            />
-          ))}
-        </Group>
+      <Group title="Session length" color={colors.muted}>
+        {durationOptions.map((m) => (
+          <Chip
+            key={m}
+            label={`${m} min`}
+            selected={d.durationMin === m}
+            onPress={() => setD({ ...d, durationMin: m })}
+          />
+        ))}
+      </Group>
 
-        <Group title="Available equipment" color={colors.muted}>
-          {equipmentOptions.map((e) => (
-            <Chip
-              key={e}
-              label={e}
-              selected={d.equipment.includes(e)}
-              onPress={() => toggleEq(e)}
-            />
-          ))}
-        </Group>
+      <Group title="Available equipment" color={colors.muted}>
+        {equipmentOptions.map((e) => (
+          <Chip key={e} label={e} selected={d.equipment.includes(e)} onPress={() => toggleEq(e)} />
+        ))}
+      </Group>
     </Screen>
   );
 }
@@ -213,4 +211,3 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
-

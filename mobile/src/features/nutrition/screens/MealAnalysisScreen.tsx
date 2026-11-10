@@ -127,8 +127,6 @@ export function MealAnalysisScreen() {
       setConfirming(false);
       showToast({
         message: `Meal saved to ${mealLabels[meal]}`,
-        actionLabel: 'Undo',
-        onAction: () => removeEntry(id),
       });
       popTo('nutrition');
     } catch (err: any) {

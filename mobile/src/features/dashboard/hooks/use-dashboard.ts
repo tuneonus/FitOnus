@@ -10,13 +10,15 @@ export const invalidateDashboard = () => {
 };
 
 export const useDashboard = () => {
+  const userId = useAuthStore((state) => state.user?.id);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return useQuery({
-    queryKey: DASHBOARD_QUERY_KEY,
+    queryKey: [...DASHBOARD_QUERY_KEY, userId],
     queryFn: () => DashboardService.getDashboardData(),
     enabled: isAuthenticated, // Only fetch if user is authenticated
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0,
+    refetchOnMount: 'always',
     retry: 2,
   });
 };

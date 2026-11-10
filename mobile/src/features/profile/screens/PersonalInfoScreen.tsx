@@ -28,7 +28,7 @@ export function PersonalInfoScreen() {
     name: store.name,
     sex: store.sex,
     dob: `${store.dobYear}-${String(store.dobMonth).padStart(2, '0')}-${String(
-      store.dobDay
+      store.dobDay,
     ).padStart(2, '0')}`,
     heightCm: store.heightCm,
     weightKg: store.weightKg,
@@ -41,7 +41,9 @@ export function PersonalInfoScreen() {
       setDraft({
         name: serverProfile.name || store.name,
         sex: serverProfile.sex || store.sex,
-        dob: serverProfile.dateOfBirth || `${store.dobYear}-${String(store.dobMonth).padStart(2, '0')}-${String(store.dobDay).padStart(2, '0')}`,
+        dob:
+          serverProfile.dateOfBirth ||
+          `${store.dobYear}-${String(store.dobMonth).padStart(2, '0')}-${String(store.dobDay).padStart(2, '0')}`,
         heightCm: serverProfile.heightCm ?? store.heightCm,
         weightKg: serverProfile.currentWeightKg ?? store.weightKg,
       });
@@ -49,6 +51,10 @@ export function PersonalInfoScreen() {
   }, [serverProfile]);
 
   const save = async () => {
+    if (isAuthenticated && !serverProfile) {
+      showToast({ message: 'Your profile could not be loaded. Please try again before saving.' });
+      return;
+    }
     if (!draft.name.trim()) return setError('Enter your name.');
     const [y = 1995, m = 6, d = 15] = draft.dob.split('-').map(Number);
 
@@ -99,73 +105,73 @@ export function PersonalInfoScreen() {
       contentContainerStyle={styles.container}
     >
       <TextField
-          label="Full name"
-          value={draft.name}
-          onChangeText={(val) => {
-            setDraft({ ...draft, name: val });
-            setError(undefined);
-          }}
-          error={error}
-          autoComplete="name"
-        />
+        label="Full name"
+        value={draft.name}
+        onChangeText={(val) => {
+          setDraft({ ...draft, name: val });
+          setError(undefined);
+        }}
+        error={error}
+        autoComplete="name"
+      />
 
-        <TextField
-          label="Date of birth (YYYY-MM-DD)"
-          value={draft.dob}
-          onChangeText={(val) => setDraft({ ...draft, dob: val })}
-        />
+      <TextField
+        label="Date of birth (YYYY-MM-DD)"
+        value={draft.dob}
+        onChangeText={(val) => setDraft({ ...draft, dob: val })}
+      />
 
-        <View style={styles.fieldBlock}>
-          <Text style={[styles.fieldLabel, { color: colors.ink }]}>
-            Sex (used for calorie estimates)
-          </Text>
-          <SegmentedControl<ProfileSetup['sex']>
-            options={[
-              { value: 'male', label: 'Male' },
-              { value: 'female', label: 'Female' },
-              { value: 'unspecified', label: 'Prefer not' },
-            ]}
-            value={draft.sex}
-            onChange={(sex) => setDraft({ ...draft, sex })}
+      <View style={styles.fieldBlock}>
+        <Text style={[styles.fieldLabel, { color: colors.ink }]}>
+          Sex (used for calorie estimates)
+        </Text>
+        <SegmentedControl<ProfileSetup['sex']>
+          options={[
+            { value: 'male', label: 'Male' },
+            { value: 'female', label: 'Female' },
+            { value: 'unspecified', label: 'Prefer not' },
+          ]}
+          value={draft.sex}
+          onChange={(sex) => setDraft({ ...draft, sex })}
+        />
+      </View>
+
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardSubLabel, { color: colors.muted }]}>
+          Height {isImperial ? `(${formatHeight(draft.heightCm, 'imperial')})` : ''}
+        </Text>
+        <View style={{ marginTop: 8 }}>
+          <Stepper
+            label="Height"
+            value={draft.heightCm}
+            onChange={(v) => setDraft({ ...draft, heightCm: v })}
+            min={120}
+            max={230}
+            unit="cm"
           />
         </View>
+      </View>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardSubLabel, { color: colors.muted }]}>
-            Height {isImperial ? `(${formatHeight(draft.heightCm, 'imperial')})` : ''}
-          </Text>
-          <View style={{ marginTop: 8 }}>
-            <Stepper
-              label="Height"
-              value={draft.heightCm}
-              onChange={(v) => setDraft({ ...draft, heightCm: v })}
-              min={120}
-              max={230}
-              unit="cm"
-            />
-          </View>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardSubLabel, { color: colors.muted }]}>
+          Starting weight {isImperial ? `(${formatWeight(draft.weightKg, 'imperial')})` : ''}
+        </Text>
+        <View style={{ marginTop: 8 }}>
+          <Stepper
+            label="Weight"
+            value={draft.weightKg}
+            onChange={(v) => setDraft({ ...draft, weightKg: v })}
+            step={0.1}
+            decimals={1}
+            min={30}
+            max={250}
+            unit="kg"
+          />
         </View>
-
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardSubLabel, { color: colors.muted }]}>
-            Starting weight {isImperial ? `(${formatWeight(draft.weightKg, 'imperial')})` : ''}
-          </Text>
-          <View style={{ marginTop: 8 }}>
-            <Stepper
-              label="Weight"
-              value={draft.weightKg}
-              onChange={(v) => setDraft({ ...draft, weightKg: v })}
-              step={0.1}
-              decimals={1}
-              min={30}
-              max={250}
-              unit="kg"
-            />
-          </View>
-          <Text style={[styles.cardFootnote, { color: colors.muted }]}>
-            Daily weigh-ins are logged from the Weight screen.
-          </Text>
-        </View>
+        <Text style={[styles.cardFootnote, { color: colors.muted }]}>
+          Daily weigh-ins are logged from the Weight screen.
+        </Text>
+      </View>
     </Screen>
   );
 }
@@ -196,4 +202,3 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
-

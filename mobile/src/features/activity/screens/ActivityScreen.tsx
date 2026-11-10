@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { ChevronRight, Dumbbell, HeartPulse, Moon, Scale } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Screen } from '../../../shared/components/ui/Screen';
@@ -13,7 +13,10 @@ import { useHasDeviceData, useHealthStore } from '../../health-integration/store
 import { useWorkoutStore } from '../../workouts/store/workoutStore';
 import { useWeightStore } from '../../weight-tracking/store/weightStore';
 import { useHomeOverview } from '@/features/home/hooks/use-home-overview';
-import { ActivityType, activityTypes, hourlySteps, weeklyActivity } from '../data/activityMock';
+import { ActivityType, activityTypes } from '../constants/activity-types';
+import { useQuery } from '@tanstack/react-query';
+import { progressApi } from '@/features/progress/api/progress-api';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useTheme } from '@/hooks/use-theme';
 
 export function ActivityScreen() {
@@ -22,10 +25,22 @@ export function ActivityScreen() {
   const hasDevice = useHasDeviceData();
   const status = useHealthStore((s) => s.status);
   const plannedSession = useWorkoutStore((s) => s.plannedSession);
-  const { dashboard } = useHomeOverview();
+  const { dashboard, isRefreshing, refresh } = useHomeOverview();
+  const userId = useAuthStore((s) => s.user?.id);
+  const stepHistory = useQuery({
+    queryKey: ['dashboard', 'steps-week', userId],
+    queryFn: () =>
+      progressApi.getAnalytics({
+        metric: 'steps',
+        range: 'W',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    enabled: !!userId,
+  });
+  const weeklyActivity = stepHistory.data?.points ?? [];
+  const hourlySteps: { label: string; value: number }[] = [];
   const summary = dashboard.data?.summary;
-  const weightEntries = useWeightStore((s) => s.entries);
-  const lastWeight = weightEntries[0]?.value ?? summary?.weight ?? null;
+  const lastWeight = summary?.weight ?? null;
   const [view, setView] = useState<'today' | 'week'>('today');
 
   const activeCalories = summary?.caloriesBurned ?? 0;
@@ -40,19 +55,61 @@ export function ActivityScreen() {
   }).format(new Date());
 
   const rings = [
-    { label: 'Active calories', value: activeCalories, goal: 650, color: colors.move, size: 168, unavailable: false },
-    { label: 'Active minutes', value: activeMinutes, goal: 45, color: colors.accent, size: 134, unavailable: false },
-    { label: 'Steps', value: steps ?? 0, goal: 10000, color: colors.sky, size: 100, unavailable: steps === null },
+    {
+      label: 'Active calories',
+      value: activeCalories,
+      goal: null,
+      color: colors.move,
+      size: 168,
+      unavailable: !summary,
+    },
+    {
+      label: 'Active minutes',
+      value: activeMinutes,
+      goal: null,
+      color: colors.accent,
+      size: 134,
+      unavailable: !summary,
+    },
+    {
+      label: 'Steps',
+      value: steps ?? 0,
+      goal: stepHistory.data?.goal ?? null,
+      color: colors.sky,
+      size: 100,
+      unavailable: steps === null,
+    },
   ];
 
   return (
-    <Screen largeTitle="Activity" subtitle={formattedDate} showBack={false}>
+    <Screen
+      largeTitle="Activity"
+      subtitle={formattedDate}
+      showBack={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing || stepHistory.isRefetching}
+          onRefresh={() => {
+            void refresh();
+            void stepHistory.refetch();
+          }}
+          tintColor={colors.accent}
+        />
+      }
+    >
       <View style={styles.content}>
+        {dashboard.isError || stepHistory.isError ? (
+          <StatusBanner
+            tone="error"
+            title="Couldn’t refresh activity"
+            body="Pull to try again. Previously loaded values may be out of date."
+          />
+        ) : null}
         {status === 'offline' && (
           <StatusBanner
             tone="offline"
             title="Offline"
-            body="Showing activity synced at 9:38 AM."
+            body="Showing the last available activity. Pull to refresh when connected."
           />
         )}
 
@@ -95,7 +152,7 @@ export function ActivityScreen() {
                     <ProgressRing
                       size={r.size}
                       strokeWidth={14}
-                      value={r.value / r.goal}
+                      value={r.goal ? r.value / r.goal : 0}
                       color={r.color}
                     />
                   </View>
@@ -106,14 +163,13 @@ export function ActivityScreen() {
               <View style={styles.ringLabelsCol}>
                 {rings.map((r) => (
                   <View key={r.label} style={styles.ringLabelItem}>
-                    <Text style={[styles.ringMetricLabel, { color: colors.muted }]}>
-                      {r.label}
-                    </Text>
+                    <Text style={[styles.ringMetricLabel, { color: colors.muted }]}>{r.label}</Text>
                     <Text style={[styles.ringMetricValue, { color: colors.ink }]}>
-                      {r.unavailable ? 'No tracker' : r.value.toLocaleString()}
-                      {!r.unavailable && (
+                      {r.unavailable ? '—' : r.value.toLocaleString()}
+                      {!r.unavailable && r.goal != null && (
                         <Text style={[styles.ringMetricGoal, { color: colors.muted }]}>
-                          {' '}/{r.goal.toLocaleString()}
+                          {' '}
+                          /{r.goal.toLocaleString()}
                         </Text>
                       )}
                     </Text>
@@ -125,8 +181,8 @@ export function ActivityScreen() {
             {/* Distance, Floors, Active cal */}
             <View style={[styles.statsGrid, { borderTopColor: colors.line }]}>
               {[
-                ['Distance', hasSteps ? `${((steps ?? 0) * 0.00075).toFixed(1)} km` : '—'],
-                ['Floors', hasSteps ? '—' : '—'],
+                ['Distance', '—'],
+                ['Floors', '—'],
                 ['Active cal', `${activeCalories}`],
               ].map(([l, v]) => (
                 <View key={l} style={styles.statCol}>
@@ -141,7 +197,10 @@ export function ActivityScreen() {
                 source={
                   hasDevice && hasSteps
                     ? { kind: 'synced', label: 'Wearable synced' }
-                    : { kind: 'estimated', label: 'Workout activity logged · No step tracker connected' }
+                    : {
+                        kind: 'estimated',
+                        label: 'Workout activity logged · No step tracker connected',
+                      }
                 }
               />
             </View>
@@ -156,16 +215,16 @@ export function ActivityScreen() {
               },
             ]}
           >
-            <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>
-              Steps this week
-            </Text>
-            {hasSteps ? (
+            <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>Steps this week</Text>
+            {weeklyActivity.length > 0 ? (
               <>
-                <Text style={[styles.bigNumber, { color: colors.ink }]}>{steps?.toLocaleString()}</Text>
+                <Text style={[styles.bigNumber, { color: colors.ink }]}>
+                  {weeklyActivity.reduce((sum, point) => sum + point.value, 0).toLocaleString()}
+                </Text>
                 <View style={{ marginTop: 12 }}>
                   <BarChart
                     data={weeklyActivity}
-                    goal={10000}
+                    goal={stepHistory.data?.goal}
                     barColor={colors.sky}
                     height={120}
                   />
@@ -174,7 +233,7 @@ export function ActivityScreen() {
             ) : (
               <View style={{ paddingVertical: 24, alignItems: 'center' }}>
                 <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center' }}>
-                  No pedometer or wearable device connected.
+                  No step history available yet.
                 </Text>
               </View>
             )}
@@ -192,14 +251,9 @@ export function ActivityScreen() {
             ]}
           >
             <Text style={[styles.cardTitle, { color: colors.ink }]}>Steps by hour</Text>
-            {hasSteps ? (
+            {hourlySteps.length > 0 ? (
               <View style={{ marginTop: 12 }}>
-                <BarChart
-                  data={hourlySteps}
-                  barColor={colors.sky}
-                  height={90}
-                  highlightIndex={1}
-                />
+                <BarChart data={hourlySteps} barColor={colors.sky} height={90} highlightIndex={1} />
               </View>
             ) : (
               <View style={{ paddingVertical: 14 }}>
@@ -213,9 +267,7 @@ export function ActivityScreen() {
 
         {/* By Activity Section */}
         <View style={styles.byTypeSection}>
-          <Text style={[styles.sectionTitle, { color: colors.ink }]}>
-            By activity · this week
-          </Text>
+          <Text style={[styles.sectionTitle, { color: colors.ink }]}>By activity · this week</Text>
           <ListGroup>
             {(Object.keys(activityTypes) as ActivityType[]).map((k) => {
               const t = activityTypes[k];
@@ -245,20 +297,14 @@ export function ActivityScreen() {
             },
           ]}
         >
-          <View
-            style={[
-              styles.workoutIconWrap,
-              { backgroundColor: colors.accent },
-            ]}
-          >
+          <View style={[styles.workoutIconWrap, { backgroundColor: colors.accent }]}>
             <Dumbbell size={20} color={colors.accentInk} />
           </View>
           <View style={styles.workoutNavBody}>
-            <Text style={[styles.workoutNavTitle, { color: colors.ink }]}>
-              Workouts
-            </Text>
+            <Text style={[styles.workoutNavTitle, { color: colors.ink }]}>Workouts</Text>
             <Text style={[styles.workoutNavSubtitle, { color: colors.muted }]}>
-              {plannedSession ? `Today: ${plannedSession.title}` : 'No session planned'} · plans, library, records
+              {plannedSession ? `Today: ${plannedSession.title}` : 'No session planned'} · plans,
+              library, records
             </Text>
           </View>
           <ChevronRight size={18} color={colors.muted} />
@@ -291,7 +337,9 @@ export function ActivityScreen() {
           <ListRow
             icon={Scale}
             title="Weight & body"
-            subtitle={lastWeight != null ? `${lastWeight.toFixed(1)} kg · Logged` : 'Log your weight'}
+            subtitle={
+              lastWeight != null ? `${lastWeight.toFixed(1)} kg · Logged` : 'Log your weight'
+            }
             onPress={() => navigate('weight')}
           />
         </ListGroup>
@@ -411,4 +459,3 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
-

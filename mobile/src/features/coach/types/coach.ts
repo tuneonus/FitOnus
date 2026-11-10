@@ -19,5 +19,5 @@ export interface Conversation {
   id: string;
   title: string;
   lastMessageAt: string;
-  messageCount: number;
+  messageCount?: number;
 }

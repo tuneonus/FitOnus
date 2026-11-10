@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
 import { Award, FileText, Medal, Scale, Target, Trophy } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
@@ -12,7 +20,7 @@ import { LineChart } from '@/shared/components/charts/LineChart';
 import { BarChart } from '@/shared/components/charts/BarChart';
 import type { TimeRange } from '@/shared/types/health';
 import { useHasDeviceData } from '../../health-integration/store/healthStore';
-import { MetricKey, progressMetrics, rangeLabels } from '../data/progressMock';
+import { MetricKey, progressMetrics, rangeLabels } from '../constants/progress-metrics';
 import { useCoachInsights } from '@/features/ai-coach/hooks/use-coach-insights';
 import { InsightCard } from '../components/InsightCard';
 import { useTheme } from '@/hooks/use-theme';
@@ -28,8 +36,7 @@ export function ProgressScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const hasDevice = useHasDeviceData();
-  const [range, setRange] = useState<TimeRange>('M');
-  const [metric, setMetric] = useState<MetricKey>('weight');
+  const { range, setRange, metric, setMetric } = useProgressStore();
 
   const {
     analyticsData,
@@ -94,11 +101,15 @@ export function ProgressScreen() {
 
   const handleRefresh = async () => {
     await Promise.allSettled([
-      refreshAll(),
+      fetchAnalytics(metric, range, true),
+      fetchPeriodComparison(range === 'W' ? 'week' : 'month', true),
+      fetchAchievements(true),
       refetchCoachInsights(),
       fetchOverview(true),
       metric === 'workouts' ? fetchAdvWorkouts(range, true) : Promise.resolve(),
-      metric === 'calories' || metric === 'protein' ? fetchAdvNutrition(range, true) : Promise.resolve(),
+      metric === 'calories' || metric === 'protein'
+        ? fetchAdvNutrition(range, true)
+        : Promise.resolve(),
       metric === 'weight' ? fetchAdvBody(range, true) : Promise.resolve(),
       metric === 'water' ? fetchAdvHydration(range, true) : Promise.resolve(),
     ]);
@@ -112,9 +123,15 @@ export function ProgressScreen() {
     if (metric === 'workouts' && advWorkouts[range]?.frequencySeries) {
       points = advWorkouts[range].frequencySeries.map((s) => ({ label: s.label, value: s.value }));
     } else if (metric === 'calories' && advNutrition[range]?.dailyTrends) {
-      points = advNutrition[range].dailyTrends.map((d) => ({ label: d.label, value: Math.round(d.calories) }));
+      points = advNutrition[range].dailyTrends.map((d) => ({
+        label: d.label,
+        value: Math.round(d.calories),
+      }));
     } else if (metric === 'protein' && advNutrition[range]?.dailyTrends) {
-      points = advNutrition[range].dailyTrends.map((d) => ({ label: d.label, value: Math.round(d.protein) }));
+      points = advNutrition[range].dailyTrends.map((d) => ({
+        label: d.label,
+        value: Math.round(d.protein),
+      }));
     } else if (metric === 'weight' && advBody[range]?.weightTrend) {
       points = advBody[range].weightTrend.map((d) => ({
         label: d.date.length > 5 ? d.date.slice(5) : d.date,
@@ -130,8 +147,8 @@ export function ProgressScreen() {
 
   const hasEmptyPoints = points.length === 0 || points.every((p) => p.value === 0);
 
-  const first = liveData ? liveData.firstValue : points[0]?.value ?? 0;
-  const last = liveData ? liveData.latestValue : points[points.length - 1]?.value ?? 0;
+  const first = liveData ? liveData.firstValue : (points[0]?.value ?? 0);
+  const last = liveData ? liveData.latestValue : (points[points.length - 1]?.value ?? 0);
   const delta = liveData ? liveData.delta : last - first;
   const improving = (liveData?.lowerIsBetter ?? m.lowerIsBetter) ? delta < 0 : delta > 0;
   const blocked =
@@ -141,7 +158,11 @@ export function ProgressScreen() {
 
   const comparisonTitle =
     periodComparison?.title ??
-    (overview?.period ? `Period Comparison (${overview.period})` : range === 'W' ? 'This Week vs Last Week' : 'This Month vs Last Month');
+    (overview?.period
+      ? `Period Comparison (${overview.period})`
+      : range === 'W'
+        ? 'This Week vs Last Week'
+        : 'This Month vs Last Month');
 
   const advComparisons = overview?.comparisonVsPriorPeriod;
   const comparisonItems =
@@ -155,28 +176,34 @@ export function ProgressScreen() {
           const k = (c.key || c.label || '').toLowerCase();
           if (k.includes('weight') && typeof c.currentValue === 'number') {
             currentStr = `${c.currentValue.toFixed(1)} kg`;
-            priorStr = typeof c.priorValue === 'number' ? `${c.priorValue.toFixed(1)} kg` : priorStr;
+            priorStr =
+              typeof c.priorValue === 'number' ? `${c.priorValue.toFixed(1)} kg` : priorStr;
           } else if (k.includes('calories') && typeof c.currentValue === 'number') {
             currentStr = `${Math.round(c.currentValue)} kcal`;
-            priorStr = typeof c.priorValue === 'number' ? `${Math.round(c.priorValue)} kcal` : priorStr;
+            priorStr =
+              typeof c.priorValue === 'number' ? `${Math.round(c.priorValue)} kcal` : priorStr;
           } else if (k.includes('protein') && typeof c.currentValue === 'number') {
             currentStr = `${Math.round(c.currentValue)} g`;
-            priorStr = typeof c.priorValue === 'number' ? `${Math.round(c.priorValue)} g` : priorStr;
+            priorStr =
+              typeof c.priorValue === 'number' ? `${Math.round(c.priorValue)} g` : priorStr;
           } else if (k.includes('hydration') && typeof c.currentValue === 'number') {
             currentStr = `${(c.currentValue / 1000).toFixed(1)} L`;
-            priorStr = typeof c.priorValue === 'number' ? `${(c.priorValue / 1000).toFixed(1)} L` : priorStr;
+            priorStr =
+              typeof c.priorValue === 'number' ? `${(c.priorValue / 1000).toFixed(1)} L` : priorStr;
           }
           return [c.label, currentStr, priorStr, c.isImprovement ?? c.better ?? true] as const;
         })
       : periodComparison && periodComparison.comparisons.length > 0
-      ? periodComparison.comparisons.map((c) => [c.label, c.current, c.previous, c.better] as const)
-      : ([
-          ['Workouts', '0', '0', true],
-          ['Weight change', '0.0 kg', '0.0 kg', true],
-          ['Avg sleep', '—', '—', true],
-          ['Avg protein', '—', '—', true],
-          ['Avg calories', '—', '—', true],
-        ] as const);
+        ? periodComparison.comparisons.map(
+            (c) => [c.label, c.current, c.previous, c.better] as const,
+          )
+        : ([
+            ['Workouts', '0', '0', true],
+            ['Weight change', '0.0 kg', '0.0 kg', true],
+            ['Avg sleep', '—', '—', true],
+            ['Avg protein', '—', '—', true],
+            ['Avg calories', '—', '—', true],
+          ] as const);
 
   const activeAchievements = storeAchievements ?? [];
 
@@ -237,42 +264,59 @@ export function ProgressScreen() {
                 {m.label} · {rangeLabels[range]}
               </Text>
               <View style={styles.metricValRow}>
-                <Text style={[styles.metricNumber, { color: colors.ink }]}>{fmt(last, m.unit)}</Text>
+                <Text style={[styles.metricNumber, { color: colors.ink }]}>
+                  {fmt(last, m.unit)}
+                </Text>
                 <Text
-                  style={[
-                    styles.metricDelta,
-                    { color: improving ? colors.good : colors.warn },
-                  ]}
+                  style={[styles.metricDelta, { color: improving ? colors.good : colors.warn }]}
                 >
                   {delta > 0 ? '+' : ''}
-                  {m.unit === 'h' ? fmt(Math.abs(delta), 'h') : `${Number(delta.toFixed(1)).toLocaleString()}`}{' '}
+                  {m.unit === 'h'
+                    ? fmt(Math.abs(delta), 'h')
+                    : `${Number(delta.toFixed(1)).toLocaleString()}`}{' '}
                   vs start
                 </Text>
               </View>
               <View style={styles.chartWrapper}>
                 {hasEmptyPoints ? (
-                  <View style={{ height: 160, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                  <View
+                    style={{
+                      height: 160,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 16,
+                    }}
+                  >
                     <Text style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}>
-                      No {m.label.toLowerCase()} entries recorded for {rangeLabels[range].toLowerCase()}.
+                      No {m.label.toLowerCase()} entries recorded for{' '}
+                      {rangeLabels[range].toLowerCase()}.
                     </Text>
-                    <Text style={{ color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: 6, lineHeight: 16 }}>
+                    <Text
+                      style={{
+                        color: colors.muted,
+                        fontSize: 11,
+                        textAlign: 'center',
+                        marginTop: 6,
+                        lineHeight: 16,
+                      }}
+                    >
                       {metric === 'workouts'
                         ? 'Complete a workout session to see frequency and volume trends.'
                         : metric === 'calories' || metric === 'protein'
-                        ? 'Log meals to track your nutrition and macronutrient targets.'
-                        : metric === 'water'
-                        ? 'Log your daily water intake to track hydration consistency.'
-                        : metric === 'weight'
-                        ? 'Record your weigh-in to begin tracking weight progression.'
-                        : 'Connect wearable health data to display activity metrics.'}
+                          ? 'Log meals to track your nutrition and macronutrient targets.'
+                          : metric === 'water'
+                            ? 'Log your daily water intake to track hydration consistency.'
+                            : metric === 'weight'
+                              ? 'Record your weigh-in to begin tracking weight progression.'
+                              : 'Connect wearable health data to display activity metrics.'}
                     </Text>
                   </View>
                 ) : m.chart === 'line' ? (
                   <LineChart
                     key={`${metric}-${range}`}
                     points={points}
-                    target={m.goal}
-                    targetLabel={m.goal ? `Goal ${m.goal}` : undefined}
+                    target={liveData?.goal}
+                    targetLabel={liveData?.goal != null ? `Goal ${liveData.goal}` : undefined}
                     subtitle={metric === 'weight' ? 'EMA trend smoothed' : undefined}
                     formatValue={(v) => fmt(v, m.unit)}
                     height={170}
@@ -282,7 +326,7 @@ export function ProgressScreen() {
                   <BarChart
                     key={`${metric}-${range}`}
                     data={points}
-                    goal={m.goal}
+                    goal={liveData?.goal}
                     formatValue={(v) => fmt(v, m.unit)}
                     height={150}
                     barColor={colors.accent}
@@ -291,22 +335,44 @@ export function ProgressScreen() {
               </View>
 
               {/* Macro breakdown when viewing nutrition */}
-              {(metric === 'calories' || metric === 'protein') && advNutrition[range]?.macroSplit && advNutrition[range].macroSplit.length > 0 && !hasEmptyPoints && (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.line }}>
-                  {advNutrition[range].macroSplit.map((split) => (
-                    <View key={split.label} style={{ alignItems: 'center' }}>
-                      <Text style={{ fontSize: 11, color: colors.muted }}>{split.label}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
-                        {split.grams}g <Text style={{ fontSize: 10, color: colors.muted }}>({split.pct}%)</Text>
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
+              {(metric === 'calories' || metric === 'protein') &&
+                advNutrition[range]?.macroSplit &&
+                advNutrition[range].macroSplit.length > 0 &&
+                !hasEmptyPoints && (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-around',
+                      marginTop: 12,
+                      paddingTop: 10,
+                      borderTopWidth: 1,
+                      borderTopColor: colors.line,
+                    }}
+                  >
+                    {advNutrition[range].macroSplit.map((split) => (
+                      <View key={split.label} style={{ alignItems: 'center' }}>
+                        <Text style={{ fontSize: 11, color: colors.muted }}>{split.label}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
+                          {split.grams}g{' '}
+                          <Text style={{ fontSize: 10, color: colors.muted }}>({split.pct}%)</Text>
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
 
               {/* Workout performance summary */}
               {metric === 'workouts' && advWorkouts[range] && !hasEmptyPoints && (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.line }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-around',
+                    marginTop: 12,
+                    paddingTop: 10,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.line,
+                  }}
+                >
                   <View style={{ alignItems: 'center' }}>
                     <Text style={{ fontSize: 11, color: colors.muted }}>Avg Duration</Text>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
@@ -332,7 +398,16 @@ export function ProgressScreen() {
 
               {/* Hydration consistency summary */}
               {metric === 'water' && advHydration[range] && !hasEmptyPoints && (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.line }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-around',
+                    marginTop: 12,
+                    paddingTop: 10,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.line,
+                  }}
+                >
                   <View style={{ alignItems: 'center' }}>
                     <Text style={{ fontSize: 11, color: colors.muted }}>Daily Avg</Text>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
@@ -366,7 +441,12 @@ export function ProgressScreen() {
             action="Ask coach"
             onAction={() => navigate('coach', { q: 'Compare this month with last month' })}
           />
-          <View style={[styles.compareCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View
+            style={[
+              styles.compareCard,
+              { backgroundColor: colors.surface, borderColor: colors.line },
+            ]}
+          >
             {comparisonItems.map(([label, a, b, better], idx, arr) => (
               <View
                 key={label as string}
@@ -381,7 +461,10 @@ export function ProgressScreen() {
                   <Text
                     style={[
                       styles.compareA,
-                      { color: better ? colors.good : colors.ink, fontWeight: better ? '700' : '500' },
+                      {
+                        color: better ? colors.good : colors.ink,
+                        fontWeight: better ? '700' : '500',
+                      },
                     ]}
                   >
                     {a as string}
@@ -397,27 +480,62 @@ export function ProgressScreen() {
         <View style={styles.sectionBlock}>
           <SectionHeader title="AI insights" />
           {isCoachLoading && !coachInsightsData ? (
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line, padding: 20, alignItems: 'center' }]}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.line,
+                  padding: 20,
+                  alignItems: 'center',
+                },
+              ]}
+            >
               <ActivityIndicator size="small" color={colors.accentStrong} />
               <Text style={{ color: colors.muted, marginTop: 8, fontSize: 13 }}>
                 Analyzing your progress patterns...
               </Text>
             </View>
           ) : isCoachError && !coachInsightsData ? (
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line, padding: 16, alignItems: 'center' }]}>
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.line,
+                  padding: 16,
+                  alignItems: 'center',
+                },
+              ]}
+            >
               <Text style={{ color: colors.muted, fontSize: 13 }}>
                 Unable to load AI insights right now.
               </Text>
               <TouchableOpacity onPress={() => refetchCoachInsights()} style={{ marginTop: 6 }}>
-                <Text style={{ color: colors.ink, fontWeight: '600', textDecorationLine: 'underline', fontSize: 13 }}>
+                <Text
+                  style={{
+                    color: colors.ink,
+                    fontWeight: '600',
+                    textDecorationLine: 'underline',
+                    fontSize: 13,
+                  }}
+                >
                   Tap to retry
                 </Text>
               </TouchableOpacity>
             </View>
           ) : !coachInsightsData?.insights || coachInsightsData.insights.length === 0 ? (
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line, padding: 16 }]}>
-              <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13, lineHeight: 18 }}>
-                No insights available yet. Log workouts, nutrition, or weight to generate AI progress insights.
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: colors.surface, borderColor: colors.line, padding: 16 },
+              ]}
+            >
+              <Text
+                style={{ color: colors.muted, textAlign: 'center', fontSize: 13, lineHeight: 18 }}
+              >
+                No insights available yet. Log workouts, nutrition, or weight to generate AI
+                progress insights.
               </Text>
             </View>
           ) : (
@@ -442,9 +560,12 @@ export function ProgressScreen() {
         <View style={styles.sectionBlock}>
           <SectionHeader title="Achievements" />
           {activeAchievements.length === 0 ? (
-            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <View
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}
+            >
               <Text style={{ color: colors.muted, textAlign: 'center', padding: 12, fontSize: 13 }}>
-                No achievements earned yet. Log workouts, nutrition and weigh-ins to unlock milestones.
+                No achievements earned yet. Log workouts, nutrition and weigh-ins to unlock
+                milestones.
               </Text>
             </View>
           ) : (
@@ -492,11 +613,7 @@ export function ProgressScreen() {
             subtitle="View and track your targets"
             onPress={() => navigate('goals')}
           />
-          <ListRow
-            icon={Scale}
-            title="Weight & body"
-            onPress={() => navigate('weight')}
-          />
+          <ListRow icon={Scale} title="Weight & body" onPress={() => navigate('weight')} />
           <ListRow
             icon={Trophy}
             title="Personal records"
@@ -602,4 +719,3 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 });
-

@@ -1,4 +1,5 @@
 import React from 'react';
+import { usePlannedWorkout } from '@/features/workouts/hooks/use-planned-workout';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { CheckCircle2, Dumbbell, Play, ArrowUpRight } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
@@ -10,6 +11,7 @@ import { ActionButton } from '@/shared/components/ui/ActionButton';
 import { premium } from '@/shared/theme/premium';
 
 export function RecommendedWorkout({ showLibraryLink = true }: { showLibraryLink?: boolean } = {}) {
+  usePlannedWorkout();
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const plannedSession = useWorkoutStore((s) => s.plannedSession);
@@ -34,9 +36,7 @@ export function RecommendedWorkout({ showLibraryLink = true }: { showLibraryLink
         <Card appearance="premium" style={styles.card}>
           <View style={styles.statusRow}>
             <Dumbbell size={18} color={colors.accentStrong} />
-            <Text style={[premium.type.eyebrow, { color: colors.muted }]}>
-              NO WORKOUT PLANNED
-            </Text>
+            <Text style={[premium.type.eyebrow, { color: colors.muted }]}>NO WORKOUT PLANNED</Text>
           </View>
           <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
             Ready to train?
@@ -90,7 +90,7 @@ export function RecommendedWorkout({ showLibraryLink = true }: { showLibraryLink
           </Text>
         </View>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-          {completed ? lastCompleted.title : plannedSession?.title ?? 'Workout Plan'}
+          {completed ? lastCompleted.title : (plannedSession?.title ?? 'Workout Plan')}
         </Text>
         <Text style={[styles.meta, { color: colors.muted }]}>
           {completed

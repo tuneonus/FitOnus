@@ -19,7 +19,10 @@ export const AISummaryCard = React.memo(({ summary }: AISummaryCardProps) => {
   const greeting = realInsights?.greeting || summary?.greeting || 'Hello Athlete!';
   const recommendation = realInsights?.recommendation || summary?.recommendation;
   const insightsText = realInsights?.insights?.length
-    ? realInsights.insights.map((i) => i.description).slice(0, 2).join(' ')
+    ? realInsights.insights
+        .map((i) => i.description)
+        .slice(0, 2)
+        .join(' ')
     : '';
 
   return (
@@ -36,7 +39,7 @@ export const AISummaryCard = React.memo(({ summary }: AISummaryCardProps) => {
           <View style={styles.loadingRow}>
             <ActivityIndicator size="small" color={colors.primary} />
             <Text variant="bodyMedium" color="muted">
-              Analyzing today's progress...
+              Analyzing today’s progress...
             </Text>
           </View>
         ) : (
@@ -99,4 +102,3 @@ const styles = StyleSheet.create({
 });
 
 AISummaryCard.displayName = 'AISummaryCard';
-

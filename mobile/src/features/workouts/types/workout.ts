@@ -1,7 +1,8 @@
 export type Exercise = {
   id: string;
   name: string;
-  muscle?: 'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Arms' | 'Core' | 'Full body' | 'Cardio' | string;
+  muscle?:
+    'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Arms' | 'Core' | 'Full body' | 'Cardio' | string;
   equipment: 'Barbell' | 'Dumbbell' | 'Cable' | 'Machine' | 'Bodyweight' | 'Kettlebell' | string;
   level?: 'Beginner' | 'Intermediate' | 'Advanced' | string;
   secondary?: string[];
@@ -31,6 +32,7 @@ export type PlannedExercise = {
 };
 
 export type WorkoutSession = {
+  isDraft?: boolean;
   id: string;
   title: string;
   focus: string;

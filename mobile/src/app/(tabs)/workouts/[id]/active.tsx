@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+} from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ScreenContainer } from '@/components/shared/screen-container';
 import { Text } from '@/components/ui/text';
@@ -13,6 +21,9 @@ import { SetLogger } from '@/features/workouts/components/set-logger';
 import { RestTimer } from '@/features/workouts/components/rest-timer';
 import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
+import { generateUUID } from '@/features/nutrition/utils/uuid';
+import { refreshFitnessQueries } from '@/services/fitness-refresh';
+import { showToast } from '@/shared/stores/toastStore';
 
 const { width } = Dimensions.get('window');
 
@@ -20,14 +31,17 @@ export default function ActiveWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors, isDark } = useTheme();
-  
+
   const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [loggedSets, setLoggedSets] = useState<Record<string, LoggedSet[]>>({});
   const [activeRest, setActiveRest] = useState<number | null>(null);
   const [isFinished, setIsFinished] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const startedAt = useRef(new Date());
+  const clientSessionId = useRef(generateUUID());
 
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
@@ -37,14 +51,13 @@ export default function ActiveWorkoutScreen() {
       try {
         const data = await WorkoutService.getWorkoutDetail(id);
         setWorkout(data);
-        
+
         // Initialize empty sets
         const initialSets: Record<string, LoggedSet[]> = {};
         data.exercises.forEach((we: any) => {
           initialSets[we.id] = [];
         });
         setLoggedSets(initialSets);
-        
       } catch (e) {
         console.error(e);
       } finally {
@@ -58,8 +71,14 @@ export default function ActiveWorkoutScreen() {
     return <Loading fullScreen />;
   }
 
-  const handleLogSet = (workoutExerciseId: string, setNumber: number, weight: number, reps: number, restSeconds: number) => {
-    setLoggedSets(prev => {
+  const handleLogSet = (
+    workoutExerciseId: string,
+    setNumber: number,
+    weight: number,
+    reps: number,
+    restSeconds: number,
+  ) => {
+    setLoggedSets((prev) => {
       const exerciseSets = [...(prev[workoutExerciseId] || [])];
       exerciseSets[setNumber - 1] = {
         id: `set-${Date.now()}`,
@@ -67,11 +86,11 @@ export default function ActiveWorkoutScreen() {
         weight,
         weightKg: weight,
         reps,
-        isCompleted: true
+        isCompleted: true,
       };
       return { ...prev, [workoutExerciseId]: exerciseSets };
     });
-    
+
     // Start rest timer
     setActiveRest(restSeconds);
   };
@@ -89,8 +108,45 @@ export default function ActiveWorkoutScreen() {
     scrollRef.current?.scrollTo({ x: index * width, animated: true });
   };
 
-  const finishWorkout = () => {
-    setIsFinished(true);
+  const finishWorkout = async () => {
+    if (saving || isFinished) return;
+    const sets = workout.exercises.flatMap((exercise: any) =>
+      (loggedSets[exercise.id] || [])
+        .filter((set) => set.isCompleted)
+        .map((set, index) => ({
+          exerciseId: exercise.exerciseId,
+          setNumber: set.setNumber ?? index + 1,
+          weightKg: set.weightKg ?? set.weight,
+          reps: set.reps,
+        })),
+    );
+    if (!sets.length) {
+      showToast({ message: 'Complete at least one set before finishing.' });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { isOffline } = await WorkoutService.saveSession({
+        clientSessionId: clientSessionId.current,
+        workoutName: workout.name,
+        planId: id,
+        startedAt: startedAt.current.toISOString(),
+        completedAt: new Date().toISOString(),
+        durationSeconds: Math.max(1, Math.round((Date.now() - startedAt.current.getTime()) / 1000)),
+        sets,
+      });
+      refreshFitnessQueries();
+      showToast({
+        message: isOffline
+          ? 'Workout saved on this device · waiting to sync'
+          : 'Workout saved to your account',
+      });
+      setIsFinished(true);
+    } catch {
+      showToast({ message: 'Could not save workout. Your sets are still here. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const closeWorkout = () => {
@@ -100,9 +156,9 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <ScreenContainer edges={['top']} style={{ backgroundColor: colors.background }}>
-      <Stack.Screen 
-        options={{ 
-          headerShown: true, 
+      <Stack.Screen
+        options={{
+          headerShown: true,
           title: 'Active Workout',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
@@ -114,29 +170,39 @@ export default function ActiveWorkoutScreen() {
             </Pressable>
           ),
           headerRight: () => (
-            <Pressable onPress={finishWorkout} style={{ padding: 8, backgroundColor: colors.primary, borderRadius: BorderRadius.full, paddingHorizontal: 16 }}>
-              <Text variant="labelMedium" style={{ color: colors.background }}>Finish</Text>
+            <Pressable
+              onPress={finishWorkout}
+              style={{
+                padding: 8,
+                backgroundColor: colors.primary,
+                borderRadius: BorderRadius.full,
+                paddingHorizontal: 16,
+              }}
+            >
+              <Text variant="labelMedium" style={{ color: colors.background }}>
+                {saving ? 'Saving…' : 'Finish'}
+              </Text>
             </Pressable>
-          )
-        }} 
+          ),
+        }}
       />
 
       {/* Pagination Dots */}
       <View style={styles.pagination}>
         {workout.exercises.map((_: any, idx: number) => (
-          <View 
-            key={idx} 
+          <View
+            key={idx}
             style={[
-              styles.dot, 
+              styles.dot,
               { backgroundColor: idx === currentExerciseIndex ? colors.primary : colors.border },
-              idx === currentExerciseIndex && { width: 16 }
-            ]} 
+              idx === currentExerciseIndex && { width: 16 },
+            ]}
           />
         ))}
       </View>
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -149,14 +215,20 @@ export default function ActiveWorkoutScreen() {
         >
           {workout.exercises.map((we: any, index: number) => {
             const exerciseSets = loggedSets[we.id] || [];
-            
+
             return (
               <View key={we.id} style={[styles.page, { width }]}>
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.pageScroll}>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.pageScroll}
+                >
                   <Text variant="headlineMedium" style={{ color: colors.text, marginBottom: 4 }}>
                     {we.exercise.name}
                   </Text>
-                  <Text variant="bodyMedium" style={{ color: colors.textSecondary, marginBottom: Spacing.xl }}>
+                  <Text
+                    variant="bodyMedium"
+                    style={{ color: colors.textSecondary, marginBottom: Spacing.xl }}
+                  >
                     Target: {we.targetSets} sets × {we.targetReps} reps
                   </Text>
 
@@ -168,24 +240,31 @@ export default function ActiveWorkoutScreen() {
                   {Array.from({ length: we.targetSets }).map((_, setIdx) => {
                     const setNum = setIdx + 1;
                     const loggedSet = exerciseSets[setIdx];
-                    
+
                     return (
-                      <SetLogger 
+                      <SetLogger
                         key={`${we.id}-set-${setNum}`}
                         setNumber={setNum}
                         loggedSet={loggedSet}
-                        previousWeight={setIdx > 0 ? (exerciseSets[setIdx - 1]?.weightKg ?? exerciseSets[setIdx - 1]?.weight) : undefined}
+                        previousWeight={
+                          setIdx > 0
+                            ? (exerciseSets[setIdx - 1]?.weightKg ??
+                              exerciseSets[setIdx - 1]?.weight)
+                            : undefined
+                        }
                         previousReps={setIdx > 0 ? exerciseSets[setIdx - 1]?.reps : undefined}
                         onLog={(w, r) => handleLogSet(we.id, setNum, w, r, we.restSeconds)}
                       />
                     );
                   })}
-                  
+
                   {/* Extra set button */}
                   <Pressable style={[styles.addSetBtn, { borderColor: colors.border }]}>
-                    <Text variant="labelLarge" style={{ color: colors.primary }}>+ Add Set</Text>
+                    <Text variant="labelLarge" style={{ color: colors.primary }}>
+                      + Add Set
+                    </Text>
                   </Pressable>
-                  
+
                   {/* Bottom spacing */}
                   <View style={{ height: 100 }} />
                 </ScrollView>
@@ -198,30 +277,54 @@ export default function ActiveWorkoutScreen() {
       {/* Navigation arrows overlay */}
       <View style={styles.navArrows} pointerEvents="box-none">
         {currentExerciseIndex > 0 ? (
-          <Pressable style={[styles.arrowBtn, { backgroundColor: colors.backgroundElement }]} onPress={() => scrollToExercise(currentExerciseIndex - 1)}>
+          <Pressable
+            style={[styles.arrowBtn, { backgroundColor: colors.backgroundElement }]}
+            onPress={() => scrollToExercise(currentExerciseIndex - 1)}
+          >
             <ChevronLeft size={24} color={colors.text} />
           </Pressable>
-        ) : <View style={styles.arrowBtn} />}
-        
+        ) : (
+          <View style={styles.arrowBtn} />
+        )}
+
         {currentExerciseIndex < workout.exercises.length - 1 ? (
-          <Pressable style={[styles.arrowBtn, { backgroundColor: colors.backgroundElement }]} onPress={() => scrollToExercise(currentExerciseIndex + 1)}>
+          <Pressable
+            style={[styles.arrowBtn, { backgroundColor: colors.backgroundElement }]}
+            onPress={() => scrollToExercise(currentExerciseIndex + 1)}
+          >
             <ChevronRight size={24} color={colors.text} />
           </Pressable>
-        ) : <View style={styles.arrowBtn} />}
+        ) : (
+          <View style={styles.arrowBtn} />
+        )}
       </View>
 
       {/* Finish Overlay */}
       {isFinished && (
         <View style={[StyleSheet.absoluteFill, { zIndex: 100 }]}>
-          <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <BlurView
+            intensity={isDark ? 40 : 20}
+            tint={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
           <View style={styles.finishContent}>
             <View style={[styles.successIcon, { backgroundColor: colors.successLight }]}>
               <CheckCircle size={64} color={colors.success} />
             </View>
-            <Text variant="headlineLarge" style={{ color: colors.text, textAlign: 'center', marginBottom: Spacing.sm }}>
+            <Text
+              variant="headlineLarge"
+              style={{ color: colors.text, textAlign: 'center', marginBottom: Spacing.sm }}
+            >
               Workout Complete!
             </Text>
-            <Text variant="bodyLarge" style={{ color: colors.textSecondary, textAlign: 'center', marginBottom: Spacing.xxl }}>
+            <Text
+              variant="bodyLarge"
+              style={{
+                color: colors.textSecondary,
+                textAlign: 'center',
+                marginBottom: Spacing.xxl,
+              }}
+            >
               Awesome job crushing the {workout.name}.
             </Text>
             <Button title="Done" onPress={closeWorkout} style={{ width: '100%' }} />
@@ -231,7 +334,6 @@ export default function ActiveWorkoutScreen() {
     </ScreenContainer>
   );
 }
-
 
 const styles = StyleSheet.create({
   pagination: {
@@ -293,5 +395,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.xl,
-  }
+  },
 });

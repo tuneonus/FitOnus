@@ -138,8 +138,6 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
 
       showToast({
         message: `Added to ${mealLabels[meal]}`,
-        actionLabel: 'Undo',
-        onAction: () => removeEntry(id),
       });
 
       setForm({ name: '', kcal: '', protein: '', carbs: '', fat: '' });

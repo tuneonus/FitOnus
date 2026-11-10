@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { Scale, Droplets, Dumbbell, X } from 'lucide-react-native';
 import { useNutritionStore } from '@/features/nutrition/store/nutritionStore';
+import { localDateKey } from '@/features/home/utils/home-overview';
 import { showToast } from '@/shared/stores/toastStore';
 
 export default function QuickLogModal() {
@@ -17,25 +18,32 @@ export default function QuickLogModal() {
 
   return (
     <View style={styles.container}>
-      <BlurView 
-        intensity={isDark ? 40 : 20} 
-        tint={isDark ? 'dark' : 'light'} 
-        style={StyleSheet.absoluteFill} 
+      <BlurView
+        intensity={isDark ? 40 : 20}
+        tint={isDark ? 'dark' : 'light'}
+        style={StyleSheet.absoluteFill}
       />
-      
+
       <Pressable style={styles.backdrop} onPress={() => router.back()} />
-      
-      <View style={[styles.content, { backgroundColor: colors.background, shadowColor: '#000000' }]}>
+
+      <View
+        style={[styles.content, { backgroundColor: colors.background, shadowColor: '#000000' }]}
+      >
         <View style={styles.header}>
-          <Text variant="headlineSmall" style={{ color: colors.text }}>Quick Log</Text>
+          <Text variant="headlineSmall" style={{ color: colors.text }}>
+            Quick Log
+          </Text>
           <Pressable onPress={() => router.back()} style={styles.closeButton}>
             <X size={24} color={colors.textSecondary} />
           </Pressable>
         </View>
 
         <View style={styles.grid}>
-          <Pressable 
-            style={[styles.actionBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
+          <Pressable
+            style={[
+              styles.actionBtn,
+              { backgroundColor: colors.backgroundElement, borderColor: colors.border },
+            ]}
             onPress={() => {
               router.back();
               navigate('weight');
@@ -44,25 +52,42 @@ export default function QuickLogModal() {
             <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
               <Scale size={28} color={colors.primary} />
             </View>
-            <Text variant="labelLarge" style={{ color: colors.text, marginTop: Spacing.sm }}>Weight</Text>
+            <Text variant="labelLarge" style={{ color: colors.text, marginTop: Spacing.sm }}>
+              Weight
+            </Text>
           </Pressable>
 
-          <Pressable 
-            style={[styles.actionBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
-            onPress={() => {
-              useNutritionStore.getState().logWater(250);
-              showToast({ message: 'Added 250 ml of water' });
-              router.back();
+          <Pressable
+            style={[
+              styles.actionBtn,
+              { backgroundColor: colors.backgroundElement, borderColor: colors.border },
+            ]}
+            onPress={async () => {
+              try {
+                const nutrition = useNutritionStore.getState();
+                if (nutrition.selectedDate !== localDateKey())
+                  nutrition.setSelectedDate(localDateKey());
+                await nutrition.logWater(250);
+                showToast({ message: 'Added 250 ml of water' });
+                router.back();
+              } catch {
+                showToast({ message: 'Could not save water. Please try again.' });
+              }
             }}
           >
             <View style={[styles.iconCircle, { backgroundColor: '#E0F2FE' }]}>
               <Droplets size={28} color="#0284C7" />
             </View>
-            <Text variant="labelLarge" style={{ color: colors.text, marginTop: Spacing.sm }}>Water</Text>
+            <Text variant="labelLarge" style={{ color: colors.text, marginTop: Spacing.sm }}>
+              Water
+            </Text>
           </Pressable>
 
-          <Pressable 
-            style={[styles.actionBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
+          <Pressable
+            style={[
+              styles.actionBtn,
+              { backgroundColor: colors.backgroundElement, borderColor: colors.border },
+            ]}
             onPress={() => {
               router.back();
               navigate('workouts');
@@ -71,7 +96,9 @@ export default function QuickLogModal() {
             <View style={[styles.iconCircle, { backgroundColor: '#FCE7F3' }]}>
               <Dumbbell size={28} color="#DB2777" />
             </View>
-            <Text variant="labelLarge" style={{ color: colors.text, marginTop: Spacing.sm }}>Workout</Text>
+            <Text variant="labelLarge" style={{ color: colors.text, marginTop: Spacing.sm }}>
+              Workout
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -128,5 +155,5 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
 });

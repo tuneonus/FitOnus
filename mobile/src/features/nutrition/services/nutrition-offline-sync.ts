@@ -1,3 +1,4 @@
+import { captureUserSession } from '@/services/user-session';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { nutritionApi } from '../api/nutrition-api';
@@ -35,11 +36,13 @@ class NutritionOfflineSyncService {
 
   private getMealsKey(): string {
     const userId = useAuthStore.getState().user?.id;
+    if (!userId) throw new Error('Sign in to access your saved fitness data.');
     return userId ? `@fitonus:pending_meals:${userId}` : '@fitonus:pending_meals';
   }
 
   private getWaterKey(): string {
     const userId = useAuthStore.getState().user?.id;
+    if (!userId) throw new Error('Sign in to access your saved fitness data.');
     return userId ? `@fitonus:pending_water:${userId}` : '@fitonus:pending_water';
   }
 
@@ -83,8 +86,10 @@ class NutritionOfflineSyncService {
   // --- Meals Queue ---
 
   async enqueueMeal(payload: LogMealInput): Promise<void> {
+    const session = captureUserSession();
     try {
       const queue = await this.getPendingMeals();
+      session.assertCurrent();
       const clientMealId = payload.id || generateUUID();
       const payloadWithId = { ...payload, id: clientMealId };
 
@@ -103,19 +108,24 @@ class NutritionOfflineSyncService {
       }
 
       await AsyncStorage.setItem(this.getMealsKey(), JSON.stringify(queue));
+      session.assertCurrent();
       logger.info(`Meal enqueued offline. Pending meals count: ${queue.length}`, clientMealId);
     } catch (error) {
+      session.assertCurrent();
       logger.error('Failed to enqueue meal offline:', error);
       throw error;
     }
   }
 
   async getPendingMeals(): Promise<QueuedMealLog[]> {
+    const session = captureUserSession();
     try {
       const raw = await AsyncStorage.getItem(this.getMealsKey());
+      session.assertCurrent();
       if (!raw) return [];
       return JSON.parse(raw) as QueuedMealLog[];
     } catch (error) {
+      session.assertCurrent();
       logger.error('Failed to read offline meals queue:', error);
       return [];
     }
@@ -124,8 +134,10 @@ class NutritionOfflineSyncService {
   // --- Water Queue ---
 
   async enqueueWater(payload: LogWaterInput): Promise<void> {
+    const session = captureUserSession();
     try {
       const queue = await this.getPendingWater();
+      session.assertCurrent();
       const clientWaterId = payload.id || generateUUID();
       const payloadWithId = { ...payload, id: clientWaterId };
 
@@ -144,19 +156,24 @@ class NutritionOfflineSyncService {
       }
 
       await AsyncStorage.setItem(this.getWaterKey(), JSON.stringify(queue));
+      session.assertCurrent();
       logger.info(`Water enqueued offline. Pending water count: ${queue.length}`, clientWaterId);
     } catch (error) {
+      session.assertCurrent();
       logger.error('Failed to enqueue water offline:', error);
       throw error;
     }
   }
 
   async getPendingWater(): Promise<QueuedWaterLog[]> {
+    const session = captureUserSession();
     try {
       const raw = await AsyncStorage.getItem(this.getWaterKey());
+      session.assertCurrent();
       if (!raw) return [];
       return JSON.parse(raw) as QueuedWaterLog[];
     } catch (error) {
+      session.assertCurrent();
       logger.error('Failed to read offline water queue:', error);
       return [];
     }
@@ -166,12 +183,15 @@ class NutritionOfflineSyncService {
    * Clears pending queues on user logout.
    */
   async clearAllQueues(): Promise<void> {
+    const session = captureUserSession();
     try {
       await Promise.all([
         AsyncStorage.removeItem(this.getMealsKey()),
         AsyncStorage.removeItem(this.getWaterKey()),
       ]);
+      session.assertCurrent();
     } catch (error) {
+      session.assertCurrent();
       logger.error('Failed to clear offline nutrition queues:', error);
     }
   }
@@ -180,7 +200,9 @@ class NutritionOfflineSyncService {
    * Total pending offline mutations count (meals + water).
    */
   async getPendingCount(): Promise<number> {
+    const session = captureUserSession();
     const [meals, water] = await Promise.all([this.getPendingMeals(), this.getPendingWater()]);
+    session.assertCurrent();
     return meals.length + water.length;
   }
 
@@ -189,9 +211,13 @@ class NutritionOfflineSyncService {
    * HTTP 409 is treated as success ONLY for confirmed duplicate submissions.
    */
   async syncAllPending(): Promise<{ syncedMeals: number; syncedWater: number; remaining: number }> {
+    if (!useAuthStore.getState().isAuthenticated)
+      return { syncedMeals: 0, syncedWater: 0, remaining: 0 };
+    const session = captureUserSession();
     if (this.isSyncing) {
       logger.info('Nutrition sync already in progress, skipping concurrent run.');
       const count = await this.getPendingCount();
+      session.assertCurrent();
       return { syncedMeals: 0, syncedWater: 0, remaining: count };
     }
 
@@ -202,14 +228,18 @@ class NutritionOfflineSyncService {
     try {
       // 1. Sync Meals
       const mealsQueue = await this.getPendingMeals();
+      session.assertCurrent();
+      const mealsQueueIds = new Set(mealsQueue.map((item) => item.clientMealId));
       const remainingMeals: QueuedMealLog[] = [];
 
       for (const item of mealsQueue) {
         try {
           await nutritionApi.logMeal(item.payload);
+          session.assertCurrent();
           syncedMeals++;
           logger.info(`Successfully synced offline meal: ${item.clientMealId}`);
         } catch (err: any) {
+          session.assertCurrent();
           const status = err?.response?.status;
           const errMsg = err?.response?.data?.error?.message || '';
 
@@ -218,21 +248,29 @@ class NutritionOfflineSyncService {
             let isConfirmed = false;
             try {
               const existing = await nutritionApi.getMeal(item.clientMealId);
+              session.assertCurrent();
               if (existing && existing.id === item.clientMealId) {
                 isConfirmed = true;
               }
             } catch (checkErr: any) {
-              logger.warn(`Meal ${item.clientMealId} returned 409 Conflict but could not be verified: ${checkErr?.message}`);
+              session.assertCurrent();
+              logger.warn(
+                `Meal ${item.clientMealId} returned 409 Conflict but could not be verified: ${checkErr?.message}`,
+              );
             }
 
             if (isConfirmed) {
-              logger.info(`Meal ${item.clientMealId} confirmed already on server (409 Duplicate). Removing from queue.`);
+              logger.info(
+                `Meal ${item.clientMealId} confirmed already on server (409 Duplicate). Removing from queue.`,
+              );
               syncedMeals++;
               continue;
             } else {
               // ID collision with another user: regenerate RFC 4122 v4 UUID and retain to prevent data loss!
               const newId = generateUUID();
-              logger.info(`Regenerating meal UUID ${item.clientMealId} -> ${newId} to resolve ID collision.`);
+              logger.info(
+                `Regenerating meal UUID ${item.clientMealId} -> ${newId} to resolve ID collision.`,
+              );
               item.clientMealId = newId;
               item.payload.id = newId;
               remainingMeals.push(item);
@@ -242,7 +280,9 @@ class NutritionOfflineSyncService {
 
           // Permanent 4xx client errors (excluding 408/429) discard to avoid stuck queue
           if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
-            logger.warn(`Meal ${item.clientMealId} failed with unrecoverable client error ${status} (${errMsg}). Removing from queue.`);
+            logger.warn(
+              `Meal ${item.clientMealId} failed with unrecoverable client error ${status} (${errMsg}). Removing from queue.`,
+            );
             continue;
           }
 
@@ -255,25 +295,40 @@ class NutritionOfflineSyncService {
         }
       }
 
-      await AsyncStorage.setItem(this.getMealsKey(), JSON.stringify(remainingMeals));
+      const mealsQueueLatest = await this.getPendingMeals();
+      session.assertCurrent();
+      await AsyncStorage.setItem(
+        this.getMealsKey(),
+        JSON.stringify([
+          ...mealsQueueLatest.filter((item) => !mealsQueueIds.has(item.clientMealId)),
+          ...remainingMeals,
+        ]),
+      );
+      session.assertCurrent();
 
       // 2. Sync Water
       const waterQueue = await this.getPendingWater();
+      session.assertCurrent();
+      const waterQueueIds = new Set(waterQueue.map((item) => item.clientWaterId));
       const remainingWater: QueuedWaterLog[] = [];
 
       for (const item of waterQueue) {
         try {
           await nutritionApi.logWater(item.payload);
+          session.assertCurrent();
           syncedWater++;
           logger.info(`Successfully synced offline water: ${item.clientWaterId}`);
         } catch (err: any) {
+          session.assertCurrent();
           const status = err?.response?.status;
           const errMsg = err?.response?.data?.error?.message || '';
 
           if (status === 409) {
             if (errMsg.includes('collision') || errMsg.includes('another user')) {
               const newWaterId = generateUUID();
-              logger.info(`Regenerating water UUID ${item.clientWaterId} -> ${newWaterId} to resolve ID collision.`);
+              logger.info(
+                `Regenerating water UUID ${item.clientWaterId} -> ${newWaterId} to resolve ID collision.`,
+              );
               item.clientWaterId = newWaterId;
               item.payload.id = newWaterId;
               remainingWater.push(item);
@@ -298,7 +353,16 @@ class NutritionOfflineSyncService {
         }
       }
 
-      await AsyncStorage.setItem(this.getWaterKey(), JSON.stringify(remainingWater));
+      const waterQueueLatest = await this.getPendingWater();
+      session.assertCurrent();
+      await AsyncStorage.setItem(
+        this.getWaterKey(),
+        JSON.stringify([
+          ...waterQueueLatest.filter((item) => !waterQueueIds.has(item.clientWaterId)),
+          ...remainingWater,
+        ]),
+      );
+      session.assertCurrent();
 
       if (syncedMeals > 0 || syncedWater > 0) {
         this.notifySyncComplete();

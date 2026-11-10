@@ -9,6 +9,7 @@ const ACCESS_TOKEN_KEY = 'auth.access_token';
 const REFRESH_TOKEN_KEY = 'auth.refresh_token';
 
 function resetAllUserStores() {
+  queryClient.clear();
   useAuthStore.getState().clearAuth();
   useSettingsStore.getState().resetStore();
 
@@ -206,7 +207,10 @@ export const AuthService = {
     try {
       await AuthRepository.changePassword({ currentPassword, newPassword });
     } catch (error: any) {
-      const message = extractApiErrorMessage(error, 'Unable to change password. Please verify your current password.');
+      const message = extractApiErrorMessage(
+        error,
+        'Unable to change password. Please verify your current password.',
+      );
       logger.error('Change password failed', { message });
       throw new Error(message);
     }
@@ -216,7 +220,10 @@ export const AuthService = {
     try {
       await AuthRepository.deleteAccount(password);
     } catch (error: any) {
-      const message = extractApiErrorMessage(error, 'Failed to delete account. Please verify your password.');
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to delete account. Please verify your password.',
+      );
       logger.error('Delete account failed', { message });
       throw new Error(message);
     }

@@ -5,6 +5,8 @@
  */
 import type { PlannedExercise, WorkoutSession } from '../types/workout';
 import { WorkoutService } from './workout-service';
+import { useWorkoutStore } from '../store/workoutStore';
+import { captureUserSession } from '@/services/user-session';
 import { logger } from '@/utils/logger';
 
 export interface GenerateWorkoutParams {
@@ -23,6 +25,7 @@ export interface GeneratedPlanResult {
 export async function generateWorkoutPlan(
   params: GenerateWorkoutParams,
 ): Promise<GeneratedPlanResult> {
+  const sessionOwner = captureUserSession();
   const { goal, durationMin, equipment, level, hasRecovery } = params;
 
   // 1. Fetch available exercises strictly from database/service
@@ -41,6 +44,9 @@ export async function generateWorkoutPlan(
     throw new Error('No exercises available in catalog to generate a plan');
   }
 
+  sessionOwner.assertCurrent();
+  useWorkoutStore.setState({ catalog: allExercises });
+
   // 2. Filter exercises by user equipment
   const equipmentLower = equipment.map((e) => e.toLowerCase());
   const usesBodyweightOnly = equipmentLower.includes('none') || equipmentLower.length === 0;
@@ -56,7 +62,7 @@ export async function generateWorkoutPlan(
     );
   });
 
-  const pool = suitableExercises.length > 0 ? suitableExercises : allExercises;
+  const pool = suitableExercises;
   if (pool.length === 0) {
     throw new Error('No suitable exercises found to generate a workout plan');
   }
@@ -99,11 +105,7 @@ export async function generateWorkoutPlan(
     exerciseId: ex.id,
     sets: defaultSets,
     reps: repStr,
-    weight: ex.equipment.toLowerCase().includes('barbell')
-      ? 60
-      : ex.equipment.toLowerCase().includes('dumbbell')
-      ? 16
-      : 0,
+    weight: 0, // The member enters their own working weight.
     restSec,
   }));
 
@@ -124,8 +126,8 @@ export async function generateWorkoutPlan(
     goal === 'Fat Loss'
       ? `Short ${restSec}s rest intervals maintain elevated heart rate for maximum caloric burn.`
       : goal === 'Strength'
-      ? `Extended ${restSec}s rest periods ensure neuromuscular recovery between heavy sets.`
-      : `Volume tuned to ${defaultSets} sets of ${repStr} reps for optimal hypertrophy stimulus.`,
+        ? `Extended ${restSec}s rest periods ensure neuromuscular recovery between heavy sets.`
+        : `Volume tuned to ${defaultSets} sets of ${repStr} reps for optimal hypertrophy stimulus.`,
     equipment.length > 0 && !usesBodyweightOnly
       ? `Customized strictly for your selected equipment (${equipment.join(', ')}).`
       : '100% bodyweight movements — no gym equipment required.',

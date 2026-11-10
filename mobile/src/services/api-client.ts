@@ -1,13 +1,21 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
+import { captureUserSession } from './user-session';
+
 import { Config } from '../constants/config';
 import { logger } from '../utils/logger';
 import { SecureStorageService } from './secure-storage';
 import { AuthRepository } from '../features/auth/api/auth-repository';
 import { useAuthStore } from '../features/auth/stores/auth-store';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    fitonusSession?: ReturnType<typeof captureUserSession>;
+  }
+}
+
 export const apiClient = axios.create({
   baseURL: Config.API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -32,6 +40,8 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    config.fitonusSession ??= captureUserSession();
+    config.fitonusSession.assertCurrent();
     config.baseURL = Config.API_BASE_URL;
 
     const isPublicAuthRoute =
@@ -49,18 +59,23 @@ apiClient.interceptors.request.use(
     } else if (config.headers?.Authorization) {
       delete config.headers.Authorization;
     }
+    config.fitonusSession.assertCurrent();
     return config;
   },
   (error) => {
     logger.error('API Request Error:', error);
     return Promise.reject(error);
-  }
+  },
 );
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    response.config.fitonusSession?.assertCurrent();
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+    originalRequest?.fitonusSession?.assertCurrent();
     const errorData = error?.response?.data;
     const errorMessage = errorData?.error?.message || errorData?.message || error.message;
 
@@ -78,12 +93,18 @@ apiClient.interceptors.response.use(
       originalRequest?.url?.includes('/auth/forgot-password') ||
       originalRequest?.url?.includes('/auth/reset-password');
 
-    if (error.response?.status === 401 && !originalRequest?._retry && !isAuthRoute) {
+    if (
+      originalRequest &&
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthRoute
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
+            originalRequest.fitonusSession?.assertCurrent();
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
@@ -97,11 +118,13 @@ apiClient.interceptors.response.use(
 
       try {
         const refreshToken = await SecureStorageService.getItem('auth.refresh_token');
+        originalRequest.fitonusSession?.assertCurrent();
         if (!refreshToken) {
           throw new Error('No refresh token');
         }
 
         const newTokens = await AuthRepository.refreshToken(refreshToken);
+        originalRequest.fitonusSession?.assertCurrent();
         await SecureStorageService.setItem('auth.access_token', newTokens.accessToken);
         await SecureStorageService.setItem('auth.refresh_token', newTokens.refreshToken);
 
@@ -112,6 +135,10 @@ apiClient.interceptors.response.use(
         }
         return apiClient(originalRequest);
       } catch (refreshError) {
+        if (!originalRequest.fitonusSession?.isCurrent()) {
+          processQueue(refreshError, null);
+          return Promise.reject(refreshError);
+        }
         processQueue(refreshError, null);
         useAuthStore.getState().clearAuth();
         await SecureStorageService.removeItem('auth.access_token');
@@ -123,5 +150,5 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );

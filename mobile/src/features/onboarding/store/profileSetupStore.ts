@@ -1,3 +1,4 @@
+import { registerUserStore } from '@/services/user-session';
 import { create } from 'zustand';
 
 export type ProfileSetup = {
@@ -72,3 +73,5 @@ export const useProfileSetupStore = create<ProfileSetupState>((set, get) => ({
   },
   reset: () => set(initialSetup),
 }));
+
+registerUserStore(useProfileSetupStore);

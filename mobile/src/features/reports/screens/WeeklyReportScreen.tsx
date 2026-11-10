@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { Check, Circle, TrendingUp, Trophy, CalendarRange } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
@@ -9,29 +9,34 @@ import { BarChart } from '@/shared/components/charts/BarChart';
 import { showToast } from '@/shared/stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
 import { useProgressStore } from '@/features/analytics/store/progressStore';
-import { progressApi } from '@/features/progress/api/progress-api';
+import { hasReportRecords, useProgressReport } from '../hooks/use-progress-report';
+import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 
 export function WeeklyReportScreen() {
   const { colors } = useTheme();
   const params = useRouteParams<{ period?: string; id?: string }>();
   const period = params.period;
-  const { weeklyReport } = useProgressStore();
-  const r = weeklyReport;
+  const report = useProgressReport('weekly');
+  const r = report.data;
+  const refreshControl = (
+    <RefreshControl
+      refreshing={report.isRefetching}
+      onRefresh={() => {
+        void report.refetch();
+      }}
+      tintColor={colors.accent}
+    />
+  );
   const { navigate } = useNavigation();
   const [accepted, setAccepted] = useState<string[]>([]);
 
-  useEffect(() => {
-    progressApi
-      .getProgressReport({ type: 'weekly' })
-      .then((data) => {
-        if (data) useProgressStore.setState({ weeklyReport: data });
-      })
-      .catch(() => {});
-  }, []);
-
-  if (!r) {
+  if (!r || !hasReportRecords(r)) {
     return (
-      <Screen title="Weekly report">
+      <Screen title="Weekly report" refreshControl={refreshControl}>
+        {report.isError ? (
+          <StatusBanner tone="error" title="Couldn’t load your report" body="Pull to try again." />
+        ) : null}
+        {report.isLoading ? <Text style={{ color: colors.muted }}>Loading report…</Text> : null}
         <EmptyState
           icon={CalendarRange}
           title="No weekly report"
@@ -46,13 +51,14 @@ export function WeeklyReportScreen() {
   return (
     <Screen
       title="Weekly report"
+      refreshControl={refreshControl}
       footer={
         <Button
           size="lg"
           fullWidth
           onPress={() =>
             navigate('coach', {
-              q: 'Plan today’s meals with 160g protein under 2200 calories',
+              q: `Review my weekly report for ${r.period}`,
             })
           }
         >
@@ -62,143 +68,138 @@ export function WeeklyReportScreen() {
       contentContainerStyle={styles.container}
     >
       {/* Header Hero Section */}
-        <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
-          <Text style={[styles.heroMeta, { color: colors.muted }]}>
-            {period ?? r.period} · Generated {r.generated}
-          </Text>
-          <Text style={[styles.headline, { color: colors.ink }]}>{r.headline}</Text>
+      <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
+        <Text style={[styles.heroMeta, { color: colors.muted }]}>
+          {period ?? r.period} · Generated {r.generated}
+        </Text>
+        <Text style={[styles.headline, { color: colors.ink }]}>{r.headline}</Text>
 
-          <View style={[styles.statsGrid, { borderTopColor: colors.line }]}>
-            {r.stats.map((s) => (
-              <View key={s.label} style={styles.statCol}>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>{s.label}</Text>
-                <View style={styles.statValRow}>
-                  <Text style={[styles.statVal, { color: colors.ink }]}>{s.value}</Text>
-                  <Text style={[styles.statUnit, { color: colors.muted }]}>{s.unit}</Text>
-                </View>
-                <Text
+        <View style={[styles.statsGrid, { borderTopColor: colors.line }]}>
+          {r.stats.map((s) => (
+            <View key={s.label} style={styles.statCol}>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>{s.label}</Text>
+              <View style={styles.statValRow}>
+                <Text style={[styles.statVal, { color: colors.ink }]}>{s.value}</Text>
+                <Text style={[styles.statUnit, { color: colors.muted }]}>{s.unit}</Text>
+              </View>
+              <Text style={[styles.statNote, { color: s.good ? colors.good : colors.muted }]}>
+                {s.note}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Calories vs Goal */}
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Calories vs goal</Text>
+        <View style={{ marginTop: 8 }}>
+          <BarChart
+            data={r.calories}
+            formatValue={(v) => `${v.toLocaleString()} kcal`}
+            height={110}
+            barColor={colors.ink}
+          />
+        </View>
+      </View>
+
+      {/* Workouts · 5 of 5 */}
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>
+          Workouts · {r.stats.find((stat) => stat.label === 'Workouts')?.value ?? r.workouts.length}
+        </Text>
+        <View style={styles.workoutsRow}>
+          {r.workouts.map((w) => {
+            const isRest = w.title === 'Rest';
+            return (
+              <View key={`${w.day}-${w.title}`} style={styles.workoutDayCol}>
+                <View
                   style={[
-                    styles.statNote,
-                    { color: s.good ? colors.good : colors.muted },
+                    styles.workoutBadge,
+                    {
+                      backgroundColor: isRest ? colors.surface2 : colors.accent,
+                    },
                   ]}
                 >
-                  {s.note}
+                  {isRest ? (
+                    <Circle size={10} color={colors.muted} />
+                  ) : (
+                    <Check size={16} color={colors.ink} strokeWidth={3} />
+                  )}
+                </View>
+                <Text style={[styles.dayLabel, { color: colors.muted }]}>{w.day}</Text>
+                <Text style={[styles.dayTitle, { color: colors.ink }]} numberOfLines={1}>
+                  {w.title}
                 </Text>
               </View>
-            ))}
-          </View>
+            );
+          })}
         </View>
+      </View>
 
-        {/* Calories vs Goal */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>Calories vs goal</Text>
-          <View style={{ marginTop: 8 }}>
-            <BarChart
-              data={r.calories}
-              goal={2350}
-              highlightIndex={6}
-              formatValue={(v) => `${v.toLocaleString()} kcal`}
-              height={110}
-              barColor={colors.ink}
-            />
-          </View>
+      {/* Achievements */}
+      <View style={styles.sectionBlock}>
+        <Text style={[styles.sectionHeading, { color: colors.ink }]}>Achievements</Text>
+        <View style={styles.bulletList}>
+          {r.achievements.map((a) => (
+            <View key={a} style={styles.bulletRow}>
+              <Trophy size={16} color={colors.accent} style={{ marginTop: 2 }} />
+              <Text style={[styles.bulletText, { color: colors.ink }]}>{a}</Text>
+            </View>
+          ))}
         </View>
+      </View>
 
-        {/* Workouts · 5 of 5 */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>Workouts · 5 of 5</Text>
-          <View style={styles.workoutsRow}>
-            {r.workouts.map((w) => {
-              const isRest = w.title === 'Rest';
-              return (
-                <View key={w.day} style={styles.workoutDayCol}>
-                  <View
-                    style={[
-                      styles.workoutBadge,
-                      {
-                        backgroundColor: isRest ? colors.surface2 : colors.accent,
-                      },
-                    ]}
-                  >
-                    {isRest ? (
-                      <Circle size={10} color={colors.muted} />
-                    ) : (
-                      <Check size={16} color={colors.ink} strokeWidth={3} />
-                    )}
-                  </View>
-                  <Text style={[styles.dayLabel, { color: colors.muted }]}>{w.day}</Text>
-                  <Text style={[styles.dayTitle, { color: colors.ink }]} numberOfLines={1}>
-                    {w.title}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+      {/* Areas to improve */}
+      <View style={styles.sectionBlock}>
+        <Text style={[styles.sectionHeading, { color: colors.ink }]}>Areas to improve</Text>
+        <View style={styles.bulletList}>
+          {r.improvements.map((a) => (
+            <View key={a} style={styles.bulletRow}>
+              <TrendingUp size={16} color={colors.warn} style={{ marginTop: 2 }} />
+              <Text style={[styles.bulletText, { color: colors.ink }]}>{a}</Text>
+            </View>
+          ))}
         </View>
+      </View>
 
-        {/* Achievements */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Achievements</Text>
-          <View style={styles.bulletList}>
-            {r.achievements.map((a) => (
-              <View key={a} style={styles.bulletRow}>
-                <Trophy size={16} color={colors.accent} style={{ marginTop: 2 }} />
-                <Text style={[styles.bulletText, { color: colors.ink }]}>{a}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Areas to improve */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Areas to improve</Text>
-          <View style={styles.bulletList}>
-            {r.improvements.map((a) => (
-              <View key={a} style={styles.bulletRow}>
-                <TrendingUp size={16} color={colors.warn} style={{ marginTop: 2 }} />
-                <Text style={[styles.bulletText, { color: colors.ink }]}>{a}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Goals for next week */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>Goals for next week</Text>
-          <View style={styles.nextGoalsList}>
-            {r.nextGoals.map((g) => {
-              const on = accepted.includes(g);
-              return (
-                <TouchableOpacity
-                  key={g}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    setAccepted(on ? accepted.filter((x) => x !== g) : [...accepted, g]);
-                    if (!on) showToast({ message: 'Added to this week’s focus' });
-                  }}
-                  style={styles.checkboxRow}
+      {/* Goals for next week */}
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Goals for next week</Text>
+        <View style={styles.nextGoalsList}>
+          {r.nextGoals.map((g) => {
+            const on = accepted.includes(g);
+            return (
+              <TouchableOpacity
+                key={g}
+                activeOpacity={0.7}
+                onPress={() => {
+                  setAccepted(on ? accepted.filter((x) => x !== g) : [...accepted, g]);
+                  if (!on) showToast({ message: 'Added to this week’s focus' });
+                }}
+                style={styles.checkboxRow}
+              >
+                <View
+                  style={[
+                    styles.checkboxBox,
+                    {
+                      borderColor: on ? colors.ink : colors.line,
+                      backgroundColor: on ? colors.ink : 'transparent',
+                    },
+                  ]}
                 >
-                  <View
-                    style={[
-                      styles.checkboxBox,
-                      {
-                        borderColor: on ? colors.ink : colors.line,
-                        backgroundColor: on ? colors.ink : 'transparent',
-                      },
-                    ]}
-                  >
-                    {on && <Check size={14} color={colors.bg} strokeWidth={3} />}
-                  </View>
-                  <Text style={[styles.checkboxLabel, { color: colors.ink }]}>{g}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  {on && <Check size={14} color={colors.bg} strokeWidth={3} />}
+                </View>
+                <Text style={[styles.checkboxLabel, { color: colors.ink }]}>{g}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
+      </View>
 
-        <Text style={[styles.disclaimer, { color: colors.muted }]}>
-          Generated from synced and logged data. Sleep and recovery come from Apple Watch; calories from your food logs (some estimated).
-        </Text>
+      <Text style={[styles.disclaimer, { color: colors.muted }]}>
+        Generated from your logged workouts, nutrition and weight data.
+      </Text>
     </Screen>
   );
 }
@@ -334,4 +335,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
 });
-

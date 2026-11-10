@@ -6,7 +6,7 @@ import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { SourceTag } from '../../../shared/components/ui/SourceTag';
 import { BarChart } from '../../../shared/components/charts/BarChart';
 import { useHasDeviceData } from '../../health-integration/store/healthStore';
-import { ActivityType, activityTypes } from '../data/activityMock';
+import { ActivityType, activityTypes } from '../constants/activity-types';
 import { useTheme } from '@/hooks/use-theme';
 
 export function ActivityDetailScreen() {
@@ -16,7 +16,7 @@ export function ActivityDetailScreen() {
   const hasDevice = useHasDeviceData();
   const t = activityTypes[type as ActivityType] ?? activityTypes.steps;
 
-  if (!hasDevice && (type === 'steps' || t.series.length === 0)) {
+  if (t.series.length === 0) {
     return (
       <Screen title={t.label}>
         <EmptyState
@@ -25,7 +25,7 @@ export function ActivityDetailScreen() {
           description={
             type === 'steps'
               ? 'Step counting requires a connected Apple Watch, Wear OS device, or Health Connect integration.'
-              : `Start a ${t.label.toLowerCase()} workout with a connected device and it will sync here.`
+              : `No synced activity records are available from your account yet.`
           }
           actionLabel="Connect a device"
           onAction={() => navigate('healthIntegration')}
@@ -72,9 +72,7 @@ export function ActivityDetailScreen() {
 
           {t.sessions.length > 0 && (
             <View style={styles.sessionsSection}>
-              <Text style={[styles.sectionTitle, { color: colors.ink }]}>
-                Sessions
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.ink }]}>Sessions</Text>
               <View
                 style={[
                   styles.sessionsCard,
@@ -98,20 +96,12 @@ export function ActivityDetailScreen() {
                       ]}
                     >
                       <View style={styles.sessionHeaderRow}>
-                        <Text style={[styles.sessionTitle, { color: colors.ink }]}>
-                          {s.title}
-                        </Text>
-                        <Text style={[styles.sessionDate, { color: colors.muted }]}>
-                          {s.date}
-                        </Text>
+                        <Text style={[styles.sessionTitle, { color: colors.ink }]}>{s.title}</Text>
+                        <Text style={[styles.sessionDate, { color: colors.muted }]}>{s.date}</Text>
                       </View>
-                      <Text style={[styles.sessionStats, { color: colors.muted }]}>
-                        {s.stats}
-                      </Text>
+                      <Text style={[styles.sessionStats, { color: colors.muted }]}>{s.stats}</Text>
                       <View style={{ marginTop: 4 }}>
-                        <SourceTag
-                          source={{ kind: 'synced', label: 'Apple Watch workout' }}
-                        />
+                        <SourceTag source={{ kind: 'synced', label: 'Apple Watch workout' }} />
                       </View>
                     </View>
                   );
@@ -187,4 +177,3 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
 });
-

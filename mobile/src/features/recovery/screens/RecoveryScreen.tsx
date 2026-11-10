@@ -1,184 +1,88 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Activity, Sparkles } from 'lucide-react-native';
+import { View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { Activity } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { SourceTag } from '@/shared/components/ui/SourceTag';
 import { ProgressRing } from '@/shared/components/charts/ProgressRing';
 import { LineChart } from '@/shared/components/charts/LineChart';
-import { useHealthStore } from '../../health-integration/store/healthStore';
 import { useDashboard } from '@/features/dashboard/hooks/use-dashboard';
-import { recommendationLevels, recoveryInputs, recoveryTrend } from '../data/recoveryMock';
+import { progressApi } from '@/features/progress/api/progress-api';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useTheme } from '@/hooks/use-theme';
 
 export function RecoveryScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const status = useHealthStore((s) => s.status);
-  const { data: dashboardData } = useDashboard();
-  const serverScore = dashboardData?.summary?.recoveryScore;
-  const hasData = serverScore != null && (status === 'synced' || status === 'offline');
-  const score = serverScore ?? 0;
-  const active = score >= 70 ? 'hard' : score >= 40 ? 'moderate' : 'rest';
-
-  if (!hasData) {
-    return (
-      <Screen title="Recovery">
-        <EmptyState
-          icon={Activity}
-          title={
-            status === 'permissions'
-              ? 'Recovery needs HRV and sleep access'
-              : 'Recovery needs a wearable'
-          }
-          body="The score combines overnight HRV, resting heart rate and sleep. Without them we show no score rather than a guess."
-          actionLabel={status === 'permissions' ? 'Review permissions' : 'Connect a device'}
-          onAction={() => navigate('healthIntegration')}
-        />
-      </Screen>
-    );
-  }
-
+  const dashboard = useDashboard();
+  const userId = useAuthStore((s) => s.user?.id);
+  const history = useQuery({
+    queryKey: ['dashboard', 'recovery-history', userId],
+    queryFn: () =>
+      progressApi.getAnalytics({
+        metric: 'recovery',
+        range: 'M',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    enabled: !!userId,
+  });
+  const score = dashboard.data?.summary.recoveryScore;
   return (
-    <Screen title="Recovery" contentContainerStyle={styles.container}>
-      {/* Recovery Score Hero */}
+    <Screen
+      title="Recovery"
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={dashboard.isRefetching || history.isRefetching}
+          onRefresh={() => {
+            void dashboard.refetch();
+            void history.refetch();
+          }}
+          tintColor={colors.accent}
+        />
+      }
+    >
+      {dashboard.isError || history.isError ? (
+        <StatusBanner
+          tone="error"
+          title="Couldn’t refresh recovery"
+          body="Pull to try again. Previously loaded data may be out of date."
+        />
+      ) : null}
+      {score != null ? (
         <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
           <View style={styles.heroContent}>
-            <ProgressRing
-              size={120}
-              strokeWidth={11}
-              value={score / 100}
-              color={colors.accent}
-              trackColor={colors.line}
-            >
-              <View style={styles.ringCenter}>
-                <Text style={[styles.scoreNumber, { color: colors.ink }]}>{score}</Text>
-                <Text style={[styles.scoreSub, { color: colors.muted }]}>of 100</Text>
-              </View>
+            <ProgressRing size={120} strokeWidth={11} value={score / 100} color={colors.accent}>
+              <Text style={[styles.scoreNumber, { color: colors.ink }]}>{score}</Text>
             </ProgressRing>
-
             <View style={styles.heroDetails}>
-              <Text style={[styles.primeHeading, { color: colors.ink }]}>Primed to train</Text>
-              <Text style={[styles.primeSub, { color: colors.muted }]}>Up 10 from yesterday</Text>
-              <View style={{ marginTop: 8 }}>
-                <SourceTag source={{ kind: 'estimated', label: 'FitOnus model · not clinical' }} />
-              </View>
+              <Text style={[styles.primeHeading, { color: colors.ink }]}>Recovery score</Text>
+              <SourceTag source={{ kind: 'synced', label: 'Account recovery data' }} />
             </View>
           </View>
         </View>
-
-        {/* Today's Recommendation */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Today’s recommendation</Text>
-          <View style={styles.recList}>
-            {recommendationLevels.map((l) => {
-              const isSelected = l.key === active;
-              return (
-                <View
-                  key={l.key}
-                  style={[
-                    styles.recCard,
-                    {
-                      backgroundColor: colors.surface,
-                      borderColor: isSelected ? colors.ink : colors.line,
-                      opacity: isSelected ? 1 : 0.6,
-                    },
-                  ]}
-                >
-                  <View style={styles.recHeader}>
-                    <Text style={[styles.recTitle, { color: colors.ink }]}>{l.label}</Text>
-                    <Text style={[styles.recRange, { color: colors.muted }]}>{l.range}</Text>
-                  </View>
-                  <Text style={[styles.recDetail, { color: colors.muted }]}>{l.detail}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* What's Driving It */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>What’s driving it</Text>
-          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            {recoveryInputs.map((i, idx) => (
-              <View
-                key={i.key}
-                style={[
-                  styles.inputRow,
-                  { borderBottomColor: colors.line },
-                  idx === recoveryInputs.length - 1 && { borderBottomWidth: 0 },
-                ]}
-              >
-                <View style={styles.inputHeader}>
-                  <Text style={[styles.inputLabel, { color: colors.ink }]}>{i.label}</Text>
-                  <Text style={[styles.inputValue, { color: colors.ink }]}>{i.value}</Text>
-                </View>
-
-                {/* Impact Track */}
-                <View style={[styles.impactTrack, { backgroundColor: colors.surface2 }]}>
-                  <View style={[styles.impactCenterTick, { backgroundColor: colors.line }]} />
-                  {i.impact !== 0 && (
-                    <View
-                      style={[
-                        styles.impactBar,
-                        {
-                          backgroundColor: i.impact > 0 ? colors.good : colors.warn,
-                          left: i.impact > 0 ? '50%' : `${50 + i.impact * 50}%`,
-                          width: `${Math.abs(i.impact) * 50}%`,
-                        },
-                      ]}
-                    />
-                  )}
-                </View>
-
-                <Text style={[styles.inputNote, { color: colors.muted }]}>
-                  {i.note} · {i.baseline}
-                </Text>
-                <View style={{ marginTop: 6 }}>
-                  <SourceTag source={i.source} />
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* 14-day Trend */}
-        <View style={[styles.trendCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.trendHeading, { color: colors.ink }]}>14-day trend</Text>
-          <View style={{ marginTop: 8 }}>
-            <LineChart
-              points={recoveryTrend}
-              target={70}
-              targetLabel="Train-hard line"
-              height={150}
-              strokeColor={colors.accent}
-            />
-          </View>
-        </View>
-
-        {/* Coach Insight */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => navigate('coach', { q: 'Why is my recovery lower this week?' })}
-          style={[styles.coachCard, { backgroundColor: colors.surface2 }]}
+      ) : !dashboard.isLoading ? (
+        <EmptyState
+          icon={Activity}
+          title="No recovery data yet"
+          body="No recovery records are available for your account. Wearable syncing is not available in this build."
+          actionLabel="Health connections"
+          onAction={() => navigate('healthIntegration')}
+        />
+      ) : (
+        <Text style={{ color: colors.muted }}>Loading recovery data…</Text>
+      )}
+      {history.data?.points.length ? (
+        <View
+          style={[styles.trendCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
         >
-          <View style={{ marginTop: 2 }}>
-            <Sparkles size={18} color={colors.accent} />
-          </View>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[styles.coachHeading, { color: colors.ink }]}>
-              Wednesday’s dip explained
-            </Text>
-            <Text style={[styles.coachBody, { color: colors.muted }]}>
-              Late bedtime + heavy legs dropped you to 58. You bounced back in two nights — a sign your base fitness is improving.
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <Text style={[styles.disclaimer, { color: colors.muted }]}>
-          Recovery is a training guide built from your wearable data. It is not a medical measurement.
-        </Text>
+          <Text style={[styles.trendHeading, { color: colors.ink }]}>Recovery trend</Text>
+          <LineChart points={history.data.points} height={150} strokeColor={colors.accent} />
+        </View>
+      ) : null}
     </Screen>
   );
 }
@@ -335,4 +239,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
 });
-

@@ -94,8 +94,8 @@ export function WorkoutPlanScreen() {
         <View style={[styles.progressionCard, { backgroundColor: colors.surface2 }]}>
           <Sparkles size={15} color={colors.accent} style={{ marginTop: 2 }} />
           <Text style={[styles.progressionText, { color: colors.ink }]}>
-            Progression: bench target is 72.5 kg. If all 4 sets hit 8 reps, I’ll suggest 75 kg next
-            session.
+            Review your working weights before training. Personal records are calculated from your
+            saved sets.
           </Text>
         </View>
       </View>

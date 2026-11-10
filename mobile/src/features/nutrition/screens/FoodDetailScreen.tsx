@@ -101,8 +101,6 @@ export function FoodDetailScreen() {
 
       showToast({
         message: `${food.name} added to ${mealLabels[meal]}`,
-        actionLabel: 'Undo',
-        onAction: () => removeEntry(entryId),
       });
 
       popTo('nutrition');

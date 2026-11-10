@@ -14,7 +14,7 @@ export function AddWeightSheet({ open, onClose }: { open: boolean; onClose: () =
   const { colors } = useTheme();
   const units = useSettingsStore((s) => s.units);
   const isImperial = units === 'imperial';
-  const { entries, addEntry, undoLast } = useWeightStore();
+  const { entries, addEntry } = useWeightStore();
   const lastEntry = entries[entries.length - 1];
 
   const getDefaultVal = () => {
@@ -24,6 +24,7 @@ export function AddWeightSheet({ open, onClose }: { open: boolean; onClose: () =
 
   const [value, setValue] = useState(getDefaultVal());
   const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -31,16 +32,25 @@ export function AddWeightSheet({ open, onClose }: { open: boolean; onClose: () =
     }
   }, [open, isImperial, lastEntry]);
 
-  const save = () => {
-    const canonicalKg = isImperial ? (lbToKg(value) ?? value) : value;
-    const prev = addEntry(canonicalKg, note || undefined);
-    showToast({
-      message: `${value.toFixed(1)} ${isImperial ? 'lb' : 'kg'} saved for today`,
-      actionLabel: 'Undo',
-      onAction: () => undoLast(prev),
-    });
-    setNote('');
-    onClose();
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const canonicalKg = isImperial ? (lbToKg(value) ?? value) : value;
+      const result = await addEntry(canonicalKg, note || undefined);
+      showToast({
+        message:
+          result === 'queued'
+            ? 'Weight saved on this device · waiting to sync'
+            : `${value.toFixed(1)} ${isImperial ? 'lb' : 'kg'} saved`,
+      });
+      setNote('');
+      onClose();
+    } catch {
+      showToast({ message: 'Could not save weight. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const todayStr = new Intl.DateTimeFormat('en-US', {
@@ -56,7 +66,7 @@ export function AddWeightSheet({ open, onClose }: { open: boolean; onClose: () =
       title="Log weight"
       description={`Today · ${todayStr}`}
       footer={
-        <Button size="lg" fullWidth onPress={save}>
+        <Button size="lg" fullWidth onPress={save} loading={saving}>
           Save
         </Button>
       }

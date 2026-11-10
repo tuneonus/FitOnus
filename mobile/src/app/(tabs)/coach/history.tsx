@@ -33,10 +33,13 @@ export default function CoachHistoryScreen() {
 
   const renderItem = ({ item }: { item: Conversation }) => {
     const date = new Date(item.lastMessageAt).toLocaleDateString();
-    
+
     return (
-      <Pressable 
-        style={[styles.historyCard, { backgroundColor: colors.backgroundElement, borderBottomColor: colors.border }]}
+      <Pressable
+        style={[
+          styles.historyCard,
+          { backgroundColor: colors.backgroundElement, borderBottomColor: colors.border },
+        ]}
         onPress={() => {
           // Navigate to specific chat if we supported dynamic routing
           // router.push(`/coach/${item.id}`);
@@ -47,9 +50,12 @@ export default function CoachHistoryScreen() {
           <MessageSquare size={20} color={colors.primary} />
         </View>
         <View style={styles.content}>
-          <Text variant="bodyLarge" style={{ fontWeight: '600' }}>{item.title}</Text>
+          <Text variant="bodyLarge" style={{ fontWeight: '600' }}>
+            {item.title}
+          </Text>
           <Text variant="labelMedium" style={{ color: colors.textSecondary, marginTop: 4 }}>
-            {date} • {item.messageCount} messages
+            {date}
+            {item.messageCount != null ? ` • ${item.messageCount} messages` : ''}
           </Text>
         </View>
         <ChevronRight size={20} color={colors.textTertiary} />
@@ -59,22 +65,25 @@ export default function CoachHistoryScreen() {
 
   return (
     <ScreenContainer edges={['bottom']} style={{ backgroundColor: colors.background }}>
-      <Stack.Screen 
-        options={{ 
-          headerShown: true, 
+      <Stack.Screen
+        options={{
+          headerShown: true,
           title: 'Chat History',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
           headerShadowVisible: false,
-        }} 
+        }}
       />
-      
+
       {isLoading ? (
         <Loading fullScreen />
       ) : conversations.length === 0 ? (
         <View style={styles.emptyState}>
           <History size={48} color={colors.textTertiary} />
-          <Text variant="headlineSmall" style={{ color: colors.textSecondary, marginTop: Spacing.md }}>
+          <Text
+            variant="headlineSmall"
+            style={{ color: colors.textSecondary, marginTop: Spacing.md }}
+          >
             No history yet
           </Text>
         </View>
@@ -116,5 +125,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
 });

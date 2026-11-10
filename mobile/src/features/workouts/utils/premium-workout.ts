@@ -34,7 +34,7 @@ export function parseWorkoutInput(raw: string, wholeNumber = false): number | nu
 
 export type HistorySession = {
   id: string;
-  clientSessionId?: string;
+  clientSessionId?: string | null;
   completedAt?: string;
   workoutName: string;
   durationSeconds: number;
@@ -51,10 +51,7 @@ export function historyForPresentation(
     sessions.flatMap((session) => [session.id, session.clientSessionId].filter(Boolean)),
   );
   const local = saved.filter(
-    (log) =>
-      (log.pendingSync || log.date === 'Today') &&
-      !ids.has(log.id) &&
-      !ids.has(log.clientSessionId),
+    (log) => log.pendingSync && !ids.has(log.id) && !ids.has(log.clientSessionId),
   );
   return [
     ...local,

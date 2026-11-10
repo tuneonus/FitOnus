@@ -15,6 +15,7 @@ import type { MeasurementKey } from '../types/weight';
 export function MeasurementsScreen() {
   const { colors } = useTheme();
   const { measurements, addMeasurement, fetchMeasurements, isLoading } = useWeightStore();
+  const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<MeasurementKey>('waist');
 
@@ -38,12 +39,24 @@ export function MeasurementsScreen() {
       }));
   }, [measurements, selectedMetric]);
 
-  const save = () => {
-    const now = new Date();
-    const dateStr = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(now);
-    addMeasurement({ date: dateStr, values: draft });
-    setOpen(false);
-    showToast({ message: 'Measurements saved' });
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const dateStr = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const result = await addMeasurement({ date: dateStr, values: draft });
+      setOpen(false);
+      showToast({
+        message:
+          result === 'queued'
+            ? 'Measurements saved on this device · waiting to sync'
+            : 'Measurements saved',
+      });
+    } catch {
+      showToast({ message: 'Could not save measurements. Check the values and try again.' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -75,7 +88,9 @@ export function MeasurementsScreen() {
         }
       >
         <Text style={[styles.subDate, { color: colors.muted }]}>
-          {measurements.length > 0 ? `Latest · ${latest.date} · logged manually` : 'No measurements logged yet'}
+          {measurements.length > 0
+            ? `Latest · ${latest.date} · logged manually`
+            : 'No measurements logged yet'}
         </Text>
 
         {/* Measurements Grid */}
@@ -101,7 +116,9 @@ export function MeasurementsScreen() {
                   },
                 ]}
               >
-                <Text style={[styles.cardLabel, { color: isSelected ? colors.accent : colors.muted }]}>
+                <Text
+                  style={[styles.cardLabel, { color: isSelected ? colors.accent : colors.muted }]}
+                >
                   {m.label}
                 </Text>
                 <View style={styles.valRow}>
@@ -109,12 +126,7 @@ export function MeasurementsScreen() {
                   <Text style={[styles.cardUnit, { color: colors.muted }]}>{m.unit}</Text>
                 </View>
                 {d !== 0 && (
-                  <Text
-                    style={[
-                      styles.cardDiff,
-                      { color: good ? colors.good : colors.warn },
-                    ]}
-                  >
+                  <Text style={[styles.cardDiff, { color: good ? colors.good : colors.warn }]}>
                     {d > 0 ? '+' : ''}
                     {d.toFixed(1)} vs {prev?.date}
                   </Text>
@@ -126,14 +138,17 @@ export function MeasurementsScreen() {
 
         {/* Selected Measurement Trend Chart */}
         {selectedMetricPoints.length >= 2 ? (
-          <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View
+            style={[
+              styles.chartCard,
+              { backgroundColor: colors.surface, borderColor: colors.line },
+            ]}
+          >
             <View style={styles.chartHeaderRow}>
               <Text style={[styles.chartTitle, { color: colors.ink }]}>
                 {selectedMeta?.label} trend
               </Text>
-              <Text style={[styles.chartUnit, { color: colors.muted }]}>
-                {selectedMeta?.unit}
-              </Text>
+              <Text style={[styles.chartUnit, { color: colors.muted }]}>{selectedMeta?.unit}</Text>
             </View>
             <LineChart
               key={selectedMetric}
@@ -153,8 +168,11 @@ export function MeasurementsScreen() {
             </View>
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={[styles.coachText, { color: colors.muted }]}>
-                <Text style={{ fontWeight: '700', color: colors.ink }}>Measurement trend active. </Text>
-                Tracking your body measurements alongside scale weight gives a clearer view of body recomposition.
+                <Text style={{ fontWeight: '700', color: colors.ink }}>
+                  Measurement trend active.{' '}
+                </Text>
+                Tracking your body measurements alongside scale weight gives a clearer view of body
+                recomposition.
               </Text>
             </View>
           </View>
@@ -163,7 +181,12 @@ export function MeasurementsScreen() {
         {/* History Table */}
         <View style={styles.historyBlock}>
           <Text style={[styles.historyHeading, { color: colors.ink }]}>History</Text>
-          <View style={[styles.tableCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View
+            style={[
+              styles.tableCard,
+              { backgroundColor: colors.surface, borderColor: colors.line },
+            ]}
+          >
             {measurements.length === 0 ? (
               <Text style={{ color: colors.muted, textAlign: 'center', padding: 16, fontSize: 13 }}>
                 No measurement history recorded yet.
@@ -171,11 +194,21 @@ export function MeasurementsScreen() {
             ) : (
               <>
                 {/* Table Header */}
-                <View style={[styles.tableRow, styles.tableHeader, { borderBottomColor: colors.line }]}>
-                  <Text style={[styles.colDate, styles.headerCell, { color: colors.muted }]}>Date</Text>
-                  <Text style={[styles.colVal, styles.headerCell, { color: colors.muted }]}>Fat %</Text>
-                  <Text style={[styles.colVal, styles.headerCell, { color: colors.muted }]}>Waist</Text>
-                  <Text style={[styles.colVal, styles.headerCell, { color: colors.muted }]}>Arm</Text>
+                <View
+                  style={[styles.tableRow, styles.tableHeader, { borderBottomColor: colors.line }]}
+                >
+                  <Text style={[styles.colDate, styles.headerCell, { color: colors.muted }]}>
+                    Date
+                  </Text>
+                  <Text style={[styles.colVal, styles.headerCell, { color: colors.muted }]}>
+                    Fat %
+                  </Text>
+                  <Text style={[styles.colVal, styles.headerCell, { color: colors.muted }]}>
+                    Waist
+                  </Text>
+                  <Text style={[styles.colVal, styles.headerCell, { color: colors.muted }]}>
+                    Arm
+                  </Text>
                 </View>
 
                 {/* Table Rows */}
@@ -188,7 +221,9 @@ export function MeasurementsScreen() {
                       idx === measurements.length - 1 && { borderBottomWidth: 0 },
                     ]}
                   >
-                    <Text style={[styles.colDate, styles.dataCellText, { color: colors.ink }]}>{m.date}</Text>
+                    <Text style={[styles.colDate, styles.dataCellText, { color: colors.ink }]}>
+                      {m.date}
+                    </Text>
                     <Text style={[styles.colVal, styles.dataCellNum, { color: colors.ink }]}>
                       {m.values.bodyFat ?? '—'}
                     </Text>
@@ -211,9 +246,9 @@ export function MeasurementsScreen() {
         open={open}
         onClose={() => setOpen(false)}
         title="Add measurements"
-        description="Fri, Oct 9 · cm unless noted"
+        description={`${new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · cm unless noted`}
         footer={
-          <Button size="lg" fullWidth onPress={save}>
+          <Button size="lg" fullWidth onPress={save} loading={saving}>
             Save
           </Button>
         }
@@ -378,4 +413,3 @@ const styles = StyleSheet.create({
     width: 170,
   },
 });
-

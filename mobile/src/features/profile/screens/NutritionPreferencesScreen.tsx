@@ -6,18 +6,16 @@ import { Button } from '@/shared/components/ui/Button';
 import { Chip } from '@/shared/components/ui/Chip';
 import { showToast } from '@/shared/stores/toastStore';
 import { useProfileSetupStore } from '../../onboarding/store/profileSetupStore';
-import {
-  allergyOptions,
-  cuisineOptions,
-  dietOptions,
-} from '../../onboarding/constants/options';
-import { nutritionGoals } from '../../nutrition/constants/meals';
+import { allergyOptions, cuisineOptions, dietOptions } from '../../onboarding/constants/options';
+import { useDashboard } from '@/features/dashboard/hooks/use-dashboard';
 import { useTheme } from '@/hooks/use-theme';
 import { useProfile, useUpdateProfile } from '../hooks/use-profile';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 export function NutritionPreferencesScreen() {
   const { colors } = useTheme();
+  const { data: dashboard } = useDashboard();
+  const targets = dashboard?.nutrition;
   const { goBack } = useNavigation();
   const store = useProfileSetupStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -35,7 +33,9 @@ export function NutritionPreferencesScreen() {
       setD({
         diet: serverProfile.dietType || store.diet,
         allergies: serverProfile.allergies ? [...serverProfile.allergies] : store.allergies,
-        cuisines: serverProfile.preferredCuisines?.length ? [...serverProfile.preferredCuisines] : store.cuisines,
+        cuisines: serverProfile.preferredCuisines?.length
+          ? [...serverProfile.preferredCuisines]
+          : store.cuisines,
       });
     }
   }, [serverProfile]);
@@ -47,6 +47,10 @@ export function NutritionPreferencesScreen() {
     });
 
   const save = async () => {
+    if (isAuthenticated && !serverProfile) {
+      showToast({ message: 'Your profile could not be loaded. Please try again before saving.' });
+      return;
+    }
     if (isAuthenticated && serverProfile) {
       try {
         await updateProfile({
@@ -83,76 +87,75 @@ export function NutritionPreferencesScreen() {
       contentContainerStyle={styles.container}
     >
       {/* Diet */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.muted }]}>Diet</Text>
-          <View style={styles.chipsRow}>
-            {dietOptions.map((o) => (
-              <Chip
-                key={o.value}
-                label={o.label}
-                selected={d.diet === o.value}
-                onPress={() => setD({ ...d, diet: o.value })}
-              />
-            ))}
-          </View>
+      <View style={styles.sectionBlock}>
+        <Text style={[styles.sectionHeading, { color: colors.muted }]}>Diet</Text>
+        <View style={styles.chipsRow}>
+          {dietOptions.map((o) => (
+            <Chip
+              key={o.value}
+              label={o.label}
+              selected={d.diet === o.value}
+              onPress={() => setD({ ...d, diet: o.value })}
+            />
+          ))}
         </View>
+      </View>
 
-        {/* Allergies */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.muted }]}>
-            Allergies & intolerances
-          </Text>
-          <View style={styles.chipsRow}>
-            {allergyOptions.map((a) => (
-              <Chip
-                key={a}
-                label={a}
-                selected={d.allergies.includes(a)}
-                onPress={() => toggle('allergies', a)}
-              />
-            ))}
-          </View>
-          <Text style={[styles.footnote, { color: colors.muted }]}>
-            Your coach will never suggest foods containing these.
-          </Text>
+      {/* Allergies */}
+      <View style={styles.sectionBlock}>
+        <Text style={[styles.sectionHeading, { color: colors.muted }]}>
+          Allergies & intolerances
+        </Text>
+        <View style={styles.chipsRow}>
+          {allergyOptions.map((a) => (
+            <Chip
+              key={a}
+              label={a}
+              selected={d.allergies.includes(a)}
+              onPress={() => toggle('allergies', a)}
+            />
+          ))}
         </View>
+        <Text style={[styles.footnote, { color: colors.muted }]}>
+          Your coach will never suggest foods containing these.
+        </Text>
+      </View>
 
-        {/* Cuisines */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.muted }]}>Favourite cuisines</Text>
-          <View style={styles.chipsRow}>
-            {cuisineOptions.map((c) => (
-              <Chip
-                key={c}
-                label={c}
-                selected={d.cuisines.includes(c)}
-                onPress={() => toggle('cuisines', c)}
-              />
-            ))}
-          </View>
+      {/* Cuisines */}
+      <View style={styles.sectionBlock}>
+        <Text style={[styles.sectionHeading, { color: colors.muted }]}>Favourite cuisines</Text>
+        <View style={styles.chipsRow}>
+          {cuisineOptions.map((c) => (
+            <Chip
+              key={c}
+              label={c}
+              selected={d.cuisines.includes(c)}
+              onPress={() => toggle('cuisines', c)}
+            />
+          ))}
         </View>
+      </View>
 
-        {/* Daily targets */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>Daily targets</Text>
-          <View style={styles.targetsGrid}>
-            {[
-              ['Calories', `${nutritionGoals.kcal.toLocaleString()}`],
-              ['Protein', `${nutritionGoals.protein} g`],
-              ['Carbs', `${nutritionGoals.carbs} g`],
-              ['Fat', `${nutritionGoals.fat} g`],
-              ['Fiber', `${nutritionGoals.fiber} g`],
-            ].map(([l, v]) => (
-              <View key={l} style={styles.targetItem}>
-                <Text style={[styles.targetLabel, { color: colors.muted }]}>{l}</Text>
-                <Text style={[styles.targetVal, { color: colors.ink }]}>{v}</Text>
-              </View>
-            ))}
-          </View>
-          <Text style={[styles.footnote, { color: colors.muted, marginTop: 12 }]}>
-            Calculated from your goal, weight and activity. Ask your coach to adjust them.
-          </Text>
+      {/* Daily targets */}
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardTitle, { color: colors.ink }]}>Daily targets</Text>
+        <View style={styles.targetsGrid}>
+          {[
+            ['Calories', targets?.caloriesGoal?.toLocaleString() ?? '—'],
+            ['Protein', targets?.proteinGoal != null ? `${targets.proteinGoal} g` : '—'],
+            ['Carbs', targets?.carbsGoal != null ? `${targets.carbsGoal} g` : '—'],
+            ['Fat', targets?.fatGoal != null ? `${targets.fatGoal} g` : '—'],
+          ].map(([l, v]) => (
+            <View key={l} style={styles.targetItem}>
+              <Text style={[styles.targetLabel, { color: colors.muted }]}>{l}</Text>
+              <Text style={[styles.targetVal, { color: colors.ink }]}>{v}</Text>
+            </View>
+          ))}
         </View>
+        <Text style={[styles.footnote, { color: colors.muted, marginTop: 12 }]}>
+          Calculated from your goal, weight and activity. Ask your coach to adjust them.
+        </Text>
+      </View>
     </Screen>
   );
 }
@@ -207,4 +210,3 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
 });
-

@@ -585,8 +585,8 @@ export function StepHealthPermissions() {
         onPress={() => update({ healthAllowed: !healthAllowed })}
       />
       <SetupNote>
-        You control access. Selecting this preference doesn’t grant device permissions; finish
-        connecting in Settings.
+        Selecting this preference does not grant device permissions. Health syncing is not available
+        in this build yet.
       </SetupNote>
     </View>
   );
@@ -620,7 +620,7 @@ export function StepDevice() {
         multi
         icon={Watch}
         title="I use a smartwatch"
-        description="Apple Watch or Wear OS. Finish pairing in Settings."
+        description="Apple Watch or Wear OS. Syncing is not available in this build yet."
         selected={deviceConnected}
         onPress={() => update({ deviceConnected: !deviceConnected })}
       />

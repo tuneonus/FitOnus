@@ -1,3 +1,4 @@
+import { registerUserStore } from '@/services/user-session';
 /**
  * Advanced Analytics Zustand Store
  *
@@ -18,6 +19,7 @@ import type {
   NutritionAnalyticsView,
   WorkoutAnalyticsView,
 } from '../types/analytics';
+import { onFitnessRefresh } from '@/services/fitness-refresh';
 import { logger } from '@/utils/logger';
 
 export interface AdvancedAnalyticsState {
@@ -37,16 +39,31 @@ export interface AdvancedAnalyticsState {
 
   // Actions
   fetchOverview: (force?: boolean) => Promise<ActivityOverviewView | null>;
-  fetchWorkouts: (range?: AnalyticsRange | string, force?: boolean) => Promise<WorkoutAnalyticsView | null>;
+  fetchWorkouts: (
+    range?: AnalyticsRange | string,
+    force?: boolean,
+  ) => Promise<WorkoutAnalyticsView | null>;
   fetchExerciseProgression: (
     exerciseId: string,
     range?: AnalyticsRange | string,
-    force?: boolean
+    force?: boolean,
   ) => Promise<ExerciseProgressionView | null>;
-  fetchNutrition: (range?: AnalyticsRange | string, force?: boolean) => Promise<NutritionAnalyticsView | null>;
-  fetchHydration: (range?: AnalyticsRange | string, force?: boolean) => Promise<HydrationAnalyticsView | null>;
-  fetchBody: (range?: AnalyticsRange | string, force?: boolean) => Promise<BodyAnalyticsView | null>;
-  fetchGoalsHabits: (windowDays?: number, force?: boolean) => Promise<GoalsHabitsAnalyticsView | null>;
+  fetchNutrition: (
+    range?: AnalyticsRange | string,
+    force?: boolean,
+  ) => Promise<NutritionAnalyticsView | null>;
+  fetchHydration: (
+    range?: AnalyticsRange | string,
+    force?: boolean,
+  ) => Promise<HydrationAnalyticsView | null>;
+  fetchBody: (
+    range?: AnalyticsRange | string,
+    force?: boolean,
+  ) => Promise<BodyAnalyticsView | null>;
+  fetchGoalsHabits: (
+    windowDays?: number,
+    force?: boolean,
+  ) => Promise<GoalsHabitsAnalyticsView | null>;
 
   refreshAll: () => Promise<void>;
   resetStore: () => void;
@@ -97,7 +114,7 @@ export const useAdvancedAnalyticsStore = create<AdvancedAnalyticsState>((set, ge
     });
   },
 
-  fetchOverview: async (force = false) => {
+  fetchOverview: async (force = true) => {
     const domainKey = 'overview';
     if (!force && get().overview) {
       return get().overview;
@@ -130,7 +147,7 @@ export const useAdvancedAnalyticsStore = create<AdvancedAnalyticsState>((set, ge
     }
   },
 
-  fetchWorkouts: async (range: AnalyticsRange | string = 'M', force = false) => {
+  fetchWorkouts: async (range: AnalyticsRange | string = 'M', force = true) => {
     const rangeKey = String(range);
     const domainKey = `workouts-${rangeKey}`;
     const cached = get().workouts[rangeKey];
@@ -168,7 +185,7 @@ export const useAdvancedAnalyticsStore = create<AdvancedAnalyticsState>((set, ge
   fetchExerciseProgression: async (
     exerciseId: string,
     range: AnalyticsRange | string = 'all',
-    force = false
+    force = true,
   ) => {
     const cacheKey = `${exerciseId}-${range}`;
     const domainKey = `progression-${cacheKey}`;
@@ -204,7 +221,7 @@ export const useAdvancedAnalyticsStore = create<AdvancedAnalyticsState>((set, ge
     }
   },
 
-  fetchNutrition: async (range: AnalyticsRange | string = 'W', force = false) => {
+  fetchNutrition: async (range: AnalyticsRange | string = 'W', force = true) => {
     const rangeKey = String(range);
     const domainKey = `nutrition-${rangeKey}`;
     const cached = get().nutrition[rangeKey];
@@ -239,7 +256,7 @@ export const useAdvancedAnalyticsStore = create<AdvancedAnalyticsState>((set, ge
     }
   },
 
-  fetchHydration: async (range: AnalyticsRange | string = 'W', force = false) => {
+  fetchHydration: async (range: AnalyticsRange | string = 'W', force = true) => {
     const rangeKey = String(range);
     const domainKey = `hydration-${rangeKey}`;
     const cached = get().hydration[rangeKey];
@@ -274,7 +291,7 @@ export const useAdvancedAnalyticsStore = create<AdvancedAnalyticsState>((set, ge
     }
   },
 
-  fetchBody: async (range: AnalyticsRange | string = 'M', force = false) => {
+  fetchBody: async (range: AnalyticsRange | string = 'M', force = true) => {
     const rangeKey = String(range);
     const domainKey = `body-${rangeKey}`;
     const cached = get().body[rangeKey];
@@ -309,7 +326,7 @@ export const useAdvancedAnalyticsStore = create<AdvancedAnalyticsState>((set, ge
     }
   },
 
-  fetchGoalsHabits: async (windowDays = 30, force = false) => {
+  fetchGoalsHabits: async (windowDays = 30, force = true) => {
     const domainKey = `goalsHabits-${windowDays}`;
     const cached = get().goalsHabits;
     if (!force && cached) {
@@ -360,3 +377,16 @@ export const useAdvancedAnalyticsStore = create<AdvancedAnalyticsState>((set, ge
   },
 }));
 
+registerUserStore(useAdvancedAnalyticsStore, () =>
+  useAdvancedAnalyticsStore.getState().resetStore(),
+);
+
+onFitnessRefresh(() => {
+  const state = useAdvancedAnalyticsStore.getState();
+  if (state.overview) void state.fetchOverview(true);
+  for (const range of Object.keys(state.workouts)) void state.fetchWorkouts(range, true);
+  for (const range of Object.keys(state.nutrition)) void state.fetchNutrition(range, true);
+  for (const range of Object.keys(state.hydration)) void state.fetchHydration(range, true);
+  for (const range of Object.keys(state.body)) void state.fetchBody(range, true);
+  if (state.goalsHabits) void state.fetchGoalsHabits(30, true);
+});

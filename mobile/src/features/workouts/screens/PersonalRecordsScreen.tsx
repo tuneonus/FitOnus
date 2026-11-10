@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { Trophy } from 'lucide-react-native';
 import { Screen } from '../../../shared/components/ui/Screen';
 import { LineChart } from '../../../shared/components/charts/LineChart';
 import { Sparkline } from '../../../shared/components/charts/Sparkline';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
-import { WorkoutService } from '../services/workout-service';
+import { workoutApi } from '../api/workout-api';
+import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { analyticsApi } from '@/features/analytics/api/analytics-api';
+import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import type { PersonalRecordView } from '../types/workout';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { useTheme } from '@/hooks/use-theme';
@@ -13,27 +17,62 @@ import { useTheme } from '@/hooks/use-theme';
 export function PersonalRecordsScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const [records, setRecords] = useState<PersonalRecordView[]>([]);
-  const [selectedLift, setSelectedLift] = useState<string>('');
-
-  useEffect(() => {
-    WorkoutService.getPersonalRecords()
-      .then((data) => {
-        setRecords(data);
-        if (data.length > 0 && data[0]?.exerciseName) {
-          setSelectedLift(data[0].exerciseName);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const activeRec = records.find((r) => r.exerciseName === selectedLift) || records[0];
-  const activeWeight = activeRec?.weightKg ?? activeRec?.value ?? 0;
-  const activeReps = activeRec?.reps ?? 1;
-  const activeE1rm = Math.round(activeWeight * (1 + activeReps / 30));
+  const userId = useAuthStore((state) => state.user?.id);
+  const query = useQuery({
+    queryKey: ['dashboard', 'personal-records', userId],
+    queryFn: () => workoutApi.getPersonalRecords(),
+    enabled: !!userId,
+  });
+  const records = query.data ?? [];
+  const [selectedLift, setSelectedLift] = useState('');
+  const activeRec = records.find((record) => record.id === selectedLift) || records[0];
+  const progression = useQuery({
+    queryKey: ['dashboard', 'record-progression', userId, activeRec?.exerciseId],
+    queryFn: () => analyticsApi.getExerciseProgression(activeRec!.exerciseId),
+    enabled: !!userId && !!activeRec,
+  });
+  const activeE1rm =
+    activeRec?.weightKg != null && activeRec.reps != null
+      ? Math.round(activeRec.weightKg * (1 + activeRec.reps / 30))
+      : null;
+  const describeRecord = (record: PersonalRecordView) =>
+    record.metricType === 'weight'
+      ? `${record.value} kg${record.reps != null ? ` × ${record.reps}` : ''}`
+      : record.metricType === 'reps'
+        ? `${record.value} reps`
+        : `${record.value} kg volume`;
+  const points =
+    progression.data?.progression.map((point) => ({
+      label: point.date.slice(5),
+      value:
+        activeRec?.metricType === 'weight'
+          ? point.topWeightKg
+          : activeRec?.metricType === 'reps'
+            ? point.reps
+            : point.volumeKg,
+    })) ?? [];
 
   return (
-    <Screen title="Personal records">
+    <Screen
+      title="Personal records"
+      refreshControl={
+        <RefreshControl
+          refreshing={query.isRefetching || progression.isRefetching}
+          onRefresh={() => {
+            void query.refetch();
+            if (activeRec) void progression.refetch();
+          }}
+          tintColor={colors.accent}
+        />
+      }
+    >
+      {query.isError || progression.isError ? (
+        <StatusBanner
+          tone="error"
+          title="Couldn’t refresh your records"
+          body="Pull to try again. Previously loaded values may be out of date."
+        />
+      ) : null}
       <View style={styles.content}>
         {!activeRec || records.length === 0 ? (
           <EmptyState
@@ -59,22 +98,26 @@ export function PersonalRecordsScreen() {
                 {activeRec.exerciseName}
               </Text>
               <Text style={[styles.liftBest, { color: colors.ink }]}>
-                {activeWeight} kg × {activeReps}
+                {describeRecord(activeRec)}
               </Text>
               <Text style={[styles.e1rmText, { color: colors.muted }]}>
                 Estimated 1RM{' '}
                 <Text style={{ color: colors.ink, fontWeight: '600' }}>
-                  {activeE1rm} kg
+                  {activeE1rm != null ? `${activeE1rm} kg` : '—'}
                 </Text>{' '}
-                · set {new Date(activeRec.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                · set{' '}
+                {new Date(activeRec.achievedAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </Text>
 
               <View style={{ marginTop: 12 }}>
                 <LineChart
-                  points={[{ label: 'PR', value: activeWeight }]}
+                  points={points}
                   ariaLabel={`${activeRec.exerciseName} top set trend`}
                   height={130}
-                  formatValue={(v) => `${v} kg`}
+                  formatValue={(v) => `${v} ${activeRec.metricType === 'reps' ? 'reps' : 'kg'}`}
                   strokeColor={colors.accent}
                 />
               </View>
@@ -87,24 +130,21 @@ export function PersonalRecordsScreen() {
             {/* All Lifts List */}
             <View style={styles.liftsList}>
               {records.map((r, idx) => {
-                const isSelected = r.exerciseName === selectedLift;
+                const isSelected = r.id === activeRec.id;
                 const rWeight = r.weightKg ?? r.value ?? 0;
                 const rReps = r.reps ?? 1;
 
                 return (
                   <TouchableOpacity
-                    key={r.exerciseId}
+                    key={r.id}
                     activeOpacity={0.7}
-                    onPress={() => setSelectedLift(r.exerciseName)}
+                    onPress={() => setSelectedLift(r.id)}
                     style={[
                       styles.liftRow,
                       idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line },
                     ]}
                   >
-                    <Trophy
-                      size={18}
-                      color={isSelected ? colors.accent : colors.muted}
-                    />
+                    <Trophy size={18} color={isSelected ? colors.accent : colors.muted} />
                     <View style={styles.liftTextCol}>
                       <Text
                         style={[
@@ -118,16 +158,15 @@ export function PersonalRecordsScreen() {
                         {r.exerciseName}
                       </Text>
                       <Text style={[styles.rowLiftBest, { color: colors.muted }]}>
-                        {rWeight} kg × {rReps} · {new Date(r.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {describeRecord(r)} ·{' '}
+                        {new Date(r.achievedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
                       </Text>
                     </View>
 
-                    <Sparkline
-                      points={[rWeight]}
-                      strokeColor={colors.ink}
-                      width={64}
-                      height={28}
-                    />
+                    <Sparkline points={[rWeight]} strokeColor={colors.ink} width={64} height={28} />
                   </TouchableOpacity>
                 );
               })}
@@ -189,4 +228,3 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
-

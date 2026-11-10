@@ -10,17 +10,11 @@ import { showToast } from '@/shared/stores/toastStore';
 import { useGoalsStore } from '../store/goalsStore';
 import { goalTypeMeta } from '../constants/goalTypes';
 import { useTheme } from '@/hooks/use-theme';
+import { useDashboard } from '@/features/dashboard/hooks/use-dashboard';
+import { useWeightStore } from '@/features/weight-tracking/store/weightStore';
 import type { GoalType } from '../types/goal';
 
 const deadlines = ['4 weeks', '8 weeks', '12 weeks', 'Ongoing'];
-const baseline: Partial<Record<GoalType, number>> = {
-  weightLoss: 78.4,
-  maintain: 78.4,
-  muscleGain: 35.2,
-  run5k: 28.7,
-  run10k: 62,
-  marathon: 5,
-};
 
 export function GoalCreateScreen() {
   const { colors } = useTheme();
@@ -28,6 +22,15 @@ export function GoalCreateScreen() {
   const id = params.id;
   const { goBack, replace } = useNavigation();
   const { goals, addGoal, updateGoal } = useGoalsStore();
+  const { data: dashboard } = useDashboard();
+  const measurements = useWeightStore((s) => s.measurements);
+  const weight = dashboard?.summary.weight;
+  const baseline: Partial<Record<GoalType, number>> = {
+    ...(weight != null ? { weightLoss: weight, maintain: weight } : {}),
+    ...(measurements[0]?.values.muscleMass != null
+      ? { muscleGain: measurements[0].values.muscleMass }
+      : {}),
+  };
   const editing = goals.find((g) => g.id === id);
 
   const [type, setType] = useState<GoalType>(editing?.type ?? 'weightLoss');
@@ -35,10 +38,12 @@ export function GoalCreateScreen() {
   const [target, setTarget] = useState(editing?.target ?? meta.defaultTarget);
   const [deadline, setDeadline] = useState(editing ? 'Ongoing' : '12 weeks');
   const [title, setTitle] = useState(editing?.title ?? '');
+  const [startingValue, setStartingValue] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
   const pick = (t: GoalType) => {
     setType(t);
+    setStartingValue(null);
     setTarget(goalTypeMeta[t].defaultTarget);
   };
 
@@ -54,7 +59,11 @@ export function GoalCreateScreen() {
         goBack();
         return;
       }
-      const start = baseline[type] ?? 0;
+      const start = startingValue ?? baseline[type] ?? (meta.cadence !== 'once' ? 0 : null);
+      if (start == null) {
+        showToast({ message: 'Enter your starting value before saving this goal.' });
+        return;
+      }
       const newId = await addGoal({
         type,
         title: title || autoTitle,
@@ -89,110 +98,119 @@ export function GoalCreateScreen() {
       contentContainerStyle={styles.container}
     >
       {!editing && (
-          <View style={styles.sectionBlock}>
-            <Text style={[styles.sectionLabel, { color: colors.muted }]}>
-              What are you working toward?
-            </Text>
-            <View style={styles.typeGrid}>
-              {(Object.keys(goalTypeMeta) as GoalType[]).map((t) => {
-                const m = goalTypeMeta[t];
-                const Icon = m.icon;
-                const on = t === type;
-                return (
-                  <TouchableOpacity
-                    key={t}
-                    activeOpacity={0.7}
-                    onPress={() => pick(t)}
+        <View style={styles.sectionBlock}>
+          <Text style={[styles.sectionLabel, { color: colors.muted }]}>
+            What are you working toward?
+          </Text>
+          <View style={styles.typeGrid}>
+            {(Object.keys(goalTypeMeta) as GoalType[]).map((t) => {
+              const m = goalTypeMeta[t];
+              const Icon = m.icon;
+              const on = t === type;
+              return (
+                <TouchableOpacity
+                  key={t}
+                  activeOpacity={0.7}
+                  onPress={() => pick(t)}
+                  style={[
+                    styles.typeCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: on ? colors.ink : colors.line,
+                    },
+                  ]}
+                >
+                  <View
                     style={[
-                      styles.typeCard,
+                      styles.typeIconBox,
                       {
-                        backgroundColor: colors.surface,
-                        borderColor: on ? colors.ink : colors.line,
+                        backgroundColor: on ? colors.accent : colors.surface2,
                       },
                     ]}
                   >
-                    <View
-                      style={[
-                        styles.typeIconBox,
-                        {
-                          backgroundColor: on ? colors.accent : colors.surface2,
-                        },
-                      ]}
-                    >
-                      <Icon size={16} color={colors.ink} />
-                    </View>
-                    <Text style={[styles.typeText, { color: colors.ink }]} numberOfLines={1}>
-                      {m.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                    <Icon size={16} color={colors.ink} />
+                  </View>
+                  <Text style={[styles.typeText, { color: colors.ink }]} numberOfLines={1}>
+                    {m.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        )}
+        </View>
+      )}
 
-        {/* Target Stepper */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardLabel, { color: colors.muted }]}>
-            {meta.cadence === 'daily'
-              ? 'Daily target'
-              : meta.cadence === 'streak'
+      {/* Target Stepper */}
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+        <Text style={[styles.cardLabel, { color: colors.muted }]}>
+          {meta.cadence === 'daily'
+            ? 'Daily target'
+            : meta.cadence === 'streak'
               ? 'Streak length'
               : 'Target'}
-          </Text>
+        </Text>
+        <View style={{ marginTop: 12 }}>
+          <Stepper
+            size="lg"
+            label="Target"
+            value={target}
+            onChange={setTarget}
+            step={meta.step}
+            decimals={meta.decimals}
+            unit={meta.unit}
+            max={100000}
+          />
+        </View>
+        {!editing && meta.cadence === 'once' && baseline[type] == null ? (
           <View style={{ marginTop: 12 }}>
+            <Text style={{ color: colors.muted }}>Starting value</Text>
             <Stepper
-              size="lg"
-              label="Target"
-              value={target}
-              onChange={setTarget}
+              label="Starting value"
+              value={startingValue ?? 0}
+              onChange={setStartingValue}
               step={meta.step}
               decimals={meta.decimals}
               unit={meta.unit}
-              max={100000}
             />
           </View>
-          {baseline[type] !== undefined && meta.cadence === 'once' && (
-            <Text style={[styles.baselineFootnote, { color: colors.muted }]}>
-              Current: {baseline[type]} {meta.unit}
+        ) : null}
+        {baseline[type] !== undefined && meta.cadence === 'once' && (
+          <Text style={[styles.baselineFootnote, { color: colors.muted }]}>
+            Current: {baseline[type]} {meta.unit}
+          </Text>
+        )}
+      </View>
+
+      {/* Timeframe */}
+      {!editing && meta.cadence === 'once' && (
+        <View style={styles.sectionBlock}>
+          <Text style={[styles.sectionLabel, { color: colors.muted }]}>Timeframe</Text>
+          <View style={styles.deadlinesRow}>
+            {deadlines.map((d) => (
+              <Chip key={d} label={d} selected={d === deadline} onPress={() => setDeadline(d)} />
+            ))}
+          </View>
+          {type === 'weightLoss' && baseline.weightLoss != null && deadline !== 'Ongoing' && (
+            <Text style={[styles.rateNote, { color: colors.muted }]}>
+              That’s about {((baseline.weightLoss! - target) / parseInt(deadline, 10)).toFixed(2)}{' '}
+              kg/week.{' '}
+              {(baseline.weightLoss! - target) / parseInt(deadline, 10) > 0.75
+                ? 'Faster than the 0.5–0.75 kg/week most coaches recommend.'
+                : 'A sustainable pace.'}
             </Text>
           )}
         </View>
+      )}
 
-        {/* Timeframe */}
-        {!editing && meta.cadence === 'once' && (
-          <View style={styles.sectionBlock}>
-            <Text style={[styles.sectionLabel, { color: colors.muted }]}>Timeframe</Text>
-            <View style={styles.deadlinesRow}>
-              {deadlines.map((d) => (
-                <Chip
-                  key={d}
-                  label={d}
-                  selected={d === deadline}
-                  onPress={() => setDeadline(d)}
-                />
-              ))}
-            </View>
-            {type === 'weightLoss' && deadline !== 'Ongoing' && (
-              <Text style={[styles.rateNote, { color: colors.muted }]}>
-                That’s about {((78.4 - target) / parseInt(deadline, 10)).toFixed(2)} kg/week.{' '}
-                {(78.4 - target) / parseInt(deadline, 10) > 0.75
-                  ? 'Faster than the 0.5–0.75 kg/week most coaches recommend.'
-                  : 'A sustainable pace.'}
-              </Text>
-            )}
-          </View>
-        )}
-
-        {/* Optional Name */}
-        <View style={{ marginTop: 4 }}>
-          <TextField
-            label="Name (optional)"
-            placeholder={autoTitle}
-            value={title}
-            onChangeText={setTitle}
-          />
-        </View>
+      {/* Optional Name */}
+      <View style={{ marginTop: 4 }}>
+        <TextField
+          label="Name (optional)"
+          placeholder={autoTitle}
+          value={title}
+          onChangeText={setTitle}
+        />
+      </View>
     </Screen>
   );
 }
@@ -262,4 +280,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
 });
-

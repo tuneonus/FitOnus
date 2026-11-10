@@ -1,5 +1,11 @@
+import { captureUserSession, registerUserStore } from '@/services/user-session';
 import { create } from 'zustand';
-import type { ActionStatus, CoachMessage, ConversationDetail, StoredChatMessage } from '../types/coach';
+import type {
+  ActionStatus,
+  CoachMessage,
+  ConversationDetail,
+  StoredChatMessage,
+} from '../types/coach';
 import { CoachApi, type ChatHistoryTurn } from '../services/coach-api';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 
@@ -9,11 +15,18 @@ type CoachState = {
   busy: boolean;
   send: (text: string) => void;
   retry: (assistantId: string) => void;
-  setActionStatus: (messageId: string, actionId: string, status: ActionStatus, resultText?: string) => void;
+  setActionStatus: (
+    messageId: string,
+    actionId: string,
+    status: ActionStatus,
+    resultText?: string,
+  ) => void;
   newConversation: () => void;
   setConversationId: (id: string | null) => void;
   /** Resume a past conversation: loads real conversation messages or questions. */
-  loadConversation: (convo: ConversationDetail | { id: string; messages: StoredChatMessage[] } | string[]) => void;
+  loadConversation: (
+    convo: ConversationDetail | { id: string; messages: StoredChatMessage[] } | string[],
+  ) => void;
 };
 
 let msgCounter = 0;
@@ -26,6 +39,7 @@ async function sendToApi(
   userMessageId: string,
   question: string,
 ) {
+  const session = captureUserSession();
   const offline = useHealthStore.getState().status === 'offline';
   if (offline) {
     set((s) => ({
@@ -63,6 +77,12 @@ async function sendToApi(
       clientMessageId: userMessageId,
     });
 
+    if (
+      !session.isCurrent() ||
+      (get().conversationId !== currentConvoId && get().conversationId != null)
+    )
+      return;
+    if (!get().messages.some((message) => message.id === assistantId)) return;
     set((s) => ({
       busy: false,
       conversationId: response.conversationId || s.conversationId,
@@ -77,6 +97,7 @@ async function sendToApi(
       ),
     }));
   } catch (err: unknown) {
+    if (!session.isCurrent()) return;
     const errorData = (err as any)?.response?.data;
     const errorMessage =
       errorData?.error?.message ||
@@ -155,9 +176,7 @@ export const useCoachStore = create<CoachState>((set, get) => ({
           ? {
               ...m,
               blocks: m.blocks?.map((b) =>
-                b.type === 'action' && b.id === actionId
-                  ? { ...b, status, resultText }
-                  : b,
+                b.type === 'action' && b.id === actionId ? { ...b, status, resultText } : b,
               ),
             }
           : m,
@@ -196,3 +215,5 @@ export const useCoachStore = create<CoachState>((set, get) => ({
     });
   },
 }));
+
+registerUserStore(useCoachStore);

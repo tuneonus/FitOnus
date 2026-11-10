@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { ChatMessage } from '../types/coach';
 import { CoachService } from '../services/coach-service';
 
-export const useChat = (conversationId: string) => {
+export const useChat = (initialConversationId = '') => {
+  const [conversationId, setConversationId] = useState(initialConversationId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -19,57 +20,64 @@ export const useChat = (conversationId: string) => {
         setIsLoading(false);
       }
     };
-    
+
     fetchMessages();
   }, [conversationId]);
 
-  const sendMessage = useCallback(async (content: string) => {
-    // Optimistically add user message
-    const userMsg: ChatMessage = {
-      id: Math.random().toString(),
-      conversationId,
-      role: 'user',
-      content,
-      timestamp: new Date().toISOString()
-    };
-    
-    setMessages(prev => [...prev, userMsg]);
-    setIsStreaming(true);
-    
-    // Placeholder for AI streaming
-    const tempAiMsg: ChatMessage = {
-      id: 'temp-' + Math.random().toString(),
-      conversationId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date().toISOString()
-    };
-    setMessages(prev => [...prev, tempAiMsg]);
+  const sendMessage = useCallback(
+    async (content: string) => {
+      // Optimistically add user message
+      const userMsg: ChatMessage = {
+        id: Math.random().toString(),
+        conversationId,
+        role: 'user',
+        content,
+        timestamp: new Date().toISOString(),
+      };
 
-    try {
-      await CoachService.sendMessage(conversationId, content, (chunk) => {
-        setMessages(prev => {
-          const newMsgs = [...prev];
-          const lastIndex = newMsgs.length - 1;
-          const lastMsg = newMsgs[lastIndex];
-          if (lastMsg) {
-            newMsgs[lastIndex] = { ...lastMsg, content: chunk };
-          }
-          return newMsgs;
+      setMessages((prev) => [...prev, userMsg]);
+      setIsStreaming(true);
+
+      // Placeholder for AI streaming
+      const tempAiMsg: ChatMessage = {
+        id: 'temp-' + Math.random().toString(),
+        conversationId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, tempAiMsg]);
+
+      try {
+        const response = await CoachService.sendMessage(conversationId, content, (chunk) => {
+          setMessages((prev) => {
+            const newMsgs = [...prev];
+            const lastIndex = newMsgs.length - 1;
+            const lastMsg = newMsgs[lastIndex];
+            if (lastMsg) {
+              newMsgs[lastIndex] = { ...lastMsg, content: chunk };
+            }
+            return newMsgs;
+          });
         });
-      });
-    } catch (e) {
-      console.error(e);
-      // Handle error
-    } finally {
-      setIsStreaming(false);
-    }
-  }, [conversationId]);
+        setConversationId(response.conversationId);
+        setMessages((previous) =>
+          previous.map((message) => (message.id === tempAiMsg.id ? response : message)),
+        );
+      } catch (e) {
+        console.error(e);
+        // Handle error
+      } finally {
+        setIsStreaming(false);
+      }
+    },
+    [conversationId],
+  );
 
   return {
     messages,
     isLoading,
     isStreaming,
-    sendMessage
+    sendMessage,
   };
 };

@@ -9,6 +9,7 @@ import { buildHomeNutrition, localDateKey } from '../utils/home-overview';
 
 export function useHomeOverview() {
   const [date, setDate] = useState(() => localDateKey());
+  const userId = useAuthStore((s) => s.user?.id);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const cachedSummary = useNutritionStore((s) => s.dailySummary);
   const entries = useNutritionStore((s) => s.entries);
@@ -20,10 +21,11 @@ export function useHomeOverview() {
   // The dashboard prefix is invalidated by the existing meal/water/offline logging actions.
   // Read today independently, without changing the diary's selected date or writing its stores.
   const nutrition = useQuery({
-    queryKey: ['dashboard', 'home-nutrition', date],
+    queryKey: ['dashboard', 'home-nutrition', userId, date],
     queryFn: () => nutritionApi.getDailyNutrition(date),
     enabled: isAuthenticated,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
     retry: 1,
   });
 

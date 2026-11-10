@@ -14,6 +14,7 @@ import { useWeightStore } from '../store/weightStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { kgToLb } from '@/shared/utils/unit-conversion';
 import { AddWeightSheet } from '../components/AddWeightSheet';
+import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { showToast } from '@/shared/stores/toastStore';
 
 export function WeightScreen() {
@@ -26,6 +27,7 @@ export function WeightScreen() {
     startWeight,
     points: storePoints,
     isLoading,
+    error,
     fetchWeightHistory,
     deleteEntry,
   } = useWeightStore();
@@ -61,7 +63,11 @@ export function WeightScreen() {
       : Math.abs(rawChange).toFixed(1);
 
   const weightUnit = units === 'imperial' ? 'lb' : 'kg';
-  const lost = latest ? startWeight - latest.value : 0;
+  const lost = latest && startWeight != null ? startWeight - latest.value : 0;
+  const goalProgress =
+    latest && startWeight != null && goalWeight != null && startWeight !== goalWeight
+      ? Math.max(0, Math.min(1, (latest.value - startWeight) / (goalWeight - startWeight)))
+      : 0;
 
   const handleDelete = async (id?: string) => {
     if (!id) return;
@@ -88,21 +94,27 @@ export function WeightScreen() {
       }
     >
       <View style={styles.container}>
+        {error ? (
+          <StatusBanner
+            tone="error"
+            title="Couldn’t refresh weight"
+            body="Pull to try again. Previously loaded values may be out of date."
+          />
+        ) : null}
         {/* Current Weight Hero */}
         <View style={styles.currentSection}>
           <Text style={[styles.currentLabel, { color: colors.muted }]}>Current</Text>
           <View style={styles.weightNumberRow}>
             <Text style={[styles.weightBig, { color: colors.ink }]}>{displayLatest}</Text>
-            {latest && <Text style={[styles.weightUnit, { color: colors.muted }]}>{weightUnit}</Text>}
+            {latest && (
+              <Text style={[styles.weightUnit, { color: colors.muted }]}>{weightUnit}</Text>
+            )}
           </View>
           <View style={styles.badgeRow}>
             {latest ? (
               <>
                 <Text
-                  style={[
-                    styles.changeText,
-                    { color: rawChange <= 0 ? colors.good : colors.warn },
-                  ]}
+                  style={[styles.changeText, { color: rawChange <= 0 ? colors.good : colors.warn }]}
                 >
                   {rawChange > 0 ? '+' : rawChange < 0 ? '-' : ''}
                   {displayChange} {weightUnit} this view
@@ -133,20 +145,27 @@ export function WeightScreen() {
             value={range}
             onChange={(val) => setRange(val as TimeRange)}
           />
-          <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View
+            style={[
+              styles.chartCard,
+              { backgroundColor: colors.surface, borderColor: colors.line },
+            ]}
+          >
             {points.length > 0 ? (
               <LineChart
                 key={range}
                 points={points}
-                target={goalWeight}
-                targetLabel={`Goal ${goalWeight}`}
+                target={goalWeight ?? undefined}
+                targetLabel={goalWeight != null ? `Goal ${goalWeight}` : undefined}
                 subtitle="EMA trend smoothed"
                 formatValue={(v) => `${v.toFixed(1)} kg`}
                 height={170}
                 strokeColor={colors.accent}
               />
             ) : (
-              <View style={{ height: 170, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+              <View
+                style={{ height: 170, alignItems: 'center', justifyContent: 'center', padding: 16 }}
+              >
                 <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>
                   No weight entries recorded for this time range.
                 </Text>
@@ -156,25 +175,36 @@ export function WeightScreen() {
         </View>
 
         {/* Goal progress card */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <View style={styles.goalHeader}>
-            <Text style={[styles.cardTitle, { color: colors.ink }]}>Goal · {goalWeight} kg</Text>
-            <Text style={[styles.goalSub, { color: colors.muted }]}>
-              {latest ? `${(latest.value - goalWeight).toFixed(1)} kg to go` : 'Target set'}
+        {goalWeight != null && startWeight != null ? (
+          <View
+            style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}
+          >
+            <View style={styles.goalHeader}>
+              <Text style={[styles.cardTitle, { color: colors.ink }]}>Goal · {goalWeight} kg</Text>
+              <Text style={[styles.goalSub, { color: colors.muted }]}>
+                {latest ? `${(latest.value - goalWeight).toFixed(1)} kg to go` : 'Target set'}
+              </Text>
+            </View>
+            <ProgressBar
+              value={goalProgress}
+              max={1}
+              color={colors.accent}
+              trackColor={colors.surface2}
+              style={{ marginTop: 12, height: 8 }}
+            />
+            <Text style={[styles.goalFootnote, { color: colors.muted }]}>
+              Started at {startWeight} kg · {Math.round(goalProgress * 100)}% there
             </Text>
           </View>
-          <ProgressBar
-            value={lost}
-            max={startWeight - goalWeight}
-            color={colors.accent}
-            trackColor={colors.surface2}
-            style={{ marginTop: 12, height: 8 }}
-          />
-          <Text style={[styles.goalFootnote, { color: colors.muted }]}>
-            Started at {startWeight} kg in January ·{' '}
-            {Math.round((lost / (startWeight - goalWeight)) * 100)}% there
-          </Text>
-        </View>
+        ) : (
+          <View
+            style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}
+          >
+            <Text style={{ color: colors.muted }}>
+              No weight goal set. Add a goal to track your progress.
+            </Text>
+          </View>
+        )}
 
         {/* Coach Insight */}
         <TouchableOpacity
@@ -187,10 +217,10 @@ export function WeightScreen() {
           </View>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={[styles.coachHeading, { color: colors.ink }]}>
-              Your pace slowed this week
+              Review your weight trend
             </Text>
             <Text style={[styles.coachBody, { color: colors.muted }]}>
-              −0.4 kg over 10 days vs −0.9 kg before. Weekend calories look like the cause. Tap for the breakdown.
+              Ask your coach to review your logged weights and nutrition.
             </Text>
           </View>
         </TouchableOpacity>
@@ -199,7 +229,10 @@ export function WeightScreen() {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => navigate('measurements')}
-          style={[styles.measurementsCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+          style={[
+            styles.measurementsCard,
+            { backgroundColor: colors.surface, borderColor: colors.line },
+          ]}
         >
           <View style={[styles.rulerIconBox, { backgroundColor: colors.surface2 }]}>
             <Ruler size={18} color={colors.ink} />
@@ -218,7 +251,9 @@ export function WeightScreen() {
         {/* History */}
         <View style={styles.historyBlock}>
           <Text style={[styles.historyHeading, { color: colors.ink }]}>History</Text>
-          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View
+            style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+          >
             {entries.length === 0 ? (
               <Text style={{ color: colors.muted, textAlign: 'center', padding: 16, fontSize: 13 }}>
                 No weight history recorded yet.
@@ -251,7 +286,9 @@ export function WeightScreen() {
                       </View>
                       <View style={{ alignItems: 'flex-end', gap: 2 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <Text style={[styles.rowWeight, { color: colors.ink }]}>{e.value.toFixed(1)}</Text>
+                          <Text style={[styles.rowWeight, { color: colors.ink }]}>
+                            {e.value.toFixed(1)}
+                          </Text>
                           {e.id && (
                             <TouchableOpacity
                               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -263,10 +300,7 @@ export function WeightScreen() {
                         </View>
                         {prev && (
                           <Text
-                            style={[
-                              styles.rowDiff,
-                              { color: d <= 0 ? colors.good : colors.warn },
-                            ]}
+                            style={[styles.rowDiff, { color: d <= 0 ? colors.good : colors.warn }]}
                           >
                             {d > 0 ? '+' : ''}
                             {d.toFixed(1)}

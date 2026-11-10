@@ -21,6 +21,9 @@ import { useHealthStore } from '../../health-integration/store/healthStore';
 import { useProfileSetupStore } from '../../onboarding/store/profileSetupStore';
 import { WorkoutBlock } from '../../ai-coach/components/blocks/WorkoutBlock';
 import { generateWorkoutPlan } from '../services/workoutPlanGenerator';
+import { workoutApi } from '../api/workout-api';
+import { refreshFitnessQueries } from '@/services/fitness-refresh';
+import { captureUserSession } from '@/services/user-session';
 import { useWorkoutStore } from '../store/workoutStore';
 import type { WorkoutSession } from '../types/workout';
 import { useTheme } from '@/hooks/use-theme';
@@ -50,6 +53,7 @@ export function WorkoutGeneratorScreen() {
   const [level, setLevel] = useState('Intermediate');
   const [equipment, setEquipment] = useState<string[]>(profile.equipment || ['Dumbbells', 'Bench']);
   const [phase, setPhase] = useState<'form' | 'generating' | 'result' | 'error'>('form');
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<WorkoutSession | null>(null);
   const [rationale, setRationale] = useState<string[]>([]);
   const { data: dashboard } = useDashboard();
@@ -82,11 +86,35 @@ export function WorkoutGeneratorScreen() {
     }
   };
 
-  const save = () => {
-    if (!result) return;
-    setPlanned(result);
-    showToast({ message: 'Saved as today’s workout' });
-    navigate('workoutPlan');
+  const save = async () => {
+    if (!result || saving) return;
+    const session = captureUserSession();
+    setSaving(true);
+    try {
+      const plan = await workoutApi.createWorkoutPlan({
+        name: result.title,
+        difficulty: level.toLowerCase() as 'beginner' | 'intermediate' | 'advanced',
+        estimatedDurationMinutes: result.durationMin,
+        tags: ['generated'],
+        exercises: result.exercises.map((exercise, orderIndex) => ({
+          exerciseId: exercise.exerciseId,
+          orderIndex,
+          targetSets: exercise.sets,
+          targetReps: exercise.reps,
+          restSeconds: exercise.restSec,
+        })),
+      });
+      session.assertCurrent();
+      setPlanned({ ...result, id: plan.id });
+      refreshFitnessQueries();
+      showToast({ message: 'Workout saved to your account' });
+      navigate('workoutPlan');
+    } catch {
+      if (session.isCurrent())
+        showToast({ message: 'Could not save your workout. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (phase === 'generating') {
@@ -132,6 +160,7 @@ export function WorkoutGeneratorScreen() {
               title="Use today"
               style={{ flex: 1 }}
               onPress={save}
+              loading={saving}
             />
           </View>
         }

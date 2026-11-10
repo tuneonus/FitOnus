@@ -7,7 +7,9 @@ import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { BarChart } from '@/shared/components/charts/BarChart';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useTheme } from '@/hooks/use-theme';
-import { nutritionGoals } from '../constants/meals';
+import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { nutritionApi } from '../api/nutrition-api';
 import type { NutritionAnalyticsView } from '../types/nutrition';
 import { useAdvancedAnalyticsStore } from '@/features/analytics/store/advancedAnalyticsStore';
@@ -19,51 +21,16 @@ export function NutritionAnalyticsScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const [range, setRange] = useState<Range>('week');
-  const [analytics, setAnalytics] = useState<NutritionAnalyticsView | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const { fetchNutrition: fetchAdvancedNutrition } = useAdvancedAnalyticsStore();
-
-  const fetchAnalytics = async (r: Range) => {
-    const advRange = r === 'week' ? '7d' : '30d';
-    try {
-      const [advResult, legacyResult] = await Promise.allSettled([
-        fetchAdvancedNutrition(advRange),
-        nutritionApi.getNutritionAnalytics(r),
-      ]);
-
-      const adv = advResult.status === 'fulfilled' ? advResult.value : null;
-      const leg = legacyResult.status === 'fulfilled' ? legacyResult.value : null;
-
-      if (adv) {
-        setAnalytics({
-          ...adv,
-          avgCalories: adv.avgCalories,
-          avgProtein:
-            adv.macroSplit?.find((m) => m.label === 'Protein')?.grams ?? (leg as any)?.avgProtein ?? 0,
-          targetCalories: adv.targetCalories ?? nutritionGoals.kcal,
-          targetProtein: (leg as any)?.targetProtein ?? nutritionGoals.protein,
-          loggedDaysCount: adv.dailyTrends.filter((d) => d.logged).length,
-          totalDaysInRange: adv.dailyTrends.length,
-          caloriesTrend: adv.dailyTrends.map((d) => ({ label: d.label, value: d.calories })),
-          proteinTrend: adv.dailyTrends.map((d) => ({ label: d.label, value: d.protein })),
-          topFoods: (leg as any)?.topFoods ?? [],
-        } as any);
-      } else if (leg) {
-        setAnalytics(leg);
-      }
-    } catch (err: any) {
-      logger.warn('Failed to fetch nutrition analytics:', err?.message);
-    }
-  };
-
-  useEffect(() => {
-    fetchAnalytics(range);
-  }, [range]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchAnalytics(range);
-    setRefreshing(false);
+  const userId = useAuthStore((state) => state.user?.id);
+  const query = useQuery({
+    queryKey: ['dashboard', 'nutrition-analytics', userId, range],
+    queryFn: () => nutritionApi.getNutritionAnalytics(range),
+    enabled: !!userId,
+  });
+  const analytics = query.data;
+  const refreshing = query.isRefetching;
+  const onRefresh = () => {
+    void query.refetch();
   };
 
   const cal =
@@ -80,14 +47,18 @@ export function NutritionAnalyticsScreen() {
 
   const topItems =
     analytics?.topFoods && analytics.topFoods.length > 0
-      ? analytics.topFoods.map((t) => ({ name: t.foodName, count: t.count, kcal: Math.round(t.totalCalories) }))
+      ? analytics.topFoods.map((t) => ({
+          name: t.foodName,
+          count: t.count,
+          kcal: Math.round(t.totalCalories),
+        }))
       : [];
 
   const avgKcal = analytics ? Math.round(analytics.avgCalories) : 0;
   const avgPro = analytics ? Math.round(analytics.avgProtein) : 0;
 
-  const targetKcal = analytics?.targetCalories ?? nutritionGoals.kcal;
-  const targetProtein = analytics?.targetProtein ?? nutritionGoals.protein;
+  const targetKcal = analytics?.targetCalories ?? undefined;
+  const targetProtein = analytics?.targetProtein ?? undefined;
   const hasData = (analytics?.loggedDaysCount ?? 0) > 0;
 
   return (
@@ -99,6 +70,20 @@ export function NutritionAnalyticsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />
         }
       >
+        {query.isError ? (
+          <StatusBanner
+            tone="error"
+            title="Couldn’t refresh nutrition analytics"
+            body="Pull to try again. Previously loaded values may be out of date."
+          />
+        ) : null}
+        {!query.isLoading && !query.isError && !hasData ? (
+          <EmptyState
+            icon={Sparkles}
+            title="No nutrition records yet"
+            body="Log meals to build your nutrition trends."
+          />
+        ) : null}
         <SegmentedControl<Range>
           options={[
             { value: 'week', label: 'Last 7 days' },
@@ -113,7 +98,7 @@ export function NutritionAnalyticsScreen() {
           <View style={styles.cardHeader}>
             <Text style={[styles.cardTitle, { color: colors.ink }]}>Calories</Text>
             <Text style={[styles.cardSub, { color: colors.muted }]}>
-              avg {avgKcal.toLocaleString()} · goal {targetKcal.toLocaleString()}
+              avg {avgKcal.toLocaleString()} · goal {targetKcal?.toLocaleString() ?? '—'}
             </Text>
           </View>
           <View style={styles.chartWrapper}>
@@ -127,7 +112,9 @@ export function NutritionAnalyticsScreen() {
             />
           </View>
           {range === 'week' && (
-            <Text style={[styles.footnote, { color: colors.muted }]}>Today is still in progress.</Text>
+            <Text style={[styles.footnote, { color: colors.muted }]}>
+              Today is still in progress.
+            </Text>
           )}
         </View>
 
@@ -136,7 +123,7 @@ export function NutritionAnalyticsScreen() {
           <View style={styles.cardHeader}>
             <Text style={[styles.cardTitle, { color: colors.ink }]}>Protein</Text>
             <Text style={[styles.cardSub, { color: colors.muted }]}>
-              avg {avgPro} g · goal {targetProtein} g
+              avg {avgPro} g · goal {targetProtein ?? '—'} g
             </Text>
           </View>
           <View style={styles.chartWrapper}>
@@ -158,7 +145,12 @@ export function NutritionAnalyticsScreen() {
             {splitData.map((m) => {
               const bg =
                 m.label === 'Protein' ? colors.move : m.label === 'Carbs' ? '#38BDF8' : colors.warn;
-              return <View key={m.label} style={{ width: `${m.pct}%`, height: '100%', backgroundColor: bg }} />;
+              return (
+                <View
+                  key={m.label}
+                  style={{ width: `${m.pct}%`, height: '100%', backgroundColor: bg }}
+                />
+              );
             })}
           </View>
           <View style={styles.splitGrid}>
@@ -177,14 +169,18 @@ export function NutritionAnalyticsScreen() {
             })}
           </View>
           <Text style={[styles.footnote, { color: colors.muted }]}>
-            Suggested for your goal: protein 25–30% of calories.
+            Macro split is calculated from your logged meals.
           </Text>
         </View>
 
         {/* Most Logged Section */}
         <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Most logged · 30 days</Text>
-          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <Text style={[styles.sectionHeading, { color: colors.ink }]}>
+            Most logged · {range === 'week' ? '7 days' : '30 days'}
+          </Text>
+          <View
+            style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+          >
             {topItems.length === 0 ? (
               <Text style={{ color: colors.muted, textAlign: 'center', padding: 16, fontSize: 13 }}>
                 No food records found for this period.
@@ -201,7 +197,9 @@ export function NutritionAnalyticsScreen() {
                 >
                   <View>
                     <Text style={[styles.foodRowName, { color: colors.ink }]}>{f.name}</Text>
-                    <Text style={[styles.foodRowSub, { color: colors.muted }]}>{f.count} times logged</Text>
+                    <Text style={[styles.foodRowSub, { color: colors.muted }]}>
+                      {f.count} times logged
+                    </Text>
                   </View>
                   <Text style={[styles.foodRowKcal, { color: colors.ink }]}>{f.kcal} kcal</Text>
                 </View>
@@ -213,11 +211,13 @@ export function NutritionAnalyticsScreen() {
         {/* Logging Consistency */}
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionHeading, { color: colors.ink }]}>Logging consistency</Text>
-          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View
+            style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+          >
             <View style={[styles.consistencyRow, { borderBottomWidth: 0 }]}>
               <Text style={[styles.consistencyLabel, { color: colors.ink }]}>Logged days</Text>
               <Text style={[styles.consistencyValue, { color: colors.ink }]}>
-                {analytics ? `${analytics.loggedDaysCount} / ${analytics.totalDaysInRange}` : '0 / 7'}{' '}
+                {analytics ? `${analytics.loggedDaysCount} / ${analytics.totalDaysInRange}` : '—'}{' '}
                 <Text style={{ color: colors.muted }}>
                   (
                   {analytics && analytics.totalDaysInRange > 0
@@ -233,7 +233,9 @@ export function NutritionAnalyticsScreen() {
         {/* Coach Summary */}
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() => navigate('coach', { q: 'How is my nutrition trending over the last month?' })}
+          onPress={() =>
+            navigate('coach', { q: 'How is my nutrition trending over the last month?' })
+          }
           style={[styles.coachBanner, { backgroundColor: colors.surface2 }]}
         >
           <View style={styles.coachIconWrapper}>
@@ -242,7 +244,7 @@ export function NutritionAnalyticsScreen() {
           <View style={styles.coachTextCol}>
             <Text style={[styles.coachHeading, { color: colors.ink }]}>Coach review</Text>
             <Text style={[styles.coachBody, { color: colors.muted }]}>
-              Protein consistency is up 18% this month. On track for your body composition goal.
+              Review your logged nutrition and daily targets with your coach.
             </Text>
           </View>
         </TouchableOpacity>

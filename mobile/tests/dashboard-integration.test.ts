@@ -2,8 +2,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   type DashboardData,
-  MOCK_DASHBOARD_DATA,
 } from '../src/features/dashboard/api/dashboard-repository';
+import { MOCK_DASHBOARD_DATA } from './fixtures/dashboard';
 import { DASHBOARD_QUERY_KEY, invalidateDashboard } from '../src/features/dashboard/hooks/use-dashboard';
 import { queryClient } from '../src/providers/query-provider';
 

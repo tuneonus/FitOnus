@@ -17,7 +17,7 @@ type FoodItemSheetProps = {
 
 export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
   const { colors } = useTheme();
-  const { scaleItem, removeItem, restoreEntry } = useNutritionStore();
+  const { scaleItem, removeItem, updateMeal } = useNutritionStore();
   const [factor, setFactor] = useState(1);
 
   const close = () => {
@@ -49,17 +49,23 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
             size="lg"
             icon={Trash2}
             title="Remove"
-            onPress={() => {
-              removeItem(entry.id, item.id);
-              showToast({
-                message: `${item.name} removed`,
-                actionLabel: 'Undo',
-                onAction: () => {
-                  useNutritionStore.getState().removeEntry(entry.id);
-                  restoreEntry(entry);
-                },
-              });
-              close();
+            disabled={entry.items.length <= 1 || !entry.isSynced}
+            onPress={async () => {
+              try {
+                await removeItem(entry.id, item.id);
+                showToast({
+                  message: `${item.name} removed`,
+                  actionLabel: 'Undo',
+                  onAction: () => {
+                    void updateMeal(entry.id, entry.items, entry.notes ?? undefined).catch(() =>
+                      showToast({ message: 'Could not restore the food.' }),
+                    );
+                  },
+                });
+                close();
+              } catch {
+                showToast({ message: 'Could not update this meal. Please try again.' });
+              }
             }}
           />
           <Button
@@ -67,17 +73,27 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
             size="lg"
             title="Save"
             style={{ flex: 1 }}
-            disabled={factor === 1}
-            onPress={() => {
-              scaleItem(entry.id, item.id, factor);
-              showToast({ message: 'Portion updated' });
-              close();
+            disabled={factor === 1 || !entry.isSynced}
+            onPress={async () => {
+              try {
+                await scaleItem(entry.id, item.id, factor);
+                showToast({ message: 'Portion updated' });
+                close();
+              } catch {
+                showToast({ message: 'Could not update this portion. Please try again.' });
+              }
             }}
           />
         </View>
       }
     >
       <View style={styles.sheetContent}>
+        {entry.items.length <= 1 ? (
+          <Text style={{ color: colors.muted }}>Meal deletion is not available yet.</Text>
+        ) : null}
+        {!entry.isSynced ? (
+          <Text style={{ color: colors.muted }}>Sync this meal before editing.</Text>
+        ) : null}
         <Text style={[styles.portionLabel, { color: colors.muted }]}>Portion</Text>
         <View style={{ marginTop: 8 }}>
           <Stepper

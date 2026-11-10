@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { workoutApi } from '@/features/workouts/api/workout-api';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import {
   Award,
   Brain,
@@ -31,157 +33,185 @@ import { formatWeight, formatHeight } from '@/shared/utils/unit-conversion';
 export function ProfileScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const { data: serverProfile } = useProfile();
+  const profile = useProfile();
+  const { data: serverProfile } = profile;
   const user = useAuthStore((s) => s.user);
-  const workoutCount = useWorkoutStore((s) => s.history.length);
+  const workoutTotals = useQuery({
+    queryKey: ['dashboard', 'profile-workout-count', user?.id],
+    queryFn: () => workoutApi.getWorkoutSessions({ limit: 1 }),
+    enabled: !!user?.id,
+  });
+  const workoutCount = workoutTotals.data?.total;
+  React.useEffect(() => {
+    void useGoalsStore
+      .getState()
+      .fetchGoals({ force: true })
+      .catch(() => {});
+    void useMemoryStore
+      .getState()
+      .fetchMemories()
+      .catch(() => {});
+  }, []);
   const p = useProfileSetupStore();
   const activeGoals = useGoalsStore((s) => s.goals.filter((g) => g.status === 'active').length);
   const { connection, platform, watchConnected } = useHealthStore();
 
   const displayName = serverProfile?.name || user?.name || p.name || 'User';
   const goalLabel = fitnessGoals.find((g) => g.value === p.goal)?.label ?? 'Fitness';
-  const initials = displayName
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'U';
+  const initials =
+    displayName
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'U';
 
   const units = useSettingsStore((s) => s.units);
   const rawWeight =
-    serverProfile?.currentWeightKg != null
-      ? Number(serverProfile.currentWeightKg)
-      : p.weightKg > 0
-        ? p.weightKg
-        : null;
-  const rawHeight =
-    serverProfile?.heightCm != null
-      ? Number(serverProfile.heightCm)
-      : p.heightCm > 0
-        ? p.heightCm
-        : null;
+    serverProfile?.currentWeightKg != null ? Number(serverProfile.currentWeightKg) : null;
+  const rawHeight = serverProfile?.heightCm != null ? Number(serverProfile.heightCm) : null;
 
   const displayWeight = formatWeight(rawWeight, units, { includeUnit: false });
   const weightUnitLabel = rawWeight ? (units === 'imperial' ? 'lb' : 'kg') : '';
 
-  const displayHeight = formatHeight(rawHeight, units, { includeUnit: false, compactImperial: true });
+  const displayHeight = formatHeight(rawHeight, units, {
+    includeUnit: false,
+    compactImperial: true,
+  });
   const heightUnitLabel = rawHeight ? (units === 'imperial' ? '' : 'cm') : '';
 
   return (
     <Screen
       title="Profile"
       showBack={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={profile.isRefetching || workoutTotals.isRefetching}
+          onRefresh={() => {
+            void profile.refetch();
+            void workoutTotals.refetch();
+            void useGoalsStore
+              .getState()
+              .fetchGoals({ force: true })
+              .catch(() => {});
+            void useMemoryStore
+              .getState()
+              .fetchMemories()
+              .catch(() => {});
+          }}
+          tintColor={colors.accent}
+        />
+      }
       headerRight={
         <IconButton icon={Settings} label="Settings" onPress={() => navigate('settings')} />
       }
       contentContainerStyle={styles.container}
     >
       {/* User Card */}
-        <View style={styles.userSection}>
-          <View style={[styles.avatarCircle, { backgroundColor: colors.ink }]}>
-            <Text style={[styles.avatarText, { color: colors.bg }]}>{initials}</Text>
-          </View>
-          <Text style={[styles.userName, { color: colors.ink }]}>{displayName}</Text>
-          <Text style={[styles.userMeta, { color: colors.muted }]}>
-            {user?.email ? `${user.email} · ` : ''}{goalLabel}
+      <View style={styles.userSection}>
+        <View style={[styles.avatarCircle, { backgroundColor: colors.ink }]}>
+          <Text style={[styles.avatarText, { color: colors.bg }]}>{initials}</Text>
+        </View>
+        <Text style={[styles.userName, { color: colors.ink }]}>{displayName}</Text>
+        <Text style={[styles.userMeta, { color: colors.muted }]}>
+          {user?.email ? `${user.email} · ` : ''}
+          {goalLabel}
+        </Text>
+      </View>
+
+      {/* Quick Stats 3 Columns */}
+      <View
+        style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
+      >
+        <View style={styles.statCol}>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>Weight</Text>
+          <Text style={[styles.statVal, { color: colors.ink }]}>
+            {displayWeight}
+            {weightUnitLabel ? (
+              <Text style={[styles.statUnit, { color: colors.muted }]}> {weightUnitLabel}</Text>
+            ) : null}
           </Text>
         </View>
-
-        {/* Quick Stats 3 Columns */}
-        <View style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <View style={styles.statCol}>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>Weight</Text>
-            <Text style={[styles.statVal, { color: colors.ink }]}>
-              {displayWeight}
-              {weightUnitLabel ? <Text style={[styles.statUnit, { color: colors.muted }]}> {weightUnitLabel}</Text> : null}
-            </Text>
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
-          <View style={styles.statCol}>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>Height</Text>
-            <Text style={[styles.statVal, { color: colors.ink }]}>
-              {displayHeight}
-              {heightUnitLabel ? <Text style={[styles.statUnit, { color: colors.muted }]}> {heightUnitLabel}</Text> : null}
-            </Text>
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
-          <View style={styles.statCol}>
-            <Text style={[styles.statLabel, { color: colors.muted }]}>Workouts</Text>
-            <Text style={[styles.statVal, { color: colors.ink }]}>{workoutCount}</Text>
-          </View>
+        <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
+        <View style={styles.statCol}>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>Height</Text>
+          <Text style={[styles.statVal, { color: colors.ink }]}>
+            {displayHeight}
+            {heightUnitLabel ? (
+              <Text style={[styles.statUnit, { color: colors.muted }]}> {heightUnitLabel}</Text>
+            ) : null}
+          </Text>
         </View>
+        <View style={[styles.statDivider, { backgroundColor: colors.line }]} />
+        <View style={styles.statCol}>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>Workouts</Text>
+          <Text style={[styles.statVal, { color: colors.ink }]}>{workoutCount ?? '—'}</Text>
+        </View>
+      </View>
 
-        {/* Preferences Group */}
-        <ListGroup>
-          <ListRow
-            icon={User}
-            title="Personal information"
-            subtitle="Name, birthday, height, weight"
-            onPress={() => navigate('personalInfo')}
-          />
-          <ListRow
-            icon={Dumbbell}
-            title="Fitness & workout preferences"
-            subtitle={`${p.daysPerWeek} days · ${p.durationMin} min · ${p.place}`}
-            onPress={() => navigate('fitnessPreferences')}
-          />
-          <ListRow
-            icon={Utensils}
-            title="Nutrition preferences"
-            subtitle={`${p.diet[0]?.toUpperCase() ?? ''}${p.diet.slice(1)} · ${
-              p.cuisines.join(', ') || 'Any cuisine'
-            }`}
-            onPress={() => navigate('nutritionPreferences')}
-          />
-          <ListRow
-            icon={Target}
-            title="Goals"
-            value={`${activeGoals} active`}
-            onPress={() => navigate('goals')}
-          />
-          <ListRow
-            icon={Award}
-            title="Challenges & Badges"
-            onPress={() => navigate('challenges')}
-          />
-        </ListGroup>
+      {/* Preferences Group */}
+      <ListGroup>
+        <ListRow
+          icon={User}
+          title="Personal information"
+          subtitle="Name, birthday, height, weight"
+          onPress={() => navigate('personalInfo')}
+        />
+        <ListRow
+          icon={Dumbbell}
+          title="Fitness & workout preferences"
+          subtitle={`${p.daysPerWeek} days · ${p.durationMin} min · ${p.place}`}
+          onPress={() => navigate('fitnessPreferences')}
+        />
+        <ListRow
+          icon={Utensils}
+          title="Nutrition preferences"
+          subtitle={`${p.diet[0]?.toUpperCase() ?? ''}${p.diet.slice(1)} · ${
+            p.cuisines.join(', ') || 'Any cuisine'
+          }`}
+          onPress={() => navigate('nutritionPreferences')}
+        />
+        <ListRow
+          icon={Target}
+          title="Goals"
+          value={`${activeGoals} active`}
+          onPress={() => navigate('goals')}
+        />
+        <ListRow icon={Award} title="Challenges & Badges" onPress={() => navigate('challenges')} />
+      </ListGroup>
 
-        {/* Devices & Integrations Group */}
-        <ListGroup>
-          <ListRow
-            icon={HeartPulse}
-            title={platform === 'ios' ? 'Apple Health' : 'Health Connect'}
-            trailing={
-              connection === 'connected' ? (
-                <Badge tone="good">Connected</Badge>
-              ) : (
-                <Badge tone="warn">Not connected</Badge>
-              )
-            }
-            onPress={() => navigate('healthIntegration')}
-          />
-          <ListRow
-            icon={Watch}
-            title="Apple Watch"
-            value={watchConnected ? 'Series 9' : 'Not paired'}
-            onPress={() => navigate('appleWatch')}
-          />
-          <ListRow
-            icon={Brain}
-            title="AI memory"
-            value="On hold"
-            onPress={() => navigate('aiMemory')}
-          />
-        </ListGroup>
+      {/* Devices & Integrations Group */}
+      <ListGroup>
+        <ListRow
+          icon={HeartPulse}
+          title={platform === 'ios' ? 'Apple Health' : 'Health Connect'}
+          trailing={
+            connection === 'connected' ? (
+              <Badge tone="good">Connected</Badge>
+            ) : (
+              <Badge tone="warn">Not connected</Badge>
+            )
+          }
+          onPress={() => navigate('healthIntegration')}
+        />
+        <ListRow
+          icon={Watch}
+          title="Apple Watch"
+          value={watchConnected ? 'Series 9' : 'Not paired'}
+          onPress={() => navigate('appleWatch')}
+        />
+        <ListRow
+          icon={Brain}
+          title="AI memory"
+          value="On hold"
+          onPress={() => navigate('aiMemory')}
+        />
+      </ListGroup>
 
-        {/* Settings Group */}
-        <ListGroup>
-          <ListRow
-            icon={Settings}
-            title="Settings"
-            onPress={() => navigate('settings')}
-          />
-        </ListGroup>
+      {/* Settings Group */}
+      <ListGroup>
+        <ListRow icon={Settings} title="Settings" onPress={() => navigate('settings')} />
+      </ListGroup>
     </Screen>
   );
 }
@@ -244,4 +274,3 @@ const styles = StyleSheet.create({
     fontWeight: 'normal',
   },
 });
-

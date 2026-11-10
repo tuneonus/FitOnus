@@ -30,6 +30,14 @@ import { useRemoteConfigStore } from '@/features/app-config/store/remoteConfigSt
 import { useTheme } from '@/hooks/use-theme';
 import { notificationService } from '@/services/notificationService';
 import { bindAuthToSettings, useSettingsStore } from '@/shared/stores/settingsStore';
+import { useNutritionStore } from '@/features/nutrition/store/nutritionStore';
+import { useWeightStore } from '@/features/weight-tracking/store/weightStore';
+import { useWorkoutStore } from '@/features/workouts/store/workoutStore';
+import { useGoalsStore } from '@/features/goals/store/goalsStore';
+import { useProgressStore } from '@/features/analytics/store/progressStore';
+import { useAdvancedAnalyticsStore } from '@/features/analytics/store/advancedAnalyticsStore';
+import { useMemoryStore } from '@/features/ai-memory/store/memoryStore';
+import { refreshFitnessQueries } from '@/services/fitness-refresh';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 function AnimatedScreenWrapper({
@@ -43,11 +51,9 @@ function AnimatedScreenWrapper({
 }) {
   const reducedMotion = useReducedMotion();
   const transitionX = useSharedValue(
-    reducedMotion ? 0 : direction === 1 ? 36 : direction === -1 ? -28 : 0
+    reducedMotion ? 0 : direction === 1 ? 36 : direction === -1 ? -28 : 0,
   );
-  const opacity = useSharedValue(
-    reducedMotion ? 1 : direction === 0 ? 0.85 : 0.65
-  );
+  const opacity = useSharedValue(reducedMotion ? 1 : direction === 0 ? 0.85 : 0.65);
 
   useEffect(() => {
     if (reducedMotion) {
@@ -78,15 +84,11 @@ function AnimatedScreenWrapper({
     transform: [{ translateX: transitionX.value }],
   }));
 
-  return (
-    <Animated.View style={[styles.screenContainer, animatedStyle]}>
-      {children}
-    </Animated.View>
-  );
+  return <Animated.View style={[styles.screenContainer, animatedStyle]}>{children}</Animated.View>;
 }
 
 export function AppShell() {
-  const { route, direction, isTabRoot, canGoBack, goBack } = useNavigation();
+  const { route, direction, isTabRoot, canGoBack, goBack, reset } = useNavigation();
   const { colors, isDark } = useTheme();
   const { width } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
@@ -96,6 +98,52 @@ export function AppShell() {
   useEffect(() => {
     return initConfig();
   }, [initConfig]);
+
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAuthLoading = useAuthStore((state) => state.isLoading);
+  useEffect(() => {
+    const publicRoutes = [
+      'splash',
+      'welcome',
+      'login',
+      'signup',
+      'forgotPassword',
+      'resetPassword',
+      'authSuccess',
+      'authError',
+    ];
+    if (!isAuthenticated && !isAuthLoading && !publicRoutes.includes(route.name)) reset('welcome');
+  }, [isAuthenticated, isAuthLoading, route.name, reset]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' || !useAuthStore.getState().isAuthenticated) return;
+      refreshFitnessQueries();
+      const jobs: Promise<unknown>[] = [];
+      if (route.name === 'nutrition')
+        jobs.push(useNutritionStore.getState().fetchDailyNutrition(undefined, true));
+      if (route.name === 'weight')
+        jobs.push(useWeightStore.getState().fetchWeightHistory(undefined, true));
+      if (route.name === 'measurements')
+        jobs.push(useWeightStore.getState().fetchMeasurements(true));
+      if (route.name === 'workouts')
+        jobs.push(
+          useWorkoutStore.getState().loadHistoryFromBackend(),
+          useWorkoutStore.getState().loadExercises(),
+        );
+      if (['goals', 'goalDetail', 'profile'].includes(route.name))
+        jobs.push(
+          useGoalsStore.getState().fetchGoals({ force: true }),
+          useGoalsStore.getState().fetchHabits(),
+        );
+      if (route.name === 'progress') jobs.push(useProgressStore.getState().refreshAll());
+      if (route.name === 'workoutAnalytics')
+        jobs.push(useAdvancedAnalyticsStore.getState().fetchWorkouts('30d', true));
+      if (route.name === 'aiMemory') jobs.push(useMemoryStore.getState().fetchMemories());
+      void Promise.allSettled(jobs);
+    });
+    return () => subscription.remove();
+  }, [route.name]);
 
   // Initialize notifications, sync auth lifecycle, and reconcile on app active state
   useEffect(() => {
@@ -188,8 +236,8 @@ export function AppShell() {
               }
               swipeX.set(0);
               isLeaving.set(false);
-            }
-          )
+            },
+          ),
         );
       } else {
         swipeX.set(withSpring(0, { damping: 24, stiffness: 320 }));
@@ -209,8 +257,7 @@ export function AppShell() {
 
   const isHero = heroStatusRoutes.includes(route.name);
   const isTabScreen =
-    isTabRoot ||
-    ['home', 'activity', 'coach', 'progress', 'profile'].includes(route.name);
+    isTabRoot || ['home', 'activity', 'coach', 'progress', 'profile'].includes(route.name);
   const showBottomNav = isTabScreen && !isKeyboardVisible;
 
   // Smooth BottomNav transitions on keyboard open/close or route change
@@ -222,12 +269,12 @@ export function AppShell() {
       withTiming(showBottomNav ? 0 : 90, {
         duration: reducedMotion ? 0 : 180,
         easing: Easing.bezier(0.4, 0, 0.2, 1),
-      })
+      }),
     );
     navOpacity.set(
       withTiming(showBottomNav ? 1 : 0, {
         duration: reducedMotion ? 0 : 160,
-      })
+      }),
     );
   }, [showBottomNav, reducedMotion, navTranslateY, navOpacity]);
 

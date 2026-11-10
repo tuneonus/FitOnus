@@ -31,7 +31,7 @@ export function WorkoutAnalyticsScreen() {
   const sessions30d = React.useMemo(() => {
     const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
     return history.filter((h) => {
-      const t = new Date(h.date || (h as any).startedAt || (h as any).completedAt).getTime();
+      const t = h.completedAt ? Date.parse(h.completedAt) : NaN;
       return !isNaN(t) && t >= thirtyDaysAgo;
     });
   }, [history, now]);
@@ -40,8 +40,8 @@ export function WorkoutAnalyticsScreen() {
   const avgDurationMin = backendWorkoutData
     ? backendWorkoutData.avgDurationMin
     : sessionCount > 0
-    ? Math.round(sessions30d.reduce((sum, h) => sum + (h.durationMin || 0), 0) / sessionCount)
-    : 0;
+      ? Math.round(sessions30d.reduce((sum, h) => sum + (h.durationMin || 0), 0) / sessionCount)
+      : 0;
   const totalVolumeKg = backendWorkoutData
     ? backendWorkoutData.totalVolumeKg
     : sessions30d.reduce((sum, h) => sum + (h.volumeKg || 0), 0);
@@ -54,7 +54,7 @@ export function WorkoutAnalyticsScreen() {
       const start = now - (wOffset + 1) * oneWeekMs;
       const end = now - wOffset * oneWeekMs;
       const weekSessions = history.filter((h) => {
-        const t = new Date(h.date || (h as any).startedAt || (h as any).completedAt).getTime();
+        const t = h.completedAt ? Date.parse(h.completedAt) : NaN;
         return !isNaN(t) && t >= start && t < end;
       });
       const label = wOffset === 0 ? 'This wk' : `W-${wOffset}`;
@@ -76,7 +76,8 @@ export function WorkoutAnalyticsScreen() {
       ? backendWorkoutData.volumeSeries
       : weeksData.map((d) => ({ label: d.label, value: d.volume }));
 
-  const hasNoWorkouts = history.length === 0 && (!backendWorkoutData || backendWorkoutData.totalSessions === 0);
+  const hasNoWorkouts =
+    history.length === 0 && (!backendWorkoutData || backendWorkoutData.totalSessions === 0);
 
   return (
     <Screen title="Workout analytics">
@@ -92,41 +93,26 @@ export function WorkoutAnalyticsScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Last 30 days headline */}
           <View style={styles.headerSection}>
-            <Text style={[styles.sectionSub, { color: colors.muted }]}>
-              Last 30 days
-            </Text>
+            <Text style={[styles.sectionSub, { color: colors.muted }]}>Last 30 days</Text>
             <Text style={[styles.bigSessions, { color: colors.ink }]}>
               {sessionCount}
-              <Text style={[styles.sessionsUnit, { color: colors.muted }]}>
-                {' '}
-                sessions
-              </Text>
+              <Text style={[styles.sessionsUnit, { color: colors.muted }]}> sessions</Text>
             </Text>
 
             <View style={[styles.statsStrip, { borderTopColor: colors.line }]}>
               <View style={styles.statCol}>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>
-                  Avg length
-                </Text>
-                <Text style={[styles.statVal, { color: colors.ink }]}>
-                  {avgDurationMin} min
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.muted }]}>Avg length</Text>
+                <Text style={[styles.statVal, { color: colors.ink }]}>{avgDurationMin} min</Text>
               </View>
               <View style={styles.statCol}>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>
-                  Volume
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.muted }]}>Volume</Text>
                 <Text style={[styles.statVal, { color: colors.ink }]}>
                   {(totalVolumeKg / 1000).toFixed(1)} t
                 </Text>
               </View>
               <View style={styles.statCol}>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>
-                  New PRs
-                </Text>
-                <Text style={[styles.statVal, { color: colors.ink }]}>
-                  {prs30d}
-                </Text>
+                <Text style={[styles.statLabel, { color: colors.muted }]}>New PRs</Text>
+                <Text style={[styles.statVal, { color: colors.ink }]}>{prs30d}</Text>
               </View>
             </View>
           </View>
@@ -155,7 +141,6 @@ export function WorkoutAnalyticsScreen() {
               {view === 'frequency' ? (
                 <BarChart
                   data={frequencyChartData}
-                  goal={4}
                   formatValue={(v) => `${v} sessions`}
                   barColor={colors.accent}
                   height={120}
@@ -299,4 +284,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-

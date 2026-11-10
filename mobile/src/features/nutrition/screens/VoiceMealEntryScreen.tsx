@@ -179,8 +179,6 @@ export function VoiceMealEntryScreen() {
       });
       showToast({
         message: `${mealLabels[meal]} logged · ${total.kcal} kcal`,
-        actionLabel: 'Undo',
-        onAction: () => removeEntry(id),
       });
       replace('nutrition');
     } catch (err: unknown) {

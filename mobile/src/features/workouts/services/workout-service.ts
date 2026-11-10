@@ -10,6 +10,7 @@ import type {
   WorkoutPlanSummaryView,
   WorkoutPlanDetailView,
 } from '../types/workout';
+import { captureUserSession } from '@/services/user-session';
 import { logger } from '@/utils/logger';
 
 export class WorkoutService {
@@ -77,19 +78,26 @@ export class WorkoutService {
    * If the network is unavailable, enqueues in local storage queue.
    */
   static async saveSession(
-    payload: SaveWorkoutSessionInput
+    payload: SaveWorkoutSessionInput,
   ): Promise<{ response: WorkoutSessionResponse; isOffline: boolean }> {
+    const session = captureUserSession();
+    if (!payload.sets.length) throw new Error('Complete at least one set before saving.');
     try {
       // Attempt live atomic submission
-      const response = await workoutApi.saveWorkoutSession(
-        payload,
-        payload.clientSessionId
-      );
+      const response = await workoutApi.saveWorkoutSession(payload, payload.clientSessionId);
+      session.assertCurrent();
       return { response, isOffline: false };
     } catch (error: any) {
+      session.assertCurrent();
+      if (
+        error?.response?.status &&
+        error.response.status < 500 &&
+        ![408, 429].includes(error.response.status)
+      )
+        throw error;
       logger.warn(
         `Direct session submission failed for ${payload.clientSessionId}. Enqueueing offline...`,
-        error?.message
+        error?.message,
       );
 
       // Enqueue to persistent offline queue
@@ -98,18 +106,15 @@ export class WorkoutService {
       // Construct optimistic local response
       const totalVolumeKg = payload.sets.reduce(
         (sum, s) => (s.isWarmup ? sum : sum + s.weightKg * s.reps),
-        0
+        0,
       );
-      const totalReps = payload.sets.reduce(
-        (sum, s) => (s.isWarmup ? sum : sum + s.reps),
-        0
-      );
+      const totalReps = payload.sets.reduce((sum, s) => (s.isWarmup ? sum : sum + s.reps), 0);
       const durationMin = Math.max(1, Math.round(payload.durationSeconds / 60));
-      const estimatedCaloriesBurned = Math.round(durationMin * 7.5);
+      const estimatedCaloriesBurned = 0; // Pending the backend calculation.
 
       const optimisticResponse: WorkoutSessionResponse = {
         id: payload.clientSessionId,
-        userId: 'current-user',
+        userId: session.userId!,
         planId: payload.planId ?? null,
         workoutName: payload.workoutName,
         startedAt: payload.startedAt,
@@ -161,7 +166,9 @@ export class WorkoutService {
       name: plan.name,
       description: plan.description || 'System workout routine',
       estimatedDuration: plan.estimatedDurationMinutes ?? 45,
-      difficulty: plan.difficulty ? (plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)) : 'Intermediate',
+      difficulty: plan.difficulty
+        ? plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)
+        : 'Intermediate',
       tags: plan.tags || [],
       exercisesCount: plan.exerciseCount ?? 0,
       isAiGenerated: plan.tags?.includes('ai-generated') ?? false,
@@ -174,7 +181,9 @@ export class WorkoutService {
       name: plan.name,
       description: plan.description || 'System workout routine',
       estimatedDuration: plan.estimatedDurationMinutes ?? 45,
-      difficulty: plan.difficulty ? (plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)) : 'Intermediate',
+      difficulty: plan.difficulty
+        ? plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)
+        : 'Intermediate',
       tags: plan.tags || [],
       exercisesCount: plan.exerciseCount ?? plan.exercises?.length ?? 0,
       exercises: (plan.exercises || []).map((we) => ({
@@ -187,7 +196,9 @@ export class WorkoutService {
           id: we.exerciseId,
           name: we.exerciseName,
           primaryMuscles: [we.primaryMuscle],
-          equipment: we.equipment ? (we.equipment.charAt(0).toUpperCase() + we.equipment.slice(1)) : 'Barbell',
+          equipment: we.equipment
+            ? we.equipment.charAt(0).toUpperCase() + we.equipment.slice(1)
+            : 'Barbell',
           difficulty: plan.difficulty,
         },
       })),

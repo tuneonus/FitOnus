@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ArrowUpRight, ShieldCheck } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
@@ -9,6 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
   const { colors } = useTheme();
+  const firstName = useAuthStore((s) => s.user?.name?.trim().split(/\s+/)[0]) || 'there';
   const { navigate } = useNavigation();
   const status = useHealthStore((s) => s.status);
   const memoryCount = useMemoryStore((s) => (s.enabled ? s.items.length : 0));
@@ -20,48 +22,28 @@ export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
   return (
     <View style={styles.container}>
       <Text style={[styles.heading, { color: colors.ink }]}>
-        Hi Aarav.{'\n'}
-        <Text style={[styles.subheading, { color: colors.muted }]}>
-          What’s on your mind?
-        </Text>
+        Hi {firstName}.{'\n'}
+        <Text style={[styles.subheading, { color: colors.muted }]}>What’s on your mind?</Text>
       </Text>
 
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => navigate(hasDevice ? 'aiMemory' : 'healthIntegration')}
-        style={[
-          styles.accessCard,
-          { backgroundColor: colors.surface2 },
-        ]}
+        style={[styles.accessCard, { backgroundColor: colors.surface2 }]}
       >
         <View style={styles.accessBadge}>
           <ShieldCheck size={13} color={colors.muted} />
-          <Text style={[styles.accessBadgeText, { color: colors.muted }]}>
-            Your coach can see
-          </Text>
+          <Text style={[styles.accessBadgeText, { color: colors.muted }]}>Your coach can see</Text>
         </View>
 
         <View style={styles.accessTagsRow}>
           {access.map((a) => (
-            <View
-              key={a}
-              style={[
-                styles.tag,
-                { backgroundColor: colors.surface },
-              ]}
-            >
+            <View key={a} style={[styles.tag, { backgroundColor: colors.surface }]}>
               <Text style={[styles.tagText, { color: colors.ink }]}>{a}</Text>
             </View>
           ))}
-          <View
-            style={[
-              styles.tag,
-              { backgroundColor: colors.surface },
-            ]}
-          >
-            <Text style={[styles.tagText, { color: colors.ink }]}>
-              {memoryCount} memories
-            </Text>
+          <View style={[styles.tag, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.tagText, { color: colors.ink }]}>{memoryCount} memories</Text>
           </View>
         </View>
 
@@ -75,9 +57,7 @@ export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
       <View style={styles.promptsSection}>
         {welcomePrompts.map((group) => (
           <View key={group.topic} style={styles.promptGroup}>
-            <Text style={[styles.topicTitle, { color: colors.muted }]}>
-              {group.topic}
-            </Text>
+            <Text style={[styles.topicTitle, { color: colors.muted }]}>{group.topic}</Text>
             <View style={styles.questionsList}>
               {group.questions.map((q, idx) => (
                 <TouchableOpacity
@@ -92,9 +72,7 @@ export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
                     },
                   ]}
                 >
-                  <Text style={[styles.questionText, { color: colors.ink }]}>
-                    {q}
-                  </Text>
+                  <Text style={[styles.questionText, { color: colors.ink }]}>{q}</Text>
                   <ArrowUpRight size={16} color={colors.muted} />
                 </TouchableOpacity>
               ))}
@@ -177,4 +155,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-

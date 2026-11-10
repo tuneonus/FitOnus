@@ -1,3 +1,4 @@
+import { captureUserSession, sessionSetter, registerUserStore } from '@/services/user-session';
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
@@ -14,10 +15,15 @@ import type {
 import { toDbMealType } from '../types/nutrition';
 import { nutritionApi } from '../api/nutrition-api';
 import { nutritionOfflineSync } from '../services/nutrition-offline-sync';
-import { calculatePortionNutrients, mapBackendMealToMealEntry } from '../utils/nutrition-calculator';
+import {
+  calculatePortionNutrients,
+  mapBackendMealToMealEntry,
+} from '../utils/nutrition-calculator';
 import { generateUUID } from '../utils/uuid';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { queryClient } from '@/providers/query-provider';
+import { localDateKey } from '@/features/home/utils/home-overview';
+import { refreshFitnessQueries } from '@/services/fitness-refresh';
 import { logger } from '@/utils/logger';
 
 function getCacheKey(): string {
@@ -28,9 +34,11 @@ function getCacheKey(): string {
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function getTodayDateString(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDateKey();
 }
 
+let nutritionReadSequence = 0;
+let lastWaterSession: ReturnType<typeof captureUserSession> | null = null;
 let lastWaterLogTime = 0;
 let lastWaterLogAmount = 0;
 let lastWaterLogId = '';
@@ -55,8 +63,8 @@ export type NutritionState = {
   addEntry: (entry: Omit<MealEntry, 'id'>) => string;
   removeEntry: (id: string) => void;
   restoreEntry: (entry: MealEntry) => void;
-  removeItem: (entryId: string, itemId: string) => void;
-  scaleItem: (entryId: string, itemId: string, factor: number) => void;
+  removeItem: (entryId: string, itemId: string) => Promise<void>;
+  scaleItem: (entryId: string, itemId: string, factor: number) => Promise<void>;
   setPendingAnalysis: (items: FoodItem[] | null) => void;
 
   // Real-world actions
@@ -79,355 +87,429 @@ export type NutritionState = {
   resetStore: () => Promise<void>;
 };
 
-export const useNutritionStore = create<NutritionState>((set, get) => ({
-  entries: [],
-  pendingAnalysis: null,
-  selectedDate: getTodayDateString(),
-  dailySummary: null,
-  waterMl: 0,
-  isLoading: false,
-  isRefreshing: false,
-  error: null,
-  pendingSyncCount: 0,
-  favorites: [],
-  recentFoods: [],
+export const useNutritionStore = create<NutritionState>((storeSet, get) => {
+  const set = storeSet;
+  return {
+    entries: [],
+    pendingAnalysis: null,
+    selectedDate: getTodayDateString(),
+    dailySummary: null,
+    waterMl: 0,
+    isLoading: false,
+    isRefreshing: false,
+    error: null,
+    pendingSyncCount: 0,
+    favorites: [],
+    recentFoods: [],
 
-  // --- Synchronous existing actions ---
+    // --- Synchronous existing actions ---
 
-  addEntry: (entry) => {
-    const id = generateUUID();
-    const newEntry: MealEntry = { ...entry, id, isSynced: false };
-    const updated = [...get().entries, newEntry];
-    set({ entries: updated });
-    saveCache(updated, get().waterMl, get().dailySummary);
-    return id;
-  },
+    addEntry: (entry) => {
+      const id = generateUUID();
+      const newEntry: MealEntry = { ...entry, id, isSynced: false };
+      const updated = [...get().entries, newEntry];
+      set({ entries: updated });
+      saveCache(updated, get().waterMl, get().dailySummary);
+      return id;
+    },
 
-  removeEntry: (id) => {
-    const updated = get().entries.filter((e) => e.id !== id);
-    set({ entries: updated });
-    saveCache(updated, get().waterMl, get().dailySummary);
-  },
+    removeEntry: () => {
+      // This backend exposes meal updates but no meal deletion endpoint.
+      throw new Error('Meal deletion is not available yet.');
+    },
 
-  restoreEntry: (entry) => {
-    const updated = [...get().entries, entry];
-    set({ entries: updated });
-    saveCache(updated, get().waterMl, get().dailySummary);
-  },
+    restoreEntry: (entry) => {
+      void get().updateMeal(entry.id, entry.items, entry.notes ?? undefined);
+    },
 
-  removeItem: (entryId, itemId) => {
-    const current = get().entries.find((e) => e.id === entryId);
-    const updated = get()
-      .entries.map((e) =>
-        e.id === entryId ? { ...e, items: e.items.filter((i) => i.id !== itemId) } : e
-      )
-      .filter((e) => e.items.length > 0);
-    set({ entries: updated });
-    saveCache(updated, get().waterMl, get().dailySummary);
+    removeItem: async (entryId, itemId) => {
+      const current = get().entries.find((entry) => entry.id === entryId);
+      if (!current) return;
+      const items = current.items.filter((item) => item.id !== itemId);
+      if (!items.length)
+        throw new Error('Keep at least one food in this meal. Meal deletion is not available yet.');
+      await get().updateMeal(entryId, items, current.notes ?? undefined);
+    },
 
-    if (current && UUID_REGEX.test(entryId)) {
-      const remainingItems = current.items.filter((i) => i.id !== itemId);
-      if (remainingItems.length > 0) {
-        void get().updateMeal(entryId, remainingItems, current.notes ?? undefined);
-      }
-    }
-  },
+    scaleItem: async (entryId, itemId, factor) => {
+      const current = get().entries.find((entry) => entry.id === entryId);
+      if (!current) return;
+      await get().updateMeal(
+        entryId,
+        current.items.map((item) => (item.id === itemId ? scaleFood(item, factor) : item)),
+        current.notes ?? undefined,
+      );
+    },
 
-  scaleItem: (entryId, itemId, factor) => {
-    const current = get().entries.find((e) => e.id === entryId);
-    const updated = get().entries.map((e) =>
-      e.id === entryId
-        ? {
-            ...e,
-            items: e.items.map((i) => (i.id === itemId ? scaleFood(i, factor) : i)),
-          }
-        : e
-    );
-    set({ entries: updated });
-    saveCache(updated, get().waterMl, get().dailySummary);
+    setPendingAnalysis: (pendingAnalysis) => set({ pendingAnalysis }),
 
-    if (current && UUID_REGEX.test(entryId)) {
-      const scaledItems = current.items.map((i) => (i.id === itemId ? scaleFood(i, factor) : i));
-      void get().updateMeal(entryId, scaledItems, current.notes ?? undefined);
-    }
-  },
+    setSelectedDate: (selectedDate) => {
+      set({ selectedDate, entries: [], dailySummary: null, waterMl: 0 });
+      void get()
+        .fetchDailyNutrition(selectedDate)
+        .catch(() => {});
+    },
 
-  setPendingAnalysis: (pendingAnalysis) => set({ pendingAnalysis }),
+    // --- Real Backend Integration & Offline Actions ---
 
-  setSelectedDate: (selectedDate) => {
-    set({ selectedDate });
-    get().fetchDailyNutrition(selectedDate);
-  },
-
-  // --- Real Backend Integration & Offline Actions ---
-
-  fetchDailyNutrition: async (dateStr, isRefresh = false) => {
-    const date = dateStr || get().selectedDate || getTodayDateString();
-    set({ [isRefresh ? 'isRefreshing' : 'isLoading']: true, error: null });
-
-    try {
-      const summary = await nutritionApi.getDailyNutrition(date);
-      const serverEntries: MealEntry[] = summary.meals.map(mapBackendMealToMealEntry);
-
-      // Merge offline pending entries for this date if any
-      const currentUnsynced = get().entries.filter((e) => !e.isSynced && (!e.date || e.date === date));
-      const combined = [...serverEntries, ...currentUnsynced];
-
-      set({
-        dailySummary: summary,
-        entries: combined,
-        waterMl: summary.consumed.waterMl,
-        isLoading: false,
-        isRefreshing: false,
-      });
-
-      saveCache(combined, summary.consumed.waterMl, summary);
-    } catch (err: any) {
-      logger.warn('Failed to fetch daily nutrition from backend:', err?.message);
-      set({
-        isLoading: false,
-        isRefreshing: false,
-        error: err?.message || 'Unable to load nutrition data',
-      });
-      // Hydrate from cache if entries is empty
-      await loadCache(set);
-    } finally {
-      get().refreshPendingSyncCount();
-    }
-  },
-
-  logMeal: async ({ mealType, items, notes, method = 'search' }) => {
-    const mealId = generateUUID();
-    const date = get().selectedDate || getTodayDateString();
-    const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-
-    const localEntry: MealEntry = {
-      id: mealId,
-      meal: mealType,
-      time,
-      method,
-      items,
-      date,
-      notes: notes ?? null,
-      isSynced: false,
-    };
-
-    // 1. Optimistic Local Update
-    const updatedEntries = [...get().entries, localEntry];
-    set({ entries: updatedEntries });
-    saveCache(updatedEntries, get().waterMl, get().dailySummary);
-
-    // 2. Prepare Backend Payload
-    const payload: LogMealInput = {
-      id: mealId,
-      mealType: toDbMealType(mealType),
-      date,
-      notes: notes ?? null,
-      items: items.map((it) => {
-        const isServerFood = it.id && UUID_REGEX.test(it.id);
-        return {
-          foodId: isServerFood ? it.id : null,
-          foodName: it.name,
-          foodBrand: it.brand ?? null,
-          servingSize: it.servingSize ?? 1,
-          servingUnit: it.servingUnit ?? 'serving',
-          servingWeightG: it.servingWeightG ?? 100,
-          servingMultiplier: it.servingMultiplier ?? 1.0,
-          calories: it.kcal,
-          proteinG: it.protein,
-          carbsG: it.carbs,
-          fatG: it.fat,
-          fiberG: it.fiber,
-        };
-      }),
-    };
-
-    // 3. Attempt direct API sync
-    try {
-      const serverMeal = await nutritionApi.logMeal(payload);
-      // Replace optimistic entry with server-recalculated entry
-      const syncedEntry = mapBackendMealToMealEntry(serverMeal);
-      const finalized = get().entries.map((e) => (e.id === mealId ? syncedEntry : e));
-      set({ entries: finalized });
-      saveCache(finalized, get().waterMl, get().dailySummary);
-      // Soft-refresh daily summary
-      get().fetchDailyNutrition(date, true).catch(() => {});
-      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    } catch (error: any) {
-      logger.info('Network submission failed, enqueuing meal for offline sync:', error?.message);
-      await nutritionOfflineSync.enqueueMeal(payload);
-      get().refreshPendingSyncCount();
-    }
-
-    return mealId;
-  },
-
-  updateMeal: async (mealId, items, notes) => {
-    const date = get().selectedDate || getTodayDateString();
-    const existing = get().entries.find((e) => e.id === mealId);
-    if (!existing) return;
-
-    const updatedEntry: MealEntry = {
-      ...existing,
-      items,
-      notes: notes !== undefined ? notes : existing.notes,
-    };
-
-    const finalizedEntries = get().entries.map((e) => (e.id === mealId ? updatedEntry : e));
-    set({ entries: finalizedEntries });
-    saveCache(finalizedEntries, get().waterMl, get().dailySummary);
-
-    if (UUID_REGEX.test(mealId)) {
-      const payload: UpdateMealInput = {
-        notes: notes !== undefined ? notes : existing.notes,
-        items: items.map((it) => ({
-          foodId: it.id && UUID_REGEX.test(it.id) ? it.id : null,
-          foodName: it.name,
-          foodBrand: it.brand ?? null,
-          servingSize: it.servingSize ?? 1,
-          servingUnit: it.servingUnit ?? 'serving',
-          servingWeightG: it.servingWeightG ?? 100,
-          servingMultiplier: it.servingMultiplier ?? 1.0,
-          calories: it.kcal,
-          proteinG: it.protein,
-          carbsG: it.carbs,
-          fatG: it.fat,
-          fiberG: it.fiber,
-        })),
-      };
+    fetchDailyNutrition: async (dateStr, isRefresh = false) => {
+      const sequence = ++nutritionReadSequence;
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const date = dateStr || get().selectedDate || getTodayDateString();
+      set({ [isRefresh ? 'isRefreshing' : 'isLoading']: true, error: null });
 
       try {
-        await nutritionApi.updateMeal(mealId, payload);
-        get().fetchDailyNutrition(date, true).catch(() => {});
-        void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        const summary = await nutritionApi.getDailyNutrition(date);
+        if (!session.isCurrent()) return;
+        if (sequence !== nutritionReadSequence || get().selectedDate !== date) return;
+        const serverEntries: MealEntry[] = summary.meals.map(mapBackendMealToMealEntry);
+
+        // Merge offline pending entries for this date if any
+        const currentUnsynced = get().entries.filter(
+          (e) =>
+            !e.isSynced &&
+            (!e.date || e.date === date) &&
+            !serverEntries.some((entry) => entry.id === e.id),
+        );
+        const combined = [...serverEntries, ...currentUnsynced];
+
+        set({
+          dailySummary: summary,
+          entries: combined,
+          waterMl: summary.consumed.waterMl,
+          isLoading: false,
+          isRefreshing: false,
+        });
+
+        saveCache(combined, summary.consumed.waterMl, summary);
       } catch (err: any) {
-        logger.warn('Failed to update meal on backend:', err?.message);
+        if (!session.isCurrent()) return;
+        if (sequence !== nutritionReadSequence || get().selectedDate !== date) return;
+        logger.warn('Failed to fetch daily nutrition from backend:', err?.message);
+        set({
+          isLoading: false,
+          isRefreshing: false,
+          error: err?.message || 'Unable to load nutrition data',
+        });
+        // Hydrate from cache if entries is empty
+        if (get().selectedDate === date) await loadCache(set, date);
+        if (!session.isCurrent()) return;
+      } finally {
+        if (session.isCurrent())
+          void get()
+            .refreshPendingSyncCount()
+            .catch(() => {});
       }
-    }
-  },
+    },
 
-  logWater: async (amountMl) => {
-    const now = Date.now();
-    if (now - lastWaterLogTime < 350 && lastWaterLogAmount === amountMl) {
-      logger.info('Duplicate rapid water tap suppressed:', amountMl);
-      return lastWaterLogId;
-    }
-    lastWaterLogTime = now;
-    lastWaterLogAmount = amountMl;
+    logMeal: async ({ mealType, items, notes, method = 'search' }) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const mealId = generateUUID();
+      const date = get().selectedDate || getTodayDateString();
+      const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
-    const waterId = generateUUID();
-    lastWaterLogId = waterId;
-    const date = get().selectedDate || getTodayDateString();
-    const newTotal = get().waterMl + amountMl;
+      const localEntry: MealEntry = {
+        id: mealId,
+        meal: mealType,
+        time,
+        method,
+        items,
+        date,
+        notes: notes ?? null,
+        isSynced: false,
+      };
 
-    // 1. Optimistic Update
-    set({ waterMl: newTotal });
-    saveCache(get().entries, newTotal, get().dailySummary);
+      // 1. Optimistic Local Update
+      const updatedEntries = [...get().entries, localEntry];
+      set({ entries: updatedEntries });
+      saveCache(updatedEntries, get().waterMl, get().dailySummary);
 
-    const payload = {
-      id: waterId,
-      date,
-      amountMl,
-      loggedAt: new Date().toISOString(),
-    };
+      // 2. Prepare Backend Payload
+      const payload: LogMealInput = {
+        id: mealId,
+        mealType: toDbMealType(mealType),
+        date,
+        notes: notes ?? null,
+        items: items.map((it) => {
+          const isServerFood = it.id && UUID_REGEX.test(it.id);
+          return {
+            foodId: isServerFood ? it.id : null,
+            foodName: it.name,
+            foodBrand: it.brand ?? null,
+            servingSize: it.servingSize ?? 1,
+            servingUnit: it.servingUnit ?? 'serving',
+            servingWeightG: it.servingWeightG ?? 100,
+            servingMultiplier: it.servingMultiplier ?? 1.0,
+            calories: it.kcal,
+            proteinG: it.protein,
+            carbsG: it.carbs,
+            fatG: it.fat,
+            fiberG: it.fiber,
+          };
+        }),
+      };
 
-    // 2. Attempt direct API sync
-    try {
-      await nutritionApi.logWater(payload);
-      get().fetchDailyNutrition(date, true).catch(() => {});
-      void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    } catch (error: any) {
-      logger.info('Direct water log failed, enqueuing offline:', error?.message);
-      await nutritionOfflineSync.enqueueWater(payload);
-      get().refreshPendingSyncCount();
-    }
-
-    return waterId;
-  },
-
-  toggleFavorite: async (food) => {
-    const isFav = !!food.isFavorite;
-    const nextState = !isFav;
-
-    // Optimistically update favorites list and food records in store
-    const currentFavs = get().favorites;
-    const nextFavs = nextState
-      ? [...currentFavs, { ...food, isFavorite: true }]
-      : currentFavs.filter((f) => f.id !== food.id);
-
-    set({ favorites: nextFavs });
-
-    try {
-      if (nextState) {
-        await nutritionApi.addFavorite(food.id);
-      } else {
-        await nutritionApi.removeFavorite(food.id);
+      // 3. Attempt direct API sync
+      try {
+        const serverMeal = await nutritionApi.logMeal(payload);
+        session.assertCurrent();
+        // Replace optimistic entry with server-recalculated entry
+        const syncedEntry = mapBackendMealToMealEntry(serverMeal);
+        const finalized = get().entries.map((e) => (e.id === mealId ? syncedEntry : e));
+        set({ entries: finalized });
+        saveCache(finalized, get().waterMl, get().dailySummary);
+        // Soft-refresh daily summary
+        get()
+          .fetchDailyNutrition(date, true)
+          .catch(() => {});
+        refreshFitnessQueries();
+      } catch (error: any) {
+        session.assertCurrent();
+        if (
+          error?.response?.status &&
+          error.response.status < 500 &&
+          ![408, 429].includes(error.response.status)
+        ) {
+          set({ entries: get().entries.filter((entry) => entry.id !== mealId) });
+          throw error;
+        }
+        logger.info('Network submission failed, enqueuing meal for offline sync:', error?.message);
+        await nutritionOfflineSync.enqueueMeal(payload);
+        session.assertCurrent();
+        get().refreshPendingSyncCount();
       }
-      return nextState;
-    } catch (err: any) {
-      logger.warn('Failed to toggle favorite on backend:', err?.message);
-      set({ favorites: currentFavs });
-      return isFav;
-    }
-  },
 
-  createCustomFood: async (input) => {
-    const customFood = await nutritionApi.createCustomFood(input);
-    set({ recentFoods: [customFood, ...get().recentFoods.filter((f) => f.id !== customFood.id)] });
-    return customFood;
-  },
+      return mealId;
+    },
 
-  fetchFavorites: async () => {
-    try {
-      const favs = await nutritionApi.getFavorites();
-      set({ favorites: favs });
-    } catch (err: any) {
-      logger.warn('Failed to fetch favorites:', err?.message);
-    }
-  },
+    updateMeal: async (mealId, items, notes) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const date = get().selectedDate || getTodayDateString();
+      const existing = get().entries.find((e) => e.id === mealId);
+      if (!existing) return;
 
-  fetchRecentFoods: async () => {
-    try {
-      const recents = await nutritionApi.getRecentFoods();
-      set({ recentFoods: recents });
-    } catch (err: any) {
-      logger.warn('Failed to fetch recent foods:', err?.message);
-    }
-  },
+      const updatedEntry: MealEntry = {
+        ...existing,
+        items,
+        notes: notes !== undefined ? notes : existing.notes,
+      };
 
-  refreshPendingSyncCount: async () => {
-    const count = await nutritionOfflineSync.getPendingCount();
-    set({ pendingSyncCount: count });
-    return count;
-  },
+      const finalizedEntries = get().entries.map((e) => (e.id === mealId ? updatedEntry : e));
+      set({ entries: finalizedEntries });
+      saveCache(finalizedEntries, get().waterMl, get().dailySummary);
 
-  syncPendingMutations: async () => {
-    await nutritionOfflineSync.syncAllPending();
-    await get().refreshPendingSyncCount();
-    await get().fetchDailyNutrition(get().selectedDate, true);
-    void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-  },
+      if (UUID_REGEX.test(mealId)) {
+        const payload: UpdateMealInput = {
+          notes: notes !== undefined ? notes : existing.notes,
+          items: items.map((it) => ({
+            foodId: it.id && UUID_REGEX.test(it.id) ? it.id : null,
+            foodName: it.name,
+            foodBrand: it.brand ?? null,
+            servingSize: it.servingSize ?? 1,
+            servingUnit: it.servingUnit ?? 'serving',
+            servingWeightG: it.servingWeightG ?? 100,
+            servingMultiplier: it.servingMultiplier ?? 1.0,
+            calories: it.kcal,
+            proteinG: it.protein,
+            carbsG: it.carbs,
+            fatG: it.fat,
+            fiberG: it.fiber,
+          })),
+        };
 
-  resetStore: async () => {
-    set({
-      entries: [],
-      pendingAnalysis: null,
-      dailySummary: null,
-      waterMl: 0,
-      isLoading: false,
-      isRefreshing: false,
-      error: null,
-      pendingSyncCount: 0,
-      favorites: [],
-      recentFoods: [],
-    });
-    try {
-      await AsyncStorage.removeItem(getCacheKey());
-    } catch (e) {
-      logger.warn('Failed to remove nutrition cache on reset:', e);
-    }
-  },
-}));
+        try {
+          await nutritionApi.updateMeal(mealId, payload);
+          session.assertCurrent();
+          get()
+            .fetchDailyNutrition(date, true)
+            .catch(() => {});
+          refreshFitnessQueries();
+        } catch (err: any) {
+          session.assertCurrent();
+          set({ entries: get().entries.map((entry) => (entry.id === mealId ? existing : entry)) });
+          logger.warn('Failed to update meal on backend:', err?.message);
+          throw err;
+        }
+      }
+    },
+
+    logWater: async (amountMl) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const now = Date.now();
+      if (
+        lastWaterSession?.isCurrent() &&
+        now - lastWaterLogTime < 350 &&
+        lastWaterLogAmount === amountMl
+      ) {
+        logger.info('Duplicate rapid water tap suppressed:', amountMl);
+        return lastWaterLogId;
+      }
+      lastWaterSession = session;
+      lastWaterLogTime = now;
+      lastWaterLogAmount = amountMl;
+
+      const waterId = generateUUID();
+      lastWaterLogId = waterId;
+      const date = get().selectedDate || getTodayDateString();
+      const newTotal = get().waterMl + amountMl;
+
+      // 1. Optimistic Update
+      set({ waterMl: newTotal });
+      saveCache(get().entries, newTotal, get().dailySummary);
+
+      const payload = {
+        id: waterId,
+        date,
+        amountMl,
+        loggedAt: new Date().toISOString(),
+      };
+
+      // 2. Attempt direct API sync
+      try {
+        await nutritionApi.logWater(payload);
+        session.assertCurrent();
+        get()
+          .fetchDailyNutrition(date, true)
+          .catch(() => {});
+        refreshFitnessQueries();
+      } catch (error: any) {
+        session.assertCurrent();
+        if (
+          error?.response?.status &&
+          error.response.status < 500 &&
+          ![408, 429].includes(error.response.status)
+        ) {
+          set({ waterMl: Math.max(0, get().waterMl - amountMl) });
+          throw error;
+        }
+        logger.info('Direct water log failed, enqueuing offline:', error?.message);
+        await nutritionOfflineSync.enqueueWater(payload);
+        session.assertCurrent();
+        get().refreshPendingSyncCount();
+      }
+
+      return waterId;
+    },
+
+    toggleFavorite: async (food) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const isFav = !!food.isFavorite;
+      const nextState = !isFav;
+
+      // Optimistically update favorites list and food records in store
+      const currentFavs = get().favorites;
+      const nextFavs = nextState
+        ? [...currentFavs, { ...food, isFavorite: true }]
+        : currentFavs.filter((f) => f.id !== food.id);
+
+      set({ favorites: nextFavs });
+
+      try {
+        if (nextState) {
+          await nutritionApi.addFavorite(food.id);
+          session.assertCurrent();
+        } else {
+          await nutritionApi.removeFavorite(food.id);
+          session.assertCurrent();
+        }
+        return nextState;
+      } catch (err: any) {
+        session.assertCurrent();
+        logger.warn('Failed to toggle favorite on backend:', err?.message);
+        set({ favorites: currentFavs });
+        return isFav;
+      }
+    },
+
+    createCustomFood: async (input) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const customFood = await nutritionApi.createCustomFood(input);
+      session.assertCurrent();
+      set({
+        recentFoods: [customFood, ...get().recentFoods.filter((f) => f.id !== customFood.id)],
+      });
+      return customFood;
+    },
+
+    fetchFavorites: async () => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      try {
+        const favs = await nutritionApi.getFavorites();
+        if (!session.isCurrent()) return;
+        set({ favorites: favs });
+      } catch (err: any) {
+        if (!session.isCurrent()) return;
+        logger.warn('Failed to fetch favorites:', err?.message);
+      }
+    },
+
+    fetchRecentFoods: async () => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      try {
+        const recents = await nutritionApi.getRecentFoods();
+        if (!session.isCurrent()) return;
+        set({ recentFoods: recents });
+      } catch (err: any) {
+        if (!session.isCurrent()) return;
+        logger.warn('Failed to fetch recent foods:', err?.message);
+      }
+    },
+
+    refreshPendingSyncCount: async () => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const count = await nutritionOfflineSync.getPendingCount();
+      if (!session.isCurrent()) return 0;
+      set({ pendingSyncCount: count });
+      return count;
+    },
+
+    syncPendingMutations: async () => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      await nutritionOfflineSync.syncAllPending();
+      session.assertCurrent();
+      await get().refreshPendingSyncCount();
+      session.assertCurrent();
+      await get().fetchDailyNutrition(get().selectedDate, true);
+      session.assertCurrent();
+      refreshFitnessQueries();
+    },
+
+    resetStore: async () => {
+      set({
+        entries: [],
+        pendingAnalysis: null,
+        dailySummary: null,
+        waterMl: 0,
+        isLoading: false,
+        isRefreshing: false,
+        error: null,
+        pendingSyncCount: 0,
+        favorites: [],
+        recentFoods: [],
+      });
+      lastWaterSession = null;
+      lastWaterLogTime = 0;
+      lastWaterLogAmount = 0;
+      lastWaterLogId = '';
+      set({ selectedDate: getTodayDateString() });
+      try {
+        await AsyncStorage.removeItem(getCacheKey());
+      } catch (e) {
+        logger.warn('Failed to remove nutrition cache on reset:', e);
+      }
+    },
+  };
+});
 
 // --- Helper Functions ---
 
@@ -468,7 +550,7 @@ export function sumNutrients(items: Nutrients[]): Nutrients {
       fat: acc.fat + (i.fat || 0),
       fiber: acc.fiber + (i.fiber || 0),
     }),
-    { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+    { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
   );
 }
 
@@ -491,7 +573,11 @@ export const useDailyTotals = (): Nutrients => {
 
 // --- Cache Helpers ---
 
-async function saveCache(entries: MealEntry[], waterMl: number, summary: DailyNutritionView | null) {
+async function saveCache(
+  entries: MealEntry[],
+  waterMl: number,
+  summary: DailyNutritionView | null,
+) {
   try {
     const payload = JSON.stringify({ entries, waterMl, summary, timestamp: Date.now() });
     await AsyncStorage.setItem(getCacheKey(), payload);
@@ -500,12 +586,12 @@ async function saveCache(entries: MealEntry[], waterMl: number, summary: DailyNu
   }
 }
 
-async function loadCache(set: (state: Partial<NutritionState>) => void) {
+async function loadCache(set: (state: Partial<NutritionState>) => void, date: string) {
   try {
     const raw = await AsyncStorage.getItem(getCacheKey());
     if (!raw) return;
     const parsed = JSON.parse(raw);
-    if (parsed && Array.isArray(parsed.entries)) {
+    if (parsed && Array.isArray(parsed.entries) && parsed.summary?.date === date) {
       set({
         entries: parsed.entries,
         waterMl: parsed.waterMl ?? 0,
@@ -519,5 +605,20 @@ async function loadCache(set: (state: Partial<NutritionState>) => void) {
 
 // Auto-initialize offline sync listener
 nutritionOfflineSync.onSyncComplete(() => {
-  useNutritionStore.getState().fetchDailyNutrition(undefined, true).catch(() => {});
+  useNutritionStore
+    .getState()
+    .fetchDailyNutrition(undefined, true)
+    .catch(() => {});
+});
+
+registerUserStore(useNutritionStore, () => {
+  nutritionReadSequence++;
+  lastWaterSession = null;
+  lastWaterLogTime = 0;
+  lastWaterLogAmount = 0;
+  lastWaterLogId = '';
+  useNutritionStore.setState(
+    { ...useNutritionStore.getInitialState(), selectedDate: getTodayDateString() },
+    true,
+  );
 });
