@@ -8,6 +8,7 @@ import { BarChart } from '../../../shared/components/charts/BarChart';
 import { useHasDeviceData } from '../../health-integration/store/healthStore';
 import { ActivityType, activityTypes } from '../constants/activity-types';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function ActivityDetailScreen() {
   const { colors } = useTheme();
@@ -24,11 +25,13 @@ export function ActivityDetailScreen() {
           title={`No ${t.label.toLowerCase()} yet`}
           description={
             type === 'steps'
-              ? 'Step counting requires a connected Apple Watch, Wear OS device, or Health Connect integration.'
+              ? (WEARABLES_ENABLED
+                  ? 'Step counting requires a connected Apple Watch, Wear OS device, or Health Connect integration.'
+                  : 'No activity records are available from your account yet.')
               : `No synced activity records are available from your account yet.`
           }
-          actionLabel="Connect a device"
-          onAction={() => navigate('healthIntegration')}
+          actionLabel={WEARABLES_ENABLED ? 'Connect a device' : undefined}
+          onAction={WEARABLES_ENABLED ? () => navigate('healthIntegration') : undefined}
         />
       </Screen>
     );
@@ -46,9 +49,13 @@ export function ActivityDetailScreen() {
         <EmptyState
           icon={t.icon}
           title={`No ${t.label.toLowerCase()} yet`}
-          description="Start a pool or open-water swim on Apple Watch and it will sync here with distance, laps and heart rate."
-          actionLabel="Check device connection"
-          onAction={() => navigate('appleWatch')}
+          description={
+            WEARABLES_ENABLED
+              ? 'Start a pool or open-water swim on Apple Watch and it will sync here with distance, laps and heart rate.'
+              : 'No activity records logged for this activity type yet.'
+          }
+          actionLabel={WEARABLES_ENABLED ? 'Check device connection' : undefined}
+          onAction={WEARABLES_ENABLED ? () => navigate('appleWatch') : undefined}
         />
       ) : (
         <View style={styles.body}>
@@ -101,7 +108,13 @@ export function ActivityDetailScreen() {
                       </View>
                       <Text style={[styles.sessionStats, { color: colors.muted }]}>{s.stats}</Text>
                       <View style={{ marginTop: 4 }}>
-                        <SourceTag source={{ kind: 'synced', label: 'Apple Watch workout' }} />
+                        <SourceTag
+                          source={
+                            WEARABLES_ENABLED
+                              ? { kind: 'synced', label: 'Apple Watch workout' }
+                              : { kind: 'manual', label: 'Logged workout' }
+                          }
+                        />
                       </View>
                     </View>
                   );

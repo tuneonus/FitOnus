@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { Route, RouteName, RouteParams, TabKey, tabForRoute, tabRoots } from './routes';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 type NavigationState = {
   stack: Route[];
@@ -58,6 +59,9 @@ export function NavigationProvider({
   });
 
   const navigate = useCallback((name: RouteName, params?: RouteParams) => {
+    if (!WEARABLES_ENABLED && (name === 'appleWatch' || name === 'wearOs')) {
+      return;
+    }
     setState((s) => {
       const nextStack = [...s.stack, makeRoute(name, params)];
       const currentTab = s.stack[0] ? tabForRoute(s.stack[0].name) : null;
@@ -67,6 +71,9 @@ export function NavigationProvider({
   }, []);
 
   const replace = useCallback((name: RouteName, params?: RouteParams) => {
+    if (!WEARABLES_ENABLED && (name === 'appleWatch' || name === 'wearOs')) {
+      return;
+    }
     setState((s) => {
       const nextStack = [...s.stack.slice(0, -1), makeRoute(name, params)];
       const currentTab = s.stack[0] ? tabForRoute(s.stack[0].name) : null;

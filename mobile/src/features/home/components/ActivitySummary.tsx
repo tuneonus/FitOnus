@@ -7,6 +7,7 @@ import { SourceTag } from '../../../shared/components/ui/SourceTag';
 import { useHasDeviceData } from '../../health-integration/store/healthStore';
 import { activityMeta, activityRings, weeklySteps } from '../data/homeMock';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 const ringSizes = [120, 94, 68];
 
@@ -20,8 +21,9 @@ export function ActivitySummary() {
       <View style={styles.container}>
         <SectionHeader
           title="Activity"
-          actionLabel="Connect"
-          onAction={() => navigate('healthIntegration')}
+          {...(WEARABLES_ENABLED
+            ? { actionLabel: 'Connect', onAction: () => navigate('healthIntegration') }
+            : {})}
         />
         <View
           style={[
@@ -30,10 +32,12 @@ export function ActivitySummary() {
           ]}
         >
           <Text style={{ fontSize: 15, fontWeight: '600', color: colors.ink, marginBottom: 4 }}>
-            Activity tracking paused
+            {WEARABLES_ENABLED ? 'Activity tracking paused' : 'Activity tracking'}
           </Text>
           <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>
-            Daily steps, active calories, and movement rings require a connected smartwatch or Apple Health / Health Connect.
+            {WEARABLES_ENABLED
+              ? 'Daily steps, active calories, and movement rings require a connected smartwatch or Apple Health / Health Connect.'
+              : 'Daily steps, active calories, and movement rings will appear here as you log activities.'}
           </Text>
         </View>
       </View>

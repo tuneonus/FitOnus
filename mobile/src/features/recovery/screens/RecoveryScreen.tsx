@@ -13,6 +13,7 @@ import { useDashboard } from '@/features/dashboard/hooks/use-dashboard';
 import { progressApi } from '@/features/progress/api/progress-api';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function RecoveryScreen() {
   const { colors } = useTheme();
@@ -68,9 +69,13 @@ export function RecoveryScreen() {
         <EmptyState
           icon={Activity}
           title="No recovery data yet"
-          body="No recovery records are available for your account. Wearable syncing is not available in this build."
-          actionLabel="Health connections"
-          onAction={() => navigate('healthIntegration')}
+          body={
+            WEARABLES_ENABLED
+              ? 'No recovery records are available for your account. Wearable syncing is not available in this build.'
+              : 'No recovery records are available for your account yet.'
+          }
+          actionLabel={WEARABLES_ENABLED ? 'Health connections' : undefined}
+          onAction={WEARABLES_ENABLED ? () => navigate('healthIntegration') : undefined}
         />
       ) : (
         <Text style={{ color: colors.muted }}>Loading recovery data…</Text>

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { RouteName } from '../navigation/routes';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 import { SplashScreen } from '@/features/auth/screens/SplashScreen';
 import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
 import { LoginScreen } from '@/features/auth/screens/LoginScreen';
@@ -139,8 +140,8 @@ export const registry: Record<RouteName, React.ComponentType> = {
   notifications: NotificationsScreen,
   notificationPreferences: NotificationPreferencesScreen,
   healthIntegration: HealthIntegrationScreen,
-  appleWatch: AppleWatchScreen,
-  wearOs: WearOsScreen,
+  appleWatch: WEARABLES_ENABLED ? AppleWatchScreen : () => null,
+  wearOs: WEARABLES_ENABLED ? WearOsScreen : () => null,
   profile: ProfileScreen,
   personalInfo: PersonalInfoScreen,
   fitnessPreferences: FitnessPreferencesScreen,

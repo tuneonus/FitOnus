@@ -2,6 +2,7 @@ import { registerUserStore } from '@/services/user-session';
 import { create } from 'zustand';
 import type { HealthPlatform, HealthStatus } from '../../../shared/types/health';
 import { healthMetrics } from '../constants/healthMetrics';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -65,13 +66,21 @@ export const useHealthStore = create<HealthState>((set, get) => ({
   },
   setAllPermissions: (value) => set({ permissions: allPermissions(value) }),
   syncNow: () => {
+    if (!WEARABLES_ENABLED) {
+      return; // Wearable synchronization disabled while feature is off
+    }
     // No native health provider or backend ingestion endpoint exists in this build.
     set({ status: 'noDevice', connection: 'disconnected', lastSync: '', watchConnected: false });
   },
-  setWatchConnected: (watchConnected) => set({ watchConnected }),
+  setWatchConnected: (watchConnected) =>
+    set({ watchConnected: WEARABLES_ENABLED ? watchConnected : false }),
 }));
 
 export const useHasDeviceData = () =>
-  useHealthStore((s) => s.status === 'synced' || s.status === 'offline' || s.status === 'error');
+  useHealthStore(
+    (s) =>
+      WEARABLES_ENABLED &&
+      (s.status === 'synced' || s.status === 'offline' || s.status === 'error'),
+  );
 
 registerUserStore(useHealthStore);

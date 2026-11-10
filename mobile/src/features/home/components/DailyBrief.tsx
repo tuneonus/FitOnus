@@ -13,6 +13,7 @@ import { ProgressRing } from '../../../shared/components/charts/ProgressRing';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 import { briefDrivers, dailyBrief, suggestedQuestions } from '../data/homeMock';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function DailyBrief() {
   const { colors } = useTheme();
@@ -49,7 +50,13 @@ export function DailyBrief() {
         {/* Recovery Dial & Headline */}
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => (hasData ? navigate('recovery') : navigate('healthIntegration'))}
+          onPress={() =>
+            hasData
+              ? navigate('recovery')
+              : WEARABLES_ENABLED
+              ? navigate('healthIntegration')
+              : navigate('recovery')
+          }
           accessibilityRole="button"
           accessibilityLabel={
             hasData
@@ -104,7 +111,7 @@ export function DailyBrief() {
           </View>
         </TouchableOpacity>
 
-        {!hasData && (
+        {!hasData && WEARABLES_ENABLED && (
           <TouchableOpacity
             accessibilityRole="button"
             activeOpacity={0.8}

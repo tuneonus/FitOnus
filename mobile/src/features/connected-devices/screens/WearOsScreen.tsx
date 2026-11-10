@@ -7,6 +7,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { showToast } from '@/shared/stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 const planned = [
   {
@@ -27,6 +28,10 @@ const planned = [
 ];
 
 export function WearOsScreen() {
+  if (!WEARABLES_ENABLED) {
+    return null;
+  }
+
   const { colors } = useTheme();
   const { navigate } = useNavigation();
 

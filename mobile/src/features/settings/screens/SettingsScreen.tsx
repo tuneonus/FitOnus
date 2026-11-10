@@ -22,6 +22,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { AuthService } from '@/features/auth/services/auth-service';
 import { useSettings, useUpdateSettings } from '@/features/profile/hooks/use-settings';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function SettingsScreen() {
   const { colors } = useTheme();
@@ -96,11 +97,13 @@ export function SettingsScreen() {
               subtitle="Apple Health / Health Connect"
               onPress={() => navigate('healthIntegration')}
             />
-            <ListRow
-              icon={Watch}
-              title="Connected devices"
-              onPress={() => navigate('appleWatch')}
-            />
+            {WEARABLES_ENABLED && (
+              <ListRow
+                icon={Watch}
+                title="Connected devices"
+                onPress={() => navigate('appleWatch')}
+              />
+            )}
             <ListRow
               icon={Brain}
               title="AI memory controls"

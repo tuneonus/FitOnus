@@ -29,6 +29,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useProfile } from '../hooks/use-profile';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { formatWeight, formatHeight } from '@/shared/utils/unit-conversion';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function ProfileScreen() {
   const { colors } = useTheme();
@@ -194,12 +195,14 @@ export function ProfileScreen() {
           }
           onPress={() => navigate('healthIntegration')}
         />
-        <ListRow
-          icon={Watch}
-          title="Apple Watch"
-          value={watchConnected ? 'Series 9' : 'Not paired'}
-          onPress={() => navigate('appleWatch')}
-        />
+        {WEARABLES_ENABLED && (
+          <ListRow
+            icon={Watch}
+            title="Apple Watch"
+            value={watchConnected ? 'Series 9' : 'Not paired'}
+            onPress={() => navigate('appleWatch')}
+          />
+        )}
         <ListRow
           icon={Brain}
           title="AI memory"

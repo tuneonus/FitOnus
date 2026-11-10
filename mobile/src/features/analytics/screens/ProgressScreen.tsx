@@ -26,6 +26,7 @@ import { InsightCard } from '../components/InsightCard';
 import { useTheme } from '@/hooks/use-theme';
 import { useProgressStore } from '../store/progressStore';
 import { useAdvancedAnalyticsStore } from '../store/advancedAnalyticsStore';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 const fmt = (v: number, unit: string) =>
   unit === 'h'
@@ -253,10 +254,18 @@ export function ProgressScreen() {
             <EmptyState
               compact
               icon={m.label === 'Sleep' ? FileText : Target}
-              title={`${m.label} needs a wearable`}
-              body="Connect Apple Health or Health Connect to see this trend."
-              actionLabel="Connect"
-              onAction={() => navigate('healthIntegration')}
+              title={
+                WEARABLES_ENABLED
+                  ? `${m.label} needs a wearable`
+                  : `${m.label} data unavailable`
+              }
+              body={
+                WEARABLES_ENABLED
+                  ? 'Connect Apple Health or Health Connect to see this trend.'
+                  : 'No records available to display for this metric.'
+              }
+              actionLabel={WEARABLES_ENABLED ? 'Connect' : undefined}
+              onAction={WEARABLES_ENABLED ? () => navigate('healthIntegration') : undefined}
             />
           ) : (
             <>
@@ -308,7 +317,9 @@ export function ProgressScreen() {
                             ? 'Log your daily water intake to track hydration consistency.'
                             : metric === 'weight'
                               ? 'Record your weigh-in to begin tracking weight progression.'
-                              : 'Connect wearable health data to display activity metrics.'}
+                              : WEARABLES_ENABLED
+                              ? 'Connect wearable health data to display activity metrics.'
+                              : 'No activity metrics recorded yet.'}
                     </Text>
                   </View>
                 ) : m.chart === 'line' ? (

@@ -10,6 +10,7 @@ import { useHasDeviceData } from '../../health-integration/store/healthStore';
 import { useWeightStore } from '../../weight-tracking/store/weightStore';
 import { BodySignal, bodySignals } from '../data/homeMock';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function BodySignals() {
   const { colors } = useTheme();
@@ -74,7 +75,9 @@ export function BodySignals() {
             <TouchableOpacity
               key={signal.key}
               activeOpacity={0.7}
-              onPress={() => navigate(available ? route : 'healthIntegration')}
+              onPress={() =>
+                navigate(available ? route : WEARABLES_ENABLED ? 'healthIntegration' : route)
+              }
               style={[
                 styles.signalRow,
                 idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line },
@@ -114,7 +117,9 @@ export function BodySignals() {
                       No data yet
                     </Text>
                     <Text style={[styles.noDataSub, { color: colors.muted }]}>
-                      Needs Apple Health or a wearable
+                      {WEARABLES_ENABLED
+                        ? 'Needs Apple Health or a wearable'
+                        : 'No tracking data logged yet'}
                     </Text>
                   </>
                 )}

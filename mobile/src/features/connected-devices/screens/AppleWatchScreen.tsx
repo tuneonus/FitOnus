@@ -19,6 +19,7 @@ import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { showToast } from '@/shared/stores/toastStore';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 const synced = [Heart, Dumbbell, Footprints, Flame, Timer].map((icon, index) => ({
   icon,
@@ -28,6 +29,10 @@ const synced = [Heart, Dumbbell, Footprints, Flame, Timer].map((icon, index) => 
 const watchWorkouts: { title: string; when: string; status: 'synced' | 'pending' }[] = [];
 
 export function AppleWatchScreen() {
+  if (!WEARABLES_ENABLED) {
+    return null;
+  }
+
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const { watchConnected, setWatchConnected, lastSync, syncNow, status, connection } =

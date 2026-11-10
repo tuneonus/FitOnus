@@ -14,6 +14,7 @@ import { useDashboard } from '@/features/dashboard/hooks/use-dashboard';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { progressApi } from '@/features/progress/api/progress-api';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function SleepScreen() {
   const { colors } = useTheme();
@@ -101,9 +102,13 @@ export function SleepScreen() {
         <EmptyState
           icon={Moon}
           title="No sleep data yet"
-          body="No sleep records are available for your account. Wearable syncing is not available in this build."
-          actionLabel="Health connections"
-          onAction={() => navigate('healthIntegration')}
+          body={
+            WEARABLES_ENABLED
+              ? 'No sleep records are available for your account. Wearable syncing is not available in this build.'
+              : 'No sleep records are available for your account yet.'
+          }
+          actionLabel={WEARABLES_ENABLED ? 'Health connections' : undefined}
+          onAction={WEARABLES_ENABLED ? () => navigate('healthIntegration') : undefined}
         />
       ) : (
         <Text style={{ color: colors.muted }}>Loading sleep data…</Text>

@@ -15,6 +15,7 @@ import type { HealthPlatform } from '@/shared/types/health';
 import { useHealthStore } from '../store/healthStore';
 import { healthConnectApps, healthMetrics } from '../constants/healthMetrics';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 const groups = ['Activity', 'Heart', 'Sleep', 'Body', 'Vitals', 'Other'] as const;
 
@@ -76,7 +77,7 @@ export function HealthIntegrationScreen() {
             {connection === 'error' && <Badge tone="bad">Error</Badge>}
           </View>
 
-          {connected && (
+          {connected && WEARABLES_ENABLED && (
             <View style={[styles.syncBar, { borderTopColor: colors.line }]}>
               <Text style={[styles.syncText, { color: colors.muted }]}>
                 {status === 'loading' ? 'Syncing…' : `Last synced ${lastSync}`}
@@ -180,7 +181,7 @@ export function HealthIntegrationScreen() {
         )}
 
         {/* Apple Watch row on iOS */}
-        {platform === 'ios' && (
+        {WEARABLES_ENABLED && platform === 'ios' && (
           <ListGroup>
             <ListRow
               icon={Watch}

@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { MetricDisplay } from '@/shared/components/ui/MetricDisplay';
 import { ActionRow } from '@/shared/components/ui/ActionRow';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function DailyMovement({ summary }: { summary: DailySummary | undefined }) {
   const { colors } = useTheme();
@@ -34,12 +35,14 @@ export function DailyMovement({ summary }: { summary: DailySummary | undefined }
         />
       </View>
       {summary?.steps == null ? (
-        <ActionRow
-          icon={Watch}
-          title="Connect your health data"
-          detail="Bring steps, sleep and recovery together."
-          onPress={() => navigate('healthIntegration')}
-        />
+        WEARABLES_ENABLED ? (
+          <ActionRow
+            icon={Watch}
+            title="Connect your health data"
+            detail="Bring steps, sleep and recovery together."
+            onPress={() => navigate('healthIntegration')}
+          />
+        ) : null
       ) : (
         <ActionRow
           icon={Activity}

@@ -18,6 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { progressApi } from '@/features/progress/api/progress-api';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function ActivityScreen() {
   const { colors } = useTheme();
@@ -195,11 +196,13 @@ export function ActivityScreen() {
             <View style={styles.sourceTagRow}>
               <SourceTag
                 source={
-                  hasDevice && hasSteps
+                  WEARABLES_ENABLED && hasDevice && hasSteps
                     ? { kind: 'synced', label: 'Wearable synced' }
                     : {
                         kind: 'estimated',
-                        label: 'Workout activity logged · No step tracker connected',
+                        label: WEARABLES_ENABLED
+                          ? 'Workout activity logged · No step tracker connected'
+                          : 'Workout activity logged',
                       }
                 }
               />
@@ -258,7 +261,9 @@ export function ActivityScreen() {
             ) : (
               <View style={{ paddingVertical: 14 }}>
                 <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
-                  Hourly breakdown requires a connected wearable or pedometer.
+                  {WEARABLES_ENABLED
+                    ? 'Hourly breakdown requires a connected wearable or pedometer.'
+                    : 'Hourly breakdown requires pedometer activity data.'}
                 </Text>
               </View>
             )}
@@ -319,7 +324,9 @@ export function ActivityScreen() {
             subtitle={
               summary?.recoveryScore != null
                 ? `${summary.recoveryScore} · Synced`
-                : 'Needs a wearable'
+                : WEARABLES_ENABLED
+                ? 'Needs a wearable'
+                : 'No data'
             }
             onPress={() => navigate('recovery')}
           />
@@ -330,7 +337,9 @@ export function ActivityScreen() {
             subtitle={
               summary?.sleepScore != null && summary?.sleepDuration
                 ? `${summary.sleepDuration} · Score ${summary.sleepScore}`
-                : 'Needs a wearable'
+                : WEARABLES_ENABLED
+                ? 'Needs a wearable'
+                : 'No data'
             }
             onPress={() => navigate('sleep')}
           />

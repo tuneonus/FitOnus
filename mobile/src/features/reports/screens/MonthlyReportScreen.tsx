@@ -13,6 +13,7 @@ import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { hasReportRecords, useProgressReport } from '../hooks/use-progress-report';
 import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { useHasDeviceData } from '@/features/health-integration/store/healthStore';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function MonthlyReportScreen() {
   const { colors } = useTheme();
@@ -140,8 +141,8 @@ export function MonthlyReportScreen() {
             icon={Target}
             title="No recovery history"
             body="No recovery records are available for this account yet."
-            actionLabel="Connect"
-            onAction={() => navigate('healthIntegration')}
+            actionLabel={WEARABLES_ENABLED ? 'Connect' : undefined}
+            onAction={WEARABLES_ENABLED ? () => navigate('healthIntegration') : undefined}
           />
         ) : (
           <View style={{ marginTop: 8 }}>

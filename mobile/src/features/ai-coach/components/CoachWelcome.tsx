@@ -7,6 +7,7 @@ import { useHealthStore } from '../../health-integration/store/healthStore';
 import { useMemoryStore } from '../../ai-memory/store/memoryStore';
 import { welcomePrompts } from '../data/conversationsMock';
 import { useTheme } from '@/hooks/use-theme';
+import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
 
 export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
   const { colors } = useTheme();
@@ -14,7 +15,8 @@ export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
   const { navigate } = useNavigation();
   const status = useHealthStore((s) => s.status);
   const memoryCount = useMemoryStore((s) => (s.enabled ? s.items.length : 0));
-  const hasDevice = status === 'synced' || status === 'offline' || status === 'error';
+  const hasDevice =
+    WEARABLES_ENABLED && (status === 'synced' || status === 'offline' || status === 'error');
   const access = hasDevice
     ? ['Sleep', 'HRV', 'Heart rate', 'Workouts', 'Meals', 'Weight']
     : ['Workouts', 'Meals', 'Weight'];
@@ -28,7 +30,9 @@ export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
 
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => navigate(hasDevice ? 'aiMemory' : 'healthIntegration')}
+        onPress={() =>
+          navigate(hasDevice ? 'aiMemory' : WEARABLES_ENABLED ? 'healthIntegration' : 'aiMemory')
+        }
         style={[styles.accessCard, { backgroundColor: colors.surface2 }]}
       >
         <View style={styles.accessBadge}>
@@ -47,7 +51,7 @@ export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
           </View>
         </View>
 
-        {!hasDevice && (
+        {!hasDevice && WEARABLES_ENABLED && (
           <Text style={[styles.deviceHint, { color: colors.muted }]}>
             Connect a device to unlock recovery and sleep answers →
           </Text>
