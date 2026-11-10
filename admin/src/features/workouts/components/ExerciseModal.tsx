@@ -24,23 +24,72 @@ function ExerciseForm({
 
   const [name, setName] = useState(exercise?.name || '');
   const [description, setDescription] = useState(exercise?.description || '');
-  const [category, setCategory] = useState<Exercise['category']>(exercise?.category || 'strength');
-  const [primaryMuscle, setPrimaryMuscle] = useState(exercise?.primaryMuscle || 'chest');
-  const [secondaryMuscles, setSecondaryMuscles] = useState(exercise?.secondaryMuscles.join(', ') || '');
-  const [equipment, setEquipment] = useState(exercise?.equipment || 'barbell');
-  const [difficulty, setDifficulty] = useState<Exercise['difficulty']>(exercise?.difficulty || 'intermediate');
-  const [instructions, setInstructions] = useState(exercise?.instructions.join('\n') || '');
-  const [tips, setTips] = useState(exercise?.tips.join('\n') || '');
+  const [category, setCategory] = useState<string>(exercise?.category || 'strength');
+  const [primaryMuscles, setPrimaryMuscles] = useState(
+    exercise?.primaryMuscles?.join(', ') || exercise?.primaryMuscle || 'Chest'
+  );
+  const [secondaryMuscles, setSecondaryMuscles] = useState(
+    exercise?.secondaryMuscles?.join(', ') || ''
+  );
+  const [equipment, setEquipment] = useState(exercise?.equipment || 'Barbell');
+  const [difficulty, setDifficulty] = useState<Exercise['difficulty']>(
+    exercise?.difficulty || 'intermediate'
+  );
+  const [isCompound, setIsCompound] = useState<boolean>(exercise?.isCompound ?? false);
+  const [instructions, setInstructions] = useState(exercise?.instructions?.join('\n') || '');
+  const [tips, setTips] = useState(exercise?.tips?.join('\n') || '');
+  const [commonMistakes, setCommonMistakes] = useState(
+    exercise?.commonMistakes?.join('\n') || ''
+  );
   const [videoUrl, setVideoUrl] = useState(exercise?.videoUrl || '');
   const [imageUrl, setImageUrl] = useState(exercise?.imageUrl || '');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isValidUrl = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Exercise name is required.');
+      return;
+    }
+
+    const parsedPrimary = primaryMuscles
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (parsedPrimary.length === 0) {
+      setError('At least one primary muscle is required.');
+      return;
+    }
+
+    const parsedInstructions = instructions
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (parsedInstructions.length === 0) {
+      setError('At least one instruction step is required.');
+      return;
+    }
+
+    if (videoUrl.trim() && !isValidUrl(videoUrl.trim())) {
+      setError('Video URL must be a valid http or https URL.');
+      return;
+    }
+
+    if (imageUrl.trim() && !isValidUrl(imageUrl.trim())) {
+      setError('Image URL must be a valid http or https URL.');
       return;
     }
 
@@ -50,11 +99,6 @@ function ExerciseForm({
     try {
       const parsedSecondary = secondaryMuscles
         .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
-
-      const parsedInstructions = instructions
-        .split('\n')
         .map((s) => s.trim())
         .filter(Boolean);
 
@@ -63,16 +107,24 @@ function ExerciseForm({
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const payload = {
+      const parsedMistakes = commonMistakes
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const payload: CreateExerciseInput = {
         name: name.trim(),
         description: description.trim() || null,
-        category,
-        primaryMuscle: primaryMuscle.trim().toLowerCase(),
+        category: category.trim(),
+        primaryMuscles: parsedPrimary,
+        primaryMuscle: parsedPrimary[0],
         secondaryMuscles: parsedSecondary,
-        equipment: equipment.trim().toLowerCase(),
+        equipment: equipment.trim(),
         difficulty,
+        isCompound,
         instructions: parsedInstructions,
         tips: parsedTips,
+        commonMistakes: parsedMistakes,
         videoUrl: videoUrl.trim() || null,
         imageUrl: imageUrl.trim() || null,
       };
@@ -116,7 +168,7 @@ function ExerciseForm({
           </label>
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value as Exercise['category'])}
+            onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white focus:border-teal-500 focus:outline-none"
           >
             <option value="strength">Strength</option>
@@ -128,18 +180,18 @@ function ExerciseForm({
         </div>
       </div>
 
-      {/* Row 2: Primary Muscle, Secondary Muscles, Equipment, Difficulty */}
+      {/* Row 2: Primary Muscles, Secondary Muscles, Equipment, Difficulty */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Primary Muscle *
+            Primary Muscles *
           </label>
           <input
             type="text"
             required
-            value={primaryMuscle}
-            onChange={(e) => setPrimaryMuscle(e.target.value)}
-            placeholder="e.g. chest"
+            value={primaryMuscles}
+            onChange={(e) => setPrimaryMuscles(e.target.value)}
+            placeholder="e.g. Chest, Triceps"
             className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
           />
         </div>
@@ -152,7 +204,7 @@ function ExerciseForm({
             type="text"
             value={secondaryMuscles}
             onChange={(e) => setSecondaryMuscles(e.target.value)}
-            placeholder="triceps, shoulders"
+            placeholder="e.g. Shoulders, Abs"
             className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
           />
         </div>
@@ -166,7 +218,7 @@ function ExerciseForm({
             required
             value={equipment}
             onChange={(e) => setEquipment(e.target.value)}
-            placeholder="barbell, dumbbell"
+            placeholder="Barbell, Dumbbell, etc."
             className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
           />
         </div>
@@ -187,7 +239,22 @@ function ExerciseForm({
         </div>
       </div>
 
-      {/* Row 3: Description */}
+      {/* Row 3: Compound Movement Toggle & Description */}
+      <div className="flex items-center gap-3 py-1">
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isCompound}
+            onChange={(e) => setIsCompound(e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-500"></div>
+          <span className="ml-2.5 text-xs font-medium text-slate-300">
+            Compound Movement (engages multiple joint groups)
+          </span>
+        </label>
+      </div>
+
       <div>
         <label className="block text-xs font-semibold text-slate-300 mb-1.5">
           Description
@@ -201,17 +268,17 @@ function ExerciseForm({
         />
       </div>
 
-      {/* Row 4: Instructions & Tips */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Row 4: Instructions, Tips & Common Mistakes */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Instructions (one step per line)
+            Instructions * (one per line)
           </label>
           <textarea
             rows={4}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
-            placeholder="1. Lie flat on bench&#10;2. Grip barbell with medium width&#10;3. Lower bar smoothly to mid-chest"
+            placeholder="1. Lie flat on bench&#10;2. Grip barbell with medium width&#10;3. Lower bar smoothly to chest"
             className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none font-mono"
           />
         </div>
@@ -225,6 +292,19 @@ function ExerciseForm({
             value={tips}
             onChange={(e) => setTips(e.target.value)}
             placeholder="Keep feet planted firmly&#10;Maintain slight arch in lower back&#10;Do not bounce bar off ribcage"
+            className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none font-mono"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            Common Mistakes (one per line)
+          </label>
+          <textarea
+            rows={4}
+            value={commonMistakes}
+            onChange={(e) => setCommonMistakes(e.target.value)}
+            placeholder="Flaring elbows outward&#10;Lifting hips off the bench&#10;Incomplete lockout"
             className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none font-mono"
           />
         </div>

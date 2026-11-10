@@ -1,19 +1,24 @@
 export interface Exercise {
   id: string;
   name: string;
-  slug: string;
+  slug?: string;
   description: string | null;
-  category: 'strength' | 'hypertrophy' | 'endurance' | 'mobility' | 'cardio';
-  primaryMuscle: string;
+  category: 'strength' | 'hypertrophy' | 'endurance' | 'mobility' | 'cardio' | string;
+  primaryMuscles: string[];
+  primaryMuscle?: string;
   secondaryMuscles: string[];
   equipment: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
+  isCompound: boolean;
   instructions: string[];
   tips: string[];
+  commonMistakes?: string[];
   videoUrl: string | null;
   imageUrl: string | null;
-  isCustom: boolean;
-  userId: string | null;
+  isSystem: boolean;
+  isCustom?: boolean;
+  userId?: string | null;
+  createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,13 +36,16 @@ export interface ExerciseListQuery {
 export interface CreateExerciseInput {
   name: string;
   description?: string | null;
-  category: 'strength' | 'hypertrophy' | 'endurance' | 'mobility' | 'cardio';
-  primaryMuscle: string;
+  category: 'strength' | 'hypertrophy' | 'endurance' | 'mobility' | 'cardio' | string;
+  primaryMuscles: string[];
+  primaryMuscle?: string;
   secondaryMuscles?: string[];
   equipment: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  instructions?: string[];
+  isCompound?: boolean;
+  instructions: string[];
   tips?: string[];
+  commonMistakes?: string[];
   videoUrl?: string | null;
   imageUrl?: string | null;
 }
@@ -45,13 +53,16 @@ export interface CreateExerciseInput {
 export interface UpdateExerciseInput {
   name?: string;
   description?: string | null;
-  category?: 'strength' | 'hypertrophy' | 'endurance' | 'mobility' | 'cardio';
+  category?: 'strength' | 'hypertrophy' | 'endurance' | 'mobility' | 'cardio' | string;
+  primaryMuscles?: string[];
   primaryMuscle?: string;
   secondaryMuscles?: string[];
   equipment?: string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  isCompound?: boolean;
   instructions?: string[];
   tips?: string[];
+  commonMistakes?: string[];
   videoUrl?: string | null;
   imageUrl?: string | null;
 }

@@ -27,6 +27,10 @@ interface ExercisesTableProps {
   onDeleteExercise: (exercise: Exercise) => void;
 }
 
+export const isProtectedExercise = (id: string): boolean => {
+  return /^e0000000-0000-4000-8000-0000000000(0[1-9]|1[0-4])$/.test(id);
+};
+
 export function ExercisesTable({
   exercises,
   isLoading,
@@ -107,7 +111,9 @@ export function ExercisesTable({
                     </span>
                   </td>
                   <td className="py-4 px-4 capitalize font-medium text-slate-200">
-                    {ex.primaryMuscle}
+                    {ex.primaryMuscles && ex.primaryMuscles.length > 0
+                      ? ex.primaryMuscles.join(', ')
+                      : ex.primaryMuscle || '—'}
                   </td>
                   <td className="py-4 px-4 capitalize text-slate-400">
                     {ex.equipment}
@@ -118,15 +124,22 @@ export function ExercisesTable({
                     </Badge>
                   </td>
                   <td className="py-4 px-4">
-                    <span
-                      className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${
-                        ex.isCustom
-                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      }`}
-                    >
-                      {ex.isCustom ? 'Custom' : 'System'}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${
+                          ex.isCustom || !ex.isSystem
+                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        }`}
+                      >
+                        {ex.isCustom || !ex.isSystem ? 'Custom' : 'System'}
+                      </span>
+                      {ex.isCompound && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          Compound
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -139,8 +152,17 @@ export function ExercisesTable({
                       </button>
                       <button
                         onClick={() => onDeleteExercise(ex)}
-                        title="Delete Exercise"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-950/40 hover:text-rose-400 transition-colors"
+                        disabled={isProtectedExercise(ex.id)}
+                        title={
+                          isProtectedExercise(ex.id)
+                            ? 'Foundational system exercises are protected and cannot be deleted'
+                            : 'Delete Exercise'
+                        }
+                        className={`rounded-lg p-1.5 transition-colors ${
+                          isProtectedExercise(ex.id)
+                            ? 'text-slate-600 cursor-not-allowed opacity-40'
+                            : 'text-slate-400 hover:bg-rose-950/40 hover:text-rose-400'
+                        }`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

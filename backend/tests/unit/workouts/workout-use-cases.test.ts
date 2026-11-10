@@ -619,6 +619,15 @@ describe('Workouts Module — Use Cases', () => {
       await expect(getExercise.execute(created.id)).rejects.toThrow('Exercise not found.');
     });
 
+    it('blocks deletion of foundational system exercises', async () => {
+      const manageExercise = new AdminManageExerciseUseCase(exerciseRepo, auditLogger);
+      const protectedId = 'e0000000-0000-4000-8000-000000000001';
+
+      await expect(manageExercise.delete(adminId, protectedId)).rejects.toThrow(
+        'The 14 foundational system exercises are protected and cannot be deleted.',
+      );
+    });
+
     it('aggregates platform workout stats', async () => {
       const logSession = new LogWorkoutSessionUseCase(sessionRepo, prRepo, exerciseRepo);
       await logSession.execute({

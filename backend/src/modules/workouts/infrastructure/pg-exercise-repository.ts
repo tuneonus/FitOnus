@@ -84,7 +84,9 @@ export class PgExerciseRepository implements IExerciseRepository {
     }
 
     if (filter.muscle && filter.muscle.trim().length > 0) {
-      conditions.push(`($${idx} = ANY(primary_muscles) OR $${idx} = ANY(secondary_muscles))`);
+      conditions.push(
+        `EXISTS (SELECT 1 FROM unnest(COALESCE(primary_muscles, ARRAY[]::text[]) || COALESCE(secondary_muscles, ARRAY[]::text[])) AS m WHERE LOWER(m) = LOWER($${idx}))`,
+      );
       values.push(filter.muscle.trim());
       idx++;
     }
@@ -102,7 +104,7 @@ export class PgExerciseRepository implements IExerciseRepository {
     }
 
     if (filter.difficulty && filter.difficulty.trim().length > 0) {
-      conditions.push(`difficulty = $${idx}`);
+      conditions.push(`LOWER(difficulty) = LOWER($${idx})`);
       values.push(filter.difficulty.trim());
       idx++;
     }

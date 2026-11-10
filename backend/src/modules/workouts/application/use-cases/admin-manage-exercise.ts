@@ -8,7 +8,7 @@ import { toExerciseView, type ExerciseView } from '../workout-view.js';
 export interface CreateExerciseAdminInput {
   adminId: string;
   name: string;
-  description?: string;
+  description?: string | null;
   instructions: string[];
   tips?: string[];
   commonMistakes?: string[];
@@ -18,8 +18,8 @@ export interface CreateExerciseAdminInput {
   category: string;
   difficulty: ExerciseDifficulty;
   isCompound?: boolean;
-  imageUrl?: string;
-  videoUrl?: string;
+  imageUrl?: string | null;
+  videoUrl?: string | null;
   ipAddress?: string;
   userAgent?: string;
 }
@@ -28,7 +28,7 @@ export interface UpdateExerciseAdminInput {
   adminId: string;
   exerciseId: string;
   name?: string;
-  description?: string;
+  description?: string | null;
   instructions?: string[];
   tips?: string[];
   commonMistakes?: string[];
@@ -43,6 +43,10 @@ export interface UpdateExerciseAdminInput {
   ipAddress?: string;
   userAgent?: string;
 }
+
+export const PROTECTED_SYSTEM_EXERCISE_IDS: ReadonlySet<string> = new Set(
+  Array.from({ length: 14 }, (_, i) => `e0000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`),
+);
 
 export class AdminManageExerciseUseCase {
   constructor(
@@ -128,6 +132,14 @@ export class AdminManageExerciseUseCase {
   }
 
   async delete(adminId: string, exerciseId: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    if (PROTECTED_SYSTEM_EXERCISE_IDS.has(exerciseId)) {
+      throw new AppError(
+        'conflict',
+        'CONFLICT',
+        'The 14 foundational system exercises are protected and cannot be deleted.',
+      );
+    }
+
     const existing = await this.exerciseRepo.findById(exerciseId);
     if (!existing || existing.deletedAt !== null) {
       throw new AppError('not_found', 'NOT_FOUND', 'Exercise not found.');

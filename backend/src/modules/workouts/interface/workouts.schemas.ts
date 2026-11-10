@@ -242,7 +242,7 @@ export const listPersonalRecordsRequest = {
 export const createExerciseAdminRequest = {
   body: z.object({
     name: z.string().trim().min(1).max(120),
-    description: z.string().trim().max(1000).optional(),
+    description: z.string().trim().max(1000).nullable().optional(),
     instructions: z.array(z.string().trim().min(1)).min(1),
     tips: z.array(z.string().trim()).default([]),
     commonMistakes: z.array(z.string().trim()).default([]),
@@ -252,8 +252,8 @@ export const createExerciseAdminRequest = {
     category: z.string().trim().min(1).max(50),
     difficulty: z.enum(EXERCISE_DIFFICULTIES),
     isCompound: z.boolean().default(false),
-    imageUrl: z.string().url().optional(),
-    videoUrl: z.string().url().optional(),
+    imageUrl: z.string().url().nullable().optional(),
+    videoUrl: z.string().url().nullable().optional(),
   }),
 };
 

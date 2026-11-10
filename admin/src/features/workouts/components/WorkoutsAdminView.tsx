@@ -118,8 +118,21 @@ export function WorkoutsAdminView() {
     }
   };
 
+  const handleOpenDeleteExercise = (exercise: Exercise) => {
+    if (exercise.isSystem && /^e0000000-0000-4000-8000-0000000000(0[1-9]|1[0-4])$/.test(exercise.id)) {
+      toast.error('The 14 foundational system exercises are protected and cannot be deleted.');
+      return;
+    }
+    setExerciseToDelete(exercise);
+  };
+
   const handleDeleteExerciseConfirm = async () => {
     if (!exerciseToDelete) return;
+    if (exerciseToDelete.isSystem && /^e0000000-0000-4000-8000-0000000000(0[1-9]|1[0-4])$/.test(exerciseToDelete.id)) {
+      toast.error('The 14 foundational system exercises are protected and cannot be deleted.');
+      setExerciseToDelete(null);
+      return;
+    }
     setIsDeletingExercise(true);
     try {
       await workoutsApi.deleteExercise(exerciseToDelete.id);
@@ -284,7 +297,7 @@ export function WorkoutsAdminView() {
               }}
               onPageChange={setExercisePage}
               onEditExercise={handleOpenEditExercise}
-              onDeleteExercise={setExerciseToDelete}
+              onDeleteExercise={handleOpenDeleteExercise}
             />
           </div>
         )}
