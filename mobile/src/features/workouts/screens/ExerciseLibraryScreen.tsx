@@ -42,12 +42,21 @@ export function ExerciseLibraryScreen() {
     setEquipment('All');
   };
   const add = (id: string) => {
-    if (plannedSession.exercises.some((exercise) => exercise.exerciseId === id))
+    const currentExercises = plannedSession?.exercises ?? [];
+    if (currentExercises.some((exercise) => exercise.exerciseId === id))
       return showToast({ message: 'Already in this workout', tone: 'info' });
+    const targetSession: import('../types/workout').WorkoutSession = plannedSession ?? {
+      id: `custom-${Date.now()}`,
+      title: 'Custom workout',
+      focus: 'Custom · 45 min',
+      durationMin: 45,
+      intensity: 'Moderate',
+      exercises: [],
+    };
     setPlannedSession({
-      ...plannedSession,
+      ...targetSession,
       exercises: [
-        ...plannedSession.exercises,
+        ...targetSession.exercises,
         { exerciseId: id, sets: 3, reps: '10', weight: 0, restSec: 60 },
       ],
     });
@@ -120,6 +129,13 @@ export function ExerciseLibraryScreen() {
             <Skeleton key={key} height={96} radius={premium.radius.card} />
           ))}
         </View>
+      ) : catalog.length === 0 ? (
+        <EmptyState
+          appearance="premium"
+          icon={Dumbbell}
+          title="No exercises in library"
+          body="No exercises are currently available. Check back soon or contact your coach/admin."
+        />
       ) : results.length === 0 ? (
         <EmptyState
           appearance="premium"

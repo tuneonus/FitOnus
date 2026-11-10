@@ -37,7 +37,9 @@ apiClient.interceptors.request.use(
     const isPublicAuthRoute =
       config.url?.includes('/auth/login') ||
       config.url?.includes('/auth/register') ||
-      config.url?.includes('/auth/refresh');
+      config.url?.includes('/auth/refresh') ||
+      config.url?.includes('/auth/forgot-password') ||
+      config.url?.includes('/auth/reset-password');
 
     if (!isPublicAuthRoute) {
       const accessToken = await SecureStorageService.getItem('auth.access_token');
@@ -72,7 +74,9 @@ apiClient.interceptors.response.use(
     const isAuthRoute =
       originalRequest?.url?.includes('/auth/login') ||
       originalRequest?.url?.includes('/auth/register') ||
-      originalRequest?.url?.includes('/auth/refresh');
+      originalRequest?.url?.includes('/auth/refresh') ||
+      originalRequest?.url?.includes('/auth/forgot-password') ||
+      originalRequest?.url?.includes('/auth/reset-password');
 
     if (error.response?.status === 401 && !originalRequest?._retry && !isAuthRoute) {
       if (isRefreshing) {

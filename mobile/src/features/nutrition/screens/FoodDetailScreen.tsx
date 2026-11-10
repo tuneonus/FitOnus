@@ -34,7 +34,8 @@ export function FoodDetailScreen() {
   const { popTo } = useNavigation();
   const { logMeal, removeEntry, toggleFavorite, favorites, recentFoods, dailySummary } =
     useNutritionStore();
-  const totals = useDailyTotals();
+  const selectedDate = useNutritionStore((state) => state.selectedDate);
+  const targets = dailySummary?.date === selectedDate ? dailySummary.targets : null;
 
   // Try finding food in memory first
   const initialFood =
@@ -141,9 +142,9 @@ export function FoodDetailScreen() {
   const scaled = scaleFood(food, servings);
 
   const facts = [
-    { label: 'Protein', value: scaled.protein, goal: dailySummary?.targets?.proteinG ?? null },
-    { label: 'Carbohydrates', value: scaled.carbs, goal: dailySummary?.targets?.carbsG ?? null },
-    { label: 'Fat', value: scaled.fat, goal: dailySummary?.targets?.fatG ?? null },
+    { label: 'Protein', value: scaled.protein, goal: targets?.proteinG ?? null },
+    { label: 'Carbohydrates', value: scaled.carbs, goal: targets?.carbsG ?? null },
+    { label: 'Fat', value: scaled.fat, goal: targets?.fatG ?? null },
     { label: 'Fiber', value: scaled.fiber, goal: null },
   ];
 
@@ -201,7 +202,7 @@ export function FoodDetailScreen() {
           {food.isVerified && (
             <View style={[styles.verifiedPill, { backgroundColor: colors.surface2 }]}>
               <CheckCircle2 size={12} color={colors.accent} />
-              <Text style={[styles.verifiedText, { color: colors.ink }]}>USDA Verified</Text>
+              <Text style={[styles.verifiedText, { color: colors.ink }]}>Verified food</Text>
             </View>
           )}
           {food.isCustom && (
@@ -353,6 +354,8 @@ const styles = StyleSheet.create({
   },
   macroRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 12,

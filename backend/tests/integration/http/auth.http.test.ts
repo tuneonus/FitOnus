@@ -171,6 +171,34 @@ describe('auth API', () => {
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe('ACCOUNT_DISABLED');
   });
+
+  it('validates and safely handles password reset endpoints without fake delivery', async () => {
+    // Malformed email fails validation
+    const badForgot = await api().post('/api/v1/auth/forgot-password').send({ email: 'not-an-email' });
+    expect(badForgot.status).toBe(400);
+    expect(badForgot.body.error.code).toBe('VALIDATION_FAILED');
+
+    // Valid email returns 503 with truthful service unavailable error
+    const goodForgot = await api().post('/api/v1/auth/forgot-password').send({ email: 'valid@example.org' });
+    expect(goodForgot.status).toBe(503);
+    expect(goodForgot.body.error.code).toBe('SERVICE_UNAVAILABLE');
+    expect(goodForgot.body.error.message).toMatch(/not configured/i);
+
+    // Malformed reset request (short password) fails validation
+    const badReset = await api()
+      .post('/api/v1/auth/reset-password')
+      .send({ token: 'sample-token', newPassword: 'short' });
+    expect(badReset.status).toBe(400);
+    expect(badReset.body.error.code).toBe('VALIDATION_FAILED');
+
+    // Valid reset request returns 503 with truthful service unavailable error
+    const goodReset = await api()
+      .post('/api/v1/auth/reset-password')
+      .send({ token: 'sample-token', newPassword: 'sufficiently-long-password-123' });
+    expect(goodReset.status).toBe(503);
+    expect(goodReset.body.error.code).toBe('SERVICE_UNAVAILABLE');
+    expect(goodReset.body.error.message).toMatch(/unavailable/i);
+  });
 });
 
 describe('auth API defaults', () => {

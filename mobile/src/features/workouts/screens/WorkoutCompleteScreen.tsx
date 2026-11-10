@@ -1,6 +1,6 @@
 import { premium } from '@/shared/theme/premium';
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Trophy } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
@@ -63,10 +63,9 @@ export function WorkoutCompleteScreen() {
   ];
 
   const save = () => {
-    if (saved.current) return;
+    if (saved.current || lastCompleted.sets <= 0) return;
     saved.current = true;
     saveCompleted();
-    showToast({ message: 'Workout saved' });
     reset('home');
   };
 
@@ -81,6 +80,7 @@ export function WorkoutCompleteScreen() {
         },
       ]}
     >
+      <StatusBar barStyle="light-content" />
       <ScrollView
         style={styles.scrollArea}
         contentContainerStyle={styles.scrollContent}
@@ -189,7 +189,14 @@ export function WorkoutCompleteScreen() {
 
       {/* Bottom Save & Discard buttons */}
       <View style={styles.bottomBar}>
-        <Button appearance="premium" size="lg" fullWidth title="Save workout" onPress={save} />
+        <Button
+          appearance="premium"
+          size="lg"
+          fullWidth
+          disabled={lastCompleted.sets <= 0}
+          title="Save workout"
+          onPress={save}
+        />
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => setDiscard(true)}

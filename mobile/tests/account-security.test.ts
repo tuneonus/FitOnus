@@ -11,6 +11,7 @@ import {
 import { useNotificationsStore } from '../src/features/notifications/store/notificationsStore';
 import { useChallengesStore } from '../src/features/challenges/store/challengesStore';
 import { apiClient } from '../src/services/api-client';
+import { authService } from '../src/features/auth/services/authService';
 
 describe('Phase 9.4 Mobile: Account Security, Privacy & Secure Deletion', () => {
   const memoryStorage = new Map<string, string>();
@@ -380,6 +381,55 @@ describe('Phase 9.4 Mobile: Account Security, Privacy & Secure Deletion', () => 
         assert.equal(useSettingsStore.getState().theme, 'system');
       } finally {
         apiClient.post = originalLogout;
+      }
+    });
+  });
+
+  describe('7. Password Reset & Forgot Password Handling', () => {
+    it('dispatches forgot-password and propagates errors safely', async () => {
+      const originalPost = apiClient.post;
+      let interceptedUrl = '';
+      let interceptedBody: any = null;
+      apiClient.post = (url: string, body?: any) => {
+        interceptedUrl = url;
+        interceptedBody = body;
+        return Promise.reject({
+          response: {
+            status: 503,
+            data: {
+              error: {
+                code: 'SERVICE_UNAVAILABLE',
+                message: 'Password reset email delivery service is currently not configured.',
+              },
+            },
+          },
+        });
+      };
+
+      try {
+        const res = await authService.requestReset('user@example.com');
+        assert.equal(interceptedUrl, '/auth/forgot-password');
+        assert.deepEqual(interceptedBody, { email: 'user@example.com' });
+        assert.equal(res.ok, false);
+        if (!res.ok) {
+          assert.match(res.error, /not configured/i);
+        }
+      } finally {
+        apiClient.post = originalPost;
+      }
+    });
+
+    it('requires token and minimum length on password reset', async () => {
+      const missingToken = await authService.resetPassword({ token: '', newPassword: 'AValidPassword123!' });
+      assert.equal(missingToken.ok, false);
+      if (!missingToken.ok) {
+        assert.match(missingToken.error, /token is required/i);
+      }
+
+      const shortPassword = await authService.resetPassword({ token: 'abc', newPassword: 'short' });
+      assert.equal(shortPassword.ok, false);
+      if (!shortPassword.ok) {
+        assert.match(shortPassword.error, /at least 12 characters/i);
       }
     });
   });

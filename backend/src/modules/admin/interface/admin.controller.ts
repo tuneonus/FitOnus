@@ -40,6 +40,12 @@ const clientMeta = (req: Request) => ({
 
 export type AdminController = ReturnType<typeof createAdminController>;
 
+export const ADMIN_NO_CACHE_HEADERS: Readonly<Record<string, string>> = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+};
+
 export function createAdminController(useCases: AdminUseCases, isProduction: boolean) {
   const sameSite = isProduction ? 'None' : 'Lax';
   const cookieSecurity = isProduction ? '; Secure; Partitioned' : '';
@@ -62,8 +68,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
         },
         headers: {
           'Set-Cookie': cookieHeader,
-          'Cache-Control': 'no-store',
-          Pragma: 'no-cache',
+          ...ADMIN_NO_CACHE_HEADERS,
         },
       };
     },
@@ -80,6 +85,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
           role: 'admin',
           permissions: Array.from(actor.permissions),
         },
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
 
@@ -93,6 +99,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
         data: { message: 'Logged out successfully' },
         headers: {
           'Set-Cookie': clearCookie,
+          ...ADMIN_NO_CACHE_HEADERS,
         },
       };
     },
@@ -108,6 +115,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
           message: 'Password changed successfully',
           revokedSessions: result.revokedSessions,
         },
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
 
@@ -122,6 +130,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
             createdAt: u.createdAt.toISOString(),
           })),
         },
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
 
@@ -130,6 +139,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
       const activity = await useCases.getUserActivity.execute({ userId: params.id });
       return {
         data: activity,
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
 
@@ -139,6 +149,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
       return {
         data: items,
         meta,
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
 
@@ -147,6 +158,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
       const detail = await useCases.getAdminUser.execute(params.id);
       return {
         data: detail,
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
 
@@ -163,6 +175,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
       return {
         data: updated,
         message: 'User account suspended.',
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
 
@@ -179,6 +192,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
       return {
         data: updated,
         message: 'User account reactivated.',
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
 
@@ -188,6 +202,7 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
       return {
         data: items,
         meta,
+        headers: ADMIN_NO_CACHE_HEADERS,
       };
     },
   };

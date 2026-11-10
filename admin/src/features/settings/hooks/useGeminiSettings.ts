@@ -73,20 +73,45 @@ export function useGeminiSettings() {
       ]);
 
       setConfig(cfg);
-      setModels(mdls);
-      setUsageSummary(summary);
-      setFeatureBreakdown(feat);
-      setModelBreakdown(mdl);
-      setTrends(trnds);
-      setEvents(evts.events);
-      setEventsTotal(evts.total);
+
+      const normalizedModels = (mdls || []).map((m: any) => ({
+        ...m,
+        id: m.model || m.id,
+        model: m.model || m.id,
+      }));
+      setModels(normalizedModels);
+
+      const normalizedSummary: GeminiUsageSummaryResponse = {
+        todayRequests: summary?.todayRequests ?? 0,
+        monthlyRequests: summary?.monthlyRequests ?? (summary as any)?.monthRequests ?? 0,
+        monthRequests: summary?.monthlyRequests ?? (summary as any)?.monthRequests ?? 0,
+        totalTokens: summary?.totalTokens ?? 0,
+        inputTokens: summary?.inputTokens ?? (summary as any)?.promptTokens ?? 0,
+        outputTokens: summary?.outputTokens ?? (summary as any)?.completionTokens ?? 0,
+        promptTokens: summary?.inputTokens ?? (summary as any)?.promptTokens ?? 0,
+        completionTokens: summary?.outputTokens ?? (summary as any)?.completionTokens ?? 0,
+        cachedTokens: summary?.cachedTokens ?? 0,
+        estimatedMonthlyCostUsd: summary?.estimatedMonthlyCostUsd ?? (summary as any)?.estimatedCostUsd ?? 0,
+        estimatedCostUsd: summary?.estimatedMonthlyCostUsd ?? (summary as any)?.estimatedCostUsd ?? 0,
+        estimatedCostInr: (summary as any)?.estimatedCostInr ?? ((summary?.estimatedMonthlyCostUsd ?? (summary as any)?.estimatedCostUsd ?? 0) * 86.5),
+        failedRequests: summary?.failedRequests ?? 0,
+        avgDurationMs: summary?.avgDurationMs ?? 0,
+      };
+      setUsageSummary(normalizedSummary);
+      setFeatureBreakdown(feat || []);
+      setModelBreakdown(mdl || []);
+      setTrends(trnds || []);
+
+      const eventList = evts?.items || evts?.events || [];
+      setEvents(eventList);
+      setEventsTotal(evts?.total ?? eventList.length);
 
       setModelDraft({
-        defaultModel: cfg.defaultModel,
-        coachModel: cfg.coachModel,
-        mealPhotoModel: cfg.mealPhotoModel,
-        voiceMealModel: cfg.voiceMealModel,
-        workoutGeneratorModel: cfg.workoutGeneratorModel,
+        defaultModel: cfg.defaultModel || 'gemini-2.5-flash',
+        coachModel: cfg.featureModels?.aiCoach || cfg.coachModel || cfg.defaultModel || 'gemini-2.5-flash',
+        mealPhotoModel: cfg.featureModels?.mealPhotoScanner || cfg.mealPhotoModel || cfg.defaultModel || 'gemini-2.5-flash',
+        voiceMealModel: cfg.featureModels?.voiceMealEntry || cfg.voiceMealModel || cfg.defaultModel || 'gemini-2.5-flash',
+        workoutGeneratorModel: cfg.featureModels?.workoutGenerator || cfg.workoutGeneratorModel || cfg.defaultModel || 'gemini-2.5-flash',
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load Gemini AI configuration';
@@ -109,8 +134,9 @@ export function useGeminiSettings() {
         offset,
         feature: feature || undefined,
       });
-      setEvents(res.events);
-      setEventsTotal(res.total);
+      const eventList = res?.items || res?.events || [];
+      setEvents(eventList);
+      setEventsTotal(res?.total ?? eventList.length);
       setEventsOffset(offset);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to query telemetry events';
@@ -123,12 +149,17 @@ export function useGeminiSettings() {
   // Track if model overrides have unsaved changes
   const isModelDraftDirty = useMemo(() => {
     if (!config) return false;
+    const currentCoach = config.featureModels?.aiCoach || config.coachModel;
+    const currentMeal = config.featureModels?.mealPhotoScanner || config.mealPhotoModel;
+    const currentVoice = config.featureModels?.voiceMealEntry || config.voiceMealModel;
+    const currentWorkout = config.featureModels?.workoutGenerator || config.workoutGeneratorModel;
+
     return (
       modelDraft.defaultModel !== config.defaultModel ||
-      modelDraft.coachModel !== config.coachModel ||
-      modelDraft.mealPhotoModel !== config.mealPhotoModel ||
-      modelDraft.voiceMealModel !== config.voiceMealModel ||
-      modelDraft.workoutGeneratorModel !== config.workoutGeneratorModel
+      modelDraft.coachModel !== currentCoach ||
+      modelDraft.mealPhotoModel !== currentMeal ||
+      modelDraft.voiceMealModel !== currentVoice ||
+      modelDraft.workoutGeneratorModel !== currentWorkout
     );
   }, [config, modelDraft]);
 
@@ -139,6 +170,12 @@ export function useGeminiSettings() {
     try {
       const updated = await geminiAdminApi.updateConfiguration({
         defaultModel: modelDraft.defaultModel,
+        featureModels: {
+          aiCoach: modelDraft.coachModel,
+          mealPhotoScanner: modelDraft.mealPhotoModel,
+          voiceMealEntry: modelDraft.voiceMealModel,
+          workoutGenerator: modelDraft.workoutGeneratorModel,
+        },
         coachModel: modelDraft.coachModel,
         mealPhotoModel: modelDraft.mealPhotoModel,
         voiceMealModel: modelDraft.voiceMealModel,
@@ -147,11 +184,11 @@ export function useGeminiSettings() {
       });
       setConfig(updated);
       setModelDraft({
-        defaultModel: updated.defaultModel,
-        coachModel: updated.coachModel,
-        mealPhotoModel: updated.mealPhotoModel,
-        voiceMealModel: updated.voiceMealModel,
-        workoutGeneratorModel: updated.workoutGeneratorModel,
+        defaultModel: updated.defaultModel || 'gemini-2.5-flash',
+        coachModel: updated.featureModels?.aiCoach || updated.coachModel || updated.defaultModel || 'gemini-2.5-flash',
+        mealPhotoModel: updated.featureModels?.mealPhotoScanner || updated.mealPhotoModel || updated.defaultModel || 'gemini-2.5-flash',
+        voiceMealModel: updated.featureModels?.voiceMealEntry || updated.voiceMealModel || updated.defaultModel || 'gemini-2.5-flash',
+        workoutGeneratorModel: updated.featureModels?.workoutGenerator || updated.workoutGeneratorModel || updated.defaultModel || 'gemini-2.5-flash',
       });
       toast.success('Gemini model configurations updated successfully.');
     } catch (err: unknown) {

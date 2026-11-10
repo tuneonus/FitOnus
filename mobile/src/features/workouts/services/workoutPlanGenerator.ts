@@ -4,7 +4,6 @@
  * available equipment, experience level, and duration targets.
  */
 import type { PlannedExercise, WorkoutSession } from '../types/workout';
-import { exercises as fallbackExercises } from '../data/workoutsMock';
 import { WorkoutService } from './workout-service';
 import { logger } from '@/utils/logger';
 
@@ -26,15 +25,20 @@ export async function generateWorkoutPlan(
 ): Promise<GeneratedPlanResult> {
   const { goal, durationMin, equipment, level, hasRecovery } = params;
 
-  // 1. Fetch available exercises from database or fallback catalog
-  let allExercises = fallbackExercises;
+  // 1. Fetch available exercises strictly from database/service
+  let allExercises: any[] = [];
   try {
     const backendExercises = await WorkoutService.getExercises();
-    if (backendExercises.length >= 4) {
-      allExercises = backendExercises as any;
+    if (backendExercises && backendExercises.length > 0) {
+      allExercises = backendExercises as any[];
     }
   } catch (err) {
-    logger.warn('Using local exercise catalog for workout generator:', err);
+    logger.warn('Failed to load exercises for workout generator:', err);
+    throw new Error('Could not retrieve exercise catalog');
+  }
+
+  if (allExercises.length === 0) {
+    throw new Error('No exercises available in catalog to generate a plan');
   }
 
   // 2. Filter exercises by user equipment
@@ -52,11 +56,15 @@ export async function generateWorkoutPlan(
     );
   });
 
-  const pool = suitableExercises.length >= 3 ? suitableExercises : allExercises;
+  const pool = suitableExercises.length > 0 ? suitableExercises : allExercises;
+  if (pool.length === 0) {
+    throw new Error('No suitable exercises found to generate a workout plan');
+  }
 
   // 3. Determine exercise count based on duration
   const targetCount = durationMin <= 30 ? 3 : durationMin <= 45 ? 5 : durationMin <= 60 ? 6 : 7;
-  const selectedPool = [...pool].sort(() => 0.5 - Math.random()).slice(0, targetCount);
+  const count = Math.min(targetCount, pool.length);
+  const selectedPool = [...pool].sort(() => 0.5 - Math.random()).slice(0, count);
 
   // 4. Configure reps, sets, and rest based on goal
   let defaultSets = 3;

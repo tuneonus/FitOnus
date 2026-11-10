@@ -372,5 +372,33 @@ describe('Admin Authentication Session Persistence & Redirect Verification (Step
       globalThis.fetch = originalFetch;
     }
   });
+
+  // 10. Cache bypass headers and no-store mode are enforced
+  it('10. Cache bypass headers and no-store mode are enforced: prevents browser caching of admin lists', async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedHeaders: Headers | null = null;
+    let capturedCache: RequestCache | undefined = undefined;
+
+    globalThis.fetch = async (_url: any, init?: any) => {
+      capturedHeaders = init?.headers as Headers;
+      capturedCache = init?.cache;
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ success: true, data: { ok: true } }),
+      } as any;
+    };
+
+    try {
+      await apiClient('/users?page=1&limit=10');
+      assert.ok(capturedHeaders);
+      assert.equal(capturedHeaders.get('Cache-Control'), 'no-cache, no-store, must-revalidate');
+      assert.equal(capturedHeaders.get('Pragma'), 'no-cache');
+      assert.equal(capturedCache, 'no-store');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
 

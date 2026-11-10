@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, BorderRadius } from '@/constants/theme';
@@ -11,6 +12,7 @@ import { showToast } from '@/shared/stores/toastStore';
 
 export default function QuickLogModal() {
   const router = useRouter();
+  const { navigate } = useNavigation();
   const { colors, isDark } = useTheme();
 
   return (
@@ -35,8 +37,8 @@ export default function QuickLogModal() {
           <Pressable 
             style={[styles.actionBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             onPress={() => {
-              showToast({ message: 'Opening weight tracker...' });
               router.back();
+              navigate('weight');
             }}
           >
             <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
@@ -63,7 +65,7 @@ export default function QuickLogModal() {
             style={[styles.actionBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             onPress={() => {
               router.back();
-              router.push('/(tabs)/workouts');
+              navigate('workouts');
             }}
           >
             <View style={[styles.iconCircle, { backgroundColor: '#FCE7F3' }]}>

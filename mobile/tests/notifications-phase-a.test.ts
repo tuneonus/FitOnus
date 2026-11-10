@@ -22,6 +22,7 @@ import {
   setSettingsStorageEngine,
   bindAuthToSettings,
 } from '../src/shared/stores/settingsStore';
+import { useNotificationsStore } from '../src/features/notifications/store/notificationsStore';
 
 describe('Phase A Notification System & Local Reminders', () => {
   // In-Memory Test Notification Engine
@@ -524,6 +525,12 @@ describe('Phase A Notification System & Local Reminders', () => {
       );
       assert.equal(scheduledId, null);
       assert.equal(scheduledList.length, 0);
+    });
+
+    it('verifies notificationsStore initializes with empty items and zero dummy records', () => {
+      useNotificationsStore.getState().resetStore();
+      const { items } = useNotificationsStore.getState();
+      assert.deepEqual(items, []);
     });
   });
 });

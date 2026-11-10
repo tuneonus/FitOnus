@@ -11,7 +11,9 @@ import { ProgressRing } from '../../../shared/components/charts/ProgressRing';
 import { BarChart } from '../../../shared/components/charts/BarChart';
 import { useHasDeviceData, useHealthStore } from '../../health-integration/store/healthStore';
 import { useWorkoutStore } from '../../workouts/store/workoutStore';
-import { ActivityType, activityTypes, hourlySteps, todayActivity, weeklyActivity } from '../data/activityMock';
+import { useWeightStore } from '../../weight-tracking/store/weightStore';
+import { useHomeOverview } from '@/features/home/hooks/use-home-overview';
+import { ActivityType, activityTypes, hourlySteps, weeklyActivity } from '../data/activityMock';
 import { useTheme } from '@/hooks/use-theme';
 
 export function ActivityScreen() {
@@ -20,17 +22,31 @@ export function ActivityScreen() {
   const hasDevice = useHasDeviceData();
   const status = useHealthStore((s) => s.status);
   const plannedSession = useWorkoutStore((s) => s.plannedSession);
+  const { dashboard } = useHomeOverview();
+  const summary = dashboard.data?.summary;
+  const weightEntries = useWeightStore((s) => s.entries);
+  const lastWeight = weightEntries[0]?.value ?? summary?.weight ?? null;
   const [view, setView] = useState<'today' | 'week'>('today');
-  const a = todayActivity;
+
+  const activeCalories = summary?.caloriesBurned ?? 0;
+  const activeMinutes = summary?.activeMinutes ?? 0;
+  const steps = summary?.steps ?? null;
+  const hasSteps = steps !== null && steps > 0;
+
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date());
 
   const rings = [
-    { label: 'Active calories', value: a.activeCalories, goal: 650, color: colors.move, size: 168 },
-    { label: 'Active minutes', value: a.activeMinutes, goal: 45, color: colors.accent, size: 134 },
-    { label: 'Steps', value: a.steps, goal: a.stepGoal, color: colors.sky, size: 100 },
+    { label: 'Active calories', value: activeCalories, goal: 650, color: colors.move, size: 168, unavailable: false },
+    { label: 'Active minutes', value: activeMinutes, goal: 45, color: colors.accent, size: 134, unavailable: false },
+    { label: 'Steps', value: steps ?? 0, goal: 10000, color: colors.sky, size: 100, unavailable: steps === null },
   ];
 
   return (
-    <Screen largeTitle="Activity" subtitle="Friday, October 9" showBack={false}>
+    <Screen largeTitle="Activity" subtitle={formattedDate} showBack={false}>
       <View style={styles.content}>
         {status === 'offline' && (
           <StatusBanner
@@ -94,11 +110,12 @@ export function ActivityScreen() {
                       {r.label}
                     </Text>
                     <Text style={[styles.ringMetricValue, { color: colors.ink }]}>
-                      {r.value.toLocaleString()}
-                      <Text style={[styles.ringMetricGoal, { color: colors.muted }]}>
-                        {' '}
-                        /{r.goal.toLocaleString()}
-                      </Text>
+                      {r.unavailable ? 'No tracker' : r.value.toLocaleString()}
+                      {!r.unavailable && (
+                        <Text style={[styles.ringMetricGoal, { color: colors.muted }]}>
+                          {' '}/{r.goal.toLocaleString()}
+                        </Text>
+                      )}
                     </Text>
                   </View>
                 ))}
@@ -108,9 +125,9 @@ export function ActivityScreen() {
             {/* Distance, Floors, Active cal */}
             <View style={[styles.statsGrid, { borderTopColor: colors.line }]}>
               {[
-                ['Distance', `${a.distanceKm} km`],
-                ['Floors', `${a.floors}`],
-                ['Active cal', `${a.activeCalories}`],
+                ['Distance', hasSteps ? `${((steps ?? 0) * 0.00075).toFixed(1)} km` : '—'],
+                ['Floors', hasSteps ? '—' : '—'],
+                ['Active cal', `${activeCalories}`],
               ].map(([l, v]) => (
                 <View key={l} style={styles.statCol}>
                   <Text style={[styles.statLabel, { color: colors.muted }]}>{l}</Text>
@@ -122,9 +139,9 @@ export function ActivityScreen() {
             <View style={styles.sourceTagRow}>
               <SourceTag
                 source={
-                  hasDevice
-                    ? { kind: 'synced', label: 'iPhone + Apple Watch · 9:38 AM' }
-                    : { kind: 'estimated', label: 'iPhone motion only · calories estimated' }
+                  hasDevice && hasSteps
+                    ? { kind: 'synced', label: 'Wearable synced' }
+                    : { kind: 'estimated', label: 'Workout activity logged · No step tracker connected' }
                 }
               />
             </View>
@@ -142,15 +159,25 @@ export function ActivityScreen() {
             <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>
               Steps this week
             </Text>
-            <Text style={[styles.bigNumber, { color: colors.ink }]}>55,590</Text>
-            <View style={{ marginTop: 12 }}>
-              <BarChart
-                data={weeklyActivity}
-                goal={10000}
-                barColor={colors.sky}
-                height={120}
-              />
-            </View>
+            {hasSteps ? (
+              <>
+                <Text style={[styles.bigNumber, { color: colors.ink }]}>{steps?.toLocaleString()}</Text>
+                <View style={{ marginTop: 12 }}>
+                  <BarChart
+                    data={weeklyActivity}
+                    goal={10000}
+                    barColor={colors.sky}
+                    height={120}
+                  />
+                </View>
+              </>
+            ) : (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center' }}>
+                  No pedometer or wearable device connected.
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -165,14 +192,22 @@ export function ActivityScreen() {
             ]}
           >
             <Text style={[styles.cardTitle, { color: colors.ink }]}>Steps by hour</Text>
-            <View style={{ marginTop: 12 }}>
-              <BarChart
-                data={hourlySteps}
-                barColor={colors.sky}
-                height={90}
-                highlightIndex={1}
-              />
-            </View>
+            {hasSteps ? (
+              <View style={{ marginTop: 12 }}>
+                <BarChart
+                  data={hourlySteps}
+                  barColor={colors.sky}
+                  height={90}
+                  highlightIndex={1}
+                />
+              </View>
+            ) : (
+              <View style={{ paddingVertical: 14 }}>
+                <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+                  Hourly breakdown requires a connected wearable or pedometer.
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -223,7 +258,7 @@ export function ActivityScreen() {
               Workouts
             </Text>
             <Text style={[styles.workoutNavSubtitle, { color: colors.muted }]}>
-              Today: {plannedSession.title} · plans, library, records
+              {plannedSession ? `Today: ${plannedSession.title}` : 'No session planned'} · plans, library, records
             </Text>
           </View>
           <ChevronRight size={18} color={colors.muted} />
@@ -235,20 +270,28 @@ export function ActivityScreen() {
             icon={HeartPulse}
             iconColor={colors.accent}
             title="Recovery"
-            subtitle={hasDevice ? '84 · Train hard' : 'Needs a wearable'}
+            subtitle={
+              summary?.recoveryScore != null
+                ? `${summary.recoveryScore} · Synced`
+                : 'Needs a wearable'
+            }
             onPress={() => navigate('recovery')}
           />
           <ListRow
             icon={Moon}
             iconColor={colors.sleep}
             title="Sleep"
-            subtitle={hasDevice ? '7h 45m · Score 88' : 'Needs a wearable'}
+            subtitle={
+              summary?.sleepScore != null && summary?.sleepDuration
+                ? `${summary.sleepDuration} · Score ${summary.sleepScore}`
+                : 'Needs a wearable'
+            }
             onPress={() => navigate('sleep')}
           />
           <ListRow
             icon={Scale}
             title="Weight & body"
-            subtitle="78.4 kg · −1.6 kg in 3 weeks"
+            subtitle={lastWeight != null ? `${lastWeight.toFixed(1)} kg · Logged` : 'Log your weight'}
             onPress={() => navigate('weight')}
           />
         </ListGroup>

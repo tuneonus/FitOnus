@@ -1,3 +1,5 @@
+import { TextField } from '@/shared/components/ui/TextField';
+import { ActionButton } from '@/shared/components/ui/ActionButton';
 import { useReducedMotion } from 'react-native-reanimated';
 import { premium } from '@/shared/theme/premium';
 import React, { useEffect, useRef, useState } from 'react';
@@ -27,7 +29,7 @@ import { useTheme } from '@/hooks/use-theme';
 import type { FoodItem, MealType } from '../types/nutrition';
 import { VoiceMealApi } from '../../ai-coach/services/voice-meal-api';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 
 type Phase = 'idle' | 'listening' | 'processing' | 'review' | 'error';
 
@@ -98,9 +100,7 @@ export function VoiceMealEntryScreen() {
         throw new Error('No audio file was recorded.');
       }
 
-      const audioBase64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: 'base64',
-      });
+      const audioBase64 = await new File(uri).base64();
 
       const result = await VoiceMealApi.parseVoiceMeal({
         audio: audioBase64,
@@ -338,6 +338,25 @@ export function VoiceMealEntryScreen() {
                 (transcript || (
                   <Text style={{ color: colors.muted }}>Recording… Tap stop when you’re done.</Text>
                 ))}
+              {phase === 'idle' ? (
+                <View style={{ width: '100%', gap: 12, marginTop: 24 }}>
+                  <TextField
+                    appearance="premium"
+                    label="Meal description"
+                    placeholder="Or type your meal and portions"
+                    value={manualText}
+                    onChangeText={setManualText}
+                    multiline
+                  />
+                  <ActionButton
+                    title="Review meal description"
+                    variant="secondary"
+                    disabled={!manualText.trim()}
+                    onPress={handleParseManualText}
+                  />
+                </View>
+              ) : null}
+
               {phase === 'processing' && (transcript || 'Analyzing food items…')}
               {phase === 'error' && (
                 <Text style={{ color: colors.bad }}>

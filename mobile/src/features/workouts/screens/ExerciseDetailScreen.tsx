@@ -23,23 +23,56 @@ export function ExerciseDetailScreen() {
   const { navigate } = useNavigation();
   const catalog = useWorkoutStore((state) => state.catalog);
   const cached = catalog.find((exercise) => exercise.id === id || exercise.slug === id);
-  const details = useQuery({ queryKey: ['exercises', 'detail', id], queryFn: () => workoutApi.getExerciseById(id!), enabled: Boolean(id && /^[0-9a-f-]{36}$/i.test(id)), retry: 1 });
+  const details = useQuery({
+    queryKey: ['exercises', 'detail', id],
+    queryFn: () => workoutApi.getExerciseById(id!),
+    enabled: Boolean(id && /^[0-9a-f-]{36}$/i.test(id)),
+    retry: 1,
+  });
   const ex = details.data ?? cached;
   const [prRecords, setPrRecords] = React.useState<PersonalRecordView[]>([]);
 
+  const exerciseId = ex?.id;
   React.useEffect(() => {
-    if (!ex) return;
-    WorkoutService.getPersonalRecords(ex.id)
+    if (!exerciseId) return;
+    WorkoutService.getPersonalRecords(exerciseId)
       .then(setPrRecords)
       .catch(() => {});
-  }, [ex?.id]);
+  }, [exerciseId]);
 
   const bestPr = prRecords[0];
-  if (!ex) return <Screen title="Exercise details">{details.isLoading ? <Skeleton height={160} /> : <EmptyState appearance="premium" icon={Dumbbell} title="Exercise unavailable" body="Try loading this exercise again, or return to the library." actionLabel="Retry" onAction={() => { void details.refetch(); }} />}</Screen>;
+  if (!ex)
+    return (
+      <Screen title="Exercise details">
+        {details.isLoading ? (
+          <Skeleton height={160} />
+        ) : (
+          <EmptyState
+            appearance="premium"
+            icon={Dumbbell}
+            title="Exercise unavailable"
+            body="Try loading this exercise again, or return to the library."
+            actionLabel="Retry"
+            onAction={() => {
+              void details.refetch();
+            }}
+          />
+        )}
+      </Screen>
+    );
 
   return (
     <Screen title={ex.name}>
-      {details.isError ? <StatusBanner tone="warning" title="Showing saved exercise details" actionLabel="Retry" onAction={() => { void details.refetch(); }} /> : null}
+      {details.isError ? (
+        <StatusBanner
+          tone="warning"
+          title="Showing saved exercise details"
+          actionLabel="Retry"
+          onAction={() => {
+            void details.refetch();
+          }}
+        />
+      ) : null}
       {ex.image ? (
         <Image source={{ uri: ex.image }} style={styles.heroImage} />
       ) : (

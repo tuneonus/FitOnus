@@ -8,6 +8,7 @@ import { SourceTag } from '@/shared/components/ui/SourceTag';
 import { ProgressRing } from '@/shared/components/charts/ProgressRing';
 import { LineChart } from '@/shared/components/charts/LineChart';
 import { useHealthStore } from '../../health-integration/store/healthStore';
+import { useDashboard } from '@/features/dashboard/hooks/use-dashboard';
 import { recommendationLevels, recoveryInputs, recoveryTrend } from '../data/recoveryMock';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -15,8 +16,10 @@ export function RecoveryScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const status = useHealthStore((s) => s.status);
-  const hasData = status === 'synced' || status === 'offline' || status === 'error';
-  const score = 84;
+  const { data: dashboardData } = useDashboard();
+  const serverScore = dashboardData?.summary?.recoveryScore;
+  const hasData = serverScore != null && (status === 'synced' || status === 'offline');
+  const score = serverScore ?? 0;
   const active = score >= 70 ? 'hard' : score >= 40 ? 'moderate' : 'rest';
 
   if (!hasData) {

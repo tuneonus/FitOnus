@@ -45,15 +45,15 @@ interface GeminiAnalyticsSectionProps {
 
 export function GeminiAnalyticsSection({
   summary,
-  featureBreakdown,
-  modelBreakdown,
-  trends,
-  events,
-  eventsTotal,
-  eventsLimit,
-  eventsOffset,
-  eventsFeatureFilter,
-  isRefreshingEvents,
+  featureBreakdown = [],
+  modelBreakdown = [],
+  trends = [],
+  events = [],
+  eventsTotal = 0,
+  eventsLimit = 15,
+  eventsOffset = 0,
+  eventsFeatureFilter = '',
+  isRefreshingEvents = false,
   onFilterChange,
   onPageChange,
 }: GeminiAnalyticsSectionProps) {
@@ -65,6 +65,17 @@ export function GeminiAnalyticsSection({
     );
   }
 
+  // Defensive extraction to support both backend DTO naming variants
+  const todayRequests = summary.todayRequests ?? 0;
+  const monthlyRequests = summary.monthlyRequests ?? summary.monthRequests ?? 0;
+  const totalTokens = summary.totalTokens ?? 0;
+  const inputTokens = summary.inputTokens ?? summary.promptTokens ?? 0;
+  const outputTokens = summary.outputTokens ?? summary.completionTokens ?? 0;
+  const costUsd = summary.estimatedMonthlyCostUsd ?? summary.estimatedCostUsd ?? 0;
+  const costInr = summary.estimatedCostInr ?? (costUsd * 86.5);
+  const avgDurationMs = summary.avgDurationMs ?? 0;
+  const failedRequests = summary.failedRequests ?? 0;
+
   const currentPage = Math.floor(eventsOffset / eventsLimit) + 1;
   const totalPages = Math.max(1, Math.ceil(eventsTotal / eventsLimit));
 
@@ -74,44 +85,44 @@ export function GeminiAnalyticsSection({
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatsCard
           title="Today Requests"
-          value={summary.todayRequests.toLocaleString()}
+          value={todayRequests.toLocaleString()}
           subtitle="All Gemini calls today"
           icon={<Activity className="h-4 w-4" />}
           accent="teal"
         />
         <StatsCard
           title="Month Requests"
-          value={summary.monthRequests.toLocaleString()}
+          value={monthlyRequests.toLocaleString()}
           subtitle="Monthly API volume"
           icon={<BarChart3 className="h-4 w-4" />}
           accent="cyan"
         />
         <StatsCard
           title="Total Tokens"
-          value={summary.totalTokens >= 1_000_000
-            ? `${(summary.totalTokens / 1_000_000).toFixed(2)}M`
-            : summary.totalTokens.toLocaleString()}
-          subtitle={`${summary.promptTokens.toLocaleString()} in / ${summary.completionTokens.toLocaleString()} out`}
+          value={totalTokens >= 1_000_000
+            ? `${(totalTokens / 1_000_000).toFixed(2)}M`
+            : totalTokens.toLocaleString()}
+          subtitle={`${inputTokens.toLocaleString()} in / ${outputTokens.toLocaleString()} out`}
           icon={<Cpu className="h-4 w-4" />}
           accent="purple"
         />
         <StatsCard
           title="Estimated Cost"
-          value={`$${summary.estimatedCostUsd.toFixed(4)}`}
-          subtitle={`≈ ₹${summary.estimatedCostInr.toFixed(2)} INR`}
+          value={`$${costUsd.toFixed(4)}`}
+          subtitle={`≈ ₹${costInr.toFixed(2)} INR`}
           icon={<DollarSign className="h-4 w-4" />}
           accent="emerald"
         />
         <StatsCard
           title="Avg Latency"
-          value={`${summary.avgDurationMs}ms`}
+          value={`${avgDurationMs}ms`}
           subtitle="Round-trip duration"
           icon={<Clock className="h-4 w-4" />}
           accent="amber"
         />
         <StatsCard
           title="Errors / Failures"
-          value={summary.failedRequests}
+          value={failedRequests}
           subtitle="Failed requests"
           icon={<AlertTriangle className="h-4 w-4" />}
           accent="rose"
@@ -146,7 +157,7 @@ export function GeminiAnalyticsSection({
                   </tr>
                 ) : (
                   featureBreakdown.map((row) => (
-                    <tr key={row.feature} className="hover:bg-slate-800/30">
+                    <tr key={`feat-${row.feature}`} className="hover:bg-slate-800/30">
                       <td className="py-2.5 font-medium text-slate-200 capitalize flex items-center gap-2">
                         {row.feature === 'coach_chat' && <Bot className="h-3.5 w-3.5 text-emerald-400" />}
                         {row.feature === 'meal_photo' && <Camera className="h-3.5 w-3.5 text-purple-400" />}
@@ -155,13 +166,13 @@ export function GeminiAnalyticsSection({
                         {row.feature.replace(/_/g, ' ')}
                       </td>
                       <td className="py-2.5 text-right font-mono text-slate-300">
-                        {row.requestCount.toLocaleString()}
+                        {(row.requestCount ?? 0).toLocaleString()}
                       </td>
                       <td className="py-2.5 text-right font-mono text-slate-400">
-                        {row.totalTokens.toLocaleString()}
+                        {(row.totalTokens ?? 0).toLocaleString()}
                       </td>
                       <td className="py-2.5 text-right font-mono font-medium text-emerald-400">
-                        ${row.estimatedCostUsd.toFixed(4)}
+                        ${(row.estimatedCostUsd ?? 0).toFixed(4)}
                       </td>
                     </tr>
                   ))
@@ -197,18 +208,18 @@ export function GeminiAnalyticsSection({
                   </tr>
                 ) : (
                   modelBreakdown.map((row) => (
-                    <tr key={row.model} className="hover:bg-slate-800/30">
+                    <tr key={`mdl-${row.model}`} className="hover:bg-slate-800/30">
                       <td className="py-2.5 font-medium font-mono text-slate-200">
                         {row.model}
                       </td>
                       <td className="py-2.5 text-right font-mono text-slate-300">
-                        {row.requestCount.toLocaleString()}
+                        {(row.requestCount ?? 0).toLocaleString()}
                       </td>
                       <td className="py-2.5 text-right font-mono text-slate-400">
-                        {row.totalTokens.toLocaleString()}
+                        {(row.totalTokens ?? 0).toLocaleString()}
                       </td>
                       <td className="py-2.5 text-right font-mono font-medium text-emerald-400">
-                        ${row.estimatedCostUsd.toFixed(4)}
+                        ${(row.estimatedCostUsd ?? 0).toFixed(4)}
                       </td>
                     </tr>
                   ))
@@ -251,21 +262,21 @@ export function GeminiAnalyticsSection({
                 </tr>
               ) : (
                 trends.slice(0, 7).map((day) => (
-                  <tr key={day.date} className="hover:bg-slate-800/30">
+                  <tr key={`trend-${day.date}`} className="hover:bg-slate-800/30">
                     <td className="py-2.5 font-mono text-slate-300">
                       {day.date}
                     </td>
                     <td className="py-2.5 text-right font-mono text-slate-200">
-                      {day.requestCount.toLocaleString()}
+                      {(day.requestCount ?? 0).toLocaleString()}
                     </td>
                     <td className="py-2.5 text-right font-mono text-slate-400">
-                      {day.totalTokens.toLocaleString()}
+                      {(day.totalTokens ?? 0).toLocaleString()}
                     </td>
                     <td className="py-2.5 text-right font-mono font-medium text-emerald-400">
-                      ${day.estimatedCostUsd.toFixed(4)}
+                      ${(day.estimatedCostUsd ?? 0).toFixed(4)}
                     </td>
                     <td className="py-2.5 text-right font-mono">
-                      {day.errorCount > 0 ? (
+                      {(day.errorCount ?? 0) > 0 ? (
                         <span className="text-rose-400 font-semibold">{day.errorCount}</span>
                       ) : (
                         <span className="text-slate-500">0</span>
@@ -334,42 +345,47 @@ export function GeminiAnalyticsSection({
                   </td>
                 </tr>
               ) : (
-                events.map((evt) => (
-                  <tr key={evt.id} className="hover:bg-slate-800/30">
-                    <td className="py-2.5 font-mono text-[11px] text-slate-400">
-                      {new Date(evt.createdAt).toLocaleTimeString()}
-                    </td>
-                    <td className="py-2.5 font-medium text-slate-200 capitalize">
-                      {evt.feature.replace(/_/g, ' ')}
-                    </td>
-                    <td className="py-2.5 font-mono text-[11px] text-teal-400">
-                      {evt.model}
-                    </td>
-                    <td className="py-2.5 text-right font-mono text-slate-300">
-                      <span className="text-slate-400">{evt.promptTokens}</span> +{' '}
-                      <span className="text-slate-200">{evt.completionTokens}</span>
-                    </td>
-                    <td className="py-2.5 text-right font-mono text-slate-400">
-                      {evt.durationMs}ms
-                    </td>
-                    <td className="py-2.5 text-right font-mono text-emerald-400">
-                      ${evt.estimatedCostUsd.toFixed(5)}
-                    </td>
-                    <td className="py-2.5 text-right">
-                      {evt.status === 'success' ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Success
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-rose-400 font-medium">
-                          <AlertTriangle className="h-3 w-3" />
-                          {evt.errorCategory ?? 'Error'}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                events.map((evt, idx) => {
+                  const inTokens = evt.inputTokens ?? evt.promptTokens ?? 0;
+                  const outTokens = evt.outputTokens ?? evt.completionTokens ?? 0;
+                  const cost = evt.estimatedCostUsd ?? 0;
+                  return (
+                    <tr key={evt.id || `evt-${idx}`} className="hover:bg-slate-800/30">
+                      <td className="py-2.5 font-mono text-[11px] text-slate-400">
+                        {evt.createdAt ? new Date(evt.createdAt).toLocaleTimeString() : '—'}
+                      </td>
+                      <td className="py-2.5 font-medium text-slate-200 capitalize">
+                        {evt.feature ? evt.feature.replace(/_/g, ' ') : '—'}
+                      </td>
+                      <td className="py-2.5 font-mono text-[11px] text-teal-400">
+                        {evt.model}
+                      </td>
+                      <td className="py-2.5 text-right font-mono text-slate-300">
+                        <span className="text-slate-400">{inTokens.toLocaleString()}</span> +{' '}
+                        <span className="text-slate-200">{outTokens.toLocaleString()}</span>
+                      </td>
+                      <td className="py-2.5 text-right font-mono text-slate-400">
+                        {evt.durationMs ?? 0}ms
+                      </td>
+                      <td className="py-2.5 text-right font-mono text-emerald-400">
+                        ${cost.toFixed(5)}
+                      </td>
+                      <td className="py-2.5 text-right">
+                        {evt.status === 'success' ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Success
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-rose-400 font-medium">
+                            <AlertTriangle className="h-3 w-3" />
+                            {evt.errorCategory ?? 'Error'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

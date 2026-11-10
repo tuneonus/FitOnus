@@ -24,8 +24,12 @@ export function ForgotPasswordScreen() {
     }
     setError(undefined);
     setLoading(true);
-    await authService.requestReset();
+    const res = await authService.requestReset(email);
     setLoading(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
     setSent(true);
   };
 
@@ -46,13 +50,13 @@ export function ForgotPasswordScreen() {
             Check your inbox
           </Text>
           <Text style={[styles.subtitleCenter, { color: colors.muted }]}>
-            We sent a reset link to{' '}
-            <Text style={{ fontWeight: '600', color: colors.ink }}>{email}</Text>.
-            It expires in 30 minutes.
+            If an account exists for{' '}
+            <Text style={{ fontWeight: '600', color: colors.ink }}>{email}</Text>,
+            we have sent instructions to reset your password. It expires in 30 minutes.
           </Text>
 
           <Button
-            title="Open reset link"
+            title="I have a reset code / token"
             size="lg"
             fullWidth
             onPress={() => navigate('resetPassword')}

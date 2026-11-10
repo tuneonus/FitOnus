@@ -5,6 +5,7 @@ import { Screen } from '../../../shared/components/ui/Screen';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { SourceTag } from '../../../shared/components/ui/SourceTag';
 import { BarChart } from '../../../shared/components/charts/BarChart';
+import { useHasDeviceData } from '../../health-integration/store/healthStore';
 import { ActivityType, activityTypes } from '../data/activityMock';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -12,7 +13,26 @@ export function ActivityDetailScreen() {
   const { colors } = useTheme();
   const { type = 'steps' } = useRouteParams<{ type?: ActivityType }>();
   const { navigate } = useNavigation();
+  const hasDevice = useHasDeviceData();
   const t = activityTypes[type as ActivityType] ?? activityTypes.steps;
+
+  if (!hasDevice && (type === 'steps' || t.series.length === 0)) {
+    return (
+      <Screen title={t.label}>
+        <EmptyState
+          icon={t.icon}
+          title={`No ${t.label.toLowerCase()} yet`}
+          description={
+            type === 'steps'
+              ? 'Step counting requires a connected Apple Watch, Wear OS device, or Health Connect integration.'
+              : `Start a ${t.label.toLowerCase()} workout with a connected device and it will sync here.`
+          }
+          actionLabel="Connect a device"
+          onAction={() => navigate('healthIntegration')}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen title={t.label}>

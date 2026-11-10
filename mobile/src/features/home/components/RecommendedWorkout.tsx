@@ -9,7 +9,7 @@ import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { ActionButton } from '@/shared/components/ui/ActionButton';
 import { premium } from '@/shared/theme/premium';
 
-export function RecommendedWorkout() {
+export function RecommendedWorkout({ showLibraryLink = true }: { showLibraryLink?: boolean } = {}) {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const plannedSession = useWorkoutStore((s) => s.plannedSession);
@@ -19,14 +19,64 @@ export function RecommendedWorkout() {
   const lastCompleted = useWorkoutStore((s) => s.lastCompleted);
   const completed = todayStatus === 'completed' && lastCompleted !== null;
   const inProgress = todayStatus === 'inProgress';
-  const hasExercises = plannedSession.exercises.length > 0;
+  const hasExercises = (plannedSession?.exercises?.length ?? 0) > 0;
+
+  if (!completed && !inProgress && !hasExercises) {
+    return (
+      <View>
+        <SectionHeader
+          appearance="premium"
+          title="Your training"
+          {...(showLibraryLink
+            ? { actionLabel: 'All workouts', onAction: () => navigate('workouts') }
+            : {})}
+        />
+        <Card appearance="premium" style={styles.card}>
+          <View style={styles.statusRow}>
+            <Dumbbell size={18} color={colors.accentStrong} />
+            <Text style={[premium.type.eyebrow, { color: colors.muted }]}>
+              NO WORKOUT PLANNED
+            </Text>
+          </View>
+          <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+            Ready to train?
+          </Text>
+          <Text style={[styles.meta, { color: colors.muted }]}>
+            Build a session that fits your time, energy and equipment today.
+          </Text>
+          <View style={styles.actions}>
+            <ActionButton
+              title="Build a workout"
+              icon={Play}
+              variant="inverse"
+              style={styles.start}
+              onPress={() => navigate('workoutGenerator')}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Browse workout templates"
+              onPress={() => navigate('workouts')}
+              style={({ pressed }) => [
+                styles.plan,
+                { borderColor: colors.line, opacity: pressed ? 0.6 : 1 },
+              ]}
+            >
+              <ArrowUpRight size={20} color={colors.ink} />
+            </Pressable>
+          </View>
+        </Card>
+      </View>
+    );
+  }
+
   return (
     <View>
       <SectionHeader
         appearance="premium"
         title="Your training"
-        actionLabel="All workouts"
-        onAction={() => navigate('workouts')}
+        {...(showLibraryLink
+          ? { actionLabel: 'All workouts', onAction: () => navigate('workouts') }
+          : {})}
       />
       <Card appearance="premium" style={styles.card}>
         <View style={styles.statusRow}>
@@ -40,20 +90,20 @@ export function RecommendedWorkout() {
           </Text>
         </View>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
-          {completed ? lastCompleted.title : plannedSession.title}
+          {completed ? lastCompleted.title : plannedSession?.title ?? 'Workout Plan'}
         </Text>
         <Text style={[styles.meta, { color: colors.muted }]}>
           {completed
             ? `${lastCompleted.durationMin} min · ${lastCompleted.sets} sets logged`
-            : `${plannedSession.durationMin} min plan · ${plannedSession.exercises.length} exercises`}
+            : `${plannedSession?.durationMin ?? 0} min plan · ${plannedSession?.exercises.length ?? 0} exercises`}
         </Text>
-        {!completed && hasExercises ? (
+        {!completed && hasExercises && plannedSession ? (
           <View style={styles.preview}>
             {plannedSession.exercises.slice(0, 2).map((exercise, index) => (
               <Pressable
                 key={`${exercise.exerciseId}-${index}`}
                 accessibilityRole="button"
-                accessibilityLabel={`View ${getExerciseById(exercise.exerciseId).name}, ${exercise.sets} sets of ${exercise.reps}`}
+                accessibilityLabel={`View ${getExerciseById(exercise.exerciseId)?.name || 'Exercise'}, ${exercise.sets} sets of ${exercise.reps}`}
                 onPress={() => navigate('exerciseDetail', { id: exercise.exerciseId })}
                 style={({ pressed }) => [
                   styles.exercise,
@@ -61,7 +111,7 @@ export function RecommendedWorkout() {
                 ]}
               >
                 <Text style={[styles.exerciseName, { color: colors.ink }]}>
-                  {getExerciseById(exercise.exerciseId).name}
+                  {getExerciseById(exercise.exerciseId)?.name || 'Exercise'}
                 </Text>
                 <Text style={[premium.type.caption, { color: colors.muted }]}>
                   {exercise.sets} × {exercise.reps}

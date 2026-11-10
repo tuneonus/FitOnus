@@ -12,7 +12,7 @@
 
 ## 1. Implementation Summary
 
-In accordance with the architecture specification formulated in [`FITONUS_NOTIFICATION_SYSTEM_AUDIT.md`](file:///media/devshan/Study_Drive/Info/Projects/TuneOnus/FitOnus/FITONUS_NOTIFICATION_SYSTEM_AUDIT.md), **Phase A (Native Setup + Local Reminders)** has been completely implemented, verified, and integrated into the FitOnus application.
+In accordance with the architecture specification formulated in [`FITONUS_NOTIFICATION_SYSTEM_AUDIT.md`](./FITONUS_NOTIFICATION_SYSTEM_AUDIT.md), **Phase A (Native Setup + Local Reminders)** has been completely implemented, verified, and integrated into the FitOnus application.
 
 Prior to Phase A, the FitOnus notification UI operated purely on hardcoded mock fixtures with zero native Android permissions, zero notification channels, no scheduling engine, and no persistence.
 

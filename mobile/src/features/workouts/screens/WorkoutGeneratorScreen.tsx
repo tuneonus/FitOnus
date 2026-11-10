@@ -19,10 +19,8 @@ import { StatusBanner } from '../../../shared/components/ui/StatusBanner';
 import { showToast } from '../../../shared/stores/toastStore';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 import { useProfileSetupStore } from '../../onboarding/store/profileSetupStore';
-import { ThinkingIndicator } from '../../ai-coach/components/ThinkingIndicator';
 import { WorkoutBlock } from '../../ai-coach/components/blocks/WorkoutBlock';
 import { generateWorkoutPlan } from '../services/workoutPlanGenerator';
-import { exerciseById } from '../data/workoutsMock';
 import { useWorkoutStore } from '../store/workoutStore';
 import type { WorkoutSession } from '../types/workout';
 import { useTheme } from '@/hooks/use-theme';
@@ -146,7 +144,10 @@ export function WorkoutGeneratorScreen() {
               focus: `${goal} · ${level}`,
               durationMin: duration,
               exercises: result.exercises.map((e) => ({
-                name: catalog.find((exercise) => exercise.id === e.exerciseId || exercise.slug === e.exerciseId)?.name ?? 'Exercise',
+                name:
+                  catalog.find(
+                    (exercise) => exercise.id === e.exerciseId || exercise.slug === e.exerciseId,
+                  )?.name ?? 'Exercise',
                 detail: `${e.sets} × ${e.reps}${e.weight ? ` · ${e.weight} kg` : ''}`,
               })),
             }}

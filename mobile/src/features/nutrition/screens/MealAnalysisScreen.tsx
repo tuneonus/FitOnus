@@ -17,10 +17,8 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { BottomSheet } from '@/shared/components/ui/BottomSheet';
 import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { StatusBanner } from '@/shared/components/ui/StatusBanner';
-import { images } from '@/shared/constants/images';
 import { showToast } from '@/shared/stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
-import { ThinkingIndicator } from '../../ai-coach/components/ThinkingIndicator';
 import { MealPhotoApi } from '../../ai-coach/services/meal-photo-api';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 import { scaleFood, sumNutrients, useNutritionStore } from '../store/nutritionStore';
@@ -377,6 +375,11 @@ export function MealAnalysisScreen() {
             }}
           />
         ) : null}
+        {missingFood.data?.foods.length === 0 && !missingFood.isFetching ? (
+          <Text accessibilityLiveRegion="polite" style={{ color: colors.muted }}>
+            No matching foods. Try another name.
+          </Text>
+        ) : null}
         <View style={styles.confirmList}>
           {missingFood.data?.foods.map((food) => (
             <Button
@@ -428,7 +431,7 @@ export function MealAnalysisScreen() {
           ))}
         </View>
         <Text style={[styles.confirmFootnote, { color: colors.muted }]}>
-          Saved items stay marked “Est.” so you and your coach know they weren’t weighed.
+          Review these estimated portions before saving this meal.
         </Text>
       </BottomSheet>
     </Screen>
@@ -513,6 +516,8 @@ const styles = StyleSheet.create({
   },
   rowFooter: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 4,
@@ -523,6 +528,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   factorBtn: {
+    minHeight: premium.layout.touch,
+    minWidth: premium.layout.touch,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
@@ -537,11 +546,16 @@ const styles = StyleSheet.create({
   },
   macroHero: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
     borderRadius: 18,
     padding: 14,
     justifyContent: 'space-between',
   },
   macroHeroItem: {
+    flexBasis: 80,
+    flexGrow: 1,
+    minWidth: 80,
     alignItems: 'center',
     gap: 3,
   },

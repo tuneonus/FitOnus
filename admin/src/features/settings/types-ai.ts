@@ -1,23 +1,38 @@
 export interface GeminiConfigResponse {
   provider: string;
-  hasActiveKey: boolean;
   keyMask: string | null;
-  hasPreviousKey: boolean;
-  previousKeyMask: string | null;
-  source: 'database' | 'environment' | 'unconfigured';
+  isConfigured: boolean;
+  canRollbackKey: boolean;
+  hasActiveKey?: boolean;
+  hasPreviousKey?: boolean;
+  previousKeyMask?: string | null;
+  source?: 'database' | 'environment' | 'unconfigured';
   defaultModel: string;
-  coachModel: string;
-  mealPhotoModel: string;
-  voiceMealModel: string;
-  workoutGeneratorModel: string;
+  featureModels?: {
+    aiCoach: string;
+    mealPhotoScanner: string;
+    voiceMealEntry: string;
+    workoutGenerator: string;
+  };
+  coachModel?: string;
+  mealPhotoModel?: string;
+  voiceMealModel?: string;
+  workoutGeneratorModel?: string;
   version: number;
   updatedBy: string | null;
   updatedAt: string;
+  connectionStatus?: 'connected' | 'not_configured';
 }
 
 export interface UpdateGeminiConfigPayload {
   apiKey?: string;
   defaultModel?: string;
+  featureModels?: {
+    aiCoach?: string;
+    mealPhotoScanner?: string;
+    voiceMealEntry?: string;
+    workoutGenerator?: string;
+  };
   coachModel?: string;
   mealPhotoModel?: string;
   voiceMealModel?: string;
@@ -43,24 +58,37 @@ export interface RollbackGeminiKeyPayload {
 }
 
 export interface GeminiModelInfo {
-  id: string;
+  model: string;
+  id?: string;
   displayName: string;
-  description: string;
+  description?: string;
+  capabilities?: {
+    text: boolean;
+    vision: boolean;
+    audio: boolean;
+  };
   inputPricePerMillion: number;
   outputPricePerMillion: number;
-  supportsVision: boolean;
-  supportsAudio: boolean;
-  isRecommendedDefault: boolean;
+  cachedInputPricePerMillion?: number;
+  supportsVision?: boolean;
+  supportsAudio?: boolean;
+  isRecommendedDefault?: boolean;
+  isDefault?: boolean;
 }
 
 export interface GeminiUsageSummaryResponse {
   todayRequests: number;
-  monthRequests: number;
+  monthlyRequests?: number;
+  monthRequests?: number;
   totalTokens: number;
-  promptTokens: number;
-  completionTokens: number;
-  estimatedCostUsd: number;
-  estimatedCostInr: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  cachedTokens?: number;
+  estimatedMonthlyCostUsd?: number;
+  estimatedCostUsd?: number;
+  estimatedCostInr?: number;
   failedRequests: number;
   avgDurationMs: number;
 }
@@ -69,8 +97,8 @@ export interface FeatureUsageBreakdown {
   feature: string;
   requestCount: number;
   totalTokens: number;
-  promptTokens: number;
-  completionTokens: number;
+  promptTokens?: number;
+  completionTokens?: number;
   estimatedCostUsd: number;
 }
 
@@ -78,8 +106,8 @@ export interface ModelUsageBreakdown {
   model: string;
   requestCount: number;
   totalTokens: number;
-  promptTokens: number;
-  completionTokens: number;
+  promptTokens?: number;
+  completionTokens?: number;
   estimatedCostUsd: number;
 }
 
@@ -93,21 +121,28 @@ export interface DailyUsageTrend {
 
 export interface GeminiUsageEventItem {
   id: string;
+  requestId?: string;
+  userId?: string | null;
   feature: string;
   model: string;
-  promptTokens: number;
-  completionTokens: number;
+  status: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  promptTokens?: number;
+  completionTokens?: number;
   totalTokens: number;
   durationMs: number;
   estimatedCostUsd: number;
-  status: 'success' | 'error';
-  errorCategory: string | null;
+  errorCategory?: string | null;
   createdAt: string;
 }
 
 export interface GeminiUsageEventsResponse {
-  events: GeminiUsageEventItem[];
+  events?: GeminiUsageEventItem[];
+  items?: GeminiUsageEventItem[];
   total: number;
   limit: number;
-  offset: number;
+  offset?: number;
+  page?: number;
+  totalPages?: number;
 }

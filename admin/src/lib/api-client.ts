@@ -33,6 +33,8 @@ export async function apiClient<T>(
   headers.set('Content-Type', 'application/json');
   headers.set('Accept', 'application/json');
   headers.set('X-Panel-Id', 'fitonus-admin');
+  headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  headers.set('Pragma', 'no-cache');
 
   const token = getAuthToken();
   if (token && !headers.has('Authorization')) {
@@ -48,6 +50,7 @@ export async function apiClient<T>(
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    cache: options.cache ?? 'no-store',
     signal: options.signal ?? timeoutSignal,
     credentials: 'include', // Sends HttpOnly fitonus_admin_token cookie
   });

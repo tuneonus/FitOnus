@@ -2,6 +2,9 @@ import { Suspense } from 'react';
 import { UsersView } from '@/features/users';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function UsersPage() {
   return (
     <Suspense

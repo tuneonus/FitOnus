@@ -1,3 +1,4 @@
+import { premium } from '@/shared/theme/premium';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { CheckCircle, AlertTriangle, Info } from 'lucide-react-native';
@@ -13,12 +14,7 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
 
   if (!toast) return null;
 
-  const Icon =
-    toast.tone === 'error'
-      ? AlertTriangle
-      : toast.tone === 'info'
-      ? Info
-      : CheckCircle;
+  const Icon = toast.tone === 'error' ? AlertTriangle : toast.tone === 'info' ? Info : CheckCircle;
 
   const iconColor = toast.tone === 'error' ? colors.bad : colors.accent;
 
@@ -27,19 +23,21 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
       style={[
         styles.container,
         {
-          bottom: raised ? Math.max(insets.bottom, 12) + 88 : Math.max(insets.bottom + 12, 36),
+          top: Math.max(insets.top, 12) + 12,
           backgroundColor: colors.ink,
         },
       ]}
+      testID="app-toast"
       pointerEvents="box-none"
+      accessibilityLiveRegion="polite"
     >
       <Icon size={18} color={iconColor} style={styles.icon} />
-      <Text style={[styles.message, { color: colors.bg }]} numberOfLines={2}>
-        {toast.message}
-      </Text>
+      <Text style={[styles.message, { color: colors.bg }]}>{toast.message}</Text>
 
       {toast.actionLabel && toast.onAction ? (
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={toast.actionLabel}
           activeOpacity={0.8}
           onPress={() => {
             toast.onAction?.();
@@ -47,9 +45,7 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
           }}
           style={styles.actionBtn}
         >
-          <Text style={[styles.actionLabel, { color: colors.accent }]}>
-            {toast.actionLabel}
-          </Text>
+          <Text style={[styles.actionLabel, { color: colors.accent }]}>{toast.actionLabel}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -59,8 +55,8 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: premium.layout.gutter,
+    right: premium.layout.gutter,
     zIndex: 9999,
     flexDirection: 'row',
     alignItems: 'center',
@@ -84,11 +80,12 @@ const styles = StyleSheet.create({
   actionBtn: {
     marginLeft: 12,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    minHeight: premium.layout.touch,
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
   actionLabel: {
     fontSize: 14,
     fontWeight: '700',
   },
 });
-

@@ -21,7 +21,7 @@ export function WorkoutHistoryScreen() {
   const { navigate } = useNavigation();
   const saved = useWorkoutStore((state) => state.history);
   const query = useQuery({
-    queryKey: ['workouts', 'premium-history'],
+    queryKey: ['dashboard', 'premium-workout-history'],
     queryFn: () => workoutApi.getWorkoutSessions({ limit: 20 }),
     retry: 1,
     staleTime: 30_000,
@@ -77,7 +77,7 @@ export function WorkoutHistoryScreen() {
                 <View style={[styles.metrics, { borderColor: colors.line }]}>
                   <MetricDisplay label="Loaded sessions" value={String(saved.length)} />
                   <MetricDisplay
-                    label="Total training time"
+                    label="Time in this list"
                     value={saved.reduce((sum, log) => sum + log.durationMin, 0).toLocaleString()}
                     unit="min"
                   />

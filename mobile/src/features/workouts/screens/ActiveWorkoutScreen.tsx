@@ -8,13 +8,22 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, ChevronRight, Pause, Play, Plus, SkipForward } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  Plus,
+  SkipForward,
+  Dumbbell,
+} from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { FeatureScreen } from '@/shared/components/ui/FeatureScreen';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { Dumbbell } from 'lucide-react-native';
+
 import { Button } from '../../../shared/components/ui/Button';
 import { ConfirmDialog } from '../../../shared/components/ui/ConfirmDialog';
 import { useWorkoutStore } from '../store/workoutStore';
@@ -28,7 +37,7 @@ const fmt = (s: number) =>
 
 export function ActiveWorkoutScreen() {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { goBack, replace } = useNavigation();
   const store = useWorkoutStore();
   const startSession = store.startSession;
@@ -86,12 +95,13 @@ export function ActiveWorkoutScreen() {
         },
       ]}
     >
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       {/* Top Header */}
       <View style={styles.topHeader}>
         <TouchableOpacity
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Back to workout plan"
+          accessibilityLabel="Go back"
           onPress={goBack}
           style={styles.headerBtn}
         >
@@ -99,7 +109,9 @@ export function ActiveWorkoutScreen() {
         </TouchableOpacity>
 
         <View style={styles.timerCol}>
-          <Text style={[styles.timerSub, { color: colors.muted }]}>{plannedSession.title}</Text>
+          <Text style={[styles.timerSub, { color: colors.muted }]}>
+            {plannedSession?.title ?? 'Active Session'}
+          </Text>
           <Text style={[styles.timerDigits, { color: paused ? colors.warn : colors.ink }]}>
             {fmt(elapsedSec)}
           </Text>
@@ -122,6 +134,7 @@ export function ActiveWorkoutScreen() {
           const complete = e.sets.every((s) => s.done);
           return (
             <TouchableOpacity
+              hitSlop={{ top: 8, bottom: 8 }}
               key={e.exerciseId}
               accessibilityRole="button"
               accessibilityLabel={`Go to exercise ${i + 1}: ${getExerciseById(e.exerciseId).name}`}
@@ -174,7 +187,7 @@ export function ActiveWorkoutScreen() {
         <View style={styles.setsList}>
           {current.sets.map((s, i) => (
             <SetRow
-              key={i}
+              key={`${current.exerciseId}-${i}`}
               index={i}
               set={s}
               bodyweight={s.weight === 0 && ex.equipment === 'Bodyweight'}
@@ -266,12 +279,18 @@ export function ActiveWorkoutScreen() {
           />
         ) : null}
 
+        {doneSets === 0 ? (
+          <Text style={{ ...premium.type.caption, color: colors.muted, marginBottom: 8 }}>
+            Complete at least one set to finish and save.
+          </Text>
+        ) : null}
         <Button
           appearance="premium"
           size="lg"
           fullWidth
           variant="primary"
           title="Finish workout"
+          disabled={doneSets === 0}
           onPress={() => setConfirmFinish(true)}
         />
       </View>
@@ -308,24 +327,28 @@ const styles = StyleSheet.create({
     minHeight: 64,
   },
   headerBtn: {
-    width: 44,
+    width: 48,
     minHeight: premium.layout.touch,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   timerCol: {
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 8,
     alignItems: 'center',
   },
   timerSub: {
     ...premium.type.caption,
+    textAlign: 'center',
   },
   timerDigits: {
     ...premium.type.metric,
     fontVariant: ['tabular-nums'],
   },
   pauseBtn: {
-    width: 44,
+    width: 48,
     minHeight: premium.layout.touch,
     borderRadius: 22,
     alignItems: 'center',
@@ -333,12 +356,15 @@ const styles = StyleSheet.create({
   },
   stripRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 4,
     paddingHorizontal: 16,
     marginTop: 8,
   },
   stripBar: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 48,
+    minWidth: 48,
     minHeight: 24,
     borderRadius: 2.5,
   },

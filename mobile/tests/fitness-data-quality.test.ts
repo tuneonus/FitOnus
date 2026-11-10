@@ -143,10 +143,11 @@ test('FitOnus Fitness Data Quality & Calculation Verification Suite', async (sui
     const bench = exerciseById('bench');
     assert.equal(bench.name, 'Barbell Bench Press');
 
-    // Unknown ID falls back safely
+    // Unknown ID falls back safely to generic non-fabricated exercise
     const fallback = exerciseById('nonexistent-uuid-1234');
     assert.ok(fallback);
-    assert.equal(fallback.name, 'Barbell Bench Press');
+    assert.equal(fallback.name, 'Exercise');
+    assert.notEqual(fallback.name, 'Barbell Bench Press');
   });
 
   await suite.test('Exercise Catalog: Validates biomechanical completeness of catalog', () => {

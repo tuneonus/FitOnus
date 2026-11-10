@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import type { ActiveExercise, SetLog, WorkoutLog, WorkoutSession, SaveWorkoutSessionInput, Exercise } from '../types/workout';
-import { exerciseById, exercises as fallbackExercises, todaySession } from '../data/workoutsMock';
 import { WorkoutService } from '../services/workout-service';
 import { offlineSyncService } from '../services/offline-sync';
 import { workoutApi } from '../api/workout-api';
@@ -44,7 +43,7 @@ function generateUUID(): string {
 
 type WorkoutState = {
   catalog: Exercise[];
-  plannedSession: WorkoutSession;
+  plannedSession: WorkoutSession | null;
   todayStatus: TodayStatus;
   history: WorkoutLog[];
   active: ActiveExercise[];
@@ -55,7 +54,7 @@ type WorkoutState = {
   pendingSyncCount: number;
   loadExercises: () => Promise<void>;
   getExerciseById: (id: string) => Exercise;
-  setPlannedSession: (session: WorkoutSession) => void;
+  setPlannedSession: (session: WorkoutSession | null) => void;
   removePlannedExercise: (exerciseId: string) => void;
   startSession: () => void;
   tick: () => void;
@@ -73,8 +72,8 @@ type WorkoutState = {
 };
 
 export const useWorkoutStore = create<WorkoutState>((set, get) => ({
-  catalog: fallbackExercises,
-  plannedSession: todaySession,
+  catalog: [],
+  plannedSession: null,
   todayStatus: 'notStarted',
   history: [],
   active: [],
@@ -86,6 +85,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   resetStore: () => {
     set({
+      catalog: [],
+      plannedSession: null,
       todayStatus: 'notStarted',
       history: [],
       active: [],
@@ -100,7 +101,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   loadExercises: async () => {
     try {
       const items = await WorkoutService.getExercises({ limit: 100 });
-      if (items && items.length > 0) {
+      if (Array.isArray(items)) {
         set({ catalog: items });
       }
     } catch (err) {
@@ -112,13 +113,23 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const { catalog } = get();
     const match = catalog.find((e) => e.id === id || e.slug === id);
     if (match) return match;
-    return exerciseById(id);
+    return {
+      id,
+      name: 'Exercise',
+      muscle: 'Full body',
+      equipment: 'Bodyweight',
+      level: 'Beginner',
+      secondary: [],
+      instructions: [],
+      cues: [],
+    };
   },
 
   setPlannedSession: (plannedSession) => set({ plannedSession }),
 
   removePlannedExercise: (exerciseId) => {
     const s = get().plannedSession;
+    if (!s) return;
     set({
       plannedSession: {
         ...s,
@@ -129,7 +140,9 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   startSession: () => {
     if (get().todayStatus === 'inProgress') return;
-    const active: ActiveExercise[] = get().plannedSession.exercises.map((e) => ({
+    const session = get().plannedSession;
+    if (!session || !session.exercises || session.exercises.length === 0) return;
+    const active: ActiveExercise[] = session.exercises.map((e) => ({
       exerciseId: e.exerciseId,
       restSec: e.restSec,
       targetReps: e.reps,
@@ -211,7 +224,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const log: WorkoutLog = {
       id: clientSessionId,
       date: 'Today',
-      title: plannedSession.title,
+      title: plannedSession?.title ?? 'Completed Workout',
       durationMin,
       volumeKg,
       sets: doneSets.length,
@@ -282,8 +295,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
     const payload: SaveWorkoutSessionInput = {
       clientSessionId,
-      workoutName: plannedSession.title || 'Completed Workout',
-      planId: plannedSession.id && !plannedSession.id.startsWith('push-') ? plannedSession.id : null,
+      workoutName: plannedSession?.title || 'Completed Workout',
+      planId: plannedSession?.id && !plannedSession.id.startsWith('push-') ? plannedSession.id : null,
       startedAt,
       completedAt,
       durationSeconds: Math.max(1, elapsedSec),

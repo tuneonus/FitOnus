@@ -470,4 +470,45 @@ describe('Admin Login Authentication & RBAC Isolation', () => {
     expect(capturedError.code).toBe('UNAUTHENTICATED');
     expect(STATUS_BY_KIND[capturedError.kind as keyof typeof STATUS_BY_KIND]).toBe(401);
   });
+
+  it('12. admin controller endpoints attach strict no-cache headers to prevent stale browser/CDN caching', async () => {
+    const mockUseCases = {
+      listUsers: {
+        execute: async () => ({
+          items: [{ id: 'user-1', email: 'user@fitonus.com' }],
+          meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
+        }),
+      },
+      getAdminUser: {
+        execute: async () => ({
+          user: { id: 'admin-1', email: 'admin@fitonus.com', displayName: 'Admin' },
+        }),
+      },
+      getDashboardStats: {
+        execute: async () => ({
+          totalUsers: 9,
+          activeUsers: 9,
+          disabledUsers: 0,
+          recentUsers: [],
+        }),
+      },
+    } as any;
+
+    const controller = createAdminController(mockUseCases, true);
+    const mockReq = {
+      validated: { query: { page: 1, limit: 10 } },
+      actor: { userId: 'admin-1', permissions: new Set(['*']) },
+    } as any;
+
+    const listRes = await controller.listUsers(mockReq);
+    expect(listRes.headers?.['Cache-Control']).toBe('no-store, no-cache, must-revalidate, proxy-revalidate');
+    expect(listRes.headers?.['Pragma']).toBe('no-cache');
+    expect(listRes.headers?.['Expires']).toBe('0');
+
+    const meRes = await controller.getMe(mockReq);
+    expect(meRes.headers?.['Cache-Control']).toBe('no-store, no-cache, must-revalidate, proxy-revalidate');
+
+    const statsRes = await controller.getDashboardStats(mockReq);
+    expect(statsRes.headers?.['Cache-Control']).toBe('no-store, no-cache, must-revalidate, proxy-revalidate');
+  });
 });

@@ -52,7 +52,17 @@ export const SEED_UUID_TO_SLUG: Record<string, string> = {
 
 export const exerciseById = (id: string): Exercise => {
   const resolvedId = SEED_UUID_TO_SLUG[id] ?? id;
-  return exercises.find((e) => e.id === resolvedId || (e as any).uuid === id) ?? exercises[0]!;
+  const match = exercises.find((e) => e.id === resolvedId || (e as any).uuid === id);
+  if (match) return match;
+  return {
+    id: id || 'unknown',
+    name: 'Exercise',
+    muscle: 'Full body',
+    equipment: 'None',
+    level: 'Beginner',
+    instructions: [],
+    cues: [],
+  };
 };
 
 export const todaySession: WorkoutSession = {

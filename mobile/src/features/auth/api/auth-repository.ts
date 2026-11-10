@@ -183,12 +183,14 @@ export const AuthRepository = {
     }
   },
 
-  forgotPassword: async (data: ForgotPasswordRequest): Promise<void> => {
-    try {
-      await apiClient.post('/auth/forgot-password', data);
-    } catch {
-      // Endpoint may not be active yet; allow client flow to continue gracefully
-    }
+  forgotPassword: async (data: ForgotPasswordRequest): Promise<{ message: string }> => {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>('/auth/forgot-password', data);
+    return response.data.data;
+  },
+
+  resetPassword: async (data: ResetPasswordRequest): Promise<{ message: string }> => {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>('/auth/reset-password', data);
+    return response.data.data;
   },
 
   verifyEmail: async (code: string): Promise<void> => {

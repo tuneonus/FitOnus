@@ -3,14 +3,12 @@ import { Card } from '@/shared/components/ui/Card';
 import { ActionButton } from '@/shared/components/ui/ActionButton';
 import { premium } from '@/shared/theme/premium';
 import { useTheme } from '@/hooks/use-theme';
-import { Camera } from 'lucide-react-native';
+import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image as ImageIcon, X } from 'lucide-react-native';
+
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
-import { images } from '@/shared/constants/images';
 import type { MealType } from '../types/nutrition';
 
 export function MealPhotoScreen() {

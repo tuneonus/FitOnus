@@ -35,7 +35,7 @@ export type ActionPayload =
 {kind: 'logMeal';meal: MealType;items: FoodItem[];} |
 {kind: 'logWorkout';exercise: string;sets: {weight: number;reps: number;}[];} |
 {kind: 'updateWeight';value: number;} |
-{kind: 'createPlan';} |
+{kind: 'createPlan'; goal?: string; durationMin?: number; equipment?: string[]; level?: string;} |
 {kind: 'updateGoal';goalId: string;target: number;} |
 {kind: 'startWorkout';};
 

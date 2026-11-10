@@ -77,8 +77,8 @@ export function GeminiConfigSection({
     );
   }
 
-  const isDatabaseKey = config.source === 'database';
-  const isEnvFallback = config.source === 'environment';
+  const isDatabaseKey = config.source === 'database' || (config.isConfigured && !config.keyMask?.includes('ENV'));
+  const isEnvFallback = config.source === 'environment' || (config.isConfigured && Boolean(config.keyMask?.includes('ENV')));
 
   return (
     <div className="space-y-6">
@@ -262,12 +262,15 @@ export function GeminiConfigSection({
             }
             className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-medium text-white focus:border-teal-500 focus:outline-none"
           >
-            {models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.displayName} ({m.id}) — Input: ${m.inputPricePerMillion}/M, Output: ${m.outputPricePerMillion}/M
-                {m.isRecommendedDefault ? ' [Recommended]' : ''}
-              </option>
-            ))}
+            {models.map((m, idx) => {
+              const modelKey = m.model || m.id || `model-${idx}`;
+              return (
+                <option key={`default-${modelKey}`} value={modelKey}>
+                  {m.displayName} ({modelKey}) — Input: ${m.inputPricePerMillion}/M, Output: ${m.outputPricePerMillion}/M
+                  {(m.isRecommendedDefault || m.isDefault) ? ' [Recommended]' : ''}
+                </option>
+              );
+            })}
           </select>
         </div>
 
@@ -296,11 +299,14 @@ export function GeminiConfigSection({
                 }
                 className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
               >
-                {models.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.displayName}
-                  </option>
-                ))}
+                {models.map((m, idx) => {
+                  const modelKey = m.model || m.id || `coach-${idx}`;
+                  return (
+                    <option key={`coach-${modelKey}`} value={modelKey}>
+                      {m.displayName}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -324,12 +330,15 @@ export function GeminiConfigSection({
                 className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
               >
                 {models
-                  .filter((m) => m.supportsVision)
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.displayName} (Vision)
-                    </option>
-                  ))}
+                  .filter((m) => m.capabilities?.vision ?? m.supportsVision ?? true)
+                  .map((m, idx) => {
+                    const modelKey = m.model || m.id || `meal-${idx}`;
+                    return (
+                      <option key={`meal-${modelKey}`} value={modelKey}>
+                        {m.displayName} (Vision)
+                      </option>
+                    );
+                  })}
               </select>
             </div>
 
@@ -353,12 +362,15 @@ export function GeminiConfigSection({
                 className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
               >
                 {models
-                  .filter((m) => m.supportsAudio)
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.displayName} (Audio)
-                    </option>
-                  ))}
+                  .filter((m) => m.capabilities?.audio ?? m.supportsAudio ?? true)
+                  .map((m, idx) => {
+                    const modelKey = m.model || m.id || `voice-${idx}`;
+                    return (
+                      <option key={`voice-${modelKey}`} value={modelKey}>
+                        {m.displayName} (Audio)
+                      </option>
+                    );
+                  })}
               </select>
             </div>
 
@@ -381,11 +393,14 @@ export function GeminiConfigSection({
                 }
                 className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
               >
-                {models.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.displayName}
-                  </option>
-                ))}
+                {models.map((m, idx) => {
+                  const modelKey = m.model || m.id || `workout-${idx}`;
+                  return (
+                    <option key={`workout-${modelKey}`} value={modelKey}>
+                      {m.displayName}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>

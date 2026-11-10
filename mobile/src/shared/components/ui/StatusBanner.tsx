@@ -57,20 +57,18 @@ export function StatusBanner({
 
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
-        {body ? (
-          <Text style={[styles.body, { color: colors.muted }]}>{body}</Text>
-        ) : null}
+        {body ? <Text style={[styles.body, { color: colors.muted }]}>{body}</Text> : null}
       </View>
 
       {actionLabel && onAction ? (
         <TouchableOpacity
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
           onPress={onAction}
           style={[styles.button, { backgroundColor: colors.surface }]}
         >
-          <Text style={[styles.actionText, { color: colors.ink }]}>
-            {actionLabel}
-          </Text>
+          <Text style={[styles.actionText, { color: colors.ink }]}>{actionLabel}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -103,7 +101,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   button: {
-    height: 32,
+    minHeight: 48,
+    minWidth: 48,
     paddingHorizontal: 12,
     borderRadius: 16,
     alignItems: 'center',
@@ -120,4 +119,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

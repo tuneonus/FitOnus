@@ -2,6 +2,7 @@ import type { Request } from 'express';
 import type { z } from 'zod';
 import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
+import { AppError } from '../../../shared/errors/app-error.js';
 import type { RouteResult } from '../../../shared/http/route.js';
 import type { AuthTokens, ClientMeta } from '../application/ports.js';
 import type { ChangePasswordUseCase } from '../application/use-cases/change-password.js';
@@ -11,9 +12,11 @@ import type { RegisterUseCase } from '../application/use-cases/register.js';
 import type { SessionsUseCases, SessionView } from '../application/use-cases/sessions.js';
 import {
   changePasswordRequest,
+  forgotPasswordRequest,
   loginRequest,
   refreshRequest,
   registerRequest,
+  resetPasswordRequest,
   sessionIdRequest,
   type tokensSchema,
 } from './auth.schemas.js';
@@ -84,6 +87,24 @@ export function createAuthController(useCases: AuthUseCases) {
     changePassword: async (req: Request): Promise<RouteResult<{ revokedSessions: number }>> => {
       const { body } = getValidated(req, changePasswordRequest);
       return { data: await useCases.changePassword.execute(requireActor(req), body) };
+    },
+
+    forgotPassword: async (req: Request): Promise<RouteResult<{ message: string }>> => {
+      getValidated(req, forgotPasswordRequest);
+      throw new AppError(
+        'unavailable',
+        'SERVICE_UNAVAILABLE',
+        'Password reset email delivery service is currently not configured. Please contact support.',
+      );
+    },
+
+    resetPassword: async (req: Request): Promise<RouteResult<{ message: string }>> => {
+      getValidated(req, resetPasswordRequest);
+      throw new AppError(
+        'unavailable',
+        'SERVICE_UNAVAILABLE',
+        'Password reset service is currently unavailable. Please contact support.',
+      );
     },
   };
 }

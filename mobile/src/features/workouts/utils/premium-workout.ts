@@ -6,7 +6,8 @@ export function filterExercises(
   muscle: string,
   equipment: string,
 ): Exercise[] {
-  const key = (value: string) => value.trim().toLowerCase();
+  const key = (value: string) =>
+    value.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   return exercises.filter((exercise) => {
     const muscles = [
       exercise.muscle ?? '',

@@ -11,8 +11,8 @@ import { Mic, MicOff, Square, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
 import { Button } from '../../../shared/components/ui/Button';
+import { requestRecordingPermissionsAsync } from 'expo-audio';
 import { CoachApi } from '../../ai-coach/services/coach-api';
-import { buildCoachResponse } from '../../ai-coach/services/mockCoachEngine';
 import { ActionBlock } from '../../ai-coach/components/blocks/ActionBlock';
 import { MetricsBlock } from '../../ai-coach/components/blocks/MetricsBlock';
 import type { Block, CoachResponse } from '../../ai-coach/types/coach';
@@ -33,49 +33,50 @@ export function VoiceCoachScreen() {
   const [command, setCommand] = useState(params.cmd ?? voiceCommands[0]!);
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState<CoachResponse | null>(null);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const clearTimers = () => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
+  const handleRequestPermission = async () => {
+    try {
+      const res = await requestRecordingPermissionsAsync();
+      setMicPermission(res.granted ? 'granted' : 'denied');
+    } catch {
+      setMicPermission('denied');
+    }
   };
 
-  useEffect(() => clearTimers, []);
+  const askCoach = async (queryText: string) => {
+    setErrorMessage(null);
+    setResponse(null);
+    setTranscript(queryText);
+    setPhase('processing');
+
+    try {
+      const realResponse = await CoachApi.sendMessage({ message: queryText });
+      setResponse(realResponse);
+      setPhase('response');
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Unable to reach AI Coach right now. Please check your network connection.';
+      setErrorMessage(msg);
+      setPhase('error');
+    }
+  };
 
   const listen = () => {
-    clearTimers();
-    setResponse(null);
-    setTranscript('');
+    if (micPermission !== 'granted') {
+      void handleRequestPermission();
+      return;
+    }
     setPhase('listening');
-    const words = command.split(' ');
-    words.forEach((_, i) => {
-      timers.current.push(
-        setTimeout(
-          () => setTranscript(words.slice(0, i + 1).join(' ')),
-          500 + i * 260
-        )
-      );
-    });
-    const doneAt = 500 + words.length * 260 + 500;
-    timers.current.push(
-      setTimeout(() => setPhase('processing'), doneAt),
-      setTimeout(async () => {
-        try {
-          const realResponse = await CoachApi.sendMessage({ message: command });
-          setResponse(realResponse);
-          setPhase('response');
-        } catch {
-          setResponse(buildCoachResponse(command));
-          setPhase('response');
-        }
-      }, doneAt + 600)
-    );
+    setTranscript(command);
   };
 
   const stop = () => {
-    const complete = transcript === command;
-    clearTimers();
-    if (!complete) setPhase('error');
+    setPhase('idle');
+    void askCoach(command);
   };
 
   const updateBlock = (
@@ -152,8 +153,8 @@ export function VoiceCoachScreen() {
             <Button
               size="lg"
               fullWidth
-              title={micPermission === 'denied' ? 'Open Settings' : 'Allow microphone'}
-              onPress={() => setMicPermission('granted')}
+              title={micPermission === 'denied' ? 'Check Microphone Permission' : 'Allow microphone'}
+              onPress={handleRequestPermission}
             />
             {micPermission === 'unknown' && (
               <TouchableOpacity
@@ -202,11 +203,11 @@ export function VoiceCoachScreen() {
             {phase === 'error' && (
               <View style={styles.errorWrap}>
                 <Text style={[styles.errorMsg, { color: colors.heroMuted }]}>
-                  The recording ended before I understood a full request. Try again in a quieter spot.
+                  {errorMessage || 'The request could not be completed. Try asking your question again.'}
                 </Text>
                 <Button
                   title="Try again"
-                  onPress={listen}
+                  onPress={() => askCoach(command)}
                   style={{ marginTop: 20 }}
                 />
               </View>

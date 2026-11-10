@@ -29,7 +29,7 @@ export function WorkoutsScreen() {
         <Text style={[premium.type.body, { color: colors.muted }]}>
           Your plan. Your pace. Every set counts.
         </Text>
-        <RecommendedWorkout />
+        <RecommendedWorkout showLibraryLink={false} />
         <Card tone="hero" appearance="premium">
           <Text style={[premium.type.eyebrow, { color: colors.accent }]}>
             BUILD YOUR NEXT SESSION

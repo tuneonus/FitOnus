@@ -1,8 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
 import { workoutApi } from '../api/workout-api';
 import type { SaveWorkoutSessionInput, WorkoutSessionResponse } from '../types/workout';
 import { logger } from '@/utils/logger';
+
+let cachedNetInfo: any = undefined;
+function getNetInfo(): any {
+  if (cachedNetInfo !== undefined) return cachedNetInfo;
+  try {
+    const mod = require('@react-native-community/netinfo');
+    cachedNetInfo = mod.default ?? mod;
+  } catch {
+    cachedNetInfo = null;
+  }
+  return cachedNetInfo;
+}
 
 const OFFLINE_QUEUE_KEY = '@fitonus:pending_workout_sessions';
 
@@ -24,9 +35,11 @@ class OfflineSyncService {
 
   private initAutoSync() {
     try {
-      this.netInfoUnsubscribe = NetInfo.addEventListener((state) => {
+      const netInfo = getNetInfo();
+      if (!netInfo) return;
+      this.netInfoUnsubscribe = netInfo.addEventListener((state: any) => {
         if (state.isConnected && state.isInternetReachable !== false) {
-          this.syncPendingSessions().catch((err) => {
+          this.syncPendingSessions().catch((err: any) => {
             logger.warn('Auto offline workout sync failed:', err);
           });
         }
@@ -122,7 +135,8 @@ class OfflineSyncService {
       return { synced: 0, failed: 0, results: [] };
     }
 
-    const netState = await NetInfo.fetch();
+    const netInfo = getNetInfo();
+    const netState = netInfo ? await netInfo.fetch() : { isConnected: true };
     if (!netState.isConnected) {
       logger.info('Device is offline. Deferring workout sync.');
       return { synced: 0, failed: 0, results: [] };

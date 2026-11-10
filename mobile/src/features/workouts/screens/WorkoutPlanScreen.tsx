@@ -1,9 +1,10 @@
 import { premium } from '@/shared/theme/premium';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ChevronRight, Play, Plus, Sparkles, Trash2 } from 'lucide-react-native';
+import { ChevronRight, Dumbbell, Play, Plus, Sparkles, Trash2 } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { FeatureScreen as Screen } from '@/shared/components/ui/FeatureScreen';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Button } from '../../../shared/components/ui/Button';
 import { showToast } from '../../../shared/stores/toastStore';
 import { useWorkoutStore } from '../store/workoutStore';
@@ -20,11 +21,26 @@ export function WorkoutPlanScreen() {
     const before = plannedSession;
     removePlannedExercise(id);
     showToast({
-      message: `${getExerciseById(id).name} removed`,
+      message: `${getExerciseById(id)?.name || 'Exercise'} removed`,
       actionLabel: 'Undo',
       onAction: () => setPlannedSession(before),
     });
   };
+
+  if (!plannedSession || plannedSession.exercises.length === 0) {
+    return (
+      <Screen title="Workout">
+        <EmptyState
+          appearance="premium"
+          icon={Dumbbell}
+          title="No workout planned"
+          body="Choose a workout template or use the generator to create a routine tailored to your goals."
+          actionLabel="Build a workout"
+          onAction={() => navigate('workoutGenerator')}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen

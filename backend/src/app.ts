@@ -27,6 +27,8 @@ export function corsMiddleware(origins: readonly string[]) {
       'Idempotency-Key',
       'X-Request-Id',
       'X-Panel-Id',
+      'Cache-Control',
+      'Pragma',
     ],
     exposedHeaders: ['X-Request-Id', 'Idempotent-Replayed', 'RateLimit', 'RateLimit-Policy', 'Retry-After'],
     credentials: true,

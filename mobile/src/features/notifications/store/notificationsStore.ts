@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import {
-  initialNotifications,
   notificationPreferenceDefaults,
 } from '../data/notificationsMock';
 import type { AppNotification, NotificationPreference } from '../types/notification';
@@ -17,11 +16,11 @@ type NotificationsState = {
 };
 
 export const useNotificationsStore = create<NotificationsState>((set, get) => ({
-  items: initialNotifications,
+  items: [],
   preferences: notificationPreferenceDefaults,
   resetStore: () =>
     set({
-      items: initialNotifications,
+      items: [],
       preferences: notificationPreferenceDefaults,
     }),
   markRead: (id) =>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Flashlight, Keyboard, X } from 'lucide-react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import { BottomSheet } from '@/shared/components/ui/BottomSheet';
 import { Button } from '@/shared/components/ui/Button';
@@ -16,6 +17,10 @@ export function BarcodeScannerScreen() {
   const { goBack, replace } = useNavigation();
   const params = useRouteParams<{ meal?: MealType }>();
   const meal = params.meal ?? 'snacks';
+
+  const [permission, requestPermission] = useCameraPermissions();
+  const lastScannedCode = useRef<string | null>(null);
+  const scanTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [found, setFound] = useState(false);
   const [manual, setManual] = useState(false);
@@ -43,10 +48,14 @@ export function BarcodeScannerScreen() {
         }),
       ])
     ).start();
+
+    return () => {
+      if (scanTimeout.current) clearTimeout(scanTimeout.current);
+    };
   }, [scanAnim]);
 
-  const lookup = async () => {
-    const clean = code.trim();
+  const lookupCode = async (targetCode: string) => {
+    const clean = targetCode.trim();
     if (clean.length < 6) {
       setNotFound(true);
       return;
@@ -67,6 +76,20 @@ export function BarcodeScannerScreen() {
     }
   };
 
+  const handleBarcodeScanned = ({ data }: { data: string }) => {
+    if (found || lookingUp || !data) return;
+    if (lastScannedCode.current === data) return;
+    lastScannedCode.current = data;
+    setCode(data);
+    void lookupCode(data);
+    if (scanTimeout.current) clearTimeout(scanTimeout.current);
+    scanTimeout.current = setTimeout(() => {
+      lastScannedCode.current = null;
+    }, 3000);
+  };
+
+  const lookup = () => lookupCode(code);
+
   const translateY = scanAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [10, 150],
@@ -74,6 +97,18 @@ export function BarcodeScannerScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {permission?.granted ? (
+        <CameraView
+          style={StyleSheet.absoluteFill}
+          facing="back"
+          enableTorch={torchOn}
+          barcodeScannerSettings={{
+            barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'code128', 'code39'],
+          }}
+          onBarcodeScanned={found ? undefined : handleBarcodeScanned}
+        />
+      ) : null}
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -97,23 +132,38 @@ export function BarcodeScannerScreen() {
 
       {/* Viewfinder */}
       <View style={styles.viewfinderContainer}>
-        <View style={styles.frame}>
-          {!found && (
-            <Animated.View
-              style={[
-                styles.scanLine,
-                {
-                  transform: [{ translateY }],
-                  backgroundColor: colors.accent,
-                },
-              ]}
+        {!permission?.granted ? (
+          <View style={styles.permissionBox}>
+            <Text style={styles.permissionText}>Camera access is needed to scan food barcodes.</Text>
+            <Button
+              title="Grant Camera Access"
+              size="sm"
+              onPress={requestPermission}
+              style={{ marginTop: 12 }}
             />
-          )}
-        </View>
+          </View>
+        ) : (
+          <View style={styles.frame}>
+            {!found && (
+              <Animated.View
+                style={[
+                  styles.scanLine,
+                  {
+                    transform: [{ translateY }],
+                    backgroundColor: colors.accent,
+                  },
+                ]}
+              />
+            )}
+          </View>
+        )}
         <Text style={styles.statusText}>
-          {found ? 'Barcode detected' : 'Line up the barcode inside the frame'}
+          {found
+            ? 'Barcode detected'
+            : lookingUp
+            ? 'Looking up barcode…'
+            : 'Line up the barcode inside the frame'}
         </Text>
-        <Text style={styles.subText}>Camera preview is simulated in this environment.</Text>
       </View>
 
       {/* Manual Button */}
@@ -238,6 +288,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     marginBottom: 24,
+  },
+  permissionBox: {
+    width: 260,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  permissionText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   scanLine: {
     height: 2,

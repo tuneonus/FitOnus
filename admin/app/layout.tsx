@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   description: 'Administrative portal for FitOnus fitness platform - Phase 1 & 2 management.',
 };
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function RootLayout({
   children,
 }: Readonly<{

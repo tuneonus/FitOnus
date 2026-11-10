@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TrendingUp, Activity, Calendar, Info } from 'lucide-react';
+import { TrendingUp, Activity, Calendar } from 'lucide-react';
 import type { RegistrationTrendPoint, DashboardTimeframe } from '../types';
 
 interface UserGrowthChartProps {
@@ -78,21 +78,6 @@ export function UserGrowthChart({
             })}
           </div>
         </div>
-
-        {/* 90D Backend Notice */}
-        {timeframe === '90d' && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-300">
-            <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" />
-            <div>
-              <span className="font-semibold">Backend Timeframe Parameter Notice: </span>
-              Backend endpoint{' '}
-              <code className="rounded bg-amber-500/20 px-1 py-0.5 font-mono text-[10px] text-amber-200">
-                GET /api/v1/admin/dashboard/stats?timeframe=90d
-              </code>{' '}
-              is not yet implemented. Displaying maximum available 14-day daily data and 30-day aggregate total.
-            </div>
-          </div>
-        )}
 
         {/* Bar Graph */}
         <div className="mt-6 flex h-44 items-end gap-2 pt-6">

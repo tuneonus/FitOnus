@@ -1,0 +1,90 @@
+[
+  {
+    "mode": "light",
+    "screen": "training",
+    "width": 430,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "check": "zero-set-workout-cannot-be-saved",
+    "passed": true
+  },
+  {
+    "mode": "light",
+    "screen": "active-guard",
+    "width": 430,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "nutrition",
+    "width": 430,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "check": "search-error-distinct-from-empty",
+    "passed": true
+  },
+  {
+    "mode": "light",
+    "screen": "food-search-recovered",
+    "width": 430,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "check": "search-retry-recovers",
+    "passed": true,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "training",
+    "width": 430,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "check": "zero-set-workout-cannot-be-saved",
+    "passed": true
+  },
+  {
+    "mode": "dark",
+    "screen": "active-guard",
+    "width": 430,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "nutrition",
+    "width": 430,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "check": "search-error-distinct-from-empty",
+    "passed": true
+  },
+  {
+    "mode": "dark",
+    "screen": "food-search-recovered",
+    "width": 430,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "check": "search-retry-recovers",
+    "passed": true,
+    "errors": []
+  }
+]

@@ -1,0 +1,768 @@
+[
+  {
+    "mode": "light",
+    "screen": "training",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "training",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "library",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "library",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "exercise",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "exercise",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "generator",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "generator",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "generated-plan",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "generated-plan",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "plan",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "plan",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "active-rest",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "active-rest",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "check": "rest-does-not-cover-finish",
+    "passed": true
+  },
+  {
+    "mode": "light",
+    "check": "resume-preserves-completed-set",
+    "passed": true
+  },
+  {
+    "mode": "light",
+    "screen": "completion",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "completion",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "history",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "history",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "nutrition",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "nutrition",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "check": "one-tap-water",
+    "passed": true
+  },
+  {
+    "mode": "light",
+    "screen": "food-search",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "food-search",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "food-detail",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "food-detail",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "diary",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "diary",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "meal-photo",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "meal-photo",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "voice-review",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "voice-review",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "photo-analysis",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "photo-analysis",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "photo-confirm",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "screen": "photo-confirm",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "light",
+    "check": "serving-and-photo-totals",
+    "passed": true,
+    "foodCalories": 525,
+    "photoCalories": 595
+  },
+  {
+    "mode": "light",
+    "check": "real-controller-payloads",
+    "workoutRequests": [
+      {
+        "path": "/api/v1/workouts/sessions",
+        "method": "POST",
+        "body": {
+          "clientSessionId": "2fbcb1e8-0e76-46b0-aa12-5d5dc1682713",
+          "workoutName": "Fat Loss · Intermediate",
+          "planId": "ai-plan-1794213136502",
+          "startedAt": "2026-11-09T08:32:23.658Z",
+          "completedAt": "2026-11-09T08:32:24.658Z",
+          "durationSeconds": 1,
+          "sets": [
+            {
+              "exerciseId": "e0000000-0000-4000-8000-000000000001",
+              "setNumber": 1,
+              "weightKg": 55,
+              "reps": 8,
+              "isWarmup": false,
+              "rpe": null
+            }
+          ]
+        }
+      }
+    ],
+    "mealRequests": [
+      {
+        "path": "/api/v1/nutrition/meals",
+        "method": "POST",
+        "body": {
+          "id": "ff5b497f-d71b-4052-9f20-82e860bbb3fc",
+          "mealType": "dinner",
+          "date": "2026-11-09",
+          "notes": null,
+          "items": [
+            {
+              "foodId": "f0000000-0000-4000-8000-000000000001",
+              "foodName": "Rice bowl · QA fixture",
+              "foodBrand": null,
+              "servingSize": 1,
+              "servingUnit": "serving",
+              "servingWeightG": 250,
+              "servingMultiplier": 1.5,
+              "calories": 525,
+              "proteinG": 30,
+              "carbsG": 67.5,
+              "fatG": 18,
+              "fiberG": 7.5
+            }
+          ]
+        }
+      },
+      {
+        "path": "/api/v1/nutrition/meals",
+        "method": "POST",
+        "body": {
+          "id": "67223b97-dd3f-4cff-939d-4fb488373376",
+          "mealType": "lunch",
+          "date": "2026-11-09",
+          "notes": "Voice entry: \"One rice bowl\"",
+          "items": [
+            {
+              "foodId": null,
+              "foodName": "Rice bowl · QA fixture",
+              "foodBrand": null,
+              "servingSize": 1,
+              "servingUnit": "serving",
+              "servingWeightG": 100,
+              "servingMultiplier": 1,
+              "calories": 350,
+              "proteinG": 20,
+              "carbsG": 45,
+              "fatG": 12,
+              "fiberG": 5
+            }
+          ]
+        }
+      },
+      {
+        "path": "/api/v1/nutrition/meals",
+        "method": "POST",
+        "body": {
+          "id": "05cbed2a-8cd9-4c6c-aacd-7295d8bde4ef",
+          "mealType": "lunch",
+          "date": "2026-11-09",
+          "notes": null,
+          "items": [
+            {
+              "foodId": null,
+              "foodName": "Rice bowl · QA fixture",
+              "foodBrand": null,
+              "servingSize": 1,
+              "servingUnit": "serving",
+              "servingWeightG": 250,
+              "servingMultiplier": 1.5,
+              "calories": 525,
+              "proteinG": 30,
+              "carbsG": 67.5,
+              "fatG": 18,
+              "fiberG": 7.5
+            },
+            {
+              "foodId": "f0000000-0000-4000-8000-000000000002",
+              "foodName": "Egg · QA fixture",
+              "foodBrand": null,
+              "servingSize": 1,
+              "servingUnit": "piece",
+              "servingWeightG": 50,
+              "servingMultiplier": 1,
+              "calories": 70,
+              "proteinG": 6,
+              "carbsG": 1,
+              "fatG": 5,
+              "fiberG": 0
+            }
+          ]
+        }
+      }
+    ],
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "training",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "training",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "library",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "library",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "exercise",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "exercise",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "generator",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "generator",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "generated-plan",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "generated-plan",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "plan",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "plan",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "active-rest",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "active-rest",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "check": "rest-does-not-cover-finish",
+    "passed": true
+  },
+  {
+    "mode": "dark",
+    "check": "resume-preserves-completed-set",
+    "passed": true
+  },
+  {
+    "mode": "dark",
+    "screen": "completion",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "completion",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "history",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "history",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "nutrition",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "nutrition",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "check": "one-tap-water",
+    "passed": true
+  },
+  {
+    "mode": "dark",
+    "screen": "food-search",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "food-search",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "food-detail",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "food-detail",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "diary",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "diary",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "meal-photo",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "meal-photo",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "voice-review",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "voice-review",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "photo-analysis",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "photo-analysis",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "photo-confirm",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "screen": "photo-confirm",
+    "width": 320,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "mode": "dark",
+    "check": "serving-and-photo-totals",
+    "passed": true,
+    "foodCalories": 525,
+    "photoCalories": 595
+  },
+  {
+    "mode": "dark",
+    "check": "real-controller-payloads",
+    "workoutRequests": [
+      {
+        "path": "/api/v1/workouts/sessions",
+        "method": "POST",
+        "body": {
+          "clientSessionId": "59145524-f597-4c8c-87d3-d5bba635d00f",
+          "workoutName": "Fat Loss · Intermediate",
+          "planId": "ai-plan-1794213183321",
+          "startedAt": "2026-11-09T08:33:09.730Z",
+          "completedAt": "2026-11-09T08:33:10.730Z",
+          "durationSeconds": 1,
+          "sets": [
+            {
+              "exerciseId": "e0000000-0000-4000-8000-000000000002",
+              "setNumber": 1,
+              "weightKg": 55,
+              "reps": 8,
+              "isWarmup": false,
+              "rpe": null
+            }
+          ]
+        }
+      }
+    ],
+    "mealRequests": [
+      {
+        "path": "/api/v1/nutrition/meals",
+        "method": "POST",
+        "body": {
+          "id": "ff27ac79-3bf5-44ff-b0c2-bff4d3a00249",
+          "mealType": "dinner",
+          "date": "2026-11-09",
+          "notes": null,
+          "items": [
+            {
+              "foodId": "f0000000-0000-4000-8000-000000000001",
+              "foodName": "Rice bowl · QA fixture",
+              "foodBrand": null,
+              "servingSize": 1,
+              "servingUnit": "serving",
+              "servingWeightG": 250,
+              "servingMultiplier": 1.5,
+              "calories": 525,
+              "proteinG": 30,
+              "carbsG": 67.5,
+              "fatG": 18,
+              "fiberG": 7.5
+            }
+          ]
+        }
+      },
+      {
+        "path": "/api/v1/nutrition/meals",
+        "method": "POST",
+        "body": {
+          "id": "fe61945d-6d94-42d7-9c9f-79da210ba9b7",
+          "mealType": "lunch",
+          "date": "2026-11-09",
+          "notes": "Voice entry: \"One rice bowl\"",
+          "items": [
+            {
+              "foodId": null,
+              "foodName": "Rice bowl · QA fixture",
+              "foodBrand": null,
+              "servingSize": 1,
+              "servingUnit": "serving",
+              "servingWeightG": 100,
+              "servingMultiplier": 1,
+              "calories": 350,
+              "proteinG": 20,
+              "carbsG": 45,
+              "fatG": 12,
+              "fiberG": 5
+            }
+          ]
+        }
+      },
+      {
+        "path": "/api/v1/nutrition/meals",
+        "method": "POST",
+        "body": {
+          "id": "404bebaf-4190-44bc-83ac-3be1269f8df9",
+          "mealType": "lunch",
+          "date": "2026-11-09",
+          "notes": null,
+          "items": [
+            {
+              "foodId": null,
+              "foodName": "Rice bowl · QA fixture",
+              "foodBrand": null,
+              "servingSize": 1,
+              "servingUnit": "serving",
+              "servingWeightG": 250,
+              "servingMultiplier": 1.5,
+              "calories": 525,
+              "proteinG": 30,
+              "carbsG": 67.5,
+              "fatG": 18,
+              "fiberG": 7.5
+            },
+            {
+              "foodId": "f0000000-0000-4000-8000-000000000002",
+              "foodName": "Egg · QA fixture",
+              "foodBrand": null,
+              "servingSize": 1,
+              "servingUnit": "piece",
+              "servingWeightG": 50,
+              "servingMultiplier": 1,
+              "calories": 70,
+              "proteinG": 6,
+              "carbsG": 1,
+              "fatG": 5,
+              "fiberG": 0
+            }
+          ]
+        }
+      }
+    ],
+    "errors": []
+  }
+]

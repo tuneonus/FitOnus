@@ -19,15 +19,18 @@ function NumericEntry({
   label,
   whole = false,
   onChange,
+  onValidityChange,
 }: {
   value: number;
   label: string;
   whole?: boolean;
   onChange: (value: number) => void;
+  onValidityChange: (valid: boolean) => void;
 }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState(String(value));
+  const invalid = parseWorkoutInput(draft, whole) === null;
   useEffect(() => {
     if (!focused) setDraft(String(value));
   }, [value, focused]);
@@ -45,27 +48,36 @@ function NumericEntry({
         onBlur={() => {
           setFocused(false);
           setDraft(String(value));
+          onValidityChange(parseWorkoutInput(String(value), whole) !== null);
         }}
         onChangeText={(text) => {
           setDraft(text);
           const next = parseWorkoutInput(text, whole);
+          onValidityChange(next !== null);
           if (next !== null) onChange(next);
         }}
         style={[
           styles.input,
           {
             color: colors.ink,
-            borderColor: focused ? colors.accentStrong : colors.line,
+            borderColor: invalid ? colors.bad : focused ? colors.accentStrong : colors.line,
             backgroundColor: colors.bg,
           },
         ]}
       />
+      {invalid ? (
+        <Text accessibilityRole="alert" style={{ ...premium.type.caption, color: colors.bad }}>
+          Enter a valid {whole ? 'whole rep count' : 'weight'}.
+        </Text>
+      ) : null}
     </View>
   );
 }
 export function SetRow({ index, set, bodyweight, onChange, onComplete }: Props) {
   const { colors } = useTheme();
   const { fontScale } = useWindowDimensions();
+  const [weightValid, setWeightValid] = useState(Number.isFinite(set.weight) && set.weight >= 0);
+  const [repsValid, setRepsValid] = useState(Number.isSafeInteger(set.reps) && set.reps >= 0);
   return (
     <View
       style={[
@@ -88,12 +100,14 @@ export function SetRow({ index, set, bodyweight, onChange, onComplete }: Props) 
           </View>
         ) : (
           <NumericEntry
+            onValidityChange={setWeightValid}
             value={set.weight}
             label={`Set ${index + 1} weight (kg)`}
             onChange={(weight) => onChange({ weight })}
           />
         )}
         <NumericEntry
+          onValidityChange={setRepsValid}
           value={set.reps}
           label={`Set ${index + 1} reps`}
           whole
@@ -102,6 +116,7 @@ export function SetRow({ index, set, bodyweight, onChange, onComplete }: Props) 
       </View>
       <ActionButton
         icon={Check}
+        disabled={!set.done && (!weightValid || !repsValid)}
         title={set.done ? `Set ${index + 1} complete · Undo` : `Complete set ${index + 1}`}
         variant={set.done ? 'secondary' : 'primary'}
         onPress={onComplete}

@@ -19,6 +19,21 @@ export const changePasswordRequest = {
   body: z.strictObject({ currentPassword: existingPassword, newPassword }),
 };
 
+export const forgotPasswordRequest = {
+  body: z.strictObject({ email }),
+};
+
+export const resetPasswordRequest = {
+  body: z.strictObject({
+    token: z.string().trim().min(1, 'Token is required').max(512),
+    newPassword,
+  }),
+};
+
+export const messageResponseSchema = z.object({
+  message: z.string(),
+});
+
 export const sessionIdRequest = { params: idParamsSchema };
 
 export const tokensSchema = z.object({

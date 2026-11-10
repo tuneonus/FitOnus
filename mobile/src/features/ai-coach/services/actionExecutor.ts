@@ -5,7 +5,7 @@
 import type { ActionPayload } from '../types/coach';
 import { useNutritionStore } from '../../nutrition/store/nutritionStore';
 import { useWorkoutStore } from '../../workouts/store/workoutStore';
-import { generatedFatLossSession, todaySession } from '../../workouts/data/workoutsMock';
+import { generateWorkoutPlan } from '../../workouts/services/workoutPlanGenerator';
 import { WorkoutService } from '../../workouts/services/workout-service';
 import { useWeightStore } from '../../weight-tracking/store/weightStore';
 import { useGoalsStore } from '../../goals/store/goalsStore';
@@ -110,10 +110,17 @@ export async function executeAction(payload: ActionPayload): Promise<ActionResul
     }
 
     case 'createPlan': {
-      useWorkoutStore.getState().setPlannedSession(generatedFatLossSession);
+      const prevSession = useWorkoutStore.getState().plannedSession;
+      const result = await generateWorkoutPlan({
+        goal: payload.goal || 'General Fitness',
+        durationMin: payload.durationMin || 45,
+        equipment: payload.equipment || ['Dumbbell'],
+        level: payload.level || 'Intermediate',
+      });
+      useWorkoutStore.getState().setPlannedSession(result.session);
       return {
         message: 'Today’s workout updated',
-        undo: () => useWorkoutStore.getState().setPlannedSession(todaySession),
+        undo: () => useWorkoutStore.getState().setPlannedSession(prevSession),
       };
     }
 

@@ -9,6 +9,7 @@ import { SourceTag } from '@/shared/components/ui/SourceTag';
 import { ProgressRing } from '@/shared/components/charts/ProgressRing';
 import { BarChart } from '@/shared/components/charts/BarChart';
 import { useHasDeviceData } from '../../health-integration/store/healthStore';
+import { useDashboard } from '@/features/dashboard/hooks/use-dashboard';
 import { formatMinutes, lastNightStages, sleepNights } from '../data/sleepMock';
 import { Hypnogram } from '../components/Hypnogram';
 import { useTheme } from '@/hooks/use-theme';
@@ -17,16 +18,12 @@ export function SleepScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const hasDevice = useHasDeviceData();
+  const { data: dashboardData } = useDashboard();
+  const serverSleepScore = dashboardData?.summary?.sleepScore;
+  const hasData = serverSleepScore != null && hasDevice;
   const [view, setView] = useState<'night' | 'trends'>('night');
 
-  const night = sleepNights[sleepNights.length - 1]!;
-  const lightMin = night.minutes - night.deepMin - night.remMin - night.awakeMin;
-  const avg = Math.round(sleepNights.slice(-7).reduce((s, n) => s + n.minutes, 0) / 7);
-  const bedSpread =
-    Math.max(...sleepNights.slice(-7).map((n) => n.bedOffset)) -
-    Math.min(...sleepNights.slice(-7).map((n) => n.bedOffset));
-
-  if (!hasDevice) {
+  if (!hasData) {
     return (
       <Screen title="Sleep">
         <EmptyState
@@ -39,6 +36,13 @@ export function SleepScreen() {
       </Screen>
     );
   }
+
+  const night = sleepNights[sleepNights.length - 1]!;
+  const lightMin = night.minutes - night.deepMin - night.remMin - night.awakeMin;
+  const avg = Math.round(sleepNights.slice(-7).reduce((s, n) => s + n.minutes, 0) / 7);
+  const bedSpread =
+    Math.max(...sleepNights.slice(-7).map((n) => n.bedOffset)) -
+    Math.min(...sleepNights.slice(-7).map((n) => n.bedOffset));
 
   const stages = [
     { label: 'Deep', min: night.deepMin, color: '#7C3AED' },
