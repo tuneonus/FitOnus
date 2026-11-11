@@ -18,7 +18,7 @@ const reasons = {
   },
   network: {
     icon: WifiOff,
-    title: 'Couldn’t reach FitOnus',
+    title: 'Couldn’t reach OnusFit',
     body: 'Check your internet connection and try again. Your data is safe.',
     primary: 'Try again',
     route: 'login' as const,

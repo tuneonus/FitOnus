@@ -39,8 +39,8 @@ export function UserStatusActionModal({
       }
       description={
         actionType === 'suspend'
-          ? 'This will immediately revoke all active sessions and block the user from accessing FitOnus.'
-          : 'This will restore full access to FitOnus for this member.'
+          ? 'This will immediately revoke all active sessions and block the user from accessing OnusFit.'
+          : 'This will restore full access to OnusFit for this member.'
       }
       footer={
         <>

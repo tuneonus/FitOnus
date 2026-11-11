@@ -138,12 +138,12 @@ export function SettingsScreen() {
         </View>
 
         <Text style={[styles.footerText, { color: colors.muted }]}>
-          FitOnus 1.0 (prototype) · by TuneOnus
+          OnusFit 1.0 (prototype) · by TuneOnus
         </Text>
 
       <ConfirmDialog
         open={confirmLogout}
-        title="Log out of FitOnus?"
+        title="Log out of OnusFit?"
         message="Your data stays in your account. You’ll need to log in again to see it on this device."
         confirmLabel="Log out"
         destructive

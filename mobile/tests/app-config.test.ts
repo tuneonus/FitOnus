@@ -103,8 +103,8 @@ describe('Mobile App Configuration & Remote Settings Verification', () => {
         },
         forceUpdate: {
           enabled: true,
-          updateMessage: 'FitOnus 2.0 is required.',
-          storeUrl: 'https://play.google.com/store/apps/details?id=com.fitonus.app',
+          updateMessage: 'OnusFit 2.0 is required.',
+          storeUrl: 'https://play.google.com/store/apps/details?id=com.tuneonus.onusfit',
         },
       };
 
@@ -137,7 +137,7 @@ describe('Mobile App Configuration & Remote Settings Verification', () => {
         forceUpdate: {
           enabled: false,
           updateMessage: 'Update recommended.',
-          storeUrl: 'https://play.google.com/store/apps/details?id=com.fitonus.app',
+          storeUrl: 'https://play.google.com/store/apps/details?id=com.tuneonus.onusfit',
         },
       };
 

@@ -51,7 +51,7 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Text variant="displaySmall" style={styles.title}>Welcome Back</Text>
-            <Text variant="bodyLarge" color="textSecondary">Sign in to continue to FitOnus</Text>
+            <Text variant="bodyLarge" color="textSecondary">Sign in to continue to OnusFit</Text>
           </View>
 
           {globalError && (

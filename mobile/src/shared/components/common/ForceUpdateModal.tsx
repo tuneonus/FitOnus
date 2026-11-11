@@ -25,7 +25,7 @@ export function ForceUpdateModal() {
   const handleOpenStore = () => {
     const url =
       config.forceUpdate.storeUrl ||
-      'https://play.google.com/store/apps/details?id=com.fitonus.app';
+      'https://play.google.com/store/apps/details?id=com.tuneonus.onusfit';
     Linking.openURL(url).catch(() => {});
   };
 
@@ -57,7 +57,7 @@ export function ForceUpdateModal() {
 
           <Text style={[styles.message, { color: colors.muted }]}>
             {config.forceUpdate.updateMessage ||
-              'A critical update is required to continue using FitOnus. Please update from the Google Play Store.'}
+              'A critical update is required to continue using OnusFit. Please update from the Google Play Store.'}
           </Text>
 
           <View style={[styles.versionBox, { backgroundColor: colors.surface, borderColor: colors.line }]}>

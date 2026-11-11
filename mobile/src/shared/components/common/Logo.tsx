@@ -44,7 +44,7 @@ export function Logo({
       </View>
 
       {withWordmark && (
-        <Text style={[styles.wordmark, { color: textColor }]}>FitOnus</Text>
+        <Text style={[styles.wordmark, { color: textColor }]}>OnusFit</Text>
       )}
     </View>
   );

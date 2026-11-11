@@ -25,7 +25,7 @@ export class GeminiMealPhotoService {
       .filter(Boolean)
       .join(', ');
 
-    return `You are FitOnus AI Meal Scanner — an expert nutritional biochemist, food recognition specialist, and dietitian.
+    return `You are OnusFit AI Meal Scanner — an expert nutritional biochemist, food recognition specialist, and dietitian.
 Analyze the provided food photograph carefully.
 
 ${contextNote ? `ADDITIONAL CONTEXT: ${contextNote}\n` : ''}

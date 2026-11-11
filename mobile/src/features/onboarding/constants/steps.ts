@@ -91,7 +91,7 @@ export const onboardingSteps: {
   {
     id: 'health',
     title: 'Connect your health data',
-    subtitle: 'Choose what FitOnus can read.',
+    subtitle: 'Choose what OnusFit can read.',
     skippable: true,
     hint: 'Optional. You can set this up later in Settings.',
   },
@@ -100,7 +100,7 @@ export const onboardingSteps: {
     title: 'Connect a device',
     subtitle: 'For heart rate, HRV and sleep.',
     skippable: true,
-    hint: 'No wearable? You can still use FitOnus.',
+    hint: 'No wearable? You can still use OnusFit.',
   },
   {
     id: 'confirm',

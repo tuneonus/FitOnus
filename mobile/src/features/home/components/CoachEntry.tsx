@@ -14,7 +14,7 @@ export function CoachEntry() {
     <Card tone="muted" appearance="premium" style={styles.card}>
       <View style={styles.header}>
         <Sparkles size={17} color={colors.accentStrong} />
-        <Text style={[premium.type.eyebrow, { color: colors.accentStrong }]}>FITONUS COACH</Text>
+        <Text style={[premium.type.eyebrow, { color: colors.accentStrong }]}>ONUSFIT COACH</Text>
       </View>
       <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
         Your next move,{'\n'}made clearer.

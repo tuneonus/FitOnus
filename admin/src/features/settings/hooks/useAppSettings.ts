@@ -19,7 +19,7 @@ import type {
 
 const DEFAULT_MAINTENANCE: MaintenanceSettingValue = {
   enabled: false,
-  message: 'FitOnus is currently undergoing scheduled maintenance. Please check back shortly.',
+  message: 'OnusFit is currently undergoing scheduled maintenance. Please check back shortly.',
   expectedEndTime: null,
 };
 
@@ -29,8 +29,8 @@ const DEFAULT_MIN_VERSION: MinVersionSettingValue = {
 
 const DEFAULT_FORCE_UPDATE: ForceUpdateSettingValue = {
   enabled: false,
-  updateMessage: 'A critical update is required to continue using FitOnus. Please update from the Google Play Store.',
-  storeUrl: 'https://play.google.com/store/apps/details?id=com.fitonus.app',
+  updateMessage: 'A critical update is required to continue using OnusFit. Please update from the Google Play Store.',
+  storeUrl: 'https://play.google.com/store/apps/details?id=com.tuneonus.onusfit',
 };
 
 const DEFAULT_SUPPORT: SupportSettingValue = {

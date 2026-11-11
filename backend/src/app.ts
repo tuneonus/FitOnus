@@ -59,9 +59,9 @@ export function createApp(deps: { config: AppConfig; logger: Logger; container: 
   }
 
   const openApiDocument = buildOpenApiDocument(container.routeGroups, {
-    title: 'Generic Backend API',
+    title: 'OnusFit API',
     version: '0.1.0',
-    description: 'Reusable Express + PostgreSQL backend starter.',
+    description: 'OnusFit fitness platform API by TuneOnus.',
   });
   app.get(`${API_PREFIX}/openapi.json`, (_req, res) => {
     res.json(openApiDocument);

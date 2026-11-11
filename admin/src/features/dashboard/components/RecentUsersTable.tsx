@@ -20,7 +20,7 @@ export function RecentUsersTable({ users }: RecentUsersTableProps) {
             Recently Registered Users
           </h3>
           <p className="text-xs text-slate-400">
-            Latest members onboarded into FitOnus
+            Latest members onboarded into OnusFit
           </p>
         </div>
 

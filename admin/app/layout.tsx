@@ -12,8 +12,8 @@ const geistMono = {
 };
 
 export const metadata: Metadata = {
-  title: 'FitOnus Admin Portal | Management & Security',
-  description: 'Administrative portal for FitOnus fitness platform - Phase 1 & 2 management.',
+  title: 'OnusFit Admin Portal | Management & Security',
+  description: 'Administrative portal for OnusFit fitness platform - Phase 1 & 2 management.',
 };
 
 export const dynamic = 'force-dynamic';

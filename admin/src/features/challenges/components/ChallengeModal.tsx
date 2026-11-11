@@ -333,7 +333,7 @@ function ChallengeForm({
             className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 text-xs text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
           <p className="mt-1 text-[11px] text-slate-400">
-            FitOnus points awarded to the member upon completion.
+            OnusFit points awarded to the member upon completion.
           </p>
         </div>
       </div>

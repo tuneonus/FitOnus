@@ -58,7 +58,7 @@ export interface PublicAppConfig {
 export const DEFAULT_PUBLIC_APP_CONFIG: PublicAppConfig = {
   maintenance: {
     enabled: false,
-    message: 'FitOnus is currently undergoing scheduled maintenance. Please check back shortly.',
+    message: 'OnusFit is currently undergoing scheduled maintenance. Please check back shortly.',
     expectedEndTime: null,
   },
   minVersion: {
@@ -66,8 +66,8 @@ export const DEFAULT_PUBLIC_APP_CONFIG: PublicAppConfig = {
   },
   forceUpdate: {
     enabled: false,
-    updateMessage: 'A critical update is required to continue using FitOnus. Please update from the Google Play Store.',
-    storeUrl: 'https://play.google.com/store/apps/details?id=com.fitonus.app',
+    updateMessage: 'A critical update is required to continue using OnusFit. Please update from the Google Play Store.',
+    storeUrl: 'https://play.google.com/store/apps/details?id=com.tuneonus.onusfit',
   },
   support: {
     email: 'support@fitonus.com',

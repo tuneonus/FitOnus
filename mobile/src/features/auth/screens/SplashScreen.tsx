@@ -59,9 +59,9 @@ export function SplashScreen() {
     <View style={[styles.container, { backgroundColor: colors.hero }]}>
       <View style={styles.centerBox}>
         <Logo size={72} />
-        <Text style={[styles.title, { color: colors.heroInk }]}>FitOnus</Text>
+        <Text style={[styles.title, { color: colors.heroInk }]}>OnusFit</Text>
         <Text style={[styles.subtitle, { color: colors.heroMuted }]}>
-          Your AI fitness & health coach
+          Own Your Fitness.
         </Text>
       </View>
 

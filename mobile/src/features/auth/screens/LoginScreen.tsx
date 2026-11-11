@@ -115,43 +115,6 @@ export function LoginScreen() {
           style={styles.loginButton}
         />
 
-        {/* Divider */}
-        <View style={styles.dividerRow}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.line }]} />
-          <Text style={[styles.dividerText, { color: colors.muted }]}>
-            or continue with
-          </Text>
-          <View style={[styles.dividerLine, { backgroundColor: colors.line }]} />
-        </View>
-
-        {/* Social Buttons */}
-        <View style={styles.socialRow}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => reset('home')}
-            style={[
-              styles.socialButton,
-              { backgroundColor: colors.surface, borderColor: colors.line },
-            ]}
-          >
-            <Text style={[styles.socialText, { color: colors.ink }]}>
-              Apple
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => reset('home')}
-            style={[
-              styles.socialButton,
-              { backgroundColor: colors.surface, borderColor: colors.line },
-            ]}
-          >
-            <Text style={[styles.socialText, { color: colors.ink }]}>
-              Google
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Sign up prompt */}
         <View style={styles.signupPrompt}>
           <Text style={{ color: colors.muted }}>Don’t have an account? </Text>

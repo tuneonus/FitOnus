@@ -54,7 +54,7 @@ export function WearOsScreen() {
 
         <Text style={[styles.cardDescription, { color: colors.ink }]}>
           Wear OS and Health Connect syncing are planned. This build shows fitness data you log
-          directly in FitOnus.
+          directly in OnusFit.
         </Text>
 
         <Button variant="secondary" fullWidth onPress={() => navigate('healthIntegration')}>

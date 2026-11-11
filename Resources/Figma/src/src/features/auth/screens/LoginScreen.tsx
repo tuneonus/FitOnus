@@ -66,7 +66,7 @@ export function LoginScreen() {
         </div>
 
         <p className="mt-auto pb-2 pt-8 text-center text-[14px] text-muted">
-          New to FitOnus?{' '}
+          New to OnusFit?{' '}
           <button type="button" onClick={() => navigate('signup')} className="font-semibold text-ink underline-offset-4 hover:underline">
             Create an account
           </button>

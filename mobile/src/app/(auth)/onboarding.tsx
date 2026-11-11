@@ -11,7 +11,7 @@ const { width } = Dimensions.get('window');
 
 const ONBOARDING_STEPS = [
   {
-    title: 'Welcome to FitOnus',
+    title: 'Welcome to OnusFit',
     description: 'Your personal AI-powered fitness and health companion.',
   },
   {

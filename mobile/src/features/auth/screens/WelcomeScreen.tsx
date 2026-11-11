@@ -49,7 +49,7 @@ export function WelcomeScreen() {
             A coach that reads your body, not just your steps.
           </Text>
           <Text style={[styles.subheadline, { color: colors.heroMuted }]}>
-            FitOnus turns sleep, recovery, training and meals into one clear plan
+            OnusFit turns sleep, recovery, training and meals into one clear plan
             — and answers your questions in plain language.
           </Text>
 

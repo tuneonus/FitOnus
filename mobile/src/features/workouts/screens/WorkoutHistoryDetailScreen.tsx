@@ -76,7 +76,7 @@ export function WorkoutHistoryDetailScreen() {
             source={
               synced
                 ? { kind: 'synced', label: 'Recorded on Apple Watch · synced' }
-                : { kind: 'manual', label: 'Logged in FitOnus' }
+                : { kind: 'manual', label: 'Logged in OnusFit' }
             }
           />
         </View>

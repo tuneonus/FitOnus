@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "FitOnus",
-    "slug": "FitOnus",
+    "name": "OnusFit",
+    "slug": "onusfit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "fitonus",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.tuneonus.onusfit",
       "icon": "./assets/expo.icon"
     },
     "android": {
@@ -20,6 +21,11 @@
       },
       "predictiveBackGestureEnabled": false,
       "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
@@ -29,7 +35,7 @@
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.RECEIVE_BOOT_COMPLETED"
       ],
-      "package": "com.devshan369.FitOnus"
+      "package": "com.tuneonus.onusfit"
     },
     "web": {
       "output": "static",
@@ -70,7 +76,7 @@
         }
       },
       "eas": {
-        "projectId": "ede4995a-e0ad-4753-9932-e2f9cfabb0bf"
+        "projectId": "17a2344d-80a9-4fd9-8b88-589ed4801e4b"
       }
     },
     "owner": "tuneonus"

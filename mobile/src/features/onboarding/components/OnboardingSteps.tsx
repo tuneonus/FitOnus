@@ -607,7 +607,7 @@ export function StepDevice() {
           ]}
         >
           <HeartPulse size={32} color={colors.accent} />
-          <Text style={[styles.watchFaceText, { color: colors.heroInk }]}>FITONUS</Text>
+          <Text style={[styles.watchFaceText, { color: colors.heroInk }]}>ONUSFIT</Text>
         </View>
         <Text style={[styles.connectionTitle, { color: colors.heroInk }]}>
           Your wrist. More insight.

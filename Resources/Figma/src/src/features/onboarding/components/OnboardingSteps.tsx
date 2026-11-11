@@ -329,7 +329,7 @@ export function StepHealthPermissions() {
         )}
       </div>
       <p className="mt-4 text-[13px] leading-relaxed text-muted">
-        FitOnus reads data only. We never sell health data, and you can revoke access any time in Settings.
+        OnusFit reads data only. We never sell health data, and you can revoke access any time in Settings.
       </p>
       {healthAllowed ?
       <p className="mt-5 flex items-center justify-center gap-2 rounded-2xl bg-good/10 p-3.5 text-[14px] font-semibold text-good" role="status">

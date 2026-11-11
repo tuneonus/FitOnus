@@ -98,7 +98,7 @@ export function HealthIntegrationScreen() {
             <View style={{ gap: 12, marginTop: 14 }}>
               <Text style={[styles.disconnectedBody, { color: colors.ink }]}>
                 Wearable health syncing is not available in this build yet. Workouts, nutrition and
-                body measurements you log in FitOnus are saved to your account.
+                body measurements you log in OnusFit are saved to your account.
               </Text>
               <Button size="lg" fullWidth onPress={connect}>
                 Connect {name}
@@ -255,7 +255,7 @@ export function HealthIntegrationScreen() {
               Disconnect {name}
             </Button>
             <Text style={[styles.disconnectFootnote, { color: colors.muted }]}>
-              Your logged meals, workouts and weights stay in FitOnus.
+              Your logged meals, workouts and weights stay in OnusFit.
             </Text>
           </View>
         )}

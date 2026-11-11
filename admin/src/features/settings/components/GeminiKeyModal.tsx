@@ -53,7 +53,7 @@ export function GeminiKeyModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Update Gemini API Key"
-      description="Rotate or configure the enterprise Google Gemini API key used by FitOnus backend."
+      description="Rotate or configure the enterprise Google Gemini API key used by OnusFit backend."
       maxWidth="lg"
       footer={
         <div className="flex items-center justify-between w-full">

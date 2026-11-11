@@ -64,7 +64,7 @@ export function formatUsersCsv(users: AdminUserListItem[]): string {
  */
 export function downloadUsersCsv(
   users: AdminUserListItem[],
-  filenamePrefix: string = 'fitonus-users-directory',
+  filenamePrefix: string = 'onusfit-users-directory',
 ): { filename: string; rowCount: number } {
   const csvContent = formatUsersCsv(users);
   const dateStr = new Date().toISOString().slice(0, 10);

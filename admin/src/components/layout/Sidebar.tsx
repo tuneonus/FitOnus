@@ -61,7 +61,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-white tracking-wide">FitOnus</span>
+              <span className="font-bold text-white tracking-wide">OnusFit</span>
               <span className="rounded bg-teal-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-300">
                 Admin
               </span>

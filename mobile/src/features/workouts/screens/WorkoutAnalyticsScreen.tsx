@@ -85,7 +85,7 @@ export function WorkoutAnalyticsScreen() {
         <EmptyState
           icon={BarChart3}
           title="No analytics yet"
-          body="Complete workouts in FitOnus to see 30-day session volume, frequency trends and strength progression."
+          body="Complete workouts in OnusFit to see 30-day session volume, frequency trends and strength progression."
           actionLabel="Start a workout"
           onAction={() => navigate('activeWorkout')}
         />

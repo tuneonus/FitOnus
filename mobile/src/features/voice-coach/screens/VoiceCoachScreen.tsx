@@ -146,7 +146,7 @@ export function VoiceCoachScreen() {
           </Text>
           <Text style={[styles.permDesc, { color: colors.heroMuted }]}>
             {micPermission === 'denied'
-              ? 'Voice needs microphone access. You can turn it on in Settings → FitOnus → Microphone.'
+              ? 'Voice needs microphone access. You can turn it on in Settings → OnusFit → Microphone.'
               : 'Log sets mid-workout, add meals hands-free, or ask how you’re doing. Audio is processed for your request only and not stored.'}
           </Text>
           <View style={styles.permButtons}>

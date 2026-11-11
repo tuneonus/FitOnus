@@ -83,7 +83,7 @@ export function AppleWatchScreen() {
         <StatusBanner
           tone="warning"
           title="Apple Health is disconnected"
-          body="Watch data reaches FitOnus through Apple Health."
+          body="Watch data reaches OnusFit through Apple Health."
           actionLabel="Fix"
           onAction={() => navigate('healthIntegration')}
         />
@@ -164,7 +164,7 @@ export function AppleWatchScreen() {
         </View>
         <View style={styles.futureList}>
           <Text style={[styles.futureItem, { color: colors.muted }]}>
-            • FitOnus watch app with live set logging
+            • OnusFit watch app with live set logging
           </Text>
           <Text style={[styles.futureItem, { color: colors.muted }]}>
             • Wear OS companion via Health Connect
@@ -187,7 +187,7 @@ export function AppleWatchScreen() {
           variant="ghost"
           onPress={() => {
             setWatchConnected(false);
-            showToast({ message: 'Apple Watch removed from FitOnus' });
+            showToast({ message: 'Apple Watch removed from OnusFit' });
           }}
         >
           Stop using this watch

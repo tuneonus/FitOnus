@@ -46,7 +46,7 @@ export function DashboardView() {
     return (
       <AdminLayout
         title="Platform Overview"
-        subtitle="Live enterprise metrics from Neon PostgreSQL across all FitOnus domains"
+        subtitle="Live enterprise metrics from Neon PostgreSQL across all OnusFit domains"
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       >
@@ -59,7 +59,7 @@ export function DashboardView() {
     return (
       <AdminLayout
         title="Platform Overview"
-        subtitle="Live enterprise metrics from Neon PostgreSQL across all FitOnus domains"
+        subtitle="Live enterprise metrics from Neon PostgreSQL across all OnusFit domains"
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       >
@@ -111,7 +111,7 @@ export function DashboardView() {
   return (
     <AdminLayout
       title="Platform Overview"
-      subtitle="Live enterprise metrics from Neon PostgreSQL across all FitOnus domains"
+      subtitle="Live enterprise metrics from Neon PostgreSQL across all OnusFit domains"
       onRefresh={handleRefresh}
       isRefreshing={isRefreshing}
     >

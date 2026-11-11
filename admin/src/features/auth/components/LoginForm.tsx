@@ -58,7 +58,7 @@ export function LoginForm() {
             <Dumbbell className="h-7 w-7 stroke-[2.5]" />
           </div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">FitOnus</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">OnusFit</h1>
             <span className="rounded bg-teal-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-teal-300 border border-teal-500/30">
               Admin
             </span>

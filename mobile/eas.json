@@ -18,11 +18,22 @@
       }
     },
     "production": {
+      "distribution": "store",
+      "developmentClient": false,
+      "environment": "production",
+      "credentialsSource": "remote",
       "android": {
         "buildType": "app-bundle"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://fitonus-api.onrender.com/api/v1"
+      }
+    },
+    "internal-testing": {
+      "extends": "production",
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://fitonus-api-dev.onrender.com/api/v1"
       }
     }
   },

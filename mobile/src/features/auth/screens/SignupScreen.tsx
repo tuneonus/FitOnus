@@ -118,7 +118,7 @@ export function SignupScreen() {
             {agreed && <Check size={14} color={colors.bg} strokeWidth={3} />}
           </View>
           <Text style={[styles.termsText, { color: colors.muted }]}>
-            I agree to FitOnus processing my health data to provide personalized
+            I agree to OnusFit processing my health data to provide personalized
             coaching per the Terms & Privacy Policy.
           </Text>
         </TouchableOpacity>

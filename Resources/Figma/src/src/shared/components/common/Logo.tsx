@@ -2,7 +2,7 @@ import React from 'react';
 
 type LogoProps = {size?: number;withWordmark?: boolean;tone?: 'default' | 'hero';};
 
-/** FitOnus mark: a rising pulse inside a lime tile. */
+/** OnusFit mark: a rising pulse inside a lime tile. */
 export function Logo({ size = 40, withWordmark, tone = 'default' }: LogoProps) {
   return (
     <span className="inline-flex items-center gap-2.5">
@@ -17,7 +17,7 @@ export function Logo({ size = 40, withWordmark, tone = 'default' }: LogoProps) {
       </span>
       {withWordmark &&
       <span className={`text-[22px] font-semibold tracking-[-0.03em] ${tone === 'hero' ? 'text-heroInk' : 'text-ink'}`}>
-          FitOnus
+          OnusFit
         </span>
       }
       {!withWordmark && <span className="sr-only">FitOnus</span>}

@@ -125,7 +125,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
 
     const maintenance: MaintenanceSettingValue = map.get('app.maintenance') ?? {
       enabled: false,
-      message: 'FitOnus is currently undergoing scheduled maintenance. Please check back shortly.',
+      message: 'OnusFit is currently undergoing scheduled maintenance. Please check back shortly.',
       expectedEndTime: null,
     };
 
@@ -135,7 +135,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
 
     const forceUpdate: ForceUpdateSettingValue = map.get('app.force_update') ?? {
       enabled: false,
-      updateMessage: 'A new version of FitOnus is required to continue.',
+      updateMessage: 'A new version of OnusFit is required to continue.',
       storeUrl: '',
     };
 

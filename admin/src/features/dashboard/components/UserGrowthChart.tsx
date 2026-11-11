@@ -53,7 +53,7 @@ export function UserGrowthChart({
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Daily member registrations recorded across the FitOnus platform
+              Daily member registrations recorded across the OnusFit platform
             </p>
           </div>
 

@@ -62,7 +62,7 @@ export function AccountScreen() {
           <ListRow
             icon={UserIcon}
             title="Name"
-            value={user?.name || 'FitOnus Athlete'}
+            value={user?.name || 'OnusFit Athlete'}
             chevron={false}
           />
           <ListRow
@@ -90,7 +90,7 @@ export function AccountScreen() {
         <View style={[styles.subCard, { borderColor: colors.line }]}>
           <View style={styles.subHeader}>
             <Crown size={17} color={colors.ink} />
-            <Text style={[styles.subTitle, { color: colors.ink }]}>FitOnus Free</Text>
+            <Text style={[styles.subTitle, { color: colors.ink }]}>OnusFit Free</Text>
             <Badge>Premium · Future</Badge>
           </View>
           <Text style={[styles.subText, { color: colors.muted }]}>

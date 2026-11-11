@@ -123,7 +123,7 @@ export function PrivacyScreen() {
           <ListGroup>
             <ListRow
               title="Health permissions"
-              subtitle="Choose which data types FitOnus can read"
+              subtitle="Choose which data types OnusFit can read"
               onPress={() => navigate('healthIntegration')}
             />
             <ListRow

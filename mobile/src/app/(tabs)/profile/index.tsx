@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Image } from 'react-native';
-import { Stack } from 'expo-router';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Redirect, Stack } from 'expo-router';
 import { ScreenContainer } from '@/components/shared/screen-container';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/hooks/use-theme';
@@ -8,9 +8,25 @@ import { Spacing, BorderRadius } from '@/constants/theme';
 import { StatCard } from '@/features/profile/components/stat-card';
 import { SettingRow } from '@/features/profile/components/setting-row';
 import { User, Activity, Target, Settings, Moon, Bell, Shield, LogOut } from 'lucide-react-native';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { useProfile } from '@/features/profile/hooks/use-profile';
+import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { data, isPending, isError, refetch } = useProfile();
+
+  if (!isAuthenticated || !user) return <Redirect href="/" />;
+
+  // Do not display a cached profile belonging to a different signed-in account.
+  const profile = data?.userId === user.id ? data : undefined;
+  const formatWeight = (value: number | null | undefined) =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0 ? `${value} kg` : '—';
+  const emptyLabel = isPending ? 'Loading profile…' : isError ? 'Profile unavailable' : 'Not recorded';
+  const currentWeight = formatWeight(profile?.currentWeightKg);
+  const targetWeight = formatWeight(profile?.targetWeightKg);
 
   return (
     <ScreenContainer edges={['top']} style={{ backgroundColor: colors.background }}>
@@ -32,8 +48,8 @@ export default function ProfileScreen() {
             <User size={40} color={colors.primary} />
           </View>
           <View style={styles.headerText}>
-            <Text variant="headlineMedium" style={{ color: colors.text }}>Alex Fitness</Text>
-            <Text variant="bodyLarge" style={{ color: colors.textSecondary }}>alex@tuneonus.com</Text>
+            <Text variant="headlineMedium" style={{ color: colors.text }}>{profile?.name || user.name || 'Profile'}</Text>
+            <Text variant="bodyLarge" style={{ color: colors.textSecondary }}>{user.email || 'No email attached'}</Text>
           </View>
         </View>
 
@@ -41,18 +57,28 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           <StatCard 
             label="Current Weight" 
-            value="78.5 kg" 
+            value={currentWeight}
             icon={Activity} 
-            subValue="-2.5 kg this month" 
+            {...(currentWeight === '—' ? { subValue: emptyLabel } : {})}
           />
           <View style={{ width: Spacing.sm }} />
           <StatCard 
             label="Target Goal" 
-            value="75.0 kg" 
+            value={targetWeight}
             icon={Target} 
-            subValue="Hypertrophy" 
+            {...(targetWeight === '—' ? { subValue: emptyLabel } : {})}
           />
         </View>
+
+        {isError && (
+          <StatusBanner
+            tone="error"
+            title="Couldn’t load profile"
+            body="Check your connection and try again."
+            actionLabel="Retry"
+            onAction={() => { void refetch(); }}
+          />
+        )}
 
         {/* Settings Groups */}
         <View style={styles.settingsGroup}>

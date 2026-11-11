@@ -16,7 +16,7 @@ export class GeminiCoachChatService implements CoachChatService {
   private buildSystemPrompt(context: UserFitnessContext): string {
     const { profile, todayNutrition, recentWorkouts, todayPlannedWorkout, activeGoals, latestWeightKg } = context;
 
-    return `You are FitOnus AI Coach — an elite, encouraging, science-based fitness coach and sports nutritionist for the FitOnus health app.
+    return `You are OnusFit AI Coach — an elite, encouraging, science-based fitness coach and sports nutritionist for the OnusFit health app.
 
 USER FITNESS PROFILE:
 - Name: ${profile.displayName}
@@ -127,7 +127,7 @@ If discussing medical symptoms, injuries, or severe pain, include "medicalNote":
     return {
       text: rawText,
       followUps: [],
-      sources: ['FitOnus Coach Engine'],
+      sources: ['OnusFit Coach Engine'],
     };
   }
 }

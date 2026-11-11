@@ -32,7 +32,7 @@ export function MaintenanceModal() {
 
   const handleContactSupport = () => {
     if (config.support.email) {
-      Linking.openURL(`mailto:${config.support.email}?subject=FitOnus%20Maintenance%20Inquiry`);
+      Linking.openURL(`mailto:${config.support.email}?subject=OnusFit%20Maintenance%20Inquiry`);
     } else if (config.support.website) {
       Linking.openURL(config.support.website);
     }
@@ -57,7 +57,7 @@ export function MaintenanceModal() {
 
           <Text style={[styles.message, { color: colors.muted }]}>
             {config.maintenance.message ||
-              'FitOnus is currently undergoing scheduled maintenance. Please check back shortly.'}
+              'OnusFit is currently undergoing scheduled maintenance. Please check back shortly.'}
           </Text>
 
           {config.maintenance.expectedEndTime && (

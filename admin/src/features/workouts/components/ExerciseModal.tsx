@@ -376,7 +376,7 @@ export function ExerciseModal({
       title={isEditing ? 'Edit Exercise' : 'Add New Exercise'}
       description={
         isEditing
-          ? 'Modify verified exercise details in the global FitOnus library.'
+          ? 'Modify verified exercise details in the global OnusFit library.'
           : 'Add a new verified exercise to the global library with form cues and targets.'
       }
       maxWidth="2xl"

@@ -34,7 +34,7 @@ export function HomeHeader() {
     <View style={styles.header}>
       <View style={styles.topRow}>
         <View style={styles.brand}>
-          <Text style={[styles.wordmark, { color: colors.ink }]}>FITONUS</Text>
+          <Text style={[styles.wordmark, { color: colors.ink }]}>ONUSFIT</Text>
           <Text style={[premium.type.caption, { color: colors.muted }]}>{dateLabel}</Text>
         </View>
         <View style={styles.actions}>

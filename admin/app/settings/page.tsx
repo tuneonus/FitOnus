@@ -7,7 +7,7 @@ export default function SettingsPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-slate-950">
-          <LoadingSpinner size="lg" label="Loading FitOnus Settings..." />
+          <LoadingSpinner size="lg" label="Loading OnusFit Settings..." />
         </div>
       }
     >

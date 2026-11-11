@@ -27,7 +27,7 @@ export function AdminLayout({
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <LoadingSpinner size="lg" label="Loading FitOnus Admin Portal..." />
+        <LoadingSpinner size="lg" label="Loading OnusFit Admin Portal..." />
       </div>
     );
   }

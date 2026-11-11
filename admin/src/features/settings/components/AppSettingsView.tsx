@@ -272,7 +272,7 @@ export function AppSettingsView() {
                     onChange={(e) =>
                       setMaintenanceDraft((prev) => ({ ...prev, message: e.target.value }))
                     }
-                    placeholder="FitOnus is currently undergoing scheduled maintenance..."
+                    placeholder="OnusFit is currently undergoing scheduled maintenance..."
                     className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
                   />
                 </div>
@@ -359,7 +359,7 @@ export function AppSettingsView() {
                     onChange={(e) =>
                       setForceUpdateDraft((prev) => ({ ...prev, storeUrl: e.target.value }))
                     }
-                    placeholder="https://play.google.com/store/apps/details?id=com.fitonus.app"
+                    placeholder="https://play.google.com/store/apps/details?id=com.tuneonus.onusfit"
                     className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
                   />
                 </div>
@@ -374,7 +374,7 @@ export function AppSettingsView() {
                     onChange={(e) =>
                       setForceUpdateDraft((prev) => ({ ...prev, updateMessage: e.target.value }))
                     }
-                    placeholder="A critical update is required to continue using FitOnus..."
+                    placeholder="A critical update is required to continue using OnusFit..."
                     className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
                   />
                 </div>

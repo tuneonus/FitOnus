@@ -45,7 +45,7 @@ export class GeminiVoiceMealService {
       .filter(Boolean)
       .join('\n');
 
-    return `You are FitOnus AI Voice Meal Assistant — an expert dietary analyst, multilingual nutritionist, and food recognition AI.
+    return `You are OnusFit AI Voice Meal Assistant — an expert dietary analyst, multilingual nutritionist, and food recognition AI.
 
 TASK:
 Analyze the meal described either in the audio or in the transcript text.
