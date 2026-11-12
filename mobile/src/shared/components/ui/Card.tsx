@@ -6,11 +6,15 @@ import { premium } from '@/shared/theme/premium';
 export type CardProps = {
   children?: React.ReactNode;
   padded?: boolean;
-  tone?: 'default' | 'muted' | 'hero';
+  tone?: 'default' | 'muted' | 'hero' | 'accent';
   appearance?: 'default' | 'premium';
   style?: ViewStyle;
 };
 
+/**
+ * Surface container. All cards share one radius so screens read as one system;
+ * `premium` only adds more breathing room for hero content.
+ */
 export function Card({
   children,
   padded = true,
@@ -22,16 +26,16 @@ export function Card({
 
   let bgColor = colors.surface;
   let borderColor = colors.line;
-  let borderWidth = 1;
 
   if (tone === 'muted') {
     bgColor = colors.surface2;
     borderColor = 'transparent';
-    borderWidth = 0;
   } else if (tone === 'hero') {
     bgColor = colors.hero;
     borderColor = 'rgba(244, 244, 238, 0.08)';
-    borderWidth = 1;
+  } else if (tone === 'accent') {
+    bgColor = colors.accentSoft;
+    borderColor = 'transparent';
   }
 
   return (
@@ -41,9 +45,8 @@ export function Card({
         {
           backgroundColor: bgColor,
           borderColor,
-          borderWidth,
-          padding: padded ? (appearance === 'premium' ? premium.space.xl : 16) : 0,
-          borderRadius: appearance === 'premium' ? premium.radius.card : 24,
+          padding: padded ? (appearance === 'premium' ? premium.space.xl : 18) : 0,
+          borderRadius: appearance === 'premium' ? premium.radius.hero : premium.radius.card,
         },
         style,
       ]}
@@ -55,7 +58,7 @@ export function Card({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
+    borderWidth: 1,
     overflow: 'hidden',
   },
 });

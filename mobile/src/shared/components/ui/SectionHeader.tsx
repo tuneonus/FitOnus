@@ -20,7 +20,6 @@ export function SectionHeader({
   action,
   onAction,
   style,
-  appearance = 'default',
 }: SectionHeaderProps) {
   const { colors } = useTheme();
   const label = actionLabel || action;
@@ -28,14 +27,7 @@ export function SectionHeader({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.titleColumn}>
-        <Text
-          accessibilityRole="header"
-          style={[
-            styles.title,
-            appearance === 'premium' && premium.type.title,
-            { color: colors.ink },
-          ]}
-        >
+        <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
           {title}
         </Text>
         {subtitle ? (
@@ -49,10 +41,10 @@ export function SectionHeader({
           onPress={onAction}
           accessibilityRole="button"
           accessibilityLabel={`${label}: ${title}`}
-          style={appearance === 'premium' ? styles.premiumAction : undefined}
+          style={styles.actionHit}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.action, { color: colors.ink }]}>{label}</Text>
+          <Text style={[styles.action, { color: colors.accentStrong }]}>{label}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -62,29 +54,27 @@ export function SectionHeader({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 10,
   },
   titleColumn: {
     flex: 1,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+    ...premium.type.heading,
   },
   subtitle: {
-    fontSize: 12.5,
+    ...premium.type.caption,
     marginTop: 2,
   },
   action: {
+    ...premium.type.label,
     fontSize: 13.5,
-    fontWeight: '600',
   },
-  premiumAction: {
-    minHeight: premium.layout.touch,
-    minWidth: premium.layout.touch,
+  actionHit: {
+    minHeight: 32,
     alignItems: 'flex-end',
     justifyContent: 'center',
     marginLeft: premium.space.md,

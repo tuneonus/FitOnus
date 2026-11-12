@@ -20,6 +20,12 @@ export function NutritionPreferencesScreen() {
   const store = useProfileSetupStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: serverProfile, refetch } = useProfile();
+  // Prefer today's dashboard targets; fall back to the targets saved on the profile.
+  const saved = serverProfile?.calculatedTargets;
+  const kcalTarget = targets?.caloriesGoal ?? saved?.dailyCalorieTarget ?? null;
+  const proteinTarget = targets?.proteinGoal ?? saved?.dailyProteinGrams ?? null;
+  const carbsTarget = targets?.carbsGoal ?? saved?.dailyCarbGrams ?? null;
+  const fatTarget = targets?.fatGoal ?? saved?.dailyFatGrams ?? null;
   const { mutateAsync: updateProfile, isPending: isSaving } = useUpdateProfile();
 
   const [d, setD] = useState({
@@ -48,7 +54,7 @@ export function NutritionPreferencesScreen() {
 
   const save = async () => {
     if (isAuthenticated && !serverProfile) {
-      showToast({ message: 'Your profile could not be loaded. Please try again before saving.' });
+      showToast({ tone: 'error', message: 'Your profile could not be loaded. Please try again before saving.' });
       return;
     }
     if (isAuthenticated && serverProfile) {
@@ -66,7 +72,7 @@ export function NutritionPreferencesScreen() {
           showToast({ message: 'Preferences updated elsewhere. Refreshed latest data.' });
           await refetch();
         } else {
-          showToast({ message: err.message || 'Failed to save preferences' });
+          showToast({ tone: 'error', message: err.message || 'Failed to save preferences' });
         }
       }
     } else {
@@ -88,7 +94,7 @@ export function NutritionPreferencesScreen() {
     >
       {/* Diet */}
       <View style={styles.sectionBlock}>
-        <Text style={[styles.sectionHeading, { color: colors.muted }]}>Diet</Text>
+        <Text style={[styles.sectionHeading, { color: colors.ink }]}>Diet</Text>
         <View style={styles.chipsRow}>
           {dietOptions.map((o) => (
             <Chip
@@ -103,7 +109,7 @@ export function NutritionPreferencesScreen() {
 
       {/* Allergies */}
       <View style={styles.sectionBlock}>
-        <Text style={[styles.sectionHeading, { color: colors.muted }]}>
+        <Text style={[styles.sectionHeading, { color: colors.ink }]}>
           Allergies & intolerances
         </Text>
         <View style={styles.chipsRow}>
@@ -123,7 +129,7 @@ export function NutritionPreferencesScreen() {
 
       {/* Cuisines */}
       <View style={styles.sectionBlock}>
-        <Text style={[styles.sectionHeading, { color: colors.muted }]}>Favourite cuisines</Text>
+        <Text style={[styles.sectionHeading, { color: colors.ink }]}>Favourite cuisines</Text>
         <View style={styles.chipsRow}>
           {cuisineOptions.map((c) => (
             <Chip
@@ -141,10 +147,10 @@ export function NutritionPreferencesScreen() {
         <Text style={[styles.cardTitle, { color: colors.ink }]}>Daily targets</Text>
         <View style={styles.targetsGrid}>
           {[
-            ['Calories', targets?.caloriesGoal?.toLocaleString() ?? '—'],
-            ['Protein', targets?.proteinGoal != null ? `${targets.proteinGoal} g` : '—'],
-            ['Carbs', targets?.carbsGoal != null ? `${targets.carbsGoal} g` : '—'],
-            ['Fat', targets?.fatGoal != null ? `${targets.fatGoal} g` : '—'],
+            ['Calories', kcalTarget != null ? kcalTarget.toLocaleString() : '—'],
+            ['Protein', proteinTarget != null ? `${proteinTarget} g` : '—'],
+            ['Carbs', carbsTarget != null ? `${carbsTarget} g` : '—'],
+            ['Fat', fatTarget != null ? `${fatTarget} g` : '—'],
           ].map(([l, v]) => (
             <View key={l} style={styles.targetItem}>
               <Text style={[styles.targetLabel, { color: colors.muted }]}>{l}</Text>
@@ -170,8 +176,10 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontSize: 13,
-    fontWeight: '500',
-    paddingHorizontal: 4,
+    lineHeight: 18,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+    paddingHorizontal: 2,
   },
   chipsRow: {
     flexDirection: 'row',

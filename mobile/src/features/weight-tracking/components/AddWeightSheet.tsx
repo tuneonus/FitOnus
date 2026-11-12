@@ -47,7 +47,7 @@ export function AddWeightSheet({ open, onClose }: { open: boolean; onClose: () =
       setNote('');
       onClose();
     } catch {
-      showToast({ message: 'Could not save weight. Please try again.' });
+      showToast({ tone: 'error', message: 'Could not save weight. Please try again.' });
     } finally {
       setSaving(false);
     }

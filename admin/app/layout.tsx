@@ -3,17 +3,9 @@ import './globals.css';
 import { AuthProvider } from '@/features/auth';
 import { ToastProvider } from '@/context/ToastContext';
 
-const geistSans = {
-  variable: '--font-geist-sans',
-};
-
-const geistMono = {
-  variable: '--font-geist-mono',
-};
-
 export const metadata: Metadata = {
-  title: 'OnusFit Admin Portal | Management & Security',
-  description: 'Administrative portal for OnusFit fitness platform - Phase 1 & 2 management.',
+  title: 'OnusFit Admin',
+  description: 'Administrative console for the OnusFit fitness platform.',
 };
 
 export const dynamic = 'force-dynamic';
@@ -27,9 +19,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className="h-full antialiased dark"
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">
+      <body className="flex min-h-full flex-col bg-ink-950 text-ink-100">
         <AuthProvider>
           <ToastProvider>{children}</ToastProvider>
         </AuthProvider>

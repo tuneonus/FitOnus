@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
   ActivityIndicator,
   StyleSheet,
@@ -64,7 +64,7 @@ export function Button({
       textColor = colors.ink;
       break;
     case 'outline':
-      bgColor = colors.surface;
+      bgColor = 'transparent';
       textColor = colors.ink;
       borderColor = colors.line;
       borderWidth = 1;
@@ -83,28 +83,30 @@ export function Button({
       break;
   }
 
-  const height = size === 'sm' ? 44 : size === 'lg' ? 56 : 48;
+  const height = size === 'sm' ? 40 : size === 'lg' ? 56 : 50;
   const paddingH = size === 'sm' ? 14 : size === 'lg' ? 24 : 18;
-  const fontSize = size === 'sm' ? 13 : size === 'lg' ? 16 : 14.5;
+  const fontSize = size === 'sm' ? 13.5 : size === 'lg' ? 16 : 15;
+
+  const radius = size === 'lg' ? 18 : size === 'sm' ? 12 : premium.radius.control + 2;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
+    <Pressable
       disabled={disabled || loading}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      style={[
+      style={({ pressed }) => [
         styles.button,
         {
           minHeight: appearance === 'premium' ? Math.max(premium.layout.touch, height) : height,
-          paddingVertical: 12,
+          paddingVertical: size === 'sm' ? 8 : 12,
           paddingHorizontal: paddingH,
           backgroundColor: bgColor,
           borderColor,
           borderWidth,
-          borderRadius: appearance === 'premium' ? premium.radius.control : height / 2,
-          opacity: disabled ? 0.45 : 1,
+          borderRadius: radius,
+          opacity: disabled ? 0.45 : pressed ? 0.86 : 1,
+          transform: [{ scale: pressed && !disabled ? 0.98 : 1 }],
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
         fullWidth && { width: '100%' },
@@ -156,7 +158,7 @@ export function Button({
           ) : null}
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -173,9 +175,9 @@ const styles = StyleSheet.create({
   },
   text: {
     flexShrink: 1,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
-    letterSpacing: -0.1,
+    letterSpacing: -0.2,
   },
   leftIcon: {
     marginRight: 8,

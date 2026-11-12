@@ -71,8 +71,8 @@ export function GeminiConfigSection({
 }: GeminiConfigSectionProps) {
   if (!config) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/50">
-        <LoadingSpinner size="md" label="Loading Gemini configuration..." />
+      <div className="card flex h-48 items-center justify-center">
+        <LoadingSpinner size="md" label="Loading Gemini configuration…" />
       </div>
     );
   }
@@ -83,11 +83,11 @@ export function GeminiConfigSection({
   return (
     <div className="space-y-6">
       {/* 1. Secure Gemini API Key Governance Card */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+      <div className="card space-y-4 p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
-              <Sparkles className="h-5 w-5" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
+              <Sparkles className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -96,7 +96,7 @@ export function GeminiConfigSection({
                 {isEnvFallback && <Badge variant="warning" size="sm">Environment Fallback</Badge>}
                 {!isDatabaseKey && !isEnvFallback && <Badge variant="disabled" size="sm">Not Configured</Badge>}
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-400">
                 Encrypted in PostgreSQL with separate master key. Secure zero-leakage proxy to Google Gemini.
               </p>
             </div>
@@ -107,7 +107,7 @@ export function GeminiConfigSection({
               type="button"
               onClick={onTestConnection}
               disabled={isTesting}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 disabled:opacity-50 transition"
+              className="btn btn-secondary btn-sm"
             >
               {isTesting ? (
                 <>
@@ -124,7 +124,7 @@ export function GeminiConfigSection({
             <button
               type="button"
               onClick={onOpenKeyModal}
-              className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-500 transition"
+              className="btn btn-primary btn-sm"
             >
               <KeyRound className="h-3.5 w-3.5" />
               <span>Rotate API Key</span>
@@ -134,27 +134,27 @@ export function GeminiConfigSection({
 
         {/* Key Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-          <div className="rounded-lg border border-slate-800 bg-slate-950 p-3 space-y-1">
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Active API Key</span>
+          <div className="card-inset space-y-1 p-3">
+            <span className="eyebrow">Active API Key</span>
             <div className="flex items-center justify-between">
               <span className="font-mono text-xs font-semibold text-white">
                 {config.keyMask ?? (isEnvFallback ? 'Configured via Environment' : 'None')}
               </span>
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[11px] text-ink-500">
                 Source: {config.source}
               </span>
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-800 bg-slate-950 p-3 space-y-1">
+          <div className="card-inset space-y-1 p-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Previous Key Archive</span>
+              <span className="eyebrow">Previous Key Archive</span>
               {config.hasPreviousKey && (
                 <button
                   type="button"
                   onClick={onRollbackKey}
                   disabled={isRollingBack}
-                  className="flex items-center gap-1 text-[11px] font-medium text-teal-400 hover:text-teal-300 disabled:opacity-50"
+                  className="flex items-center gap-1 text-[11px] font-medium text-brand-400 hover:text-brand-300 disabled:opacity-50"
                 >
                   <RotateCcw className="h-3 w-3" />
                   <span>Rollback</span>
@@ -162,20 +162,20 @@ export function GeminiConfigSection({
               )}
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-slate-300">
+              <span className="font-mono text-xs text-ink-300">
                 {config.previousKeyMask ?? 'No previous key stored'}
               </span>
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[11px] text-ink-500">
                 {config.hasPreviousKey ? 'Rollback ready' : 'Empty'}
               </span>
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-800 bg-slate-950 p-3 space-y-1">
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Audit Metadata</span>
-            <div className="flex items-center justify-between text-xs text-slate-300">
+          <div className="card-inset space-y-1 p-3">
+            <span className="eyebrow">Audit Metadata</span>
+            <div className="flex items-center justify-between text-xs text-ink-300">
               <span>Version: <strong className="text-white">{config.version}</strong></span>
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[11px] text-ink-500">
                 Updated: {new Date(config.updatedAt).toLocaleDateString()}
               </span>
             </div>
@@ -209,18 +209,18 @@ export function GeminiConfigSection({
       </div>
 
       {/* 2. Dynamic Model Configuration & Per-Feature Overrides Card */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-5">
+      <div className="card space-y-5 p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
-              <Cpu className="h-5 w-5" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
+              <Cpu className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="text-sm font-semibold text-white">Dynamic Gemini Model Configuration</h4>
                 {isModelDraftDirty && <Badge variant="warning" size="sm">Unsaved Overrides</Badge>}
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-400">
                 Configure runtime models per feature without mobile app updates or server redeployment.
               </p>
             </div>
@@ -230,7 +230,7 @@ export function GeminiConfigSection({
             type="button"
             onClick={onSaveModels}
             disabled={!isModelDraftDirty || isSaving}
-            className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-500 disabled:opacity-50 transition"
+            className="btn btn-primary btn-sm"
           >
             {isSaving ? (
               <>
@@ -247,20 +247,20 @@ export function GeminiConfigSection({
         </div>
 
         {/* Global Default Model Selection */}
-        <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 space-y-2">
-          <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <div className="card-inset space-y-2 p-4">
+          <label className="text-xs font-semibold text-ink-300 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-teal-400" />
+              <Layers className="h-4 w-4 text-brand-400" />
               Default System AI Model
             </span>
-            <span className="text-[10px] text-slate-500">Fallback for all AI operations</span>
+            <span className="text-[11px] text-ink-500">Fallback for all AI operations</span>
           </label>
           <select
             value={modelDraft.defaultModel}
             onChange={(e) =>
               setModelDraft((prev) => ({ ...prev, defaultModel: e.target.value }))
             }
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-medium text-white focus:border-teal-500 focus:outline-none"
+            className="input"
           >
             {models.map((m, idx) => {
               const modelKey = m.model || m.id || `model-${idx}`;
@@ -276,20 +276,20 @@ export function GeminiConfigSection({
 
         {/* Per-Feature Overrides Grid */}
         <div className="space-y-3">
-          <h5 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <h5 className="eyebrow">
             Per-Feature Model Overrides
           </h5>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* AI Coach */}
-            <div className="rounded-lg border border-slate-800 bg-slate-950 p-3.5 space-y-2">
+            <div className="card-inset space-y-2 p-3.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-200">
+                <div className="flex items-center gap-2 text-xs font-medium text-ink-200">
                   <Bot className="h-4 w-4 text-emerald-400" />
                   <span>AI Coach Chat</span>
                 </div>
                 <Badge variant="completed" size="sm">Conversational</Badge>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-ink-500">
                 Fitness guidance, memory retrieval, and workout recommendation chat.
               </p>
               <select
@@ -297,7 +297,7 @@ export function GeminiConfigSection({
                 onChange={(e) =>
                   setModelDraft((prev) => ({ ...prev, coachModel: e.target.value }))
                 }
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
+                className="input"
               >
                 {models.map((m, idx) => {
                   const modelKey = m.model || m.id || `coach-${idx}`;
@@ -311,15 +311,15 @@ export function GeminiConfigSection({
             </div>
 
             {/* Meal Photo Scanner */}
-            <div className="rounded-lg border border-slate-800 bg-slate-950 p-3.5 space-y-2">
+            <div className="card-inset space-y-2 p-3.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-200">
+                <div className="flex items-center gap-2 text-xs font-medium text-ink-200">
                   <Camera className="h-4 w-4 text-purple-400" />
                   <span>Meal Photo Scanner</span>
                 </div>
                 <Badge variant="info" size="sm">Vision Capable</Badge>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-ink-500">
                 Nutritional image analysis, portion sizing, and macronutrient estimation.
               </p>
               <select
@@ -327,7 +327,7 @@ export function GeminiConfigSection({
                 onChange={(e) =>
                   setModelDraft((prev) => ({ ...prev, mealPhotoModel: e.target.value }))
                 }
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
+                className="input"
               >
                 {models
                   .filter((m) => m.capabilities?.vision ?? m.supportsVision ?? true)
@@ -343,15 +343,15 @@ export function GeminiConfigSection({
             </div>
 
             {/* Voice Meal Entry */}
-            <div className="rounded-lg border border-slate-800 bg-slate-950 p-3.5 space-y-2">
+            <div className="card-inset space-y-2 p-3.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-200">
+                <div className="flex items-center gap-2 text-xs font-medium text-ink-200">
                   <Mic className="h-4 w-4 text-amber-400" />
                   <span>Voice Meal Entry</span>
                 </div>
                 <Badge variant="warning" size="sm">Audio Capable</Badge>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-ink-500">
                 Audio voice recording parsing into structured dietary logs.
               </p>
               <select
@@ -359,7 +359,7 @@ export function GeminiConfigSection({
                 onChange={(e) =>
                   setModelDraft((prev) => ({ ...prev, voiceMealModel: e.target.value }))
                 }
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
+                className="input"
               >
                 {models
                   .filter((m) => m.capabilities?.audio ?? m.supportsAudio ?? true)
@@ -375,15 +375,15 @@ export function GeminiConfigSection({
             </div>
 
             {/* Workout Generator */}
-            <div className="rounded-lg border border-slate-800 bg-slate-950 p-3.5 space-y-2">
+            <div className="card-inset space-y-2 p-3.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-200">
+                <div className="flex items-center gap-2 text-xs font-medium text-ink-200">
                   <Dumbbell className="h-4 w-4 text-rose-400" />
                   <span>Workout Generator</span>
                 </div>
                 <Badge variant="completed" size="sm">Structured JSON</Badge>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-ink-500">
                 Custom workout routine generation, sets, reps, and target muscle mapping.
               </p>
               <select
@@ -391,7 +391,7 @@ export function GeminiConfigSection({
                 onChange={(e) =>
                   setModelDraft((prev) => ({ ...prev, workoutGeneratorModel: e.target.value }))
                 }
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
+                className="input"
               >
                 {models.map((m, idx) => {
                   const modelKey = m.model || m.id || `workout-${idx}`;

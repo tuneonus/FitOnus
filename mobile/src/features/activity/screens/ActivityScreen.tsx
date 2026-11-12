@@ -94,7 +94,7 @@ export function ActivityScreen() {
             void refresh();
             void stepHistory.refetch();
           }}
-          tintColor={colors.accent}
+          tintColor={colors.accentStrong}
         />
       }
     >
@@ -359,7 +359,6 @@ export function ActivityScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 16,
     gap: 20,
     paddingBottom: 32,
   },

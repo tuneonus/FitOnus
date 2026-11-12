@@ -4,7 +4,7 @@ import { BookOpen, History, Trophy, BarChart3, Sparkles } from 'lucide-react-nat
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { FeatureScreen } from '@/shared/components/ui/FeatureScreen';
 import { ActionButton } from '@/shared/components/ui/ActionButton';
-import { ActionRow } from '@/shared/components/ui/ActionRow';
+import { ListGroup, ListRow } from '@/shared/components/ui/ListRow';
 import { Card } from '@/shared/components/ui/Card';
 import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { MetricDisplay } from '@/shared/components/ui/MetricDisplay';
@@ -18,33 +18,36 @@ export function WorkoutsScreen() {
   const { navigate } = useNavigation();
   const { history, loadHistoryFromBackend, loadExercises, syncOfflineSessions, pendingSyncCount } =
     useWorkoutStore();
+  // When nothing is planned the card above already offers "Build a workout"; avoid a duplicate CTA.
+  const hasPlan = useWorkoutStore(
+    (s) => (s.plannedSession?.exercises?.length ?? 0) > 0 || s.todayStatus !== 'notStarted',
+  );
   useEffect(() => {
     void loadHistoryFromBackend();
     void loadExercises();
     void syncOfflineSessions();
   }, [loadHistoryFromBackend, loadExercises, syncOfflineSessions]);
   return (
-    <FeatureScreen title="Training" showBack>
+    <FeatureScreen title="Training" showBack subtitle="Your plan. Your pace. Every set counts.">
       <View style={styles.content}>
-        <Text style={[premium.type.body, { color: colors.muted }]}>
-          Your plan. Your pace. Every set counts.
-        </Text>
         <RecommendedWorkout showLibraryLink={false} />
-        <Card tone="hero" appearance="premium">
-          <Text style={[premium.type.eyebrow, { color: colors.accent }]}>
-            BUILD YOUR NEXT SESSION
-          </Text>
-          <Text style={[styles.title, { color: colors.heroInk }]}>Make it fit your day.</Text>
-          <Text style={[styles.body, { color: colors.heroMuted }]}>
-            Choose your goal, time and equipment. Review your generated plan before you train.
-          </Text>
-          <ActionButton
-            title="Create a workout"
-            icon={Sparkles}
-            onPress={() => navigate('workoutGenerator')}
-            style={styles.create}
-          />
-        </Card>
+        {hasPlan ? (
+          <Card tone="hero" appearance="premium">
+            <Text style={[premium.type.eyebrow, { color: colors.accent }]}>
+              BUILD YOUR NEXT SESSION
+            </Text>
+            <Text style={[styles.title, { color: colors.heroInk }]}>Make it fit your day.</Text>
+            <Text style={[styles.body, { color: colors.heroMuted }]}>
+              Choose your goal, time and equipment. Review your generated plan before you train.
+            </Text>
+            <ActionButton
+              title="Create a workout"
+              icon={Sparkles}
+              onPress={() => navigate('workoutGenerator')}
+              style={styles.create}
+            />
+          </Card>
+        ) : null}
         <View>
           <SectionHeader
             appearance="premium"
@@ -52,7 +55,7 @@ export function WorkoutsScreen() {
             actionLabel="History"
             onAction={() => navigate('workoutHistory')}
           />
-          <View style={[styles.metrics, { borderColor: colors.line }]}>
+          <Card style={styles.metrics}>
             <MetricDisplay
               label="Saved sessions"
               value={String(history.length)}
@@ -63,42 +66,44 @@ export function WorkoutsScreen() {
               value={history.reduce((sum, log) => sum + log.sets, 0).toLocaleString()}
               detail="From saved sessions"
             />
-          </View>
+          </Card>
           {pendingSyncCount > 0 ? (
             <Text
               accessibilityLiveRegion="polite"
-              style={[premium.type.caption, { color: colors.muted }]}
+              style={[premium.type.caption, styles.pending, { color: colors.muted }]}
             >
               {pendingSyncCount} saved session(s) waiting to sync.
             </Text>
           ) : null}
         </View>
         <View>
-          <SectionHeader appearance="premium" title="Keep progressing" />
-          <ActionRow
-            icon={BookOpen}
-            title="Exercise library"
-            detail="Find movements by muscle and equipment."
-            onPress={() => navigate('exerciseLibrary')}
-          />
-          <ActionRow
-            icon={History}
-            title="Workout history"
-            detail="Review sessions, sets and training volume."
-            onPress={() => navigate('workoutHistory')}
-          />
-          <ActionRow
-            icon={Trophy}
-            title="Personal records"
-            detail="See your recorded best performances."
-            onPress={() => navigate('personalRecords')}
-          />
-          <ActionRow
-            icon={BarChart3}
-            title="Training analytics"
-            detail="Explore your volume, frequency and progress."
-            onPress={() => navigate('workoutAnalytics')}
-          />
+          <SectionHeader title="Keep progressing" />
+          <ListGroup style={styles.group}>
+            <ListRow
+              icon={BookOpen}
+              title="Exercise library"
+              subtitle="Find movements by muscle and equipment."
+              onPress={() => navigate('exerciseLibrary')}
+            />
+            <ListRow
+              icon={History}
+              title="Workout history"
+              subtitle="Review sessions, sets and training volume."
+              onPress={() => navigate('workoutHistory')}
+            />
+            <ListRow
+              icon={Trophy}
+              title="Personal records"
+              subtitle="See your recorded best performances."
+              onPress={() => navigate('personalRecords')}
+            />
+            <ListRow
+              icon={BarChart3}
+              title="Training analytics"
+              subtitle="Explore your volume, frequency and progress."
+              onPress={() => navigate('workoutAnalytics')}
+            />
+          </ListGroup>
         </View>
       </View>
     </FeatureScreen>
@@ -113,9 +118,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 24,
-    paddingVertical: 20,
-    marginBottom: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  pending: { marginTop: 8 },
+  group: { marginVertical: 0 },
 });

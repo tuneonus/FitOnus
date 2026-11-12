@@ -4,7 +4,8 @@ import { Droplets, Plus } from 'lucide-react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
-import { ActionButton } from '@/shared/components/ui/ActionButton';
+import { Button } from '@/shared/components/ui/Button';
+import { Card } from '@/shared/components/ui/Card';
 import { premium } from '@/shared/theme/premium';
 import { type HomeNutrition, progressRatio } from '../utils/home-overview';
 
@@ -20,20 +21,18 @@ export function HydrationSummary({
   const goal = overview.goals.waterMl;
   return (
     <View>
-      <SectionHeader title="Stay hydrated" appearance="premium" />
-      <View
-        style={[styles.content, { borderTopColor: colors.line, borderBottomColor: colors.line }]}
-      >
+      <SectionHeader title="Hydration" />
+      <Card style={styles.card}>
         <View style={styles.top}>
           <View style={[styles.icon, { backgroundColor: colors.infoLight }]}>
-            <Droplets size={22} color={colors.info} strokeWidth={1.7} />
+            <Droplets size={20} color={colors.info} strokeWidth={2} />
           </View>
           <View style={styles.copy}>
             <Text style={[styles.value, { color: colors.ink }]}>
               {value === null
                 ? '—'
                 : (value / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              <Text style={[premium.type.body, { color: colors.muted }]}> L</Text>
+              <Text style={[premium.type.label, { color: colors.muted }]}> L</Text>
             </Text>
             <Text style={[premium.type.caption, { color: colors.muted }]}>
               {goal !== null
@@ -41,38 +40,33 @@ export function HydrationSummary({
                 : 'Daily water goal not set'}
             </Text>
           </View>
+          <Button title="Log" icon={Plus} size="sm" variant="secondary" onPress={onOpen} />
         </View>
         <ProgressBar
           value={progressRatio(value, goal)}
           color={colors.sky}
-          height={5}
+          height={6}
           accessibilityLabel={
             value !== null && goal !== null
               ? `Water: ${value} of ${goal} millilitres`
               : 'Water progress unavailable'
           }
         />
-        <ActionButton variant="secondary" title="Log water" icon={Plus} onPress={onOpen} />
-      </View>
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingVertical: 20,
-    gap: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
+  card: { gap: 16 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   icon: {
-    width: 48,
-    height: 48,
-    borderRadius: premium.radius.control,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  copy: { flex: 1, gap: 4 },
-  value: { ...premium.type.metric, fontSize: 30, lineHeight: 38 },
+  copy: { flex: 1, gap: 2 },
+  value: { ...premium.type.metric },
 });

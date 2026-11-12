@@ -24,7 +24,7 @@ export function WeeklyReportScreen() {
       onRefresh={() => {
         void report.refetch();
       }}
-      tintColor={colors.accent}
+      tintColor={colors.accentStrong}
     />
   );
   const { navigate } = useNavigation();
@@ -143,7 +143,7 @@ export function WeeklyReportScreen() {
         <View style={styles.bulletList}>
           {r.achievements.map((a) => (
             <View key={a} style={styles.bulletRow}>
-              <Trophy size={16} color={colors.accent} style={{ marginTop: 2 }} />
+              <Trophy size={16} color={colors.accentStrong} style={{ marginTop: 2 }} />
               <Text style={[styles.bulletText, { color: colors.ink }]}>{a}</Text>
             </View>
           ))}

@@ -56,7 +56,7 @@ export function CoachConversationScreen() {
     return (
       <Screen title="Conversation">
         <View style={styles.loadingBox}>
-          <ActivityIndicator size="small" color={colors.accent} />
+          <ActivityIndicator size="small" color={colors.accentStrong} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>Loading messages…</Text>
         </View>
       </Screen>
@@ -142,7 +142,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   convoBody: {
-    paddingHorizontal: 16,
     gap: 20,
     paddingBottom: 32,
   },

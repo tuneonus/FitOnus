@@ -9,7 +9,8 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { Info, Plus, AlertTriangle, X } from 'lucide-react-native';
+import { Info, Plus, AlertTriangle, X, Camera } from 'lucide-react-native';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import { FeatureScreen as Screen } from '@/shared/components/ui/FeatureScreen';
 import { Button } from '@/shared/components/ui/Button';
@@ -139,6 +140,21 @@ export function MealAnalysisScreen() {
     }
   };
 
+  if (!params.imageUri) {
+    // Reached without a photo (e.g. restored route): offer the next step instead of an error.
+    return (
+      <Screen title="Meal analysis">
+        <EmptyState
+          icon={Camera}
+          title="No meal photo yet"
+          body="Take or choose a photo of your plate and we’ll estimate the foods for you to review."
+          actionLabel="Take a meal photo"
+          onAction={() => replace('mealPhoto', params.meal ? { meal: params.meal } : undefined)}
+        />
+      </Screen>
+    );
+  }
+
   return (
     <Screen
       title="Meal analysis"
@@ -159,11 +175,7 @@ export function MealAnalysisScreen() {
     >
       {/* Photo preview */}
       <View style={styles.imageContainer}>
-        {params.imageUri ? (
-          <Image source={{ uri: params.imageUri }} style={styles.photo} resizeMode="cover" />
-        ) : (
-          <Text style={{ color: colors.muted, padding: 24 }}>No meal photo selected.</Text>
-        )}
+        <Image source={{ uri: params.imageUri }} style={styles.photo} resizeMode="cover" />
       </View>
 
       {/* Phase: Analyzing */}

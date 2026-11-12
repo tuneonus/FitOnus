@@ -45,7 +45,7 @@ export function PrivacyScreen() {
       await updateSettings.mutateAsync({ [key]: nextVal });
     } catch {
       setPrivacy({ [key]: prevVal });
-      showToast({ message: 'Failed to update privacy preference on server.' });
+      showToast({ tone: 'error', message: 'Couldn’t update this privacy setting. Please try again.' });
     }
   };
 
@@ -80,7 +80,7 @@ export function PrivacyScreen() {
       {/* What your coach can read hero */}
         <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
           <View style={styles.heroHeader}>
-            <Eye size={16} color={colors.accent} />
+            <Eye size={16} color={colors.accentStrong} />
             <Text style={[styles.heroTitle, { color: colors.ink }]}>
               What your coach can read
             </Text>

@@ -15,6 +15,13 @@ import { generateUUID } from '@/features/nutrition/utils/uuid';
 import { refreshFitnessQueries } from '@/services/fitness-refresh';
 import { logger } from '@/utils/logger';
 
+/**
+ * The history API lists entries newest-first (ORDER BY logged_at DESC). This store and its
+ * screens treat the array as oldest → newest (latest = last item; new logs are appended),
+ * so normalise once at ingest.
+ */
+const toChronological = <T,>(entries: T[]): T[] => [...entries].reverse();
+
 export interface WeightState {
   entries: WeightEntry[];
   measurements: MeasurementEntry[];
@@ -86,7 +93,7 @@ export const useWeightStore = create<WeightState>((storeSet, get) => {
         if (!session.isCurrent()) return;
         if (cached && cached.entries.length > 0) {
           set({
-            entries: cached.entries,
+            entries: toChronological(cached.entries),
             points: cached.points,
             summary: cached.summary,
             goalWeight: cached.summary.targetWeightKg ?? null,
@@ -108,7 +115,7 @@ export const useWeightStore = create<WeightState>((storeSet, get) => {
         if (get().currentRange !== range) return;
         if (data) {
           set({
-            entries: data.entries,
+            entries: toChronological(data.entries),
             points: data.points,
             summary: data.summary,
             goalWeight: data.summary.targetWeightKg ?? null,

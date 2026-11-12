@@ -47,15 +47,16 @@ export function CoachHistoryScreen() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const fetchConversations = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadFailed(false);
       const res = await CoachApi.listConversations(1, 50);
-      setConversations(res.conversations || []);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unable to load conversations.';
-      showToast({ message: msg });
+      setConversations(res?.conversations || []);
+    } catch {
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -71,9 +72,8 @@ export function CoachHistoryScreen() {
       await CoachApi.deleteConversation(deletingId);
       setConversations((prev) => prev.filter((c) => c.id !== deletingId));
       showToast({ message: 'Conversation deleted' });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to delete conversation.';
-      showToast({ message: msg });
+    } catch {
+      showToast({ tone: 'error', message: 'Couldn’t delete this conversation. Please try again.' });
     } finally {
       setDeletingId(null);
     }
@@ -99,9 +99,19 @@ export function CoachHistoryScreen() {
 
       {loading ? (
         <View style={styles.loadingBox}>
-          <ActivityIndicator size="small" color={colors.accent} />
+          <ActivityIndicator size="small" color={colors.accentStrong} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>Loading conversations…</Text>
         </View>
+      ) : loadFailed && conversations.length === 0 ? (
+        <EmptyState
+          icon={MessagesSquare}
+          title="Couldn’t load conversations"
+          body="Check your connection and try again. Your history hasn’t been removed."
+          actionLabel="Retry"
+          onAction={() => {
+            void fetchConversations();
+          }}
+        />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={MessagesSquare}
@@ -195,7 +205,6 @@ export function CoachHistoryScreen() {
 
 const styles = StyleSheet.create({
   searchWrap: {
-    paddingHorizontal: 16,
     marginBottom: 8,
   },
   loadingBox: {
@@ -209,7 +218,6 @@ const styles = StyleSheet.create({
   },
   groupSection: {
     marginTop: 20,
-    paddingHorizontal: 16,
   },
   groupTitle: {
     fontSize: 12,
@@ -218,7 +226,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   card: {
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     overflow: 'hidden',
   },

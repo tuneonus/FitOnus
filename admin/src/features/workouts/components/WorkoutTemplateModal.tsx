@@ -157,7 +157,7 @@ function TemplateForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400">
+        <div className="alert alert-error">
           {error}
         </div>
       )}
@@ -165,27 +165,29 @@ function TemplateForm({
       {/* Row 1: Name, Difficulty, Duration */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="workouttemplatemodal-field-1" className="field-label">
             Routine Name *
           </label>
           <input
+            id="workouttemplatemodal-field-1"
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Push Hypertrophy Foundation"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="workouttemplatemodal-field-2" className="field-label">
             Difficulty
           </label>
           <select
+            id="workouttemplatemodal-field-2"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as WorkoutTemplate['difficulty'])}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white focus:border-teal-500 focus:outline-none"
+            className="input"
           >
             <option value="beginner">Beginner</option>
             <option value="intermediate">Intermediate</option>
@@ -197,10 +199,11 @@ function TemplateForm({
       {/* Row 2: Duration, Tags */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="workouttemplatemodal-field-3" className="field-label">
             Est. Duration (Minutes)
           </label>
           <input
+            id="workouttemplatemodal-field-3"
             type="number"
             min={5}
             max={240}
@@ -209,64 +212,66 @@ function TemplateForm({
               setEstimatedDurationMinutes(e.target.value === '' ? '' : Number(e.target.value))
             }
             placeholder="45"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="workouttemplatemodal-field-4" className="field-label">
             Tags (comma separated)
           </label>
           <input
+            id="workouttemplatemodal-field-4"
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="e.g. push, chest, upper, hypertrophy"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
       </div>
 
       {/* Row 3: Description */}
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+        <label htmlFor="workouttemplatemodal-field-5" className="field-label">
           Routine Overview
         </label>
         <textarea
+            id="workouttemplatemodal-field-5"
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Focuses on chest, shoulders, and triceps with progressive compound overload."
-          className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+          className="input"
         />
       </div>
 
       {/* Exercises Config List */}
       <div>
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="flex items-center justify-between border-b border-ink-800 pb-2">
+          <h3 className="eyebrow">
             Exercises ({exercises.length})
-          </label>
+          </h3>
           <button
             type="button"
             onClick={handleAddExerciseRow}
-            className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-2.5 py-1 text-xs font-medium text-teal-400 transition-colors"
+            className="btn btn-secondary btn-sm"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Exercise
+            Add exercise
           </button>
         </div>
 
         <div className="mt-3 space-y-2 max-h-72 overflow-y-auto pr-1">
           {exercises.length === 0 ? (
-            <div className="py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+            <div className="rounded-lg border border-dashed border-ink-700 py-6 text-center text-xs text-ink-400">
               No exercises added yet. Click &quot;Add Exercise&quot; above to build the routine.
             </div>
           ) : (
             exercises.map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-800 bg-slate-950/60"
+                className="card-inset flex flex-wrap items-center gap-2 p-2.5"
               >
                 {/* Reorder Buttons */}
                 <div className="flex flex-col gap-0.5">
@@ -274,7 +279,8 @@ function TemplateForm({
                     type="button"
                     disabled={idx === 0}
                     onClick={() => handleMoveExercise(idx, 'up')}
-                    className="p-0.5 text-slate-500 hover:text-white disabled:opacity-20"
+                    aria-label={`Move exercise ${idx + 1} up`}
+                    className="rounded p-0.5 text-ink-500 hover:bg-ink-800 hover:text-white disabled:opacity-20"
                   >
                     <ArrowUp className="h-3 w-3" />
                   </button>
@@ -282,18 +288,20 @@ function TemplateForm({
                     type="button"
                     disabled={idx === exercises.length - 1}
                     onClick={() => handleMoveExercise(idx, 'down')}
-                    className="p-0.5 text-slate-500 hover:text-white disabled:opacity-20"
+                    aria-label={`Move exercise ${idx + 1} down`}
+                    className="rounded p-0.5 text-ink-500 hover:bg-ink-800 hover:text-white disabled:opacity-20"
                   >
                     <ArrowDown className="h-3 w-3" />
                   </button>
                 </div>
 
                 {/* Exercise Select */}
-                <div className="flex-1 min-w-[140px]">
+                <div className="min-w-[160px] flex-1">
                   <select
                     value={item.exerciseId}
                     onChange={(e) => handleExerciseChange(idx, 'exerciseId', e.target.value)}
-                    className="w-full rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-xs text-white focus:border-teal-500 focus:outline-none"
+                    aria-label={`Exercise ${idx + 1}`}
+                    className="input"
                   >
                     {availableExercises.map((ae) => (
                       <option key={ae.id} value={ae.id}>
@@ -304,7 +312,7 @@ function TemplateForm({
                 </div>
 
                 {/* Sets */}
-                <div className="w-16">
+                <div className="w-16" title="Sets">
                   <input
                     type="number"
                     min={1}
@@ -314,23 +322,25 @@ function TemplateForm({
                     onChange={(e) =>
                       handleExerciseChange(idx, 'targetSets', Number(e.target.value))
                     }
-                    className="w-full rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-xs text-center text-white focus:border-teal-500 focus:outline-none"
+                    aria-label={`Sets for exercise ${idx + 1}`}
+                    className="input px-2"
                   />
                 </div>
 
                 {/* Reps */}
-                <div className="w-20">
+                <div className="w-20" title="Reps">
                   <input
                     type="text"
                     placeholder="Reps (8-12)"
                     value={item.targetReps}
                     onChange={(e) => handleExerciseChange(idx, 'targetReps', e.target.value)}
-                    className="w-full rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-xs text-center text-white focus:border-teal-500 focus:outline-none"
+                    aria-label={`Reps for exercise ${idx + 1}`}
+                    className="input px-2"
                   />
                 </div>
 
                 {/* Rest (sec) */}
-                <div className="w-20">
+                <div className="w-20" title="Rest (seconds)">
                   <input
                     type="number"
                     min={0}
@@ -341,7 +351,8 @@ function TemplateForm({
                     onChange={(e) =>
                       handleExerciseChange(idx, 'restSeconds', Number(e.target.value))
                     }
-                    className="w-full rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5 text-xs text-center text-white focus:border-teal-500 focus:outline-none"
+                    aria-label={`Rest seconds for exercise ${idx + 1}`}
+                    className="input px-2"
                   />
                 </div>
 
@@ -349,7 +360,8 @@ function TemplateForm({
                 <button
                   type="button"
                   onClick={() => handleRemoveExerciseRow(idx)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+                  aria-label={`Remove exercise ${idx + 1}`}
+                  className="btn btn-danger-ghost btn-icon btn-sm ml-auto"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -360,21 +372,21 @@ function TemplateForm({
       </div>
 
       {/* Footer Actions */}
-      <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+      <div className="form-actions">
         <button
           type="button"
           onClick={onClose}
           disabled={isSubmitting}
-          className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+          className="btn btn-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-xl bg-teal-500 hover:bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-md shadow-teal-500/20 transition-all disabled:opacity-50"
+          className="btn btn-primary"
         >
-          {isSubmitting ? 'Saving...' : isEditing ? 'Update Routine' : 'Create Routine'}
+          {isSubmitting ? 'Saving…' : isEditing ? 'Update Routine' : 'Create Routine'}
         </button>
       </div>
     </form>
@@ -394,7 +406,7 @@ export function WorkoutTemplateModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Edit Starter Routine' : 'Create Starter Routine'}
+      title={isEditing ? 'Edit starter routine' : 'New starter routine'}
       description="System-curated routines are published globally for all members as verified starter templates."
       maxWidth="2xl"
     >

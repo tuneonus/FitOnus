@@ -25,49 +25,11 @@ const TOAST_ICONS = {
   info: Info,
 };
 
-const TOAST_STYLES: Record<
-  ToastType,
-  {
-    container: string;
-    icon: string;
-    title: string;
-    text: string;
-    dismiss: string;
-    defaultTitle: string;
-  }
-> = {
-  success: {
-    container: 'border-emerald-500/30 bg-slate-900/95 shadow-emerald-500/10 text-emerald-300',
-    icon: 'text-emerald-400',
-    title: 'text-emerald-300',
-    text: 'text-slate-300',
-    dismiss: 'text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10',
-    defaultTitle: 'Success',
-  },
-  error: {
-    container: 'border-rose-500/30 bg-slate-900/95 shadow-rose-500/10 text-rose-300',
-    icon: 'text-rose-400',
-    title: 'text-rose-300',
-    text: 'text-slate-300',
-    dismiss: 'text-slate-400 hover:text-rose-300 hover:bg-rose-500/10',
-    defaultTitle: 'Error',
-  },
-  warning: {
-    container: 'border-amber-500/30 bg-slate-900/95 shadow-amber-500/10 text-amber-300',
-    icon: 'text-amber-400',
-    title: 'text-amber-300',
-    text: 'text-slate-300',
-    dismiss: 'text-slate-400 hover:text-amber-300 hover:bg-amber-500/10',
-    defaultTitle: 'Warning',
-  },
-  info: {
-    container: 'border-teal-500/30 bg-slate-900/95 shadow-teal-500/10 text-teal-300',
-    icon: 'text-teal-400',
-    title: 'text-teal-300',
-    text: 'text-slate-300',
-    dismiss: 'text-slate-400 hover:text-teal-300 hover:bg-teal-500/10',
-    defaultTitle: 'Information',
-  },
+const TOAST_STYLES: Record<ToastType, { accent: string; icon: string }> = {
+  success: { accent: 'bg-emerald-400', icon: 'text-emerald-400' },
+  error: { accent: 'bg-rose-400', icon: 'text-rose-400' },
+  warning: { accent: 'bg-amber-400', icon: 'text-amber-400' },
+  info: { accent: 'bg-brand-500', icon: 'text-brand-500' },
 };
 
 export function Toast({ toast, onDismiss }: ToastProps) {
@@ -78,17 +40,16 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   return (
     <div
       role={role}
-      aria-live="polite"
-      className={`pointer-events-auto flex w-full items-start gap-3 rounded-xl border p-3.5 shadow-xl backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-top-2 ${styles.container}`}
+      aria-live={role === 'alert' ? 'assertive' : 'polite'}
+      className="pointer-events-auto relative flex w-full items-start gap-3 overflow-hidden rounded-lg border border-ink-700 bg-ink-850/95 py-3 pl-4 pr-2.5 shadow-pop backdrop-blur-md"
     >
-      <Icon className={`h-5 w-5 shrink-0 mt-0.5 ${styles.icon}`} />
-      <div className="flex-1 min-w-0 pr-1">
+      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-[3px] ${styles.accent}`} />
+      <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${styles.icon}`} />
+      <div className="min-w-0 flex-1 pr-1">
         {toast.title && (
-          <p className={`text-xs font-semibold tracking-wide ${styles.title}`}>
-            {toast.title}
-          </p>
+          <p className="text-[13px] font-semibold text-white">{toast.title}</p>
         )}
-        <p className={`text-xs leading-relaxed ${styles.text}`}>
+        <p className={`text-[13px] leading-relaxed ${toast.title ? 'mt-0.5 text-ink-300' : 'text-ink-100'}`}>
           {toast.message}
         </p>
       </div>
@@ -96,9 +57,9 @@ export function Toast({ toast, onDismiss }: ToastProps) {
         type="button"
         onClick={() => onDismiss(toast.id)}
         aria-label="Dismiss notification"
-        className={`shrink-0 rounded-lg p-1 transition-colors ${styles.dismiss}`}
+        className="btn btn-ghost h-6 w-6 shrink-0 rounded-md px-0 text-ink-400"
       >
-        <X className="h-4 w-4" />
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );
@@ -116,7 +77,7 @@ export function ToastContainer({
   return (
     <div
       aria-label="Notifications"
-      className="fixed top-4 right-4 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none sm:top-6 sm:right-6"
+      className="pointer-events-none fixed inset-x-4 top-4 z-[70] flex flex-col gap-2 sm:inset-x-auto sm:right-6 sm:top-6 sm:w-full sm:max-w-sm"
     >
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} onDismiss={onDismiss} />

@@ -45,11 +45,20 @@ export function WorkoutCompleteScreen() {
           No active session
         </Text>
         <Text
-          style={[styles.heading, { color: colors.heroInk, textAlign: 'center', marginBottom: 24 }]}
+          style={[
+            styles.heading,
+            styles.emptyHeading,
+            { color: colors.heroInk, textAlign: 'center', marginBottom: 24 },
+          ]}
         >
           No recently completed workout found
         </Text>
-        <Button appearance="premium" title="Go to Workouts" onPress={() => reset('workouts')} />
+        <Button
+          appearance="premium"
+          title="Go to Workouts"
+          onPress={() => reset('workouts')}
+          style={{ alignSelf: 'center' }}
+        />
       </View>
     );
   }
@@ -259,6 +268,11 @@ const styles = StyleSheet.create({
   heading: {
     ...premium.type.display,
     marginTop: 4,
+  },
+  emptyHeading: {
+    ...premium.type.title,
+    fontSize: 26,
+    lineHeight: 32,
   },
   statsGrid: {
     flexDirection: 'row',

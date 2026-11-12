@@ -104,11 +104,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   offlineBanner: {
-    paddingHorizontal: 16,
     paddingBottom: 8,
   },
   messagesList: {
-    paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 24,
     gap: 16,

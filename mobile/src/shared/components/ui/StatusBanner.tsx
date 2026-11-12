@@ -26,34 +26,39 @@ export function StatusBanner({
 
   let Icon = Info;
   let iconColor = colors.sky;
-  let bgColor = 'rgba(14, 150, 220, 0.1)';
+  let bgColor = colors.infoLight;
 
   switch (tone) {
     case 'offline':
       Icon = WifiOff;
       iconColor = colors.ink;
-      bgColor = 'rgba(128, 128, 128, 0.1)';
+      bgColor = colors.surface2;
       break;
     case 'error':
       Icon = AlertTriangle;
       iconColor = colors.bad;
-      bgColor = 'rgba(214, 40, 40, 0.1)';
+      bgColor = colors.errorLight;
       break;
     case 'warning':
       Icon = Shield;
       iconColor = colors.warn;
-      bgColor = 'rgba(214, 120, 10, 0.1)';
+      bgColor = colors.warningLight;
       break;
     case 'info':
       Icon = Info;
       iconColor = colors.sky;
-      bgColor = 'rgba(14, 150, 220, 0.1)';
+      bgColor = colors.infoLight;
       break;
   }
 
   return (
-    <View style={[styles.banner, { backgroundColor: bgColor }, style]}>
-      <Icon size={18} color={iconColor} style={styles.icon} />
+    <View
+      accessibilityRole={tone === 'error' ? 'alert' : undefined}
+      style={[styles.banner, { backgroundColor: bgColor }, style]}
+    >
+      <View style={[styles.iconWrap, { backgroundColor: colors.surface }]}>
+        <Icon size={16} color={iconColor} strokeWidth={2.2} />
+      </View>
 
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
@@ -78,22 +83,27 @@ export function StatusBanner({
 const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 14,
-    borderRadius: 18,
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 16,
     marginVertical: 6,
   },
-  icon: {
-    marginTop: 2,
-    marginRight: 10,
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   content: {
     flex: 1,
   },
   title: {
     fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: -0.1,
+    lineHeight: 19,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   body: {
     fontSize: 13,
@@ -101,21 +111,16 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   button: {
-    minHeight: 48,
-    minWidth: 48,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    minHeight: 40,
+    minWidth: 56,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   actionText: {
-    fontSize: 12.5,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

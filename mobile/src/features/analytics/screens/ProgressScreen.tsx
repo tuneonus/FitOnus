@@ -8,7 +8,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { Award, FileText, Medal, Scale, Target, Trophy } from 'lucide-react-native';
+import { Award, BarChart3, FileText, Medal, Scale, Target, Trophy } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
@@ -147,6 +147,8 @@ export function ProgressScreen() {
   }
 
   const hasEmptyPoints = points.length === 0 || points.every((p) => p.value === 0);
+  // Without recorded points there is no honest headline value or change to show.
+  const noValue = hasEmptyPoints && !liveData?.latestValue;
 
   const first = liveData ? liveData.firstValue : (points[0]?.value ?? 0);
   const last = liveData ? liveData.latestValue : (points[points.length - 1]?.value ?? 0);
@@ -199,8 +201,8 @@ export function ProgressScreen() {
             (c) => [c.label, c.current, c.previous, c.better] as const,
           )
         : ([
-            ['Workouts', '0', '0', true],
-            ['Weight change', '0.0 kg', '0.0 kg', true],
+            ['Workouts', '—', '—', true],
+            ['Weight change', '—', '—', true],
             ['Avg sleep', '—', '—', true],
             ['Avg protein', '—', '—', true],
             ['Avg calories', '—', '—', true],
@@ -216,7 +218,7 @@ export function ProgressScreen() {
         <RefreshControl
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
-          tintColor={colors.accent}
+          tintColor={colors.accentStrong}
         />
       }
     >
@@ -236,6 +238,7 @@ export function ProgressScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.chipsBleed}
           contentContainerStyle={styles.chipsScroll}
         >
           {(Object.keys(progressMetrics) as MetricKey[]).map((k) => (
@@ -274,42 +277,34 @@ export function ProgressScreen() {
               </Text>
               <View style={styles.metricValRow}>
                 <Text style={[styles.metricNumber, { color: colors.ink }]}>
-                  {fmt(last, m.unit)}
+                  {noValue ? '—' : fmt(last, m.unit)}
                 </Text>
-                <Text
-                  style={[styles.metricDelta, { color: improving ? colors.good : colors.warn }]}
-                >
-                  {delta > 0 ? '+' : ''}
-                  {m.unit === 'h'
-                    ? fmt(Math.abs(delta), 'h')
-                    : `${Number(delta.toFixed(1)).toLocaleString()}`}{' '}
-                  vs start
-                </Text>
+                {noValue ? null : (
+                  <Text
+                    style={[
+                      styles.metricDelta,
+                      {
+                        color: improving ? colors.good : colors.warn,
+                        backgroundColor: improving ? colors.successLight : colors.warningLight,
+                      },
+                    ]}
+                  >
+                    {delta > 0 ? '+' : ''}
+                    {m.unit === 'h'
+                      ? fmt(Math.abs(delta), 'h')
+                      : `${Number(delta.toFixed(1)).toLocaleString()}`}{' '}
+                    vs start
+                  </Text>
+                )}
               </View>
               <View style={styles.chartWrapper}>
                 {hasEmptyPoints ? (
-                  <View
-                    style={{
-                      height: 160,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: 16,
-                    }}
-                  >
-                    <Text style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}>
-                      No {m.label.toLowerCase()} entries recorded for{' '}
-                      {rangeLabels[range].toLowerCase()}.
-                    </Text>
-                    <Text
-                      style={{
-                        color: colors.muted,
-                        fontSize: 11,
-                        textAlign: 'center',
-                        marginTop: 6,
-                        lineHeight: 16,
-                      }}
-                    >
-                      {metric === 'workouts'
+                  <EmptyState
+                    compact
+                    icon={metric === 'weight' ? Scale : BarChart3}
+                    title={`No ${m.label.toLowerCase()} data for ${rangeLabels[range].toLowerCase()}`}
+                    body={
+                      metric === 'workouts'
                         ? 'Complete a workout session to see frequency and volume trends.'
                         : metric === 'calories' || metric === 'protein'
                           ? 'Log meals to track your nutrition and macronutrient targets.'
@@ -318,10 +313,10 @@ export function ProgressScreen() {
                             : metric === 'weight'
                               ? 'Record your weigh-in to begin tracking weight progression.'
                               : WEARABLES_ENABLED
-                              ? 'Connect wearable health data to display activity metrics.'
-                              : 'No activity metrics recorded yet.'}
-                    </Text>
-                  </View>
+                                ? 'Connect wearable health data to display activity metrics.'
+                                : 'No activity metrics recorded yet.'
+                    }
+                  />
                 ) : m.chart === 'line' ? (
                   <LineChart
                     key={`${metric}-${range}`}
@@ -644,14 +639,21 @@ const styles = StyleSheet.create({
   chipsScroll: {
     flexDirection: 'row',
     gap: 8,
+    paddingHorizontal: 20,
+  },
+  chipsBleed: {
+    marginHorizontal: -20,
+    flexGrow: 0,
   },
   card: {
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 18,
   },
   metricLabel: {
     fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   metricValRow: {
     flexDirection: 'row',
@@ -660,15 +662,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   metricNumber: {
-    fontSize: 30,
+    fontSize: 34,
+    lineHeight: 40,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
-    letterSpacing: -0.5,
+    letterSpacing: -1,
   },
   metricDelta: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   chartWrapper: {
     marginTop: 12,
@@ -677,7 +684,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   compareCard: {
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -716,7 +723,7 @@ const styles = StyleSheet.create({
   },
   achCard: {
     width: '48.5%',
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
     gap: 6,

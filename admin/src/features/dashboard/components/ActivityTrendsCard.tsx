@@ -2,16 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import {
-  Dumbbell,
-  Utensils,
-  Trophy,
-  ArrowRight,
-  Flame,
-  Droplets,
-  Sparkles,
-  Info,
-} from 'lucide-react';
+import { Dumbbell, Utensils, Trophy, ArrowUpRight, Info, AlertTriangle } from 'lucide-react';
 import type { WorkoutStats } from '@/features/workouts/types';
 import type { NutritionCatalogStats } from '@/features/nutrition/types';
 import type { Challenge } from '@/features/challenges/types';
@@ -25,6 +16,83 @@ interface ActivityTrendsCardProps {
   challengesError?: string;
 }
 
+interface Metric {
+  label: string;
+  value: string;
+}
+
+function DomainCard({
+  title,
+  description,
+  href,
+  icon,
+  iconClass,
+  error,
+  metrics,
+  emptyLabel,
+  footnote,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  icon: React.ReactNode;
+  iconClass: string;
+  error?: string;
+  metrics: Metric[] | null;
+  emptyLabel: string;
+  footnote?: React.ReactNode;
+}) {
+  return (
+    <section className="card flex min-w-0 flex-col">
+      <div className="flex items-center justify-between gap-3 border-b border-ink-800 px-5 py-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-ink-850 ring-1 ring-ink-800 [&>svg]:h-4 [&>svg]:w-4 ${iconClass}`}
+          >
+            {icon}
+          </span>
+          <div className="min-w-0">
+            <h3 className="card-title">{title}</h3>
+            <p className="truncate text-xs text-ink-400">{description}</p>
+          </div>
+        </div>
+        <Link
+          href={href}
+          className="btn btn-ghost btn-icon btn-sm text-ink-400"
+          aria-label={`Open ${title.toLowerCase()} management`}
+          title={`Open ${title.toLowerCase()} management`}
+        >
+          <ArrowUpRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        {error ? (
+          <div className="alert alert-error text-xs">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : metrics ? (
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-5">
+            {metrics.map((m) => (
+              <div key={m.label} className="min-w-0">
+                <dt className="truncate text-xs text-ink-400">{m.label}</dt>
+                <dd className="mt-1 truncate text-lg font-semibold tabular-nums tracking-tight text-white">
+                  {m.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p className="py-4 text-[13px] text-ink-400">{emptyLabel}</p>
+        )}
+
+        {footnote && !error && <div className="mt-auto pt-5">{footnote}</div>}
+      </div>
+    </section>
+  );
+}
+
 export function ActivityTrendsCard({
   workoutStats,
   nutritionStats,
@@ -36,244 +104,98 @@ export function ActivityTrendsCard({
   // Format tonnage
   const formatVolume = (kg: number) => {
     if (kg >= 1000) {
-      return `${(kg / 1000).toFixed(1)} tons`;
+      return `${(kg / 1000).toFixed(1)} t`;
     }
     return `${kg.toLocaleString()} kg`;
   };
 
   // Challenge metrics
   const totalChallenges = challenges?.length ?? 0;
-  const publishedChallenges =
-    challenges?.filter((c) => c.status === 'published').length ?? 0;
-  const autoEnrollChallenges =
-    challenges?.filter((c) => c.autoEnroll).length ?? 0;
+  const publishedChallenges = challenges?.filter((c) => c.status === 'published').length ?? 0;
+  const autoEnrollChallenges = challenges?.filter((c) => c.autoEnroll).length ?? 0;
   const autoEnrollPercent =
-    totalChallenges > 0
-      ? Math.round((autoEnrollChallenges / totalChallenges) * 100)
-      : 0;
+    totalChallenges > 0 ? Math.round((autoEnrollChallenges / totalChallenges) * 100) : 0;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <div>
+      <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h3 className="text-base font-semibold text-white">
-            Platform Activity & Engagement Trends
-          </h3>
-          <p className="text-xs text-slate-400">
-            Real-time cross-pillar fitness activity tracked in Neon PostgreSQL
-          </p>
+          <h2 className="text-[15px] font-semibold tracking-tight text-white">Platform activity</h2>
+          <p className="text-xs text-ink-400">All-time totals by domain</p>
         </div>
-        <span className="text-[11px] text-teal-400 font-medium">
-          Multi-domain Analytics
-        </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Workout Activity Pillar */}
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4 flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
-                  <Dumbbell className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-white">
-                    Workout Activity
-                  </h4>
-                  <p className="text-[10px] text-slate-400">Strength & Cardio</p>
-                </div>
-              </div>
-              <Link
-                href="/workouts"
-                className="text-slate-400 hover:text-purple-300 transition-colors p-1"
-                title="View Workouts Management"
-              >
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <DomainCard
+          title="Workouts"
+          description="Training sessions and exercise library"
+          href="/workouts"
+          icon={<Dumbbell />}
+          iconClass="text-purple-300"
+          error={workoutError}
+          emptyLabel="No workout stats recorded."
+          metrics={
+            workoutStats
+              ? [
+                  { label: 'Completed sessions', value: workoutStats.totalCompletedSessions.toLocaleString() },
+                  { label: 'Active lifters', value: workoutStats.activeLiftersCount.toLocaleString() },
+                  { label: 'Total volume', value: formatVolume(workoutStats.totalVolumeLiftedKg) },
+                  { label: 'Exercise library', value: workoutStats.totalExercises.toLocaleString() },
+                ]
+              : null
+          }
+        />
 
-            {workoutError ? (
-              <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-2.5 text-[11px] text-rose-300">
-                {workoutError}
-              </div>
-            ) : workoutStats ? (
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                  <span className="text-[10px] text-slate-400">Completed Sessions</span>
-                  <p className="text-base font-bold text-white mt-0.5">
-                    {workoutStats.totalCompletedSessions.toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                  <span className="text-[10px] text-slate-400">Active Lifters</span>
-                  <p className="text-base font-bold text-purple-300 mt-0.5">
-                    {workoutStats.activeLiftersCount.toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                  <span className="text-[10px] text-slate-400">Total Volume</span>
-                  <p className="text-base font-bold text-emerald-400 mt-0.5">
-                    {formatVolume(workoutStats.totalVolumeLiftedKg)}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                  <span className="text-[10px] text-slate-400">Exercise Library</span>
-                  <p className="text-base font-bold text-cyan-300 mt-0.5">
-                    {workoutStats.totalExercises} exercises
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="text-xs text-slate-500 py-3">No workout stats recorded.</div>
-            )}
-          </div>
+        <DomainCard
+          title="Nutrition"
+          description="Meal logging, hydration and food catalog"
+          href="/nutrition"
+          icon={<Utensils />}
+          iconClass="text-amber-300"
+          error={nutritionError}
+          emptyLabel="No nutrition stats recorded."
+          metrics={
+            nutritionStats
+              ? [
+                  { label: 'Meals logged', value: nutritionStats.totalMealsLogged.toLocaleString() },
+                  { label: 'Food items logged', value: nutritionStats.totalMealItemsLogged.toLocaleString() },
+                  { label: 'Water entries', value: nutritionStats.totalWaterLogs.toLocaleString() },
+                  { label: 'Verified foods', value: nutritionStats.totalVerifiedFoods.toLocaleString() },
+                ]
+              : null
+          }
+        />
 
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-2 border-t border-slate-800/60">
-            <Flame className="h-3 w-3 text-purple-400" />
-            <span>Curated routines & custom strength tracking</span>
-          </div>
-        </div>
-
-        {/* Nutrition Activity Pillar */}
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4 flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                  <Utensils className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-white">
-                    Nutrition Activity
-                  </h4>
-                  <p className="text-[10px] text-slate-400">Meals & Hydration</p>
-                </div>
-              </div>
-              <Link
-                href="/nutrition"
-                className="text-slate-400 hover:text-amber-300 transition-colors p-1"
-                title="View Nutrition Management"
-              >
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            {nutritionError ? (
-              <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-2.5 text-[11px] text-rose-300">
-                {nutritionError}
-              </div>
-            ) : nutritionStats ? (
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                  <span className="text-[10px] text-slate-400">Meals Logged</span>
-                  <p className="text-base font-bold text-white mt-0.5">
-                    {nutritionStats.totalMealsLogged.toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                  <span className="text-[10px] text-slate-400">Food Items Tracked</span>
-                  <p className="text-base font-bold text-amber-300 mt-0.5">
-                    {nutritionStats.totalMealItemsLogged.toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                  <span className="text-[10px] text-slate-400">Water Entries</span>
-                  <p className="text-base font-bold text-cyan-400 mt-0.5">
-                    {nutritionStats.totalWaterLogs.toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                  <span className="text-[10px] text-slate-400">Verified Catalog</span>
-                  <p className="text-base font-bold text-teal-300 mt-0.5">
-                    {nutritionStats.totalVerifiedFoods} foods
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="text-xs text-slate-500 py-3">No nutrition stats recorded.</div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-2 border-t border-slate-800/60">
-            <Droplets className="h-3 w-3 text-cyan-400" />
-            <span>Physical serving contracts & macronutrient compliance</span>
-          </div>
-        </div>
-
-        {/* Challenges & Gamification Pillar */}
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4 flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
-                  <Trophy className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-white">
-                    Challenges & Rewards
-                  </h4>
-                  <p className="text-[10px] text-slate-400">Community Gamification</p>
-                </div>
-              </div>
-              <Link
-                href="/challenges"
-                className="text-slate-400 hover:text-rose-300 transition-colors p-1"
-                title="View Challenges Management"
-              >
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            {challengesError ? (
-              <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-2.5 text-[11px] text-rose-300">
-                {challengesError}
-              </div>
-            ) : challenges ? (
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                    <span className="text-[10px] text-slate-400">Published Active</span>
-                    <p className="text-base font-bold text-emerald-400 mt-0.5">
-                      {publishedChallenges}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5">
-                    <span className="text-[10px] text-slate-400">Total Configured</span>
-                    <p className="text-base font-bold text-white mt-0.5">
-                      {totalChallenges}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-lg bg-slate-900/80 border border-slate-800/80 p-2.5 text-xs">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">Auto-Enroll Rate</span>
-                    <span className="font-semibold text-teal-300">
-                      {autoEnrollPercent}% ({autoEnrollChallenges} challenges)
-                    </span>
-                  </div>
-                </div>
-
-                {/* Missing Backend Endpoint Notice */}
-                <div className="flex items-start gap-1.5 rounded-lg bg-slate-900/90 border border-slate-800 p-2 text-[10px] text-slate-400">
-                  <Info className="h-3 w-3 text-slate-400 shrink-0 mt-0.5" />
-                  <span>
-                    Aggregate user participation counts pending{' '}
-                    <code className="text-slate-300 font-mono">/challenges/stats</code> (Phase 10.4).
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-xs text-slate-500 py-3">No challenges configured.</div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-2 border-t border-slate-800/60">
-            <Sparkles className="h-3 w-3 text-rose-400" />
-            <span>Badges, point rewards, and cadence tracking</span>
-          </div>
-        </div>
+        <DomainCard
+          title="Challenges"
+          description="Programs, badges and rewards"
+          href="/challenges"
+          icon={<Trophy />}
+          iconClass="text-rose-300"
+          error={challengesError}
+          emptyLabel="No challenges configured."
+          metrics={
+            challenges
+              ? [
+                  { label: 'Published', value: publishedChallenges.toLocaleString() },
+                  { label: 'Total configured', value: totalChallenges.toLocaleString() },
+                  { label: 'Auto-enroll', value: `${autoEnrollPercent}%` },
+                  { label: 'Auto-enroll count', value: autoEnrollChallenges.toLocaleString() },
+                ]
+              : null
+          }
+          footnote={
+            challenges ? (
+              <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-ink-500">
+                <Info className="mt-px h-3 w-3 shrink-0" />
+                <span>
+                  Participation counts need the{' '}
+                  <code className="font-mono text-ink-400">/challenges/stats</code> endpoint (pending).
+                </span>
+              </p>
+            ) : undefined
+          }
+        />
       </div>
     </div>
   );

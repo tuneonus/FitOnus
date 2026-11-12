@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import {
   BookOpenText,
   BarChart3,
@@ -12,7 +12,9 @@ import {
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { FeatureScreen } from '@/shared/components/ui/FeatureScreen';
 import { ActionButton } from '@/shared/components/ui/ActionButton';
-import { ActionRow } from '@/shared/components/ui/ActionRow';
+import { ListGroup, ListRow } from '@/shared/components/ui/ListRow';
+import { Card } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { SectionHeader } from '@/shared/components/ui/SectionHeader';
 import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
@@ -31,6 +33,42 @@ import { mealLabels, mealOrder } from '../constants/meals';
 import { AddFoodSheet } from '../components/AddFoodSheet';
 import { FoodItemSheet } from '../components/FoodItemSheet';
 import type { FoodItem, MealEntry, MealType } from '../types/nutrition';
+
+/** Equal-width shortcut tile for one way of logging food. */
+function LogMethodTile({
+  icon: Icon,
+  label,
+  onPress,
+}: {
+  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  label: string;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.tile,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.line,
+          opacity: pressed ? 0.8 : 1,
+          transform: [{ scale: pressed ? 0.97 : 1 }],
+        },
+      ]}
+    >
+      <View style={[styles.tileIcon, { backgroundColor: colors.accentSoft }]}>
+        <Icon size={20} color={colors.accentStrong} strokeWidth={2} />
+      </View>
+      <Text style={[styles.tileLabel, { color: colors.ink }]} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 export function NutritionScreen() {
   const { colors } = useTheme();
@@ -85,7 +123,7 @@ export function NutritionScreen() {
       await logWater(amount);
       showToast({ message: `${amount} ml water added` });
     } catch {
-      showToast({ message: 'Couldn’t save water. Please try again.' });
+      showToast({ tone: 'error', message: 'Couldn’t save water. Please try again.' });
     } finally {
       waterLock.current = false;
       setWaterBusy(null);
@@ -104,6 +142,7 @@ export function NutritionScreen() {
   return (
     <FeatureScreen
       title="Nutrition"
+      eyebrow={`${isToday ? 'Today' : 'Viewing'} · ${dateLabel}`}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -116,18 +155,15 @@ export function NutritionScreen() {
       footer={<ActionButton title="Log a meal" icon={Plus} onPress={() => setAddMeal('lunch')} />}
     >
       <View style={styles.content}>
-        <View style={styles.dateRow}>
-          <Text style={[premium.type.label, { color: colors.muted }]}>
-            {isToday ? 'TODAY' : 'VIEWING'} · {dateLabel}
-          </Text>
-          {!isToday ? (
-            <ActionButton
-              title="Today"
-              variant="secondary"
-              onPress={() => setSelectedDate(localDateKey())}
-            />
-          ) : null}
-        </View>
+        {!isToday ? (
+          <StatusBanner
+            tone="info"
+            title={`Viewing ${dateLabel}`}
+            body="Logs you add go to this date."
+            actionLabel="Today"
+            onAction={() => setSelectedDate(localDateKey())}
+          />
+        ) : null}
         {error ? (
           <StatusBanner
             tone="error"
@@ -156,143 +192,155 @@ export function NutritionScreen() {
           <NutritionSummary overview={overview} onOpen={() => navigate('mealDiary')} />
         )}
         <View style={styles.methods}>
-          <ActionButton
-            title="Meal photo"
-            variant="secondary"
+          <LogMethodTile
             icon={Camera}
+            label="Photo"
             onPress={() => navigate('mealPhoto', { meal: 'lunch' })}
-            style={styles.method}
           />
-          <ActionButton
-            title="Barcode"
-            variant="secondary"
+          <LogMethodTile
             icon={ScanBarcode}
+            label="Barcode"
             onPress={() => navigate('barcodeScanner', { meal: 'snacks' })}
-            style={styles.method}
           />
-          <ActionButton
-            title="Voice entry"
-            variant="secondary"
+          <LogMethodTile
             icon={Mic}
+            label="Voice"
             onPress={() => navigate('voiceMealEntry', { meal: 'lunch' })}
-            style={styles.method}
           />
         </View>
         <View>
-          <SectionHeader
-            appearance="premium"
-            title="Water"
-            subtitle="Tap an amount to add it to this day."
-          />
-          <Text style={[styles.waterValue, { color: colors.ink }]}>
-            {day.waterMl === null
-              ? '—'
-              : (day.waterMl / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })}{' '}
-            L
-            <Text style={[premium.type.body, { color: colors.muted }]}>
-              {day.goals.waterMl === null
-                ? ' · Goal unavailable'
-                : ` / ${day.goals.waterMl / 1000} L`}
+          <SectionHeader title="Water" subtitle="Tap an amount to add it to this day." />
+          <Card style={styles.waterCard}>
+            <Text style={[styles.waterValue, { color: colors.ink }]}>
+              {day.waterMl === null
+                ? '—'
+                : (day.waterMl / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              <Text style={[premium.type.label, { color: colors.muted }]}>
+                {day.goals.waterMl === null
+                  ? ' L · Goal unavailable'
+                  : ` / ${day.goals.waterMl / 1000} L`}
+              </Text>
             </Text>
-          </Text>
-          <ProgressBar
-            value={progressRatio(day.waterMl, day.goals.waterMl)}
-            height={5}
-            color={colors.sky}
-            style={styles.waterBar}
-          />
-          <View style={styles.methods}>
-            {[250, 500, 750].map((amount) => (
-              <ActionButton
-                key={amount}
-                title={`+ ${amount} ml`}
-                accessibilityLabel={`Log ${amount} millilitres of water`}
-                variant="secondary"
-                disabled={waterBusy !== null}
-                loading={waterBusy === amount}
-                onPress={() => {
-                  void logDrink(amount);
-                }}
-                style={styles.method}
-              />
-            ))}
-          </View>
+            <ProgressBar
+              value={progressRatio(day.waterMl, day.goals.waterMl)}
+              height={6}
+              color={colors.sky}
+            />
+            <View style={styles.waterButtons}>
+              {[250, 500, 750].map((amount) => (
+                <Button
+                  key={amount}
+                  title={`+${amount} ml`}
+                  size="sm"
+                  variant="secondary"
+                  disabled={waterBusy !== null}
+                  loading={waterBusy === amount}
+                  onPress={() => {
+                    void logDrink(amount);
+                  }}
+                  style={styles.waterButton}
+                />
+              ))}
+            </View>
+          </Card>
         </View>
-        <View>
-          <SectionHeader appearance="premium" title="Your meals" />
+        <View style={styles.meals}>
+          <SectionHeader title="Your meals" />
           {mealOrder.map((meal) => {
             const group = visibleEntries.filter((entry) => entry.meal === meal);
             const kcal = group
               .flatMap((entry) => entry.items)
               .reduce((sum, item) => sum + item.kcal, 0);
+            const items = group.flatMap((entry) =>
+              entry.items.map((item, index) => ({ entry, item, index })),
+            );
             return (
-              <View key={meal} style={[styles.meal, { borderColor: colors.line }]}>
-                <View style={styles.dateRow}>
-                  <Text
-                    accessibilityRole="header"
-                    style={[premium.type.label, { color: colors.ink }]}
-                  >
-                    {mealLabels[meal]}
-                  </Text>
-                  <Text style={[premium.type.caption, { color: colors.muted }]}>
-                    {group.length ? `${Math.round(kcal)} kcal logged` : 'Nothing logged'}
-                  </Text>
-                </View>
-                {group.flatMap((entry) =>
-                  entry.items.map((item, index) => (
-                    <TouchableOpacity
-                      key={`${entry.id}-${item.id}-${index}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Edit ${item.name}, ${Math.round(item.kcal)} calories`}
-                      onPress={() => setEditing({ entry, item })}
-                      style={styles.food}
+              <Card key={meal} padded={false}>
+                <View style={styles.mealHeader}>
+                  <View style={styles.copy}>
+                    <Text
+                      accessibilityRole="header"
+                      style={[premium.type.cardTitle, { color: colors.ink }]}
                     >
-                      <View style={styles.copy}>
-                        <Text style={[premium.type.body, { color: colors.ink }]}>{item.name}</Text>
-                        <Text style={[premium.type.caption, { color: colors.muted }]}>
-                          {item.serving} · {entry.time}
-                          {item.estimated ? ' · AI estimate' : ''}
-                          {entry.isSynced === false ? ' · Pending sync' : ''}
-                        </Text>
-                      </View>
-                      <Text style={[premium.type.label, { color: colors.ink }]}>
-                        {Math.round(item.kcal)}
+                      {mealLabels[meal]}
+                    </Text>
+                    <Text style={[premium.type.caption, { color: colors.muted }]}>
+                      {group.length ? `${Math.round(kcal)} kcal logged` : 'Nothing logged yet'}
+                    </Text>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add to ${mealLabels[meal].toLowerCase()}`}
+                    onPress={() => setAddMeal(meal)}
+                    hitSlop={6}
+                    style={({ pressed }) => [
+                      styles.addButton,
+                      { backgroundColor: colors.accentSoft, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <Plus size={18} color={colors.accentStrong} strokeWidth={2.4} />
+                    <Text style={[styles.addText, { color: colors.accentStrong }]}>Add</Text>
+                  </Pressable>
+                </View>
+                {items.map(({ entry, item, index }) => (
+                  <Pressable
+                    key={`${entry.id}-${item.id}-${index}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit ${item.name}, ${Math.round(item.kcal)} calories`}
+                    onPress={() => setEditing({ entry, item })}
+                    style={({ pressed }) => [
+                      styles.food,
+                      { borderTopColor: colors.lineSoft },
+                      pressed && { backgroundColor: colors.surface2 },
+                    ]}
+                  >
+                    <View style={styles.copy}>
+                      <Text style={[premium.type.label, { color: colors.ink }]} numberOfLines={1}>
+                        {item.name}
                       </Text>
-                    </TouchableOpacity>
-                  )),
-                )}
-                <ActionButton
-                  title={`Add to ${mealLabels[meal].toLowerCase()}`}
-                  icon={Plus}
-                  variant="secondary"
-                  onPress={() => setAddMeal(meal)}
-                  style={styles.add}
-                />
-              </View>
+                      <Text
+                        style={[premium.type.caption, { color: colors.muted }]}
+                        numberOfLines={1}
+                      >
+                        {item.serving} · {entry.time}
+                        {item.estimated ? ' · AI estimate' : ''}
+                        {entry.isSynced === false ? ' · Pending sync' : ''}
+                      </Text>
+                    </View>
+                    <Text style={[styles.kcal, { color: colors.ink }]}>
+                      {Math.round(item.kcal)}
+                      <Text style={[premium.type.caption, { color: colors.muted }]}> kcal</Text>
+                    </Text>
+                  </Pressable>
+                ))}
+              </Card>
             );
           })}
         </View>
         <View>
-          <ActionRow
-            icon={BookOpenText}
-            title="Meal diary"
-            detail="Review your logged days and weekly trends."
-            onPress={() => navigate('mealDiary')}
-          />
-          <ActionRow
-            icon={BarChart3}
-            title="Nutrition analytics"
-            detail="See your nutrition patterns over time."
-            onPress={() => navigate('nutritionAnalytics')}
-          />
-          <ActionRow
-            icon={Sparkles}
-            title="Plan with your Coach"
-            detail="Ask about meals and your saved nutrition targets."
-            onPress={() =>
-              navigate('coach', { q: 'Help me plan meals around my saved nutrition targets.' })
-            }
-          />
+          <SectionHeader title="Go deeper" />
+          <ListGroup style={styles.group}>
+            <ListRow
+              icon={BookOpenText}
+              title="Meal diary"
+              subtitle="Review your logged days and weekly trends."
+              onPress={() => navigate('mealDiary')}
+            />
+            <ListRow
+              icon={BarChart3}
+              title="Nutrition analytics"
+              subtitle="See your nutrition patterns over time."
+              onPress={() => navigate('nutritionAnalytics')}
+            />
+            <ListRow
+              icon={Sparkles}
+              title="Plan with your Coach"
+              subtitle="Ask about meals and your saved nutrition targets."
+              onPress={() =>
+                navigate('coach', { q: 'Help me plan meals around my saved nutrition targets.' })
+              }
+            />
+          </ListGroup>
         </View>
       </View>
       <AddFoodSheet
@@ -306,19 +354,56 @@ export function NutritionScreen() {
 }
 const styles = StyleSheet.create({
   content: { gap: 24, paddingBottom: 24 },
-  dateRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  methods: { flexDirection: 'row', gap: 10 },
+  tile: {
+    flex: 1,
+    minHeight: 88,
+    borderRadius: premium.radius.card,
+    borderWidth: 1,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
   },
-  methods: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  method: { flexGrow: 1, flexBasis: 95 },
-  waterValue: { ...premium.type.metric, marginVertical: 12 },
-  waterBar: { marginBottom: 20 },
-  meal: { paddingVertical: 20, borderTopWidth: StyleSheet.hairlineWidth },
-  food: { minHeight: 72, flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
-  copy: { flex: 1, gap: 4 },
-  add: { marginTop: 12 },
+  tileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileLabel: { ...premium.type.label, fontSize: 13.5 },
+  waterCard: { gap: 14 },
+  waterValue: { ...premium.type.metric },
+  waterButtons: { flexDirection: 'row', gap: 8 },
+  waterButton: { flex: 1 },
+  meals: { gap: 10 },
+  mealHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+  },
+  addText: { fontSize: 13.5, fontWeight: '700' },
+  food: {
+    minHeight: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    gap: 12,
+    borderTopWidth: 1,
+  },
+  copy: { flex: 1, gap: 2 },
+  kcal: { ...premium.type.label, fontVariant: ['tabular-nums'] },
+  group: { marginVertical: 0 },
 });

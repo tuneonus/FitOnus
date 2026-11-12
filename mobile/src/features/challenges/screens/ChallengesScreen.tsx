@@ -128,8 +128,8 @@ export function ChallengesScreen() {
         <RefreshControl
           refreshing={isRefreshing}
           onRefresh={onRefresh}
-          tintColor={colors.accent}
-          colors={[colors.accent]}
+          tintColor={colors.accentStrong}
+          colors={[colors.accentStrong]}
         />
       }
     >

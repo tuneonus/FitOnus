@@ -111,7 +111,7 @@ export function WorkoutGeneratorScreen() {
       navigate('workoutPlan');
     } catch {
       if (session.isCurrent())
-        showToast({ message: 'Could not save your workout. Please try again.' });
+        showToast({ tone: 'error', message: 'Could not save your workout. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -121,7 +121,7 @@ export function WorkoutGeneratorScreen() {
     return (
       <Screen title="Building your plan">
         <View style={styles.generatingBody}>
-          <Sparkles size={28} color={colors.accent} />
+          <Sparkles size={28} color={colors.accentStrong} />
           <Text style={[styles.genHeading, { color: colors.ink }]}>
             Building your {duration}-minute {goal.toLowerCase()} session
           </Text>

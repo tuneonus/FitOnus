@@ -161,7 +161,7 @@ export function AiMemoryScreen() {
         {/* Saved Memories List */}
         {loading && items.length === 0 ? (
           <View style={{ padding: 32, alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator size="small" color={colors.accent} />
+            <ActivityIndicator size="small" color={colors.accentStrong} />
           </View>
         ) : items.length === 0 ? (
           <EmptyState
@@ -289,7 +289,6 @@ export function AiMemoryScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 16,
     paddingBottom: 40,
     gap: 20,
   },

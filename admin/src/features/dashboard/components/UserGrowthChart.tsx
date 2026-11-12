@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
-import { TrendingUp, Activity, Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+import { TrendingUp, Activity, BarChart3 } from 'lucide-react';
+import { Panel } from '@/components/ui/Panel';
 import type { RegistrationTrendPoint, DashboardTimeframe } from '../types';
 
 interface UserGrowthChartProps {
@@ -11,7 +12,16 @@ interface UserGrowthChartProps {
   active7d: number;
   active30d: number;
   timeframe: DashboardTimeframe;
-  onTimeframeChange: (tf: DashboardTimeframe) => void;
+}
+
+function niceMax(value: number) {
+  if (value <= 4) return 4;
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const steps = [1, 2, 2.5, 5, 10];
+  for (const s of steps) {
+    if (s * magnitude >= value) return s * magnitude;
+  }
+  return 10 * magnitude;
 }
 
 export function UserGrowthChart({
@@ -21,134 +31,163 @@ export function UserGrowthChart({
   active7d,
   active30d,
   timeframe,
-  onTimeframeChange,
 }: UserGrowthChartProps) {
+  const [hovered, setHovered] = useState<number | null>(null);
+
   // Filter data points based on selected timeframe
-  const displayPoints =
-    timeframe === '7d' ? trend.slice(-7) : trend;
+  const displayPoints = timeframe === '7d' ? trend.slice(-7) : trend;
 
-  const maxVal =
-    displayPoints.length > 0
-      ? Math.max(...displayPoints.map((p) => p.count), 1)
-      : 1;
+  const dataMax = displayPoints.length > 0 ? Math.max(...displayPoints.map((p) => p.count)) : 0;
+  const axisMax = niceMax(dataMax);
+  const gridLines = [axisMax, axisMax / 2, 0];
 
-  const totalPeriodRegistrations =
-    timeframe === '7d' ? new7d : new30d;
+  const totalPeriodRegistrations = timeframe === '7d' ? new7d : new30d;
+  const activeInPeriod = timeframe === '7d' ? active7d : active30d;
+  const windowLabel = timeframe === '90d' ? '30D' : timeframe.toUpperCase();
 
-  const activeInPeriod =
-    timeframe === '7d' ? active7d : active30d;
+  // Thin x-axis labels so they never collide on narrow screens.
+  const labelEvery = displayPoints.length > 16 ? 5 : displayPoints.length > 10 ? 2 : 1;
+
+  const formatDate = (date: string, opts: Intl.DateTimeFormatOptions) =>
+    new Date(date).toLocaleDateString('en-US', opts);
 
   return (
-    <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm flex flex-col justify-between">
-      <div>
-        {/* Header & Timeframe Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-white">
-                User Growth & Registration Trend
-              </h3>
-              <span className="rounded-full bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 text-[10px] font-semibold text-teal-300">
-                PostgreSQL Aggregated
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Daily member registrations recorded across the OnusFit platform
-            </p>
-          </div>
-
-          {/* Timeframe Controls */}
-          <div className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-950/80 p-1 self-start sm:self-auto">
-            {(['7d', '30d', '90d'] as DashboardTimeframe[]).map((tf) => {
-              const active = timeframe === tf;
-              return (
-                <button
-                  key={tf}
-                  type="button"
-                  onClick={() => onTimeframeChange(tf)}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                    active
-                      ? 'bg-teal-500 text-slate-950 shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                  }`}
-                >
-                  {tf.toUpperCase()}
-                </button>
-              );
-            })}
-          </div>
+    <Panel
+      className="lg:col-span-2"
+      title="Registrations"
+      description="New member accounts created per day"
+      icon={<BarChart3 />}
+      bodyClassName="flex flex-col"
+    >
+      <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+        <div>
+          <p className="eyebrow">New in {windowLabel}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-white">
+            {totalPeriodRegistrations.toLocaleString()}
+          </p>
         </div>
-
-        {/* Bar Graph */}
-        <div className="mt-6 flex h-44 items-end gap-2 pt-6">
-          {displayPoints.length === 0 ? (
-            <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">
-              No registration activity recorded in this period.
-            </div>
-          ) : (
-            displayPoints.map((point) => {
-              const heightPercent = Math.max(
-                Math.round((point.count / maxVal) * 100),
-                8,
-              );
-              const dateObj = new Date(point.date);
-              const dateFormatted = dateObj.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              });
-
-              return (
-                <div
-                  key={point.date}
-                  className="group relative flex flex-1 flex-col items-center justify-end h-full"
-                >
-                  {/* Hover Tooltip */}
-                  <div className="absolute -top-9 hidden group-hover:flex flex-col items-center z-20 pointer-events-none">
-                    <span className="rounded-lg bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-white shadow-xl border border-slate-700 whitespace-nowrap">
-                      {point.count} new account{point.count === 1 ? '' : 's'} on {dateFormatted}
-                    </span>
-                  </div>
-
-                  {/* Visual Bar */}
-                  <div
-                    className="w-full rounded-t-md bg-gradient-to-t from-teal-500/20 to-teal-400/40 group-hover:from-teal-400/80 group-hover:to-emerald-400 transition-all border-t border-x border-teal-500/40"
-                    style={{ height: `${heightPercent}%` }}
-                  />
-
-                  {/* Day Label */}
-                  <span className="mt-2 text-[10px] text-slate-400 font-mono truncate w-full text-center">
-                    {dateFormatted.split(' ')[1]}
-                  </span>
-                </div>
-              );
-            })
-          )}
+        <div>
+          <p className="eyebrow">Active in {windowLabel}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-white">
+            {activeInPeriod.toLocaleString()}
+          </p>
         </div>
       </div>
 
-      {/* Footer Summary Stats */}
-      <div className="mt-6 pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400">
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-            <TrendingUp className="h-4 w-4" />
-            <span>
-              +{totalPeriodRegistrations} registered ({timeframe === '90d' ? '30D available' : timeframe.toUpperCase()})
-            </span>
-          </span>
-          <span className="hidden sm:inline text-slate-700">|</span>
-          <span className="flex items-center gap-1.5">
-            <Activity className="h-3.5 w-3.5 text-teal-400" />
-            <span>
-              Active in window ({timeframe === '90d' ? '30D' : timeframe.toUpperCase()}): <strong className="text-white">{activeInPeriod}</strong> users
-            </span>
-          </span>
+      {displayPoints.length === 0 ? (
+        <div className="mt-6 flex h-52 items-center justify-center rounded-lg border border-dashed border-ink-700 text-[13px] text-ink-400">
+          No registration activity recorded in this period.
         </div>
+      ) : (
+        <div className="mt-6">
+          <div className="relative flex h-52">
+            {/* Y axis labels */}
+            <div className="flex w-8 shrink-0 flex-col justify-between pb-6 text-right text-[10px] tabular-nums text-ink-500">
+              {gridLines.map((g) => (
+                <span key={g} className="-translate-y-1/2 leading-none first:translate-y-0 last:translate-y-0">
+                  {Number.isInteger(g) ? g : g.toFixed(1)}
+                </span>
+              ))}
+            </div>
 
-        <span className="flex items-center gap-1.5 text-slate-500 text-[11px]">
-          <Calendar className="h-3.5 w-3.5" />
-          <span>Real-time Postgres Neon Aggregation</span>
+            <div className="relative ml-3 flex-1">
+              {/* Gridlines */}
+              <div aria-hidden="true" className="absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between">
+                {gridLines.map((g, i) => (
+                  <div
+                    key={g}
+                    className={`h-px w-full ${i === gridLines.length - 1 ? 'bg-ink-700' : 'bg-ink-800/80'}`}
+                  />
+                ))}
+              </div>
+
+              {/* Bars */}
+              <div
+                role="img"
+                aria-label={`Daily registrations, ${displayPoints.length} days, ${totalPeriodRegistrations} total in ${windowLabel}.`}
+                className="absolute inset-x-0 top-0 bottom-6 flex items-end gap-[2px]"
+                onMouseLeave={() => setHovered(null)}
+              >
+                {displayPoints.map((point, i) => {
+                  const heightPercent = axisMax > 0 ? (point.count / axisMax) * 100 : 0;
+                  const isHovered = hovered === i;
+                  return (
+                    <div
+                      key={point.date}
+                      className="group relative flex h-full flex-1 items-end"
+                      onMouseEnter={() => setHovered(i)}
+                    >
+                      {isHovered && (
+                        <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 -translate-x-1/2 whitespace-nowrap rounded-md border border-ink-700 bg-ink-850 px-2.5 py-1.5 text-[11px] shadow-pop">
+                          <span className="block text-ink-400">
+                            {formatDate(point.date, { weekday: 'short', month: 'short', day: 'numeric' })}
+                          </span>
+                          <span className="font-semibold text-white tabular-nums">
+                            {point.count} new account{point.count === 1 ? '' : 's'}
+                          </span>
+                        </div>
+                      )}
+                      <div
+                        className={`w-full rounded-t-[4px] transition-colors ${
+                          isHovered ? 'bg-brand-500' : 'bg-brand-600/80'
+                        } ${hovered !== null && !isHovered ? 'opacity-60' : ''}`}
+                        style={{
+                          height: point.count > 0 ? `max(${heightPercent}%, 3px)` : '1px',
+                          opacity: point.count === 0 ? 0.35 : undefined,
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* X axis labels */}
+              <div aria-hidden="true" className="absolute inset-x-0 bottom-0 flex h-5 items-end gap-[2px]">
+                {displayPoints.map((point, i) => (
+                  <span
+                    key={point.date}
+                    className="flex-1 truncate text-center text-[10px] tabular-nums text-ink-500"
+                  >
+                    {i % labelEvery === 0 || i === displayPoints.length - 1
+                      ? formatDate(point.date, displayPoints.length > 10 ? { month: 'numeric', day: 'numeric' } : { weekday: 'short' })
+                      : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Accessible table view of the plotted data */}
+          <table className="sr-only">
+            <caption>Daily registrations</caption>
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">New accounts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayPoints.map((p) => (
+                <tr key={p.date}>
+                  <td>{formatDate(p.date, { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                  <td>{p.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-ink-800 pt-4 text-xs text-ink-400">
+        <span className="inline-flex items-center gap-1.5">
+          <TrendingUp className="h-3.5 w-3.5 text-ink-500" />
+          {totalPeriodRegistrations.toLocaleString()} registered in {windowLabel}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Activity className="h-3.5 w-3.5 text-ink-500" />
+          {activeInPeriod.toLocaleString()} active users in {windowLabel}
         </span>
       </div>
-    </div>
+    </Panel>
   );
 }

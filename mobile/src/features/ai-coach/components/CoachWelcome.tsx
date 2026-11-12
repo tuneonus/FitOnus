@@ -90,8 +90,7 @@ export function CoachWelcome({ onAsk }: { onAsk: (q: string) => void }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 32,
   },
   heading: {

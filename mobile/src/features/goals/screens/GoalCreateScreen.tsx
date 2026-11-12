@@ -80,7 +80,7 @@ export function GoalCreateScreen() {
       showToast({ message: 'Goal created. Your coach will plan around it.' });
       replace('goalDetail', { id: newId });
     } catch {
-      showToast({ message: 'Failed to save goal. Please try again.' });
+      showToast({ tone: 'error', message: 'Failed to save goal. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -99,7 +99,7 @@ export function GoalCreateScreen() {
     >
       {!editing && (
         <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionLabel, { color: colors.muted }]}>
+          <Text style={[styles.sectionLabel, { color: colors.ink }]}>
             What are you working toward?
           </Text>
           <View style={styles.typeGrid}>
@@ -184,7 +184,7 @@ export function GoalCreateScreen() {
       {/* Timeframe */}
       {!editing && meta.cadence === 'once' && (
         <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionLabel, { color: colors.muted }]}>Timeframe</Text>
+          <Text style={[styles.sectionLabel, { color: colors.ink }]}>Timeframe</Text>
           <View style={styles.deadlinesRow}>
             {deadlines.map((d) => (
               <Chip key={d} label={d} selected={d === deadline} onPress={() => setDeadline(d)} />
@@ -225,8 +225,10 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 13,
-    fontWeight: '500',
-    paddingHorizontal: 4,
+    lineHeight: 18,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+    paddingHorizontal: 2,
   },
   typeGrid: {
     flexDirection: 'row',

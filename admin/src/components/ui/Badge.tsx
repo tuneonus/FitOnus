@@ -16,38 +16,41 @@ interface BadgeProps {
   variant?: BadgeVariant;
   size?: 'sm' | 'md';
   className?: string;
+  /** Hide the leading status dot. */
+  plain?: boolean;
 }
+
+const VARIANT_STYLES: Record<BadgeVariant, { chip: string; dot: string }> = {
+  active: { chip: 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/25', dot: 'bg-emerald-400' },
+  disabled: { chip: 'bg-rose-500/10 text-rose-300 ring-rose-500/25', dot: 'bg-rose-400' },
+  completed: { chip: 'bg-brand-500/10 text-brand-300 ring-brand-500/25', dot: 'bg-brand-500' },
+  pending: { chip: 'bg-amber-500/10 text-amber-300 ring-amber-500/25', dot: 'bg-amber-400' },
+  admin: { chip: 'bg-purple-500/10 text-purple-300 ring-purple-500/25', dot: 'bg-purple-400' },
+  member: { chip: 'bg-ink-800 text-ink-200 ring-ink-700', dot: 'bg-ink-400' },
+  neutral: { chip: 'bg-ink-800 text-ink-300 ring-ink-700', dot: 'bg-ink-500' },
+  warning: { chip: 'bg-amber-500/10 text-amber-300 ring-amber-500/25', dot: 'bg-amber-400' },
+  info: { chip: 'bg-cyan-500/10 text-cyan-300 ring-cyan-500/25', dot: 'bg-cyan-400' },
+};
 
 export function Badge({
   children,
   variant = 'neutral',
   size = 'md',
   className = '',
+  plain = false,
 }: BadgeProps) {
-  const variantStyles: Record<BadgeVariant, string> = {
-    active: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-    disabled: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
-    completed: 'bg-teal-500/10 text-teal-300 border border-teal-500/20',
-    pending: 'bg-amber-500/10 text-amber-300 border border-amber-500/20',
-    admin: 'bg-purple-500/10 text-purple-300 border border-purple-500/20',
-    member: 'bg-slate-500/10 text-slate-300 border border-slate-500/20',
-    neutral: 'bg-slate-800 text-slate-300 border border-slate-700',
-    warning: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-    info: 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20',
-  };
-
+  const styles = VARIANT_STYLES[variant];
   const sizeStyles = {
-    sm: 'text-xs px-2 py-0.5 rounded-md font-medium',
-    md: 'text-xs px-2.5 py-1 rounded-full font-medium tracking-wide',
+    sm: 'h-5 px-1.5 text-[11px]',
+    md: 'h-6 px-2 text-xs',
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md font-medium capitalize ring-1 ring-inset ${styles.chip} ${sizeStyles[size]} ${className}`}
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+      {!plain && <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${styles.dot}`} />}
       {children}
     </span>
   );
 }
-

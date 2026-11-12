@@ -86,14 +86,21 @@ export function ActionButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: premium.layout.touch,
+    minHeight: 50,
     paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: premium.radius.control,
+    paddingVertical: 13,
+    borderRadius: premium.radius.control + 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  label: { ...premium.type.label, flexShrink: 1, textAlign: 'center' },
+  label: {
+    ...premium.type.label,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    flexShrink: 1,
+    textAlign: 'center',
+  },
 });

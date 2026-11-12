@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useProfile } from '@/features/profile/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { premium } from '@/shared/theme/premium';
+import { Logo } from '@/shared/components/common/Logo';
 
 export function HomeHeader() {
   const { colors } = useTheme();
@@ -34,8 +35,11 @@ export function HomeHeader() {
     <View style={styles.header}>
       <View style={styles.topRow}>
         <View style={styles.brand}>
-          <Text style={[styles.wordmark, { color: colors.ink }]}>ONUSFIT</Text>
-          <Text style={[premium.type.caption, { color: colors.muted }]}>{dateLabel}</Text>
+          <Logo size={36} />
+          <View>
+            <Text style={[styles.wordmark, { color: colors.ink }]}>OnusFit</Text>
+            <Text style={[premium.type.caption, { color: colors.muted }]}>{dateLabel}</Text>
+          </View>
         </View>
         <View style={styles.actions}>
           <Pressable
@@ -44,7 +48,11 @@ export function HomeHeader() {
             onPress={() => navigate('notifications')}
             style={({ pressed }) => [
               styles.iconButton,
-              { borderColor: colors.line, opacity: pressed ? 0.6 : 1 },
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.line,
+                opacity: pressed ? 0.6 : 1,
+              },
             ]}
           >
             <Bell size={21} color={colors.ink} strokeWidth={1.7} />
@@ -55,14 +63,14 @@ export function HomeHeader() {
             onPress={() => switchTab('profile')}
             style={({ pressed }) => [
               styles.avatar,
-              { backgroundColor: colors.surface2, opacity: pressed ? 0.6 : 1 },
+              { backgroundColor: colors.hero, opacity: pressed ? 0.6 : 1 },
             ]}
           >
-            <Text style={[premium.type.label, { color: colors.ink }]}>{initials}</Text>
+            <Text style={[premium.type.label, { color: colors.heroInk }]}>{initials}</Text>
           </Pressable>
         </View>
       </View>
-      <Text style={[styles.greeting, { color: colors.muted }]}>{greeting},</Text>
+      <Text style={[styles.greeting, { color: colors.muted }]}>{greeting}</Text>
       <Text accessibilityRole="header" style={[styles.name, { color: colors.ink }]}>
         {firstName}.
       </Text>
@@ -77,26 +85,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 28,
+    marginBottom: 24,
   },
-  brand: { flex: 1, gap: 3 },
-  wordmark: { ...premium.type.eyebrow, letterSpacing: 2.4 },
+  brand: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  wordmark: { fontSize: 16, lineHeight: 20, fontWeight: '800', letterSpacing: -0.4 },
   actions: { flexDirection: 'row', gap: 8 },
   iconButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  greeting: { ...premium.type.body },
+  greeting: { ...premium.type.body, fontWeight: '500' },
   name: { ...premium.type.display, marginTop: 2 },
 });

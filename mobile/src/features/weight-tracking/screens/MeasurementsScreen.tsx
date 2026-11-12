@@ -53,7 +53,7 @@ export function MeasurementsScreen() {
             : 'Measurements saved',
       });
     } catch {
-      showToast({ message: 'Could not save measurements. Check the values and try again.' });
+      showToast({ tone: 'error', message: 'Could not save measurements. Check the values and try again.' });
     } finally {
       setSaving(false);
     }
@@ -83,7 +83,7 @@ export function MeasurementsScreen() {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={() => fetchMeasurements(true)}
-            tintColor={colors.accent}
+            tintColor={colors.accentStrong}
           />
         }
       >
@@ -111,13 +111,13 @@ export function MeasurementsScreen() {
                   styles.gridCard,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: isSelected ? colors.accent : colors.line,
+                    borderColor: isSelected ? colors.accentStrong : colors.line,
                     borderWidth: isSelected ? 1.5 : 1,
                   },
                 ]}
               >
                 <Text
-                  style={[styles.cardLabel, { color: isSelected ? colors.accent : colors.muted }]}
+                  style={[styles.cardLabel, { color: isSelected ? colors.accentStrong : colors.muted }]}
                 >
                   {m.label}
                 </Text>
@@ -164,7 +164,7 @@ export function MeasurementsScreen() {
         {measurements.length >= 2 ? (
           <View style={[styles.coachCard, { backgroundColor: colors.surface2 }]}>
             <View style={{ marginTop: 2 }}>
-              <Sparkles size={18} color={colors.accent} />
+              <Sparkles size={18} color={colors.accentStrong} />
             </View>
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={[styles.coachText, { color: colors.muted }]}>
@@ -284,7 +284,6 @@ export function MeasurementsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
     paddingBottom: 32,
     gap: 16,
   },

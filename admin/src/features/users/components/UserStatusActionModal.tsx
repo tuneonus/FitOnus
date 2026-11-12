@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import type { AdminUserListItem } from '../types';
 
@@ -34,8 +34,8 @@ export function UserStatusActionModal({
       onClose={onClose}
       title={
         actionType === 'suspend'
-          ? 'Suspend User Account'
-          : 'Reactivate User Account'
+          ? 'Suspend user account'
+          : 'Reactivate user account'
       }
       description={
         actionType === 'suspend'
@@ -48,7 +48,7 @@ export function UserStatusActionModal({
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
+            className="btn btn-secondary"
           >
             Cancel
           </button>
@@ -56,45 +56,46 @@ export function UserStatusActionModal({
             type="button"
             disabled={isSubmitting}
             onClick={onConfirm}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-lg transition-colors ${
-              actionType === 'suspend'
-                ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'
-                : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
-            }`}
+            className={`btn ${actionType === 'suspend' ? 'btn-danger' : 'btn-success'}`}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Processing...</span>
+                Processing…
               </>
             ) : actionType === 'suspend' ? (
-              <span>Confirm Suspension</span>
+              'Suspend account'
             ) : (
-              <span>Confirm Reactivation</span>
+              'Reactivate account'
             )}
           </button>
         </>
       }
     >
-      <div className="space-y-4 text-xs">
+      <div className="space-y-4">
         {error && (
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-rose-300 font-medium">
-            {error}
+          <div role="alert" className="alert alert-error">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
-          <span className="text-slate-400">Target User:</span>
-          <p className="font-semibold text-white mt-0.5">
-            {targetUser.displayName} ({targetUser.email})
-          </p>
+        <div className="card-inset flex items-center gap-3 p-3">
+          <span className="avatar h-9 w-9 text-xs">
+            {targetUser.displayName ? targetUser.displayName.slice(0, 2).toUpperCase() : 'US'}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-medium text-white">{targetUser.displayName}</p>
+            <p className="truncate text-xs text-ink-400">{targetUser.email}</p>
+          </div>
         </div>
 
         <div>
-          <label className="block text-slate-300 font-medium mb-1.5">
-            Reason for this action (Recorded in Audit Trail):
+          <label htmlFor="status-action-reason" className="field-label">
+            Reason {actionType === 'suspend' ? <span className="text-rose-300">*</span> : <span className="text-ink-500">(optional)</span>}
           </label>
           <input
+            id="status-action-reason"
             type="text"
             placeholder={
               actionType === 'suspend'
@@ -103,11 +104,12 @@ export function UserStatusActionModal({
             }
             value={reason}
             onChange={(e) => onReasonChange(e.target.value)}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            aria-invalid={Boolean(error) && actionType === 'suspend' && !reason.trim()}
+            className={`input ${error && actionType === 'suspend' && !reason.trim() ? 'input-invalid' : ''}`}
           />
+          <p className="field-hint">Recorded in the audit trail with your admin account.</p>
         </div>
       </div>
     </Modal>
   );
 }
-

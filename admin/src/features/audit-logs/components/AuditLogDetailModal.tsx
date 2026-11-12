@@ -23,68 +23,68 @@ export function AuditLogDetailModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Audit Log Event Details"
-      description="Comprehensive audit record with full payload and caller metadata"
+      title="Audit event"
+      description="Full audit record with payload and caller metadata."
       maxWidth="lg"
     >
-      <div className="space-y-4 text-xs">
-        <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3.5">
+      <div className="space-y-5 text-[13px]">
+        <dl className="grid grid-cols-1 gap-x-4 gap-y-4 rounded-lg border border-ink-800 p-4 sm:grid-cols-2">
           <div>
-            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
+            <dt className="eyebrow">
               Action
-            </span>
+            </dt>
             <div className="mt-1">
               <AuditLogActionBadge action={log.action} />
             </div>
           </div>
           <div>
-            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
+            <dt className="eyebrow">
               Event ID
-            </span>
-            <p className="font-mono text-[11px] text-slate-300 mt-1">{log.id}</p>
+            </dt>
+            <p className="mt-1 break-all font-mono text-xs text-ink-300">{log.id}</p>
           </div>
           <div>
-            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
+            <dt className="eyebrow">
               Administrator
-            </span>
-            <p className="font-semibold text-white mt-1">
+            </dt>
+            <p className="mt-1 break-words font-medium text-white">
               {log.adminName || 'Admin'} ({log.adminEmail})
             </p>
           </div>
           <div>
-            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
+            <dt className="eyebrow">
               Target Account
-            </span>
-            <p className="font-medium text-slate-300 mt-1">
+            </dt>
+            <p className="mt-1 break-words text-ink-200">
               {log.targetUserEmail || log.targetUserId || 'None'}
             </p>
           </div>
           <div>
-            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
+            <dt className="eyebrow">
               IP Address
-            </span>
-            <p className="font-mono text-slate-300 mt-1">
+            </dt>
+            <p className="mt-1 font-mono text-ink-200">
               {log.ipAddress || 'Internal'}
             </p>
           </div>
           <div>
-            <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
+            <dt className="eyebrow">
               Timestamp
-            </span>
-            <p className="text-slate-300 mt-1">
+            </dt>
+            <p className="mt-1 tabular-nums text-ink-200">
               {new Date(log.createdAt).toLocaleString()}
             </p>
           </div>
-        </div>
+        </dl>
 
         <div>
-          <div className="flex items-center gap-2 mb-2 text-slate-400">
-            <Terminal className="h-4 w-4 text-teal-400" />
+          <div className="mb-2 flex items-center gap-2 text-ink-400">
+            <Terminal className="h-4 w-4 text-ink-400" />
             <span className="font-semibold text-white">
-              Event Payload & Metadata (JSON)
+              Payload (JSON)
             </span>
           </div>
-          <pre className="rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-[11px] text-teal-300 overflow-x-auto">
+          <pre className="max-h-80 overflow-auto rounded-lg border border-ink-800 bg-ink-950 p-4 font-mono text-xs leading-relaxed text-ink-200">
             {JSON.stringify(log.details, null, 2)}
           </pre>
         </div>

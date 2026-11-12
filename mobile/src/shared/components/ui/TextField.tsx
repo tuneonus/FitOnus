@@ -38,11 +38,11 @@ export function TextField({
         style={[
           styles.inputContainer,
           {
-            backgroundColor: colors.surface,
+            backgroundColor: isFocused ? colors.surface : colors.surface2,
             ...(appearance === 'premium'
               ? { minHeight: 56, height: undefined, borderRadius: premium.radius.control }
               : {}),
-            borderColor: error ? colors.bad : isFocused ? colors.ink : colors.line,
+            borderColor: error ? colors.bad : isFocused ? colors.accentStrong : 'transparent',
           },
         ]}
       >
@@ -71,7 +71,9 @@ export function TextField({
       </View>
 
       {error ? (
-        <Text style={[styles.error, { color: colors.bad }]}>{error}</Text>
+        <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.bad }]}>
+          {error}
+        </Text>
       ) : hint ? (
         <Text style={[styles.hint, { color: colors.muted }]}>{hint}</Text>
       ) : null}
@@ -86,11 +88,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    marginBottom: 6,
+    marginBottom: 8,
     letterSpacing: -0.1,
   },
   inputContainer: {
-    height: 52,
+    height: 54,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 16,
@@ -108,8 +110,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   error: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 12.5,
+    fontWeight: '500',
+    marginTop: 6,
     marginLeft: 4,
   },
   hint: {

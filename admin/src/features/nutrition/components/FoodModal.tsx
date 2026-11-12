@@ -146,9 +146,9 @@ function FoodForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+    <form onSubmit={handleSubmit} className="space-y-4 text-[13px]">
       {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400">
+        <div className="alert alert-error">
           {error}
         </div>
       )}
@@ -156,55 +156,59 @@ function FoodForm({
       {/* Basic Identity */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2">
-          <label className="block font-semibold text-slate-300 mb-1">
-            Food Name <span className="text-rose-400">*</span>
+          <label htmlFor="foodmodal-field-1" className="field-label">
+            Food Name <span className="text-rose-300" aria-hidden="true">*</span>
           </label>
           <input
+            id="foodmodal-field-1"
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Chicken Breast, raw"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
         <div>
-          <label className="block font-semibold text-slate-300 mb-1">Brand</label>
+          <label htmlFor="foodmodal-field-2" className="field-label">Brand</label>
           <input
+            id="foodmodal-field-2"
             type="text"
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
             placeholder="e.g. Kirkland, Tyson (or blank)"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="block font-semibold text-slate-300 mb-1">
+          <label htmlFor="foodmodal-field-3" className="field-label">
             Barcode / UPC
           </label>
           <input
+            id="foodmodal-field-3"
             type="text"
             value={barcode}
             onChange={(e) => setBarcode(e.target.value)}
             placeholder="e.g. 012345678901"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none font-mono"
+            className="input font-mono"
           />
         </div>
         <div>
-          <label className="block font-semibold text-slate-300 mb-1">
-            Data Source <span className="text-rose-400">*</span>
+          <label htmlFor="foodmodal-field-4" className="field-label">
+            Data Source <span className="text-rose-300" aria-hidden="true">*</span>
           </label>
           <select
+            id="foodmodal-field-4"
             value={dataSource}
             onChange={(e) =>
               setDataSource(
                 e.target.value as 'usda_fdc' | 'open_food_facts' | 'manufacturer_label'
               )
             }
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-teal-500 focus:outline-none"
+            className="input"
           >
             <option value="usda_fdc">USDA FoodData Central (Authoritative)</option>
             <option value="manufacturer_label">Manufacturer Nutrition Facts</option>
@@ -212,76 +216,81 @@ function FoodForm({
           </select>
         </div>
         <div>
-          <label className="block font-semibold text-slate-300 mb-1">
+          <label htmlFor="foodmodal-field-5" className="field-label">
             Source ID / FDC ID
           </label>
           <input
+            id="foodmodal-field-5"
             type="text"
             value={sourceId}
             onChange={(e) => setSourceId(e.target.value)}
             placeholder="e.g. 171265"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none font-mono"
+            className="input font-mono"
           />
         </div>
       </div>
 
       {/* Serving Specifications */}
-      <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-3">
-        <h4 className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+      <div className="card-inset space-y-3 p-4">
+        <h4 className="eyebrow">
           Serving Contract & Physical Parameters
         </h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Serving Size <span className="text-rose-400">*</span>
+            <label htmlFor="foodmodal-field-6" className="field-label">
+              Serving Size <span className="text-rose-300" aria-hidden="true">*</span>
             </label>
             <input
+            id="foodmodal-field-6"
               type="number"
               step="any"
               min="0.01"
               required
               value={servingSize}
               onChange={(e) => setServingSize(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Serving Unit <span className="text-rose-400">*</span>
+            <label htmlFor="foodmodal-field-7" className="field-label">
+              Serving Unit <span className="text-rose-300" aria-hidden="true">*</span>
             </label>
             <input
+            id="foodmodal-field-7"
               type="text"
               required
               value={servingUnit}
               onChange={(e) => setServingUnit(e.target.value)}
               placeholder="piece, cup, tbsp, g"
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none"
+              className="input"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Weight (g) <span className="text-rose-400">*</span>
+            <label htmlFor="foodmodal-field-8" className="field-label">
+              Weight (g) <span className="text-rose-300" aria-hidden="true">*</span>
             </label>
             <input
+            id="foodmodal-field-8"
               type="number"
               step="any"
               min="0.01"
               required
               value={servingWeightG}
               onChange={(e) => setServingWeightG(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
+            <label htmlFor="foodmodal-field-9" className="field-label">
               Serving Basis
             </label>
             <select
+            id="foodmodal-field-9"
               value={servingBasis}
               onChange={(e) =>
                 setServingBasis(e.target.value as '100g' | 'serving' | '100ml')
               }
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none"
+              className="input"
             >
               <option value="100g">Per 100g (Standard)</option>
               <option value="serving">Per Serving</option>
@@ -291,33 +300,35 @@ function FoodForm({
         </div>
 
         {/* Optional Liquid / Density Parameters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-ink-800">
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Volume (ml) <span className="text-slate-600 font-normal">(Liquids/Oils only)</span>
+            <label htmlFor="foodmodal-field-10" className="field-label">
+              Volume (ml) <span className="font-normal text-ink-500">(Liquids/Oils only)</span>
             </label>
             <input
+            id="foodmodal-field-10"
               type="number"
               step="any"
               min="0.1"
               value={servingVolumeMl}
               onChange={(e) => setServingVolumeMl(e.target.value)}
               placeholder="e.g. 237 (1 cup milk)"
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Density ρ (g/ml) <span className="text-slate-600 font-normal">(e.g. 1.0313 milk)</span>
+            <label htmlFor="foodmodal-field-11" className="field-label">
+              Density ρ (g/ml) <span className="font-normal text-ink-500">(e.g. 1.0313 milk)</span>
             </label>
             <input
+            id="foodmodal-field-11"
               type="number"
               step="any"
               min="0.0001"
               value={densityGPerMl}
               onChange={(e) => setDensityGPerMl(e.target.value)}
               placeholder="e.g. 0.9184 (olive oil)"
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
         </div>
@@ -327,7 +338,7 @@ function FoodForm({
           <div
             className={`p-2 rounded-lg text-[11px] font-mono flex items-center justify-between border ${
               densityDiscrepancyPct! <= 15
-                ? 'bg-teal-950/40 border-teal-800 text-teal-300'
+                ? 'bg-brand-950/40 border-brand-800 text-brand-300'
                 : 'bg-rose-950/40 border-rose-800 text-rose-300'
             }`}
           >
@@ -343,135 +354,143 @@ function FoodForm({
       </div>
 
       {/* Reference Nutrients */}
-      <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-3">
-        <h4 className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+      <div className="card-inset space-y-3 p-4">
+        <h4 className="eyebrow">
           Nutritional Facts (Per 100g Reference Basis)
         </h4>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Calories (kcal) <span className="text-rose-400">*</span>
+            <label htmlFor="foodmodal-field-12" className="field-label">
+              Calories (kcal) <span className="text-rose-300" aria-hidden="true">*</span>
             </label>
             <input
+            id="foodmodal-field-12"
               type="number"
               step="any"
               min="0"
               required
               value={calories}
               onChange={(e) => setCalories(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-teal-300 font-bold focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Protein (g) <span className="text-rose-400">*</span>
+            <label htmlFor="foodmodal-field-13" className="field-label">
+              Protein (g) <span className="text-rose-300" aria-hidden="true">*</span>
             </label>
             <input
+            id="foodmodal-field-13"
               type="number"
               step="any"
               min="0"
               required
               value={proteinG}
               onChange={(e) => setProteinG(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Carbohydrates (g) <span className="text-rose-400">*</span>
+            <label htmlFor="foodmodal-field-14" className="field-label">
+              Carbohydrates (g) <span className="text-rose-300" aria-hidden="true">*</span>
             </label>
             <input
+            id="foodmodal-field-14"
               type="number"
               step="any"
               min="0"
               required
               value={carbohydratesG}
               onChange={(e) => setCarbohydratesG(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
-              Fat (g) <span className="text-rose-400">*</span>
+            <label htmlFor="foodmodal-field-15" className="field-label">
+              Fat (g) <span className="text-rose-300" aria-hidden="true">*</span>
             </label>
             <input
+            id="foodmodal-field-15"
               type="number"
               step="any"
               min="0"
               required
               value={fatG}
               onChange={(e) => setFatG(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
         </div>
 
         {/* Micronutrients */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-800/80">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-ink-800">
           <div>
-            <label className="block font-medium text-slate-400 mb-1">Fiber (g)</label>
+            <label htmlFor="foodmodal-field-16" className="field-label">Fiber (g)</label>
             <input
+            id="foodmodal-field-16"
               type="number"
               step="any"
               min="0"
               value={fiberG}
               onChange={(e) => setFiberG(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">Sugar (g)</label>
+            <label htmlFor="foodmodal-field-17" className="field-label">Sugar (g)</label>
             <input
+            id="foodmodal-field-17"
               type="number"
               step="any"
               min="0"
               value={sugarG}
               onChange={(e) => setSugarG(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">Sodium (mg)</label>
+            <label htmlFor="foodmodal-field-18" className="field-label">Sodium (mg)</label>
             <input
+            id="foodmodal-field-18"
               type="number"
               step="any"
               min="0"
               value={sodiumMg}
               onChange={(e) => setSodiumMg(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
           <div>
-            <label className="block font-medium text-slate-400 mb-1">
+            <label htmlFor="foodmodal-field-19" className="field-label">
               Cholesterol (mg)
             </label>
             <input
+            id="foodmodal-field-19"
               type="number"
               step="any"
               min="0"
               value={cholesterolMg}
               onChange={(e) => setCholesterolMg(parseFloat(e.target.value) || 0)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-white focus:border-teal-500 focus:outline-none font-mono"
+              className="input font-mono"
             />
           </div>
         </div>
       </div>
 
       {/* Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+      <div className="form-actions">
         <button
           type="button"
           onClick={onClose}
           disabled={isSubmitting}
-          className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-slate-300 hover:bg-slate-800 transition-colors"
+          className="btn btn-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-2 font-semibold text-slate-950 hover:brightness-110 shadow-lg shadow-teal-500/20 disabled:opacity-50 transition-all"
+          className="btn btn-primary"
         >
           {isSubmitting ? 'Saving Food...' : isEditing ? 'Update Food' : 'Create Verified Food'}
         </button>

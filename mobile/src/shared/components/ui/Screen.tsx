@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   StyleSheet,
   StatusBar,
@@ -15,11 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
 
 export type ScreenProps = {
   title?: string;
   largeTitle?: string;
   subtitle?: string;
+  /** Small uppercase kicker above a large page title. */
+  eyebrow?: string;
   showBack?: boolean;
   onBack?: () => void;
   headerLeft?: React.ReactNode;
@@ -37,6 +40,7 @@ export function Screen({
   title,
   largeTitle,
   subtitle,
+  eyebrow,
   showBack,
   onBack,
   headerLeft,
@@ -57,7 +61,6 @@ export function Screen({
   const isTabScreen = ['home', 'activity', 'coach', 'progress', 'profile'].includes(route?.name);
   const hasBottomNav = isTabRoot || isTabScreen;
   const backVisible = showBack ?? (canGoBack && !isTabRoot && !isTabScreen);
-  const hasBar = Boolean(title || backVisible || headerLeft || headerRight);
 
   const bgColor = isHero ? colors.hero : colors.bg;
   const textColor = isHero ? colors.heroInk : colors.ink;
@@ -129,58 +132,85 @@ export function Screen({
     </>
   );
 
+  // Tab roots present a large, left-aligned page title; pushed screens use a compact bar.
+  const pageTitle = largeTitle ?? (!backVisible && !headerLeft && title ? title : undefined);
+  const barTitle = pageTitle === title ? undefined : title;
+  const inlineActions = !largeTitle && pageTitle && !backVisible ? headerRight : undefined;
+  const showBar = Boolean(barTitle || backVisible || headerLeft || (headerRight && !inlineActions));
+
   return (
     <View style={[styles.root, { backgroundColor: bgColor }]}>
-      <StatusBar
-        barStyle={isHero || isDark ? 'light-content' : 'dark-content'}
-      />
+      <StatusBar barStyle={isHero || isDark ? 'light-content' : 'dark-content'} />
 
       <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, 12) }]}>
-        {hasBar && (
+        {showBar && (
           <View style={styles.topBar}>
             <View style={styles.headerSide}>
               {backVisible ? (
-                <TouchableOpacity
+                <Pressable
                   onPress={handleBack}
                   accessibilityRole="button"
                   accessibilityLabel="Go back"
-                  activeOpacity={0.7}
-                  style={[
+                  style={({ pressed }) => [
                     styles.backButton,
-                    { backgroundColor: isHero ? 'rgba(244, 244, 238, 0.1)' : colors.surface2 },
+                    {
+                      backgroundColor: isHero ? 'rgba(244, 244, 238, 0.1)' : colors.surface,
+                      borderColor: isHero ? 'transparent' : colors.line,
+                      opacity: pressed ? 0.7 : 1,
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    },
                   ]}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <ChevronLeft size={24} color={textColor} />
-                </TouchableOpacity>
+                  <ChevronLeft size={22} color={textColor} strokeWidth={2.2} />
+                </Pressable>
               ) : (
                 headerLeft
               )}
             </View>
 
             <View style={styles.headerCenter}>
-              {title ? (
-                <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
-                  {title}
+              {barTitle ? (
+                <Text
+                  accessibilityRole="header"
+                  style={[styles.title, { color: textColor }]}
+                  numberOfLines={1}
+                >
+                  {barTitle}
+                </Text>
+              ) : null}
+              {barTitle && subtitle && !largeTitle ? (
+                <Text style={[styles.barSubtitle, { color: mutedTextColor }]} numberOfLines={1}>
+                  {subtitle}
                 </Text>
               ) : null}
             </View>
 
             <View style={[styles.headerSide, styles.headerSideRight]}>
-              {headerRight}
+              {inlineActions ? null : headerRight}
             </View>
           </View>
         )}
 
-        {largeTitle ? (
-          <View style={styles.largeTitleSection}>
-            <Text style={[styles.largeTitle, { color: textColor }]}>
-              {largeTitle}
-            </Text>
+        {pageTitle ? (
+          <View style={[styles.largeTitleSection, !showBar && styles.largeTitleSectionTop]}>
+            <View style={styles.largeTitleRow}>
+              <View style={styles.largeTitleText}>
+                {eyebrow ? (
+                  <Text style={[styles.eyebrow, { color: mutedTextColor }]}>{eyebrow}</Text>
+                ) : null}
+                <Text
+                  accessibilityRole="header"
+                  style={[styles.largeTitle, { color: textColor }]}
+                  numberOfLines={2}
+                >
+                  {pageTitle}
+                </Text>
+              </View>
+              {inlineActions ? <View style={styles.inlineActions}>{inlineActions}</View> : null}
+            </View>
             {subtitle ? (
-              <Text style={[styles.subtitle, { color: mutedTextColor }]}>
-                {subtitle}
-              </Text>
+              <Text style={[styles.subtitle, { color: mutedTextColor }]}>{subtitle}</Text>
             ) : null}
           </View>
         ) : null}
@@ -211,15 +241,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   topBar: {
-    height: 48,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   headerSide: {
     minWidth: 44,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   headerSideRight: {
     justifyContent: 'flex-end',
@@ -231,49 +262,70 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...premium.type.cardTitle,
     textAlign: 'center',
-    letterSpacing: -0.2,
+  },
+  barSubtitle: {
+    ...premium.type.caption,
+    textAlign: 'center',
   },
   largeTitleSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: premium.layout.gutter,
     paddingTop: 4,
-    paddingBottom: 12,
+    paddingBottom: 16,
+  },
+  largeTitleSectionTop: {
+    paddingTop: 12,
+  },
+  largeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 12,
+  },
+  largeTitleText: {
+    flex: 1,
+  },
+  inlineActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingBottom: 2,
+  },
+  eyebrow: {
+    ...premium.type.eyebrow,
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
   largeTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    lineHeight: 34,
-    letterSpacing: -0.5,
+    ...premium.type.screenTitle,
   },
   subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 3,
+    ...premium.type.bodySm,
+    marginTop: 4,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: premium.layout.gutter,
     paddingTop: 8,
   },
   fixedContent: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: premium.layout.gutter,
     paddingTop: 8,
   },
   footerContainer: {
-    borderTopWidth: 1,
-    paddingHorizontal: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: premium.layout.gutter,
     paddingTop: 12,
   },
 });

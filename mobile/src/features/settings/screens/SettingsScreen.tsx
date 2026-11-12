@@ -68,7 +68,7 @@ export function SettingsScreen() {
               title="Notifications"
               onPress={() => navigate('notificationPreferences')}
             />
-            <View style={[styles.unitsRow, { borderTopColor: colors.line, borderTopWidth: 1 }]}>
+            <View style={styles.unitsRow}>
               <View style={[styles.unitsIconBox, { backgroundColor: colors.surface2 }]}>
                 <Ruler size={18} color={colors.ink} />
               </View>
@@ -138,7 +138,7 @@ export function SettingsScreen() {
         </View>
 
         <Text style={[styles.footerText, { color: colors.muted }]}>
-          OnusFit 1.0 (prototype) · by TuneOnus
+          OnusFit 1.0 · Own Your Fitness · by TuneOnus
         </Text>
 
       <ConfirmDialog
@@ -167,8 +167,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sectionHeading: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
     paddingHorizontal: 4,
   },
   unitsRow: {
@@ -179,15 +182,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   unitsIconBox: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   unitsLabel: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: -0.2,
     flex: 1,
   },
   footerText: {

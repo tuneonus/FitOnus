@@ -29,10 +29,14 @@ const synced = [Heart, Dumbbell, Footprints, Flame, Timer].map((icon, index) => 
 const watchWorkouts: { title: string; when: string; status: 'synced' | 'pending' }[] = [];
 
 export function AppleWatchScreen() {
+  // Gate before any hooks run so the Rules of Hooks hold; the screen stays hidden when disabled.
   if (!WEARABLES_ENABLED) {
     return null;
   }
+  return <AppleWatchScreenContent />;
+}
 
+function AppleWatchScreenContent() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const { watchConnected, setWatchConnected, lastSync, syncNow, status, connection } =

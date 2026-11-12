@@ -89,7 +89,7 @@ export function WeightScreen() {
         <RefreshControl
           refreshing={isLoading}
           onRefresh={() => fetchWeightHistory(range, true)}
-          tintColor={colors.accent}
+          tintColor={colors.accentStrong}
         />
       }
     >
@@ -213,7 +213,7 @@ export function WeightScreen() {
           style={[styles.coachCard, { backgroundColor: colors.surface2 }]}
         >
           <View style={{ marginTop: 2 }}>
-            <Sparkles size={18} color={colors.accent} />
+            <Sparkles size={18} color={colors.accentStrong} />
           </View>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={[styles.coachHeading, { color: colors.ink }]}>

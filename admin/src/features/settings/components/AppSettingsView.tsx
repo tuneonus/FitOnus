@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { StatsCard } from '@/components/ui/StatsCard';
+import { TabBar } from '@/components/ui/TabBar';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAppSettings } from '../hooks/useAppSettings';
@@ -79,9 +80,9 @@ export function AppSettingsView() {
 
   if (isLoading || gemini.isLoading) {
     return (
-      <AdminLayout title="Application Settings" subtitle="Remote configuration and limits">
+      <AdminLayout title="Settings" subtitle="Remote configuration, feature flags and AI quota governance.">
         <div className="flex h-96 items-center justify-center">
-          <LoadingSpinner size="lg" label="Loading application settings from Neon DEV..." />
+          <LoadingSpinner size="lg" label="Loading application settings…" />
         </div>
       </AdminLayout>
     );
@@ -91,126 +92,96 @@ export function AppSettingsView() {
 
   return (
     <AdminLayout
-      title="Application Settings"
-      subtitle="Remote configuration, feature flags, and AI quota governance"
+      title="Settings"
+      subtitle="Remote configuration, feature flags and AI quota governance."
       onRefresh={handleRefresh}
       isRefreshing={isRefreshing || gemini.isRefreshingEvents}
     >
-      <div className="space-y-6 pb-12">
-        {/* Maintenance Mode Alert Banner if active */}
+      <div className="space-y-6 pb-8">
         {isMaintenanceActive && (
-          <div className="flex items-center justify-between rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-300">
-            <div className="flex items-center gap-3">
-              <ShieldAlert className="h-5 w-5 shrink-0 text-amber-400" />
+          <div role="status" className="alert alert-warning flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <p className="font-semibold text-sm">Maintenance Mode is Currently Enabled</p>
-                <p className="text-xs text-amber-400/80">
-                  Mobile applications will display the maintenance overlay. Admin operations remain fully accessible.
+                <p className="font-semibold text-amber-100">Maintenance mode is enabled</p>
+                <p className="text-xs text-amber-200/80">
+                  Mobile apps show the maintenance overlay. Admin operations remain fully accessible.
                 </p>
               </div>
             </div>
-            <Badge variant="warning">Maintenance Live</Badge>
+            <Badge variant="warning">Maintenance live</Badge>
           </div>
         )}
 
-        {/* Global Action Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
-              <Sliders className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-white">Central Configuration Store</h2>
-                <Badge variant="completed" size="sm">Neon PostgreSQL DEV</Badge>
-                {isDirty && <Badge variant="warning" size="sm">Unsaved Changes</Badge>}
+        <div className="sticky top-14 z-20 -mx-4 border-y border-ink-800 bg-ink-950/90 px-4 py-3 backdrop-blur-md sm:mx-0 sm:rounded-xl sm:border sm:bg-ink-900/95 sm:px-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800 sm:flex">
+                <Sliders className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-[13px] font-semibold text-white">Application configuration</h2>
+                  {isDirty ? (
+                    <Badge variant="warning" size="sm">Unsaved changes</Badge>
+                  ) : (
+                    <Badge variant="neutral" size="sm">Up to date</Badge>
+                  )}
+                </div>
+                <p className="text-xs text-ink-400">
+                  Saved with optimistic concurrency and applied to the public configuration cache.
+                </p>
               </div>
-              <p className="text-xs text-slate-400">
-                Optimistic concurrency enabled. Changes apply immediately to public configuration cache.
-              </p>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={resetDraft}
+                disabled={!isDirty || isSaving}
+                className="btn btn-secondary"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Discard
+              </button>
+
+              <button
+                type="button"
+                onClick={() => saveSettings()}
+                disabled={!isDirty || isSaving}
+                className="btn btn-primary"
+              >
+                {isSaving ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5" />
+                    Save changes
+                  </>
+                )}
+              </button>
             </div>
           </div>
-
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              onClick={resetDraft}
-              disabled={!isDirty || isSaving}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Discard
-            </button>
-
-            <button
-              type="button"
-              onClick={() => saveSettings()}
-              disabled={!isDirty || isSaving}
-              className="flex items-center gap-1.5 rounded-lg bg-teal-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-teal-400 transition-all shadow-md shadow-teal-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {isSaving ? (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  Saving to DEV...
-                </>
-              ) : (
-                <>
-                  <Save className="h-3.5 w-3.5" />
-                  Save Changes
-                </>
-              )}
-            </button>
-          </div>
         </div>
 
-        {/* Tab Filters */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              activeTab === 'all'
-                ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            All Sections
-          </button>
-          <button
-            onClick={() => setActiveTab('app')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              activeTab === 'app'
-                ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            App Management
-            {(isMaintenanceDirty || isMinVersionDirty || isForceUpdateDirty || isSupportDirty || isLegalDirty) && (
-              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('features')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              activeTab === 'features'
-                ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Feature Management
-            {isFeaturesDirty && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('ai')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              activeTab === 'ai'
-                ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            AI Management & Quotas
-            {isAiLimitsDirty && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />}
-          </button>
-        </div>
+        <TabBar
+          ariaLabel="Settings sections"
+          active={activeTab}
+          onChange={setActiveTab}
+          tabs={[
+            { id: 'all', label: 'All sections' },
+            {
+              id: 'app',
+              label: 'App management',
+              dirty: isMaintenanceDirty || isMinVersionDirty || isForceUpdateDirty || isSupportDirty || isLegalDirty,
+            },
+            { id: 'features', label: 'Features', dirty: isFeaturesDirty },
+            { id: 'ai', label: 'AI & quotas', dirty: isAiLimitsDirty },
+          ]}
+        />
 
         {/* ========================================================= */}
         {/* SECTION A: APP MANAGEMENT                                 */}
@@ -219,32 +190,32 @@ export function AppSettingsView() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-                  Section A — App Management
+                <h3 className="text-[15px] font-semibold tracking-tight text-white">
+                  App Management
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="mt-0.5 text-[13px] text-ink-400">
                   System availability, minimum version enforcement, and public support channels.
                 </p>
               </div>
             </div>
 
             {/* Maintenance Mode Card */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+            <div className="card space-y-4 p-5">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
                     <ShieldAlert className="h-4 w-4" />
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-white">Maintenance Mode</h4>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-ink-400">
                       Instantly pause mobile member access for server updates or migrations.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-ink-400">
                     Version: {records['app.maintenance']?.version ?? 1}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -254,34 +225,37 @@ export function AppSettingsView() {
                       onChange={(e) =>
                         setMaintenanceDraft((prev) => ({ ...prev, enabled: e.target.checked }))
                       }
+                      aria-label="Enable Maintenance Mode"
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                    <div className="w-11 h-6 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                   </label>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-medium text-slate-300">
+                  <label htmlFor="app-settings-field-1" className="block text-xs font-medium text-ink-300">
                     Maintenance Announcement Message
                   </label>
                   <textarea
+                    id="app-settings-field-1"
                     rows={2}
                     value={maintenanceDraft.message}
                     onChange={(e) =>
                       setMaintenanceDraft((prev) => ({ ...prev, message: e.target.value }))
                     }
                     placeholder="OnusFit is currently undergoing scheduled maintenance..."
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">
+                  <label htmlFor="app-settings-field-2" className="block text-xs font-medium text-ink-300">
                     Expected Completion Time (Optional ISO / Datetime)
                   </label>
                   <input
+                    id="app-settings-field-2"
                     type="text"
                     value={maintenanceDraft.expectedEndTime || ''}
                     onChange={(e) =>
@@ -291,29 +265,29 @@ export function AppSettingsView() {
                       }))
                     }
                     placeholder="2026-11-09T12:00:00Z"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
               </div>
             </div>
 
             {/* Version & Force Update Card */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+            <div className="card space-y-4 p-5">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
                     <Smartphone className="h-4 w-4" />
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-white">App Version & Force Update</h4>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-ink-400">
                       Enforce minimum app client version requirements and store redirects.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-ink-400">
                     Version: {records['app.force_update']?.version ?? 1}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -323,73 +297,77 @@ export function AppSettingsView() {
                       onChange={(e) =>
                         setForceUpdateDraft((prev) => ({ ...prev, enabled: e.target.checked }))
                       }
+                      aria-label="Enable force update"
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                    <div className="w-11 h-6 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                   </label>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">
+                  <label htmlFor="app-settings-field-3" className="block text-xs font-medium text-ink-300">
                     Android Minimum Supported Version (Semver)
                   </label>
                   <input
+                    id="app-settings-field-3"
                     type="text"
                     value={minVersionDraft.androidMinVersion}
                     onChange={(e) =>
                       setMinVersionDraft({ androidMinVersion: e.target.value.trim() })
                     }
                     placeholder="1.0.0"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] leading-relaxed text-ink-500">
                     Apps below this version are blocked when Force Update is active.
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">
+                  <label htmlFor="app-settings-field-4" className="block text-xs font-medium text-ink-300">
                     Google Play Store URL
                   </label>
                   <input
+                    id="app-settings-field-4"
                     type="url"
                     value={forceUpdateDraft.storeUrl}
                     onChange={(e) =>
                       setForceUpdateDraft((prev) => ({ ...prev, storeUrl: e.target.value }))
                     }
                     placeholder="https://play.google.com/store/apps/details?id=com.tuneonus.onusfit"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-medium text-slate-300">
+                  <label htmlFor="app-settings-field-5" className="block text-xs font-medium text-ink-300">
                     Force Update Prompt Message
                   </label>
                   <textarea
+                    id="app-settings-field-5"
                     rows={2}
                     value={forceUpdateDraft.updateMessage}
                     onChange={(e) =>
                       setForceUpdateDraft((prev) => ({ ...prev, updateMessage: e.target.value }))
                     }
                     placeholder="A critical update is required to continue using OnusFit..."
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
               </div>
             </div>
 
             {/* Support & Legal Card */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+            <div className="card space-y-4 p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
                   <Mail className="h-4 w-4" />
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-white">Support & Legal Information</h4>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-ink-400">
                     Public contact details and legal compliance endpoints.
                   </p>
                 </div>
@@ -397,67 +375,72 @@ export function AppSettingsView() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Support Email</label>
+                  <label htmlFor="app-settings-field-6" className="block text-xs font-medium text-ink-300">Support Email</label>
                   <input
+                    id="app-settings-field-6"
                     type="email"
                     value={supportDraft.email}
                     onChange={(e) =>
                       setSupportDraft((prev) => ({ ...prev, email: e.target.value.trim() }))
                     }
                     placeholder="support@fitonus.com"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Support Website</label>
+                  <label htmlFor="app-settings-field-7" className="block text-xs font-medium text-ink-300">Support Website</label>
                   <input
+                    id="app-settings-field-7"
                     type="url"
                     value={supportDraft.website}
                     onChange={(e) =>
                       setSupportDraft((prev) => ({ ...prev, website: e.target.value.trim() }))
                     }
                     placeholder="https://fitonus.com/support"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Contact Info / Hotline</label>
+                  <label htmlFor="app-settings-field-8" className="block text-xs font-medium text-ink-300">Contact Info / Hotline</label>
                   <input
+                    id="app-settings-field-8"
                     type="text"
                     value={supportDraft.contactInfo}
                     onChange={(e) =>
                       setSupportDraft((prev) => ({ ...prev, contactInfo: e.target.value }))
                     }
                     placeholder="+1 (800) 555-ONUS"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
 
-                <div className="space-y-1.5 md:col-span-1.5">
-                  <label className="text-xs font-medium text-slate-300">Privacy Policy URL</label>
+                <div className="space-y-1.5 ">
+                  <label htmlFor="app-settings-field-9" className="block text-xs font-medium text-ink-300">Privacy Policy URL</label>
                   <input
+                    id="app-settings-field-9"
                     type="url"
                     value={legalDraft.privacyPolicyUrl}
                     onChange={(e) =>
                       setLegalDraft((prev) => ({ ...prev, privacyPolicyUrl: e.target.value.trim() }))
                     }
                     placeholder="https://fitonus.com/privacy"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
 
-                <div className="space-y-1.5 md:col-span-1.5">
-                  <label className="text-xs font-medium text-slate-300">Terms of Service URL</label>
+                <div className="space-y-1.5 ">
+                  <label htmlFor="app-settings-field-10" className="block text-xs font-medium text-ink-300">Terms of Service URL</label>
                   <input
+                    id="app-settings-field-10"
                     type="url"
                     value={legalDraft.termsOfServiceUrl}
                     onChange={(e) =>
                       setLegalDraft((prev) => ({ ...prev, termsOfServiceUrl: e.target.value.trim() }))
                     }
                     placeholder="https://fitonus.com/terms"
-                    className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                    className="input"
                   />
                 </div>
               </div>
@@ -472,10 +455,10 @@ export function AppSettingsView() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-                  Section B — Feature Management (Remote Feature Flags)
+                <h3 className="text-[15px] font-semibold tracking-tight text-white">
+                  Feature Management (Remote Feature Flags)
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="mt-0.5 text-[13px] text-ink-400">
                   Enable or disable application modules in real time. Backend enforces permissions and preserves all user records.
                 </p>
               </div>
@@ -486,15 +469,15 @@ export function AppSettingsView() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Feature 1: AI Coach */}
-              <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 space-y-3">
+              <div className="card space-y-3 p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
                       <Bot className="h-4 w-4" />
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-white">AI Coach Conversation</h4>
-                      <p className="text-xs text-slate-400">Chat and workout advisory assistant</p>
+                      <p className="text-xs text-ink-400">Chat and workout advisory assistant</p>
                     </div>
                   </div>
 
@@ -505,12 +488,13 @@ export function AppSettingsView() {
                       onChange={(e) =>
                         setFeaturesDraft((prev) => ({ ...prev, aiCoach: e.target.checked }))
                       }
+                      aria-label="Enable AI Coach Conversation"
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                    <div className="w-11 h-6 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/80 pt-2">
+                <div className="flex items-center justify-between text-xs text-ink-500 border-t border-ink-800 pt-2">
                   <span>Status:</span>
                   <Badge variant={featuresDraft.aiCoach ? 'active' : 'disabled'} size="sm">
                     {featuresDraft.aiCoach ? 'Active on Mobile' : 'Disabled / Gated'}
@@ -519,15 +503,15 @@ export function AppSettingsView() {
               </div>
 
               {/* Feature 2: Meal Photo Scanner */}
-              <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 space-y-3">
+              <div className="card space-y-3 p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
                       <Camera className="h-4 w-4" />
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-white">AI Meal Photo Scanner</h4>
-                      <p className="text-xs text-slate-400">Multimodal Gemini vision meal analysis</p>
+                      <p className="text-xs text-ink-400">Multimodal Gemini vision meal analysis</p>
                     </div>
                   </div>
 
@@ -541,12 +525,13 @@ export function AppSettingsView() {
                           mealPhotoScanner: e.target.checked,
                         }))
                       }
+                      aria-label="Enable AI Meal Photo Scanner"
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    <div className="w-11 h-6 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/80 pt-2">
+                <div className="flex items-center justify-between text-xs text-ink-500 border-t border-ink-800 pt-2">
                   <span>Status:</span>
                   <Badge variant={featuresDraft.mealPhotoScanner ? 'active' : 'disabled'} size="sm">
                     {featuresDraft.mealPhotoScanner ? 'Active on Mobile' : 'Disabled / Gated'}
@@ -555,15 +540,15 @@ export function AppSettingsView() {
               </div>
 
               {/* Feature 3: Voice Meal Entry */}
-              <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 space-y-3">
+              <div className="card space-y-3 p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
                       <Mic className="h-4 w-4" />
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-white">Voice Meal Entry</h4>
-                      <p className="text-xs text-slate-400">Natural voice to nutrition intake parser</p>
+                      <p className="text-xs text-ink-400">Natural voice to nutrition intake parser</p>
                     </div>
                   </div>
 
@@ -577,12 +562,13 @@ export function AppSettingsView() {
                           voiceMealEntry: e.target.checked,
                         }))
                       }
+                      aria-label="Enable Voice Meal Entry"
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                    <div className="w-11 h-6 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/80 pt-2">
+                <div className="flex items-center justify-between text-xs text-ink-500 border-t border-ink-800 pt-2">
                   <span>Status:</span>
                   <Badge variant={featuresDraft.voiceMealEntry ? 'active' : 'disabled'} size="sm">
                     {featuresDraft.voiceMealEntry ? 'Active on Mobile' : 'Disabled / Gated'}
@@ -591,15 +577,15 @@ export function AppSettingsView() {
               </div>
 
               {/* Feature 4: Workout Generator */}
-              <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 space-y-3">
+              <div className="card space-y-3 p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
                       <Dumbbell className="h-4 w-4" />
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-white">Workout Generator</h4>
-                      <p className="text-xs text-slate-400">Automated custom fitness plan generation</p>
+                      <p className="text-xs text-ink-400">Automated custom fitness plan generation</p>
                     </div>
                   </div>
 
@@ -613,12 +599,13 @@ export function AppSettingsView() {
                           workoutGenerator: e.target.checked,
                         }))
                       }
+                      aria-label="Enable Workout Generator"
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                    <div className="w-11 h-6 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/80 pt-2">
+                <div className="flex items-center justify-between text-xs text-ink-500 border-t border-ink-800 pt-2">
                   <span>Status:</span>
                   <Badge variant={featuresDraft.workoutGenerator ? 'active' : 'disabled'} size="sm">
                     {featuresDraft.workoutGenerator ? 'Active on Mobile' : 'Disabled / Gated'}
@@ -636,54 +623,48 @@ export function AppSettingsView() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-                  Section C — AI Management & Live Analytics
+                <h3 className="text-[15px] font-semibold tracking-tight text-white">
+                  AI Management & Live Analytics
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="mt-0.5 text-[13px] text-ink-400">
                   Secure Gemini API key management, dynamic per-feature model selection, and token usage analytics.
                 </p>
               </div>
 
               {/* Sub-Navigation when filtered to AI */}
               {activeTab === 'ai' && (
-                <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/80 p-1">
+                <div className="segmented max-w-full self-start overflow-x-auto" role="group" aria-label="AI settings view">
                   <button
                     type="button"
                     onClick={() => setAiSubTab('config')}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-                      aiSubTab === 'config'
-                        ? 'bg-teal-500 text-slate-950 font-semibold shadow'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
+                    data-active={aiSubTab === 'config'}
+                    aria-pressed={aiSubTab === 'config'}
+                    className="segmented-item whitespace-nowrap"
                   >
-                    Gemini Configuration
+                    Gemini configuration
                     {gemini.isModelDraftDirty && (
-                      <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-label="Unsaved changes" />
                     )}
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiSubTab('analytics')}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-                      aiSubTab === 'analytics'
-                        ? 'bg-teal-500 text-slate-950 font-semibold shadow'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
+                    data-active={aiSubTab === 'analytics'}
+                    aria-pressed={aiSubTab === 'analytics'}
+                    className="segmented-item whitespace-nowrap"
                   >
-                    Usage & Cost Analytics
+                    Usage & cost
                   </button>
                   <button
                     type="button"
                     onClick={() => setAiSubTab('limits')}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-                      aiSubTab === 'limits'
-                        ? 'bg-teal-500 text-slate-950 font-semibold shadow'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
+                    data-active={aiSubTab === 'limits'}
+                    aria-pressed={aiSubTab === 'limits'}
+                    className="segmented-item whitespace-nowrap"
                   >
-                    User Quotas & Limits
+                    User quotas
                     {isAiLimitsDirty && (
-                      <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-label="Unsaved changes" />
                     )}
                   </button>
                 </div>
@@ -736,17 +717,17 @@ export function AppSettingsView() {
             {(activeTab === 'all' || (activeTab === 'ai' && aiSubTab === 'limits')) && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <h4 className="eyebrow">
                     Per-User Daily Quota Governance
                   </h4>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">Reset Boundary:</span>
+                    <span className="text-xs text-ink-400">Reset Boundary:</span>
                     <Badge variant="info" size="sm">00:00 UTC</Badge>
                   </div>
                 </div>
 
                 {/* Live Real AI Usage Stats Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 2xl:grid-cols-6">
                   <StatsCard
                     title="Today Total"
                     value={aiUsageStats.todayTotalRequests}
@@ -792,31 +773,32 @@ export function AppSettingsView() {
                 </div>
 
                 {/* AI Quotas Configuration Card */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+                <div className="card space-y-4 p-5">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
                         <Gauge className="h-4 w-4" />
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-white">Daily Per-User Quota Limits</h4>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-ink-400">
                           Enforced atomically on PostgreSQL. Users receive 429 RATE_LIMIT_EXCEEDED when exceeded.
                         </p>
                       </div>
                     </div>
 
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-ink-400">
                       Version: {records['ai.limits']?.version ?? 1}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-2">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-300">
+                      <label htmlFor="app-settings-field-11" className="block text-xs font-medium text-ink-300">
                         Daily Global AI Limit
                       </label>
                       <input
+                    id="app-settings-field-11"
                         type="number"
                         min={1}
                         value={aiLimitsDraft.dailyGlobalLimit}
@@ -826,16 +808,17 @@ export function AppSettingsView() {
                             dailyGlobalLimit: parseInt(e.target.value, 10) || 0,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                        className="input"
                       />
-                      <p className="text-[10px] text-slate-500">Max total AI ops / user / day</p>
+                      <p className="text-[11px] text-ink-500">Max total AI ops / user / day</p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-300">
+                      <label htmlFor="app-settings-field-12" className="block text-xs font-medium text-ink-300">
                         Coach Chat Daily Limit
                       </label>
                       <input
+                    id="app-settings-field-12"
                         type="number"
                         min={0}
                         value={aiLimitsDraft.coachChatDailyLimit}
@@ -845,16 +828,17 @@ export function AppSettingsView() {
                             coachChatDailyLimit: parseInt(e.target.value, 10) || 0,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                        className="input"
                       />
-                      <p className="text-[10px] text-slate-500">Daily chat messages / user</p>
+                      <p className="text-[11px] text-ink-500">Daily chat messages / user</p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-300">
+                      <label htmlFor="app-settings-field-13" className="block text-xs font-medium text-ink-300">
                         Meal Photo Scanner Limit
                       </label>
                       <input
+                    id="app-settings-field-13"
                         type="number"
                         min={0}
                         value={aiLimitsDraft.mealPhotoDailyLimit}
@@ -864,16 +848,17 @@ export function AppSettingsView() {
                             mealPhotoDailyLimit: parseInt(e.target.value, 10) || 0,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                        className="input"
                       />
-                      <p className="text-[10px] text-slate-500">Daily photo scans / user</p>
+                      <p className="text-[11px] text-ink-500">Daily photo scans / user</p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-300">
+                      <label htmlFor="app-settings-field-14" className="block text-xs font-medium text-ink-300">
                         Voice Meal Entry Limit
                       </label>
                       <input
+                    id="app-settings-field-14"
                         type="number"
                         min={0}
                         value={aiLimitsDraft.voiceMealDailyLimit}
@@ -883,16 +868,17 @@ export function AppSettingsView() {
                             voiceMealDailyLimit: parseInt(e.target.value, 10) || 0,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                        className="input"
                       />
-                      <p className="text-[10px] text-slate-500">Daily audio parses / user</p>
+                      <p className="text-[11px] text-ink-500">Daily audio parses / user</p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-300">
+                      <label htmlFor="app-settings-field-15" className="block text-xs font-medium text-ink-300">
                         Workout Generator Limit
                       </label>
                       <input
+                    id="app-settings-field-15"
                         type="number"
                         min={0}
                         value={aiLimitsDraft.workoutGeneratorDailyLimit}
@@ -902,9 +888,9 @@ export function AppSettingsView() {
                             workoutGeneratorDailyLimit: parseInt(e.target.value, 10) || 0,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none"
+                        className="input"
                       />
-                      <p className="text-[10px] text-slate-500">Daily workout gens / user</p>
+                      <p className="text-[11px] text-ink-500">Daily workout gens / user</p>
                     </div>
                   </div>
                 </div>

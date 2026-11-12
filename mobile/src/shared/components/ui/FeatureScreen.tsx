@@ -8,6 +8,8 @@ import { useTheme } from '@/hooks/use-theme';
 export function FeatureScreen({
   title,
   largeTitle,
+  subtitle,
+  eyebrow,
   children,
   contentContainerStyle,
   ...props
@@ -30,9 +32,15 @@ export function FeatureScreen({
     >
       {!keyboardOpen && (largeTitle || title) ? (
         <View style={styles.heading}>
+          {eyebrow ? (
+            <Text style={[styles.eyebrow, { color: colors.muted }]}>{eyebrow}</Text>
+          ) : null}
           <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
             {largeTitle || title}
           </Text>
+          {subtitle ? (
+            <Text style={[styles.subtitle, { color: colors.muted }]}>{subtitle}</Text>
+          ) : null}
         </View>
       ) : null}
       {children}
@@ -46,6 +54,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: premium.layout.gutter,
   },
-  heading: { paddingTop: 8, paddingBottom: 24 },
-  title: { ...premium.type.display },
+  heading: { paddingTop: 4, paddingBottom: 20 },
+  eyebrow: { ...premium.type.eyebrow, textTransform: 'uppercase', marginBottom: 4 },
+  title: { ...premium.type.screenTitle },
+  subtitle: { ...premium.type.bodySm, marginTop: 4 },
 });

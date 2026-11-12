@@ -151,7 +151,7 @@ export function GoalDetailScreen() {
       {!done && (
         <View style={[styles.forecastCard, { backgroundColor: colors.surface2 }]}>
           <View style={styles.forecastHeader}>
-            <Sparkles size={13} color={colors.accent} />
+            <Sparkles size={13} color={colors.accentStrong} />
             <Text style={[styles.forecastLabel, { color: colors.muted }]}>Goal progress</Text>
           </View>
           <Text style={[styles.forecastText, { color: colors.ink }]}>

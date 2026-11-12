@@ -58,13 +58,13 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
                   actionLabel: 'Undo',
                   onAction: () => {
                     void updateMeal(entry.id, entry.items, entry.notes ?? undefined).catch(() =>
-                      showToast({ message: 'Could not restore the food.' }),
+                      showToast({ tone: 'error', message: 'Could not restore the food.' }),
                     );
                   },
                 });
                 close();
               } catch {
-                showToast({ message: 'Could not update this meal. Please try again.' });
+                showToast({ tone: 'error', message: 'Could not update this meal. Please try again.' });
               }
             }}
           />
@@ -80,7 +80,7 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
                 showToast({ message: 'Portion updated' });
                 close();
               } catch {
-                showToast({ message: 'Could not update this portion. Please try again.' });
+                showToast({ tone: 'error', message: 'Could not update this portion. Please try again.' });
               }
             }}
           />

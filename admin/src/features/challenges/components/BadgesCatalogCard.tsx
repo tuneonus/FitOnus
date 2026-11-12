@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Award, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Award, Sparkles, Info } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/context/ToastContext';
 import { challengesApi } from '../api';
 import type { AdminBadge, CreateBadgeInput, BadgeCategory, BadgeTier } from '../types';
@@ -142,129 +144,136 @@ export function BadgesCatalogCard() {
     }
   };
 
-  const handleDeleteBadge = async (id: string, badgeName: string) => {
-    if (!confirm(`Are you sure you want to delete badge "${badgeName}"?`)) return;
+  const [badgeToDelete, setBadgeToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isDeletingBadge, setIsDeletingBadge] = useState(false);
+
+  const handleDeleteBadge = (id: string, badgeName: string) => {
+    setBadgeToDelete({ id, name: badgeName });
+  };
+
+  const handleConfirmDeleteBadge = async () => {
+    if (!badgeToDelete) return;
+    const { id, name: badgeName } = badgeToDelete;
+    setIsDeletingBadge(true);
     try {
       await challengesApi.deleteBadge(id);
       toast.success(`Badge "${badgeName}" deleted.`);
+      setBadgeToDelete(null);
       await fetchBadges();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete badge.');
+    } finally {
+      setIsDeletingBadge(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header with Title and Create Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 bg-neutral-900 border border-neutral-800 rounded-xl">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <span>🎖️</span> Gamification Badges Catalog
+          <h2 className="text-[15px] font-semibold tracking-tight text-white">Badge catalog</h2>
+          <p className="mt-0.5 text-[13px] text-ink-400">
+            Achievement badges available for challenges and milestones.
+          </p>
+        </div>
+        <button type="button" onClick={handleOpenModal} className="btn btn-primary self-start sm:self-auto">
+          <Plus className="h-4 w-4" />
+          Create badge
+        </button>
+      </div>
+
+      <div className="alert alert-info">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" />
+        <span>
+          Standard badges are built into the app. Custom badges are stored through the admin badge
+          endpoints and can be deleted here.
+        </span>
+      </div>
+
+      <section>
+        <div className="mb-3 flex items-center gap-2">
+          <Award className="h-4 w-4 text-ink-400" />
+          <h3 className="text-[13px] font-semibold text-white">
+            Standard badges <span className="font-normal text-ink-400">({VERIFIED_BADGES.length})</span>
           </h3>
-          <p className="text-xs text-neutral-400 mt-1">
-            Registered achievement badges available for assignment to user challenges and milestones.
-          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleOpenModal}
-            className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium transition flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            <span>+ Create Custom Badge</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Backend API Connected Banner */}
-      <div className="p-4 bg-teal-950/20 border border-teal-800/40 rounded-xl text-xs text-teal-300 flex items-start gap-3">
-        <CheckCircle2 className="h-4 w-4 mt-0.5 text-teal-400 shrink-0" />
-        <div>
-          <p className="font-semibold text-teal-200">Phase 11 Real Data Integration Active:</p>
-          <p className="mt-0.5 text-neutral-300">
-            Administrative badge endpoints (<code className="text-teal-200 bg-teal-950/60 px-1 py-0.5 rounded">GET /api/v1/admin/challenges/badges</code>, <code className="text-teal-200 bg-teal-950/60 px-1 py-0.5 rounded">POST</code>, and <code className="text-teal-200 bg-teal-950/60 px-1 py-0.5 rounded">DELETE</code>) are connected. Custom badges persist live to Neon PostgreSQL.
-          </p>
-        </div>
-      </div>
-
-      {/* Standard System Badges Section */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Award className="h-4 w-4 text-emerald-400" />
-          <h4 className="text-sm font-semibold text-white">System Standard Badges ({VERIFIED_BADGES.length})</h4>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 sm:gap-4">
           {VERIFIED_BADGES.map((badge) => (
-            <div
-              key={badge.id}
-              className="p-5 bg-neutral-900/60 border border-neutral-800/80 rounded-xl hover:border-neutral-700 transition flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-start justify-between">
-                  <span className="text-3xl p-2 bg-neutral-800 rounded-lg">{badge.icon}</span>
-                  <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    {badge.category}
-                  </span>
-                </div>
-                <h4 className="text-sm font-bold text-white mt-3">{badge.name}</h4>
-                <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed">{badge.description}</p>
+            <article key={badge.id} className="card flex flex-col p-5 transition-colors hover:border-ink-700">
+              <div className="flex items-start justify-between gap-3">
+                <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-lg bg-ink-850 text-2xl ring-1 ring-ink-800">
+                  {badge.icon}
+                </span>
+                <Badge variant="neutral" size="sm" plain>
+                  {badge.category}
+                </Badge>
               </div>
-
-              <div className="mt-4 pt-3 border-t border-neutral-800/60 flex items-center justify-between text-[11px] text-neutral-400">
-                <span className="font-mono text-neutral-300">ID: {badge.id}</span>
-                <span className="text-emerald-400 font-medium">Standard Standard</span>
+              <h4 className="mt-3 text-[13px] font-semibold text-white">{badge.name}</h4>
+              <p className="mt-1 flex-1 text-xs leading-relaxed text-ink-400">{badge.description}</p>
+              <div className="mt-4 flex items-center justify-between border-t border-ink-800 pt-3 text-[11px] text-ink-400">
+                <span className="truncate font-mono text-ink-500">{badge.id}</span>
+                <span className="font-medium text-emerald-300">Standard</span>
               </div>
-            </div>
+            </article>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Custom Neon Database Badges Section */}
       {customBadges.length > 0 && (
-        <div className="pt-2">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="h-4 w-4 text-teal-400" />
-            <h4 className="text-sm font-semibold text-white">Custom Dynamic Badges ({customBadges.length})</h4>
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-ink-400" />
+            <h3 className="text-[13px] font-semibold text-white">
+              Custom badges <span className="font-normal text-ink-400">({customBadges.length})</span>
+            </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 sm:gap-4">
             {customBadges.map((badge) => (
-              <div
-                key={badge.id}
-                className="p-5 bg-teal-950/10 border border-teal-900/40 rounded-xl hover:border-teal-700/60 transition flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between">
-                    <span className="text-2xl p-2 bg-neutral-800 rounded-lg">🏅</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                        {badge.tier}
-                      </span>
-                      <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase rounded-full bg-slate-800 text-slate-300">
-                        {badge.category}
-                      </span>
-                    </div>
+              <article key={badge.id} className="card flex flex-col p-5 transition-colors hover:border-ink-700">
+                <div className="flex items-start justify-between gap-3">
+                  <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-lg bg-ink-850 text-xl ring-1 ring-ink-800">
+                    🏅
+                  </span>
+                  <div className="flex flex-wrap items-center justify-end gap-1.5">
+                    <Badge variant="completed" size="sm" plain>
+                      {badge.tier}
+                    </Badge>
+                    <Badge variant="neutral" size="sm" plain>
+                      {badge.category}
+                    </Badge>
                   </div>
-                  <h4 className="text-sm font-bold text-white mt-3">{badge.name}</h4>
-                  <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed">{badge.description}</p>
                 </div>
-
-                <div className="mt-4 pt-3 border-t border-neutral-800/60 flex items-center justify-between text-[11px] text-neutral-400">
-                  <span className="text-teal-300 font-medium">+{badge.pointsValue} pts</span>
+                <h4 className="mt-3 text-[13px] font-semibold text-white">{badge.name}</h4>
+                <p className="mt-1 flex-1 text-xs leading-relaxed text-ink-400">{badge.description}</p>
+                <div className="mt-4 flex items-center justify-between border-t border-ink-800 pt-3 text-xs">
+                  <span className="font-medium tabular-nums text-ink-200">+{badge.pointsValue} pts</span>
                   <button
                     type="button"
                     onClick={() => handleDeleteBadge(badge.id, badge.name)}
-                    className="text-rose-400 hover:text-rose-300 transition flex items-center gap-1 cursor-pointer"
+                    className="btn btn-danger-ghost btn-sm -mr-2"
                   >
-                    <Trash2 className="h-3 w-3" />
-                    <span>Delete</span>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
                   </button>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
-        </div>
+        </section>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(badgeToDelete)}
+        onClose={() => setBadgeToDelete(null)}
+        onConfirm={handleConfirmDeleteBadge}
+        isBusy={isDeletingBadge}
+        title="Delete badge?"
+        description="This custom badge will be removed from the catalog."
+        confirmLabel="Delete badge"
+        busyLabel="Deleting…"
+      >
+        Delete <strong className="font-semibold text-white">{badgeToDelete?.name}</strong>?
+      </ConfirmDialog>
 
       {/* Modal for Creating Custom Badge */}
       <Modal
@@ -274,38 +283,41 @@ export function BadgesCatalogCard() {
         description="Add a new custom badge to the gamification catalog for user challenges."
         maxWidth="md"
       >
-        <form onSubmit={handleCreateBadge} className="space-y-4 text-xs">
+        <form onSubmit={handleCreateBadge} className="space-y-4 text-[13px]">
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Badge Name</label>
+            <label htmlFor="badgescatalogcard-field-1" className="field-label">Badge Name</label>
             <input
+            id="badgescatalogcard-field-1"
               type="text"
               required
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="e.g., Century Rider"
-              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 text-xs"
+              className="input"
             />
           </div>
 
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Slug (kebab-case)</label>
+            <label htmlFor="badgescatalogcard-field-2" className="field-label">Slug (kebab-case)</label>
             <input
+            id="badgescatalogcard-field-2"
               type="text"
               required
               value={slug}
               onChange={(e) => setSlug(e.target.value.toLowerCase())}
               placeholder="e.g., century-rider"
-              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-white font-mono placeholder-slate-500 focus:outline-none focus:border-teal-500 text-xs"
+              className="input font-mono"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Category</label>
+              <label htmlFor="badgescatalogcard-field-3" className="field-label">Category</label>
               <select
+            id="badgescatalogcard-field-3"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as BadgeCategory)}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                className="input"
               >
                 <option value="workout">Workout</option>
                 <option value="streak">Streak</option>
@@ -317,11 +329,12 @@ export function BadgesCatalogCard() {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Tier</label>
+              <label htmlFor="badgescatalogcard-field-4" className="field-label">Tier</label>
               <select
+            id="badgescatalogcard-field-4"
                 value={tier}
                 onChange={(e) => setTier(e.target.value as BadgeTier)}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                className="input"
               >
                 <option value="bronze">Bronze</option>
                 <option value="silver">Silver</option>
@@ -334,55 +347,58 @@ export function BadgesCatalogCard() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Reward Points</label>
+              <label htmlFor="badgescatalogcard-field-5" className="field-label">Reward Points</label>
               <input
+            id="badgescatalogcard-field-5"
                 type="number"
                 min={0}
                 max={10000}
                 value={pointsValue}
                 onChange={(e) => setPointsValue(Number(e.target.value))}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                className="input"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Icon Name</label>
+              <label htmlFor="badgescatalogcard-field-6" className="field-label">Icon Name</label>
               <input
+            id="badgescatalogcard-field-6"
                 type="text"
                 value={iconName}
                 onChange={(e) => setIconName(e.target.value)}
                 placeholder="e.g. medal, flame, trophy"
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                className="input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Description & Criteria</label>
+            <label htmlFor="badgescatalogcard-field-7" className="field-label">Description & Criteria</label>
             <textarea
+            id="badgescatalogcard-field-7"
               required
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Awarded for cycling 100 kilometers in outdoor rides..."
-              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 text-xs"
+              className="input"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <div className="form-actions">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs transition cursor-pointer"
+              className="btn btn-secondary"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs transition disabled:opacity-50 cursor-pointer"
+              className="btn btn-primary"
             >
-              {isSubmitting ? 'Saving...' : 'Create Badge'}
+              {isSubmitting ? 'Saving…' : 'Create Badge'}
             </button>
           </div>
         </form>

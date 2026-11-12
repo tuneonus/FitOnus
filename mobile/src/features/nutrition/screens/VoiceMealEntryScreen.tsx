@@ -183,7 +183,7 @@ export function VoiceMealEntryScreen() {
       replace('nutrition');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save meal.';
-      showToast({ message: msg });
+      showToast({ tone: 'error', message: msg });
     } finally {
       setIsSaving(false);
     }

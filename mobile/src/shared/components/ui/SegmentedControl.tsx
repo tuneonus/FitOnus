@@ -79,6 +79,8 @@ export function SegmentedControl<T extends string>({
                 },
               ]}
               numberOfLines={appearance === 'premium' ? undefined : 1}
+              adjustsFontSizeToFit={appearance !== 'premium'}
+              minimumFontScale={0.82}
             >
               {option.label}
             </Text>
@@ -92,17 +94,17 @@ export function SegmentedControl<T extends string>({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    borderRadius: 9999,
+    borderRadius: 14,
     padding: 3,
     alignItems: 'center',
   },
   optionButton: {
     flex: 1,
-    height: 36,
-    borderRadius: 9999,
+    height: 38,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
   },
   activeButton: {
     shadowColor: '#000',
@@ -113,5 +115,6 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 13,
+    letterSpacing: -0.2,
   },
 });

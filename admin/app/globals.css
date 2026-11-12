@@ -1,36 +1,289 @@
 @import "tailwindcss";
 
+/*
+ * OnusFit Admin design system
+ * ---------------------------------------------------------------
+ * Mirrors the OnusFit app language: forest-tinted neutrals ("ink")
+ * with a single athletic citron accent ("brand").
+ * Status colours keep Tailwind's emerald / amber / rose / cyan / purple.
+ */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Forest-tinted neutral scale (dark UI surfaces, borders, text) */
+  --color-ink-50: #f5f7f3;
+  --color-ink-100: #e9ede6;
+  --color-ink-200: #d3dbd0;
+  --color-ink-300: #b6c2b6;
+  --color-ink-400: #94a497;
+  --color-ink-500: #6e7f72;
+  --color-ink-600: #4f5f53;
+  --color-ink-700: #36443a;
+  --color-ink-800: #26322a;
+  --color-ink-850: #1d2821;
+  --color-ink-900: #161f1a;
+  --color-ink-950: #0e1411;
+
+  /* Citron brand accent — 500 is the OnusFit primary (#C7EF72) */
+  --color-brand-50: #fafdf0;
+  --color-brand-100: #f3fbd9;
+  --color-brand-200: #e7f7b4;
+  --color-brand-300: #dcf597;
+  --color-brand-400: #d2f285;
+  --color-brand-500: #c7ef72;
+  --color-brand-600: #a6d14a;
+  --color-brand-700: #7fa332;
+  --color-brand-800: #5b7a24;
+  --color-brand-900: #3d5419;
+  --color-brand-950: #192812;
+
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px 0 rgb(0 0 0 / 0.35);
+  --shadow-pop: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 16px 40px -12px rgb(0 0 0 / 0.65);
+}
+
 :root {
-  --background: #0b0f19;
-  --foreground: #f8fafc;
-  --card: #131c2e;
-  --card-border: #1e293b;
-  --brand-teal: #14b8a6;
-  --brand-emerald: #10b981;
+  color-scheme: dark;
+  --background: var(--color-ink-950);
+  --foreground: var(--color-ink-50);
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  min-height: 100vh;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-brand-500) 35%, transparent);
+    color: var(--color-ink-50);
+  }
+
+  /* Visible, consistent keyboard focus for every interactive element. */
+  :where(a, button, [role="button"], summary, input[type="checkbox"], input[type="radio"], [tabindex]):focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  select option {
+    background-color: var(--color-ink-900);
+    color: var(--color-ink-100);
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-brand-500);
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.75);
+    cursor: pointer;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
-/* Custom scrollbar for modern dashboards */
+@layer components {
+  /* ---------- Surfaces ---------- */
+  .card {
+    @apply relative rounded-xl border border-ink-800 bg-ink-900 shadow-card;
+  }
+  .card-pad {
+    @apply p-5 sm:p-6;
+  }
+  .card-inset {
+    @apply rounded-lg border border-ink-800 bg-ink-950/60;
+  }
+  .card-title {
+    @apply text-sm font-semibold tracking-tight text-ink-50;
+  }
+  .card-subtitle {
+    @apply mt-0.5 text-xs leading-relaxed text-ink-400;
+  }
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-[0.08em] text-ink-400;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    @apply inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 text-[13px] font-medium transition-colors duration-150 select-none disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply h-8 gap-1.5 px-3 text-xs;
+  }
+  .btn-lg {
+    @apply h-10 px-4 text-sm;
+  }
+  .btn-icon {
+    @apply h-9 w-9 px-0;
+  }
+  .btn-icon.btn-sm {
+    @apply h-8 w-8 px-0;
+  }
+  .btn-primary {
+    @apply bg-brand-500 text-brand-950 hover:bg-brand-400 active:bg-brand-600;
+  }
+  .btn-secondary {
+    @apply border border-ink-700 bg-ink-850 text-ink-100 hover:border-ink-600 hover:bg-ink-800 hover:text-white;
+  }
+  .btn-ghost {
+    @apply text-ink-300 hover:bg-ink-800 hover:text-white;
+  }
+  .btn-danger {
+    @apply bg-rose-600 text-white hover:bg-rose-500 active:bg-rose-700;
+  }
+  .btn-danger-ghost {
+    @apply text-rose-300 hover:bg-rose-500/10 hover:text-rose-200;
+  }
+  .btn-success {
+    @apply bg-emerald-600 text-white hover:bg-emerald-500;
+  }
+  .link {
+    @apply inline-flex items-center gap-1 font-medium text-brand-400 underline-offset-4 transition-colors hover:text-brand-300 hover:underline;
+  }
+
+  /* ---------- Forms ---------- */
+  .field-label {
+    @apply mb-1.5 block text-xs font-medium text-ink-300;
+  }
+  .field-hint {
+    @apply mt-1.5 text-[11px] leading-relaxed text-ink-500;
+  }
+  .field-error {
+    @apply mt-1.5 text-[11px] font-medium text-rose-300;
+  }
+  .input {
+    @apply block h-9 w-full rounded-lg border border-ink-700 bg-ink-950 px-3 text-sm text-ink-50 transition-colors outline-none placeholder:text-ink-500 hover:border-ink-600 focus:border-brand-500/70 focus:ring-2 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  textarea.input {
+    @apply h-auto min-h-20 py-2 leading-relaxed;
+  }
+  select.input {
+    @apply appearance-none bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a497' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.6rem center;
+    background-size: 16px;
+  }
+  .input-invalid {
+    @apply border-rose-500/60 focus:border-rose-500 focus:ring-rose-500/20;
+  }
+
+  /* Sticky action row at the end of a form rendered inside a Modal body. */
+  .form-actions {
+    @apply sticky -bottom-5 z-10 -mx-5 -mb-5 mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-ink-800 bg-ink-900 px-5 py-3.5 sm:-mx-6 sm:px-6;
+  }
+
+  /* ---------- Toolbar / segmented control ---------- */
+  .toolbar {
+    @apply flex flex-col gap-3 rounded-xl border border-ink-800 bg-ink-900 p-3 shadow-card lg:flex-row lg:items-center;
+  }
+  .segmented {
+    @apply inline-flex items-center gap-0.5 rounded-lg border border-ink-800 bg-ink-950 p-0.5;
+  }
+  .segmented-item {
+    @apply inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-ink-400 transition-colors hover:text-ink-100;
+  }
+  .segmented-item[data-active="true"] {
+    @apply bg-ink-800 text-white shadow-sm;
+  }
+
+  /* ---------- Tables ---------- */
+  .table-shell {
+    @apply relative overflow-hidden rounded-xl border border-ink-800 bg-ink-900 shadow-card;
+  }
+  .table-scroll {
+    @apply relative w-full overflow-x-auto overscroll-x-contain;
+  }
+  .data-table {
+    @apply w-full border-collapse text-left text-[13px];
+  }
+  .data-table thead th {
+    @apply whitespace-nowrap border-b border-ink-800 bg-ink-850/60 px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.06em] text-ink-400;
+  }
+  .data-table tbody td {
+    @apply border-b border-ink-800/70 px-4 py-3 align-middle text-ink-200;
+  }
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .data-table tbody tr {
+    @apply transition-colors hover:bg-ink-850/70;
+  }
+  .table-footer {
+    @apply flex flex-col gap-3 border-t border-ink-800 px-4 py-3 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  /* ---------- Feedback ---------- */
+  .alert {
+    @apply flex items-start gap-3 rounded-lg border px-4 py-3 text-[13px] leading-relaxed;
+  }
+  .alert-error {
+    @apply border-rose-500/30 bg-rose-500/[0.07] text-rose-200;
+  }
+  .alert-warning {
+    @apply border-amber-500/30 bg-amber-500/[0.07] text-amber-200;
+  }
+  .alert-success {
+    @apply border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-200;
+  }
+  .alert-info {
+    @apply border-ink-700 bg-ink-850 text-ink-300;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-md bg-ink-800/70;
+  }
+  .avatar {
+    @apply inline-flex shrink-0 items-center justify-center rounded-lg border border-ink-700 bg-ink-800 font-semibold text-ink-100;
+  }
+  .kbd {
+    @apply rounded border border-ink-700 bg-ink-850 px-1.5 py-0.5 font-mono text-[11px] text-ink-300;
+  }
+}
+
+/* Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-700) transparent;
+}
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--color-ink-700);
   border-radius: 9999px;
+  border: 2px solid var(--color-ink-950);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-600);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -30,7 +30,7 @@ export function ReportsScreen() {
       }
       navigate('weeklyReport');
     } catch {
-      showToast({ message: 'Could not load your report. Please try again.' });
+      showToast({ tone: 'error', message: 'Could not load your report. Please try again.' });
     } finally {
       setGenerating(false);
     }
@@ -47,7 +47,7 @@ export function ReportsScreen() {
             void weekly.refetch();
             void monthly.refetch();
           }}
-          tintColor={colors.accent}
+          tintColor={colors.accentStrong}
         />
       }
     >
@@ -73,8 +73,8 @@ export function ReportsScreen() {
           </View>
           <Text style={[styles.headline, { color: colors.ink }]}>{activeWeekly.headline}</Text>
           <View style={styles.readRow}>
-            <Text style={[styles.readText, { color: colors.accent }]}>Read report</Text>
-            <ChevronRight size={14} color={colors.accent} />
+            <Text style={[styles.readText, { color: colors.accentStrong }]}>Read report</Text>
+            <ChevronRight size={14} color={colors.accentStrong} />
           </View>
         </TouchableOpacity>
       ) : (

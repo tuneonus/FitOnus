@@ -122,16 +122,16 @@ export function AdminAccountSettingsModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Admin Account & Security Settings"
+      title="Account & security"
       description="View administrator profile credentials and evaluate password security posture."
       maxWidth="lg"
     >
       <div className="space-y-6">
         {/* Administrator Profile Card */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 sm:p-5">
+        <div className="card-inset p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500/20 to-emerald-500/20 border border-teal-500/40 text-teal-300 font-bold text-base shadow-sm shadow-teal-500/10">
+              <div className="avatar h-12 w-12 rounded-xl text-sm text-brand-300">
                 {user?.displayName
                   ? user.displayName.slice(0, 2).toUpperCase()
                   : user?.email
@@ -143,27 +143,28 @@ export function AdminAccountSettingsModal({
                   <h4 className="text-sm font-semibold text-white">
                     {user?.displayName || 'System Administrator'}
                   </h4>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 border border-teal-500/30 px-2 py-0.5 text-[10px] font-semibold text-teal-300 uppercase tracking-wider">
+                  <span className="inline-flex h-5 items-center gap-1 rounded-md bg-brand-500/10 px-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-300 ring-1 ring-inset ring-brand-500/25">
                     <Shield className="h-3 w-3" />
                     {user?.role || 'Admin'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5 truncate">{user?.email}</p>
+                <p className="text-xs text-ink-400 mt-0.5 truncate">{user?.email}</p>
               </div>
             </div>
 
             {/* Account ID badge with copy */}
             {user?.id && (
-              <div className="flex items-center gap-1.5 self-start sm:self-auto rounded-lg border border-slate-800 bg-slate-950/60 px-2.5 py-1 text-xs">
-                <span className="text-[11px] text-slate-500 font-mono">ID:</span>
-                <span className="font-mono text-[11px] text-slate-300 max-w-[120px] truncate">
+              <div className="flex items-center gap-1.5 self-start sm:self-auto rounded-lg border border-ink-800 bg-ink-950/60 px-2.5 py-1 text-xs">
+                <span className="text-[11px] text-ink-500 font-mono">ID:</span>
+                <span className="font-mono text-[11px] text-ink-300 max-w-[120px] truncate">
                   {user.id}
                 </span>
                 <button
                   type="button"
                   onClick={handleCopyId}
-                  title="Copy Account ID"
-                  className="text-slate-400 hover:text-white transition-colors p-0.5"
+                  title="Copy account ID"
+                  aria-label="Copy account ID"
+                  className="rounded p-0.5 text-ink-400 transition-colors hover:bg-ink-800 hover:text-white"
                 >
                   {copiedId ? (
                     <Check className="h-3 w-3 text-emerald-400" />
@@ -177,15 +178,15 @@ export function AdminAccountSettingsModal({
 
           {/* Permissions Pill Grid */}
           {user?.permissions && user.permissions.length > 0 && (
-            <div className="mt-4 pt-3.5 border-t border-slate-800/80">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+            <div className="mt-4 pt-3.5 border-t border-ink-800">
+              <p className="eyebrow mb-2">
                 Granted System Permissions
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {user.permissions.map((perm) => (
                   <span
                     key={perm}
-                    className="rounded-md border border-slate-800 bg-slate-950/80 px-2 py-0.5 text-[10px] font-mono text-slate-300"
+                    className="rounded-md bg-ink-800 px-1.5 py-0.5 font-mono text-[11px] text-ink-300 ring-1 ring-inset ring-ink-700"
                   >
                     {perm}
                   </span>
@@ -196,10 +197,10 @@ export function AdminAccountSettingsModal({
         </div>
 
         {/* Password Security Form */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4 sm:p-5">
+        <div className="rounded-lg border border-ink-800 p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-4">
-            <KeyRound className="h-4 w-4 text-teal-400" />
-            <h4 className="text-xs font-semibold text-white uppercase tracking-wider">
+            <KeyRound className="h-4 w-4 text-ink-400" />
+            <h4 className="text-[13px] font-semibold text-white">
               Password Security Management
             </h4>
           </div>
@@ -207,21 +208,23 @@ export function AdminAccountSettingsModal({
           <div className="space-y-3.5">
             {/* Current Password */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label htmlFor="account-password-1" className="field-label">
                 Current Password
               </label>
               <div className="relative">
                 <input
+                  id="account-password-1"
                   type={showCurrent ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Enter current administrative password"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 pr-10 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="input pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
+                  aria-label={showCurrent ? 'Hide current password' : 'Show current password'}
+                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-ink-400 hover:bg-ink-800 hover:text-ink-200"
                 >
                   {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -230,21 +233,23 @@ export function AdminAccountSettingsModal({
 
             {/* New Password */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label htmlFor="account-password-2" className="field-label">
                 New Password
               </label>
               <div className="relative">
                 <input
+                  id="account-password-2"
                   type={showNew ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Minimum 12 characters"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 pr-10 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="input pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowNew(!showNew)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
+                  aria-label={showNew ? 'Hide new password' : 'Show new password'}
+                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-ink-400 hover:bg-ink-800 hover:text-ink-200"
                 >
                   {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -253,21 +258,23 @@ export function AdminAccountSettingsModal({
 
             {/* Confirm New Password */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label htmlFor="account-password-3" className="field-label">
                 Confirm New Password
               </label>
               <div className="relative">
                 <input
+                  id="account-password-3"
                   type={showConfirm ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter new password"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 pr-10 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="input pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
+                  aria-label={showConfirm ? 'Hide password confirmation' : 'Show password confirmation'}
+                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-ink-400 hover:bg-ink-800 hover:text-ink-200"
                 >
                   {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -275,17 +282,17 @@ export function AdminAccountSettingsModal({
             </div>
 
             {/* Live Requirements Checklist */}
-            <div className="rounded-xl border border-slate-800/80 bg-slate-950/50 p-3 text-xs space-y-1.5">
-              <p className="text-[11px] font-semibold text-slate-400 mb-1">
+            <div className="card-inset space-y-1.5 p-3 text-xs">
+              <p className="text-[11px] font-semibold text-ink-400 mb-1">
                 Password Security Checklist:
               </p>
               <div className="flex items-center gap-2">
                 {isMinLength ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                 ) : (
-                  <div className="h-3.5 w-3.5 rounded-full border border-slate-600 shrink-0" />
+                  <div className="h-3.5 w-3.5 rounded-full border border-ink-600 shrink-0" />
                 )}
-                <span className={isMinLength ? 'text-emerald-300' : 'text-slate-400'}>
+                <span className={isMinLength ? 'text-emerald-300' : 'text-ink-400'}>
                   At least 12 characters in length
                 </span>
               </div>
@@ -293,9 +300,9 @@ export function AdminAccountSettingsModal({
                 {isDifferentFromCurrent ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                 ) : (
-                  <div className="h-3.5 w-3.5 rounded-full border border-slate-600 shrink-0" />
+                  <div className="h-3.5 w-3.5 rounded-full border border-ink-600 shrink-0" />
                 )}
-                <span className={isDifferentFromCurrent ? 'text-emerald-300' : 'text-slate-400'}>
+                <span className={isDifferentFromCurrent ? 'text-emerald-300' : 'text-ink-400'}>
                   Different from current password
                 </span>
               </div>
@@ -303,17 +310,17 @@ export function AdminAccountSettingsModal({
                 {isMatching ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                 ) : (
-                  <div className="h-3.5 w-3.5 rounded-full border border-slate-600 shrink-0" />
+                  <div className="h-3.5 w-3.5 rounded-full border border-ink-600 shrink-0" />
                 )}
-                <span className={isMatching ? 'text-emerald-300' : 'text-slate-400'}>
+                <span className={isMatching ? 'text-emerald-300' : 'text-ink-400'}>
                   Passwords match
                 </span>
               </div>
             </div>
 
             {/* Security Enforcement Notice */}
-            <div className="flex items-start gap-2.5 rounded-xl border border-teal-500/20 bg-teal-500/10 p-3.5 text-xs text-teal-300">
-              <Lock className="h-4 w-4 shrink-0 mt-0.5 text-teal-400" />
+            <div className="alert alert-info text-xs">
+              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" />
               <div>
                 <span className="font-semibold">Security Enforcement: </span>
                 Updating your password immediately signs out all other active admin sessions across all devices while preserving your current session.
@@ -322,8 +329,8 @@ export function AdminAccountSettingsModal({
 
             {/* Error Banner */}
             {formError && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-300">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-400" />
+              <div className="alert alert-error">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span className="flex-1">{formError}</span>
               </div>
             )}
@@ -334,7 +341,7 @@ export function AdminAccountSettingsModal({
                 type="button"
                 onClick={handleSubmitPassword}
                 disabled={!canSubmit}
-                className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-2.5 px-4 text-xs font-semibold text-slate-950 hover:from-teal-400 hover:to-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-teal-500/20 flex items-center justify-center gap-2"
+                className="btn btn-primary w-full justify-center"
               >
                 {isSubmitting ? (
                   <>
@@ -342,7 +349,7 @@ export function AdminAccountSettingsModal({
                     <span>Updating Password...</span>
                   </>
                 ) : (
-                  <span>Update Password</span>
+                  <span>Update password</span>
                 )}
               </button>
             </div>
@@ -354,7 +361,7 @@ export function AdminAccountSettingsModal({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+            className="btn btn-secondary"
           >
             Close
           </button>

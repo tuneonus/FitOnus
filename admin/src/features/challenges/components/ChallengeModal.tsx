@@ -180,33 +180,35 @@ function ChallengeForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3.5 text-xs text-rose-300">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-400" />
+        <div className="alert alert-error">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>{error}</div>
         </div>
       )}
 
       {/* Title */}
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-          Challenge Title <span className="text-teal-400">*</span>
+        <label htmlFor="challengemodal-field-1" className="field-label">
+          Challenge Title <span className="text-rose-300" aria-hidden="true">*</span>
         </label>
         <input
+            id="challengemodal-field-1"
           type="text"
           required
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="e.g. 5-Day Workout Warrior"
-          className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          className="input"
         />
       </div>
 
       {/* Slug */}
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-          Unique Slug <span className="text-teal-400">*</span>
+        <label htmlFor="challengemodal-field-2" className="field-label">
+          Unique Slug <span className="text-rose-300" aria-hidden="true">*</span>
         </label>
         <input
+            id="challengemodal-field-2"
           type="text"
           required
           disabled={isEditing}
@@ -216,9 +218,9 @@ function ChallengeForm({
             setSlugManuallyEdited(true);
           }}
           placeholder="e.g. 5-day-workout-warrior"
-          className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed font-mono"
+          className="input font-mono"
         />
-        <p className="mt-1 text-[11px] text-slate-400">
+        <p className="field-hint">
           {isEditing
             ? 'Slug cannot be modified once created.'
             : 'Unique identifier used for tracking and URL references.'}
@@ -227,30 +229,32 @@ function ChallengeForm({
 
       {/* Description */}
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-          Description <span className="text-teal-400">*</span>
+        <label htmlFor="challengemodal-field-3" className="field-label">
+          Description <span className="text-rose-300" aria-hidden="true">*</span>
         </label>
         <textarea
+            id="challengemodal-field-3"
           rows={3}
           required
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Detailed challenge instructions, motivation, and rules..."
-          className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          className="input"
         />
       </div>
 
       {/* Cadence, Category, Metric Type (Locked in edit mode) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Cadence {!isEditing && <span className="text-teal-400">*</span>}
+          <label htmlFor="challengemodal-field-4" className="field-label">
+            Cadence {!isEditing && <span className="text-rose-300" aria-hidden="true">*</span>}
           </label>
           <select
+            id="challengemodal-field-4"
             disabled={isEditing}
             value={cadence}
             onChange={(e) => setCadence(e.target.value as ChallengeCadence)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="input"
           >
             {CADENCES.map((c) => (
               <option key={c} value={c}>
@@ -261,14 +265,15 @@ function ChallengeForm({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Category {!isEditing && <span className="text-teal-400">*</span>}
+          <label htmlFor="challengemodal-field-5" className="field-label">
+            Category {!isEditing && <span className="text-rose-300" aria-hidden="true">*</span>}
           </label>
           <select
+            id="challengemodal-field-5"
             disabled={isEditing}
             value={category}
             onChange={(e) => setCategory(e.target.value as ChallengeCategory)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="input"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -279,14 +284,15 @@ function ChallengeForm({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Metric {!isEditing && <span className="text-teal-400">*</span>}
+          <label htmlFor="challengemodal-field-6" className="field-label">
+            Metric {!isEditing && <span className="text-rose-300" aria-hidden="true">*</span>}
           </label>
           <select
+            id="challengemodal-field-6"
             disabled={isEditing}
             value={metricType}
             onChange={(e) => setMetricType(e.target.value as ChallengeMetricType)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="input"
           >
             {METRIC_TYPES.map((m) => (
               <option key={m} value={m}>
@@ -300,10 +306,11 @@ function ChallengeForm({
       {/* Target Value & Points */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Target Value <span className="text-teal-400">*</span>
+          <label htmlFor="challengemodal-field-7" className="field-label">
+            Target Value <span className="text-rose-300" aria-hidden="true">*</span>
           </label>
           <input
+            id="challengemodal-field-7"
             type="number"
             min={1}
             step="any"
@@ -311,18 +318,19 @@ function ChallengeForm({
             value={targetValue}
             onChange={(e) => setTargetValue(parseFloat(e.target.value) || 0)}
             placeholder="e.g. 5"
-            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 text-xs text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="input"
           />
-          <p className="mt-1 text-[11px] text-slate-400">
+          <p className="field-hint">
             Units correspond to chosen metric (e.g., workouts, minutes, kg).
           </p>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Reward Points <span className="text-teal-400">*</span>
+          <label htmlFor="challengemodal-field-8" className="field-label">
+            Reward Points <span className="text-rose-300" aria-hidden="true">*</span>
           </label>
           <input
+            id="challengemodal-field-8"
             type="number"
             min={0}
             step={5}
@@ -330,9 +338,9 @@ function ChallengeForm({
             value={rewardPoints}
             onChange={(e) => setRewardPoints(parseInt(e.target.value, 10) || 0)}
             placeholder="e.g. 50"
-            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 text-xs text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="input"
           />
-          <p className="mt-1 text-[11px] text-slate-400">
+          <p className="field-hint">
             OnusFit points awarded to the member upon completion.
           </p>
         </div>
@@ -340,39 +348,42 @@ function ChallengeForm({
 
       {/* Badge ID */}
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-          Reward Badge ID <span className="text-slate-500">(Optional)</span>
+        <label htmlFor="challengemodal-field-9" className="field-label">
+          Reward Badge ID <span className="font-normal text-ink-500">(optional)</span>
         </label>
         <input
+            id="challengemodal-field-9"
           type="text"
           value={rewardBadgeId}
           onChange={(e) => setRewardBadgeId(e.target.value)}
           placeholder="e.g. badge_warrior_gold"
-          className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 font-mono"
+          className="input font-mono"
         />
       </div>
 
       {/* Visual customization & Auto Enroll */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">Icon Name</label>
+          <label htmlFor="challengemodal-field-10" className="field-label">Icon Name</label>
           <input
+            id="challengemodal-field-10"
             type="text"
             value={iconName}
             onChange={(e) => setIconName(e.target.value)}
             placeholder="trophy"
-            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">Banner Color</label>
+          <label htmlFor="challengemodal-field-11" className="field-label">Banner Color</label>
           <input
+            id="challengemodal-field-11"
             type="text"
             value={bannerColor}
             onChange={(e) => setBannerColor(e.target.value)}
             placeholder="teal"
-            className="w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="input"
           />
         </div>
 
@@ -382,30 +393,30 @@ function ChallengeForm({
               type="checkbox"
               checked={autoEnroll}
               onChange={(e) => setAutoEnroll(e.target.checked)}
-              className="rounded border-slate-700 bg-slate-800 text-teal-500 focus:ring-teal-500 h-4 w-4"
+              className="h-4 w-4 rounded"
             />
-            <span className="text-xs font-medium text-slate-300">Auto-Enroll Users</span>
+            <span className="text-[13px] font-medium text-ink-200">Auto-enroll users</span>
           </label>
         </div>
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+      <div className="form-actions">
         <button
           type="button"
           onClick={onClose}
           disabled={isSubmitting}
-          className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+          className="btn btn-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-2 text-xs font-semibold text-slate-950 hover:from-teal-400 hover:to-emerald-400 transition-all shadow-md shadow-teal-500/20 disabled:opacity-50"
+          className="btn btn-primary"
         >
           {isSubmitting ? (
-            <span>Saving...</span>
+            <span>Saving…</span>
           ) : (
             <>
               <Sparkles className="h-3.5 w-3.5" />

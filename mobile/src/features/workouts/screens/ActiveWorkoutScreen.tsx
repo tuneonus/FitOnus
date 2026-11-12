@@ -103,9 +103,9 @@ export function ActiveWorkoutScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
           onPress={goBack}
-          style={styles.headerBtn}
+          style={[styles.headerBtn, { backgroundColor: colors.surface, borderColor: colors.line }]}
         >
-          <ChevronLeft size={24} color={colors.ink} />
+          <ChevronLeft size={22} color={colors.ink} />
         </TouchableOpacity>
 
         <View style={styles.timerCol}>
@@ -122,9 +122,13 @@ export function ActiveWorkoutScreen() {
           accessibilityRole="button"
           accessibilityLabel={paused ? 'Resume workout timer' : 'Pause workout timer'}
           onPress={store.togglePause}
-          style={[styles.pauseBtn, { backgroundColor: colors.surface2 }]}
+          style={[styles.pauseBtn, { backgroundColor: paused ? colors.accent : colors.hero }]}
         >
-          {paused ? <Play size={18} color={colors.ink} /> : <Pause size={18} color={colors.ink} />}
+          {paused ? (
+            <Play size={18} color={colors.accentInk} fill={colors.accentInk} />
+          ) : (
+            <Pause size={18} color={colors.heroInk} fill={colors.heroInk} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -146,7 +150,7 @@ export function ActiveWorkoutScreen() {
                 {
                   backgroundColor:
                     i === currentIndex
-                      ? colors.ink
+                      ? colors.accentStrong
                       : complete
                         ? colors.good
                         : e.skipped
@@ -175,10 +179,18 @@ export function ActiveWorkoutScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.exCounter, { color: colors.muted }]}>
-          Exercise {currentIndex + 1} of {active.length}
-          {current.skipped ? ' · skipped' : ''}
-        </Text>
+        <View style={styles.counterRow}>
+          <Text style={[styles.exCounter, { color: colors.muted }]}>
+            EXERCISE {currentIndex + 1} OF {active.length}
+            {current.skipped ? ' · SKIPPED' : ''}
+          </Text>
+          <Text
+            accessibilityLabel={`Session progress: ${doneSets} of ${totalSets} sets done`}
+            style={[styles.progressPill, { color: colors.ink, backgroundColor: colors.surface2 }]}
+          >
+            {doneSets}/{totalSets} sets
+          </Text>
+        </View>
         <Text style={[styles.exTitle, { color: colors.ink }]}>{ex.name}</Text>
         <Text style={[styles.exTarget, { color: colors.muted }]}>
           Target {current.sets.length} × {current.targetReps} · rest {current.restSec}s
@@ -235,22 +247,6 @@ export function ActiveWorkoutScreen() {
             disabled={!next}
             onPress={() => store.setCurrentIndex(currentIndex + 1)}
           />
-        </View>
-
-        <View
-          style={[
-            styles.progressCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.line,
-            },
-          ]}
-        >
-          <Text style={[styles.progLabel, { color: colors.muted }]}>Session progress</Text>
-          <Text style={[styles.progNumber, { color: colors.ink }]}>
-            {doneSets}
-            <Text style={[styles.progTotal, { color: colors.muted }]}> / {totalSets} sets</Text>
-          </Text>
         </View>
       </ScrollView>
 
@@ -327,9 +323,10 @@ const styles = StyleSheet.create({
     minHeight: 64,
   },
   headerBtn: {
-    width: 48,
-    minHeight: premium.layout.touch,
+    width: 44,
+    height: 44,
     borderRadius: 22,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -345,11 +342,13 @@ const styles = StyleSheet.create({
   },
   timerDigits: {
     ...premium.type.metric,
+    fontSize: 28,
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   pauseBtn: {
-    width: 48,
-    minHeight: premium.layout.touch,
+    width: 44,
+    height: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
@@ -358,15 +357,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     marginTop: 8,
   },
   stripBar: {
     flexGrow: 1,
-    flexBasis: 48,
-    minWidth: 48,
-    minHeight: 24,
-    borderRadius: 2.5,
+    flexBasis: 40,
+    minWidth: 40,
+    height: 6,
+    borderRadius: 3,
+    marginVertical: 9,
   },
   pausedBanner: {
     marginHorizontal: 16,
@@ -382,20 +382,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 24,
   },
+  counterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   exCounter: {
+    ...premium.type.eyebrow,
+  },
+  progressPill: {
     ...premium.type.caption,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
   exTitle: {
-    ...premium.type.title,
-    marginTop: 2,
+    ...premium.type.screenTitle,
+    fontSize: 28,
+    lineHeight: 34,
+    marginTop: 6,
   },
   exTarget: {
-    ...premium.type.caption,
-    marginTop: 2,
+    ...premium.type.bodySm,
+    marginTop: 4,
+    marginBottom: 12,
   },
   tableHeader: {
     flexDirection: 'row',
@@ -429,26 +447,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  progressCard: {
-    borderRadius: premium.radius.card,
-    borderWidth: 1,
-    padding: 16,
-    marginTop: 16,
-  },
-  progLabel: {
-    ...premium.type.caption,
-  },
-  progNumber: {
-    ...premium.type.metric,
-    fontVariant: ['tabular-nums'],
-    marginTop: 2,
-  },
-  progTotal: {
-    ...premium.type.body,
-  },
   bottomFooter: {
-    borderTopWidth: 1,
-    paddingHorizontal: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 20,
     paddingTop: 12,
   },
 });

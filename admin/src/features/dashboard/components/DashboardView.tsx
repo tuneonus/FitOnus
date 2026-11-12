@@ -8,18 +8,48 @@ import {
   Dumbbell,
   Utensils,
   Trophy,
-  ShieldAlert,
-  RefreshCw,
+  Info,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { StatsCard } from '@/components/ui/StatsCard';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { useToast } from '@/context/ToastContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
+import type { DashboardTimeframe } from '../types';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import { UserGrowthChart } from './UserGrowthChart';
 import { OnboardingFunnelCard } from './OnboardingFunnelCard';
 import { ActivityTrendsCard } from './ActivityTrendsCard';
 import { RecentUsersTable } from './RecentUsersTable';
+
+const PAGE_TITLE = 'Overview';
+const PAGE_SUBTITLE = 'Live platform metrics across members, training, nutrition and challenges.';
+const TIMEFRAMES: DashboardTimeframe[] = ['7d', '30d', '90d'];
+
+function TimeframeSwitch({
+  value,
+  onChange,
+}: {
+  value: DashboardTimeframe;
+  onChange: (tf: DashboardTimeframe) => void;
+}) {
+  return (
+    <div className="segmented" role="group" aria-label="Metrics timeframe">
+      {TIMEFRAMES.map((tf) => (
+        <button
+          key={tf}
+          type="button"
+          onClick={() => onChange(tf)}
+          data-active={value === tf}
+          aria-pressed={value === tf}
+          className="segmented-item tabular-nums"
+        >
+          {tf.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function DashboardView() {
   const { toast } = useToast();
@@ -36,19 +66,22 @@ export function DashboardView() {
   const handleRefresh = async () => {
     try {
       await refresh();
-      toast.success('Dashboard metrics refreshed from Neon PostgreSQL.');
+      toast.success('Dashboard metrics refreshed.');
     } catch {
       toast.error('Failed to refresh dashboard metrics.');
     }
   };
 
+  const timeframeSwitch = <TimeframeSwitch value={timeframe} onChange={setTimeframe} />;
+
   if (isLoading) {
     return (
       <AdminLayout
-        title="Platform Overview"
-        subtitle="Live enterprise metrics from Neon PostgreSQL across all OnusFit domains"
+        title={PAGE_TITLE}
+        subtitle={PAGE_SUBTITLE}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
+        actions={timeframeSwitch}
       >
         <DashboardSkeleton />
       </AdminLayout>
@@ -58,26 +91,17 @@ export function DashboardView() {
   if (error && !data) {
     return (
       <AdminLayout
-        title="Platform Overview"
-        subtitle="Live enterprise metrics from Neon PostgreSQL across all OnusFit domains"
+        title={PAGE_TITLE}
+        subtitle={PAGE_SUBTITLE}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       >
-        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 text-rose-300">
-          <div className="flex items-center gap-3">
-            <ShieldAlert className="h-6 w-6 text-rose-400" />
-            <h3 className="font-semibold text-white">Failed to load platform metrics</h3>
-          </div>
-          <p className="mt-2 text-sm text-slate-300">{error}</p>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700 transition-colors"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            <span>Try Again</span>
-          </button>
-        </div>
+        <ErrorState
+          title="Failed to load platform metrics"
+          message={error}
+          onRetry={handleRefresh}
+          isRetrying={isRefreshing}
+        />
       </AdminLayout>
     );
   }
@@ -110,138 +134,87 @@ export function DashboardView() {
 
   return (
     <AdminLayout
-      title="Platform Overview"
-      subtitle="Live enterprise metrics from Neon PostgreSQL across all OnusFit domains"
+      title={PAGE_TITLE}
+      subtitle={PAGE_SUBTITLE}
       onRefresh={handleRefresh}
       isRefreshing={isRefreshing}
+      actions={timeframeSwitch}
     >
-      <div className="space-y-8">
-        {/* Header Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-medium text-slate-400">
-              Displaying metrics for timeframe:{' '}
-              <strong className="text-white uppercase">{timeframe}</strong>
-              {timeframe === '90d' && (
-                <span className="ml-2 text-[10px] text-amber-400 font-normal">
-                  (Backend returns max 30D window; 90D query pending Phase 11)
-                </span>
-              )}
+      <div className="space-y-6 lg:space-y-8">
+        {timeframe === '90d' && (
+          <div className="alert alert-info">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" />
+            <span>
+              The backend aggregates activity for up to 30 days. 90D views show the 30-day window
+              until the extended query is available.
             </span>
           </div>
+        )}
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 hidden sm:inline">
-              Timeframe Filter:
-            </span>
-            <div className="flex items-center rounded-xl border border-slate-800 bg-slate-900/60 p-1">
-              {(['7d', '30d', '90d'] as const).map((tf) => (
-                <button
-                  key={tf}
-                  type="button"
-                  onClick={() => setTimeframe(tf)}
-                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${
-                    timeframe === tf
-                      ? 'bg-teal-500 text-slate-950 shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {tf.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 6 Core KPI Metric Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {/* 1. Total Users */}
+        {/* Core KPIs */}
+        <section aria-label="Key metrics" className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 sm:gap-4">
           <StatsCard
-            title="Total Users"
+            title="Total users"
             value={totalUsersCount}
             subtitle="Registered accounts"
-            icon={<Users className="h-5 w-5" />}
+            icon={<Users />}
             accent="teal"
           />
-
-          {/* 2. Active Users */}
           <StatsCard
-            title="Active Users"
+            title="Active users"
             value={activeUsersCount}
             subtitle={
               timeframe === '90d'
-                ? `${activeUsersRate}% active (30D max available)`
-                : `${activeUsersRate}% active (${timeframe.toUpperCase()})`
+                ? `${activeUsersRate}% of users · 30D window`
+                : `${activeUsersRate}% of users · ${timeframe.toUpperCase()}`
             }
-            icon={<UserCheck className="h-5 w-5" />}
+            icon={<UserCheck />}
             accent="emerald"
           />
-
-          {/* 3. New Registrations */}
           <StatsCard
-            title="New Signups"
+            title="New signups"
             value={newRegistrationsCount}
-            subtitle={
-              timeframe === '90d'
-                ? 'Registered (30D max available)'
-                : `Registered (${timeframe.toUpperCase()})`
-            }
-            icon={<TrendingUp className="h-5 w-5" />}
+            subtitle={timeframe === '90d' ? 'Registered · 30D window' : `Registered · ${timeframe.toUpperCase()}`}
+            icon={<TrendingUp />}
             accent="cyan"
           />
-
-          {/* 4. Workout Activity */}
           <StatsCard
-            title="Workouts"
-            value={
-              workoutStats
-                ? workoutStats.totalCompletedSessions.toLocaleString()
-                : 'Unavailable'
-            }
+            title="Workouts completed"
+            value={workoutStats ? workoutStats.totalCompletedSessions.toLocaleString() : 'Unavailable'}
             subtitle={
               workoutStats
-                ? `${workoutStats.activeLiftersCount} active lifters`
-                : data.errors.workouts || 'Offline'
+                ? `${workoutStats.activeLiftersCount.toLocaleString()} active lifters`
+                : data.errors.workouts || 'Source offline'
             }
-            icon={<Dumbbell className="h-5 w-5" />}
+            icon={<Dumbbell />}
             accent="purple"
           />
-
-          {/* 5. Nutrition Activity */}
           <StatsCard
-            title="Meals Logged"
-            value={
-              nutritionStats
-                ? nutritionStats.totalMealsLogged.toLocaleString()
-                : 'Unavailable'
-            }
+            title="Meals logged"
+            value={nutritionStats ? nutritionStats.totalMealsLogged.toLocaleString() : 'Unavailable'}
             subtitle={
               nutritionStats
-                ? `${nutritionStats.totalWaterLogs} water entries`
-                : data.errors.nutrition || 'Offline'
+                ? `${nutritionStats.totalWaterLogs.toLocaleString()} water entries`
+                : data.errors.nutrition || 'Source offline'
             }
-            icon={<Utensils className="h-5 w-5" />}
+            icon={<Utensils />}
             accent="amber"
           />
-
-          {/* 6. Challenge Participation */}
           <StatsCard
-            title="Challenges"
-            value={
-              challenges ? `${publishedChallengesCount} Active` : 'Unavailable'
-            }
+            title="Live challenges"
+            value={challenges ? publishedChallengesCount : 'Unavailable'}
             subtitle={
               challenges
-                ? `${challenges.length} total configured`
-                : data.errors.challenges || 'Offline'
+                ? `${challenges.length} configured in total`
+                : data.errors.challenges || 'Source offline'
             }
-            icon={<Trophy className="h-5 w-5" />}
+            icon={<Trophy />}
             accent="rose"
           />
-        </div>
+        </section>
 
-        {/* Growth Chart (2 cols) & Funnel Progress (1 col) */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Growth chart & onboarding */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
           <UserGrowthChart
             trend={userStats.registrationTrend}
             new7d={userStats.newRegistrations7d}
@@ -249,7 +222,6 @@ export function DashboardView() {
             active7d={userStats.activeUsers7d}
             active30d={userStats.activeUsers30d}
             timeframe={timeframe}
-            onTimeframeChange={setTimeframe}
           />
 
           <OnboardingFunnelCard
@@ -259,7 +231,6 @@ export function DashboardView() {
           />
         </div>
 
-        {/* Multi-Domain Activity Trends */}
         <ActivityTrendsCard
           workoutStats={workoutStats}
           nutritionStats={nutritionStats}
@@ -269,7 +240,6 @@ export function DashboardView() {
           challengesError={data.errors.challenges}
         />
 
-        {/* Recent Registrations Table */}
         <RecentUsersTable users={userStats.recentUsers} />
       </div>
     </AdminLayout>

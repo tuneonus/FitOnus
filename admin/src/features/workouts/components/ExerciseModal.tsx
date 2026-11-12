@@ -141,7 +141,7 @@ function ExerciseForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400">
+        <div className="alert alert-error">
           {error}
         </div>
       )}
@@ -149,27 +149,29 @@ function ExerciseForm({
       {/* Row 1: Name & Category */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-1" className="field-label">
             Exercise Name *
           </label>
           <input
+            id="exercisemodal-field-1"
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Barbell Bench Press"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-2" className="field-label">
             Category
           </label>
           <select
+            id="exercisemodal-field-2"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white focus:border-teal-500 focus:outline-none"
+            className="input"
           >
             <option value="strength">Strength</option>
             <option value="hypertrophy">Hypertrophy</option>
@@ -183,54 +185,58 @@ function ExerciseForm({
       {/* Row 2: Primary Muscles, Secondary Muscles, Equipment, Difficulty */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-3" className="field-label">
             Primary Muscles *
           </label>
           <input
+            id="exercisemodal-field-3"
             type="text"
             required
             value={primaryMuscles}
             onChange={(e) => setPrimaryMuscles(e.target.value)}
             placeholder="e.g. Chest, Triceps"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-4" className="field-label">
             Secondary Muscles
           </label>
           <input
+            id="exercisemodal-field-4"
             type="text"
             value={secondaryMuscles}
             onChange={(e) => setSecondaryMuscles(e.target.value)}
             placeholder="e.g. Shoulders, Abs"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-5" className="field-label">
             Equipment
           </label>
           <input
+            id="exercisemodal-field-5"
             type="text"
             required
             value={equipment}
             onChange={(e) => setEquipment(e.target.value)}
             placeholder="Barbell, Dumbbell, etc."
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-6" className="field-label">
             Difficulty
           </label>
           <select
+            id="exercisemodal-field-6"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as Exercise['difficulty'])}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white focus:border-teal-500 focus:outline-none"
+            className="input"
           >
             <option value="beginner">Beginner</option>
             <option value="intermediate">Intermediate</option>
@@ -248,64 +254,68 @@ function ExerciseForm({
             onChange={(e) => setIsCompound(e.target.checked)}
             className="sr-only peer"
           />
-          <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-500"></div>
-          <span className="ml-2.5 text-xs font-medium text-slate-300">
+          <div className="w-9 h-5 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500"></div>
+          <span className="ml-2.5 text-xs font-medium text-ink-300">
             Compound Movement (engages multiple joint groups)
           </span>
         </label>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+        <label htmlFor="exercisemodal-field-7" className="field-label">
           Description
         </label>
         <textarea
+            id="exercisemodal-field-7"
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Brief overview of the exercise and primary stimulus..."
-          className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+          className="input"
         />
       </div>
 
       {/* Row 4: Instructions, Tips & Common Mistakes */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-8" className="field-label">
             Instructions * (one per line)
           </label>
           <textarea
+            id="exercisemodal-field-8"
             rows={4}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             placeholder="1. Lie flat on bench&#10;2. Grip barbell with medium width&#10;3. Lower bar smoothly to chest"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none font-mono"
+            className="input font-mono"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-9" className="field-label">
             Form Tips & Cues (one per line)
           </label>
           <textarea
+            id="exercisemodal-field-9"
             rows={4}
             value={tips}
             onChange={(e) => setTips(e.target.value)}
             placeholder="Keep feet planted firmly&#10;Maintain slight arch in lower back&#10;Do not bounce bar off ribcage"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none font-mono"
+            className="input font-mono"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-10" className="field-label">
             Common Mistakes (one per line)
           </label>
           <textarea
+            id="exercisemodal-field-10"
             rows={4}
             value={commonMistakes}
             onChange={(e) => setCommonMistakes(e.target.value)}
             placeholder="Flaring elbows outward&#10;Lifting hips off the bench&#10;Incomplete lockout"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none font-mono"
+            className="input font-mono"
           />
         </div>
       </div>
@@ -313,48 +323,50 @@ function ExerciseForm({
       {/* Row 5: Media URLs (Optional) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-11" className="field-label">
             Video Demonstration URL (optional)
           </label>
           <input
+            id="exercisemodal-field-11"
             type="url"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             placeholder="https://..."
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="exercisemodal-field-12" className="field-label">
             Thumbnail / Image URL (optional)
           </label>
           <input
+            id="exercisemodal-field-12"
             type="url"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://..."
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+            className="input"
           />
         </div>
       </div>
 
       {/* Footer Actions */}
-      <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+      <div className="form-actions">
         <button
           type="button"
           onClick={onClose}
           disabled={isSubmitting}
-          className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+          className="btn btn-secondary"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-xl bg-teal-500 hover:bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-md shadow-teal-500/20 transition-all disabled:opacity-50"
+          className="btn btn-primary"
         >
-          {isSubmitting ? 'Saving...' : isEditing ? 'Update Exercise' : 'Create Exercise'}
+          {isSubmitting ? 'Saving…' : isEditing ? 'Update Exercise' : 'Create Exercise'}
         </button>
       </div>
     </form>
@@ -373,7 +385,7 @@ export function ExerciseModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Edit Exercise' : 'Add New Exercise'}
+      title={isEditing ? 'Edit exercise' : 'Add exercise'}
       description={
         isEditing
           ? 'Modify verified exercise details in the global OnusFit library.'

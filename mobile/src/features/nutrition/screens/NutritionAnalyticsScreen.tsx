@@ -60,6 +60,8 @@ export function NutritionAnalyticsScreen() {
   const targetKcal = analytics?.targetCalories ?? undefined;
   const targetProtein = analytics?.targetProtein ?? undefined;
   const hasData = (analytics?.loggedDaysCount ?? 0) > 0;
+  // Without logged days the charts would only show zeros; present one honest empty state instead.
+  const showEmpty = !query.isLoading && !query.isError && !hasData;
 
   return (
     <Screen title="Nutrition analytics">
@@ -67,7 +69,11 @@ export function NutritionAnalyticsScreen() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accentStrong}
+          />
         }
       >
         {query.isError ? (
@@ -75,13 +81,6 @@ export function NutritionAnalyticsScreen() {
             tone="error"
             title="Couldn’t refresh nutrition analytics"
             body="Pull to try again. Previously loaded values may be out of date."
-          />
-        ) : null}
-        {!query.isLoading && !query.isError && !hasData ? (
-          <EmptyState
-            icon={Sparkles}
-            title="No nutrition records yet"
-            body="Log meals to build your nutrition trends."
           />
         ) : null}
         <SegmentedControl<Range>
@@ -93,142 +92,178 @@ export function NutritionAnalyticsScreen() {
           onChange={setRange}
         />
 
-        {/* Calories Card */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { color: colors.ink }]}>Calories</Text>
-            <Text style={[styles.cardSub, { color: colors.muted }]}>
-              avg {avgKcal.toLocaleString()} · goal {targetKcal?.toLocaleString() ?? '—'}
-            </Text>
-          </View>
-          <View style={styles.chartWrapper}>
-            <BarChart
-              key={`c-${range}`}
-              data={cal}
-              goal={targetKcal}
-              height={120}
-              barColor={colors.ink}
-              formatValue={(v) => `${v.toLocaleString()} kcal`}
-            />
-          </View>
-          {range === 'week' && (
-            <Text style={[styles.footnote, { color: colors.muted }]}>
-              Today is still in progress.
-            </Text>
-          )}
-        </View>
-
-        {/* Protein Card */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { color: colors.ink }]}>Protein</Text>
-            <Text style={[styles.cardSub, { color: colors.muted }]}>
-              avg {avgPro} g · goal {targetProtein ?? '—'} g
-            </Text>
-          </View>
-          <View style={styles.chartWrapper}>
-            <BarChart
-              key={`p-${range}`}
-              data={pro}
-              goal={targetProtein}
-              height={110}
-              barColor={colors.move}
-              formatValue={(v) => `${v} g`}
-            />
-          </View>
-        </View>
-
-        {/* Macro Split Card */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[styles.cardTitle, { color: colors.ink }]}>Average macro split</Text>
-          <View style={styles.splitTrack}>
-            {splitData.map((m) => {
-              const bg =
-                m.label === 'Protein' ? colors.move : m.label === 'Carbs' ? '#38BDF8' : colors.warn;
-              return (
-                <View
-                  key={m.label}
-                  style={{ width: `${m.pct}%`, height: '100%', backgroundColor: bg }}
-                />
-              );
-            })}
-          </View>
-          <View style={styles.splitGrid}>
-            {splitData.map((m) => {
-              const dotBg =
-                m.label === 'Protein' ? colors.move : m.label === 'Carbs' ? '#38BDF8' : colors.warn;
-              return (
-                <View key={m.label} style={styles.splitItem}>
-                  <View style={styles.splitItemHeader}>
-                    <View style={[styles.dot, { backgroundColor: dotBg }]} />
-                    <Text style={[styles.splitLabel, { color: colors.muted }]}>{m.label}</Text>
-                  </View>
-                  <Text style={[styles.splitPct, { color: colors.ink }]}>{m.pct}%</Text>
-                </View>
-              );
-            })}
-          </View>
-          <Text style={[styles.footnote, { color: colors.muted }]}>
-            Macro split is calculated from your logged meals.
-          </Text>
-        </View>
-
-        {/* Most Logged Section */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>
-            Most logged · {range === 'week' ? '7 days' : '30 days'}
-          </Text>
-          <View
-            style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
-          >
-            {topItems.length === 0 ? (
-              <Text style={{ color: colors.muted, textAlign: 'center', padding: 16, fontSize: 13 }}>
-                No food records found for this period.
-              </Text>
-            ) : (
-              topItems.map((f, idx) => (
-                <View
-                  key={f.name}
-                  style={[
-                    styles.listRow,
-                    { borderBottomColor: colors.line },
-                    idx === topItems.length - 1 && { borderBottomWidth: 0 },
-                  ]}
-                >
-                  <View>
-                    <Text style={[styles.foodRowName, { color: colors.ink }]}>{f.name}</Text>
-                    <Text style={[styles.foodRowSub, { color: colors.muted }]}>
-                      {f.count} times logged
-                    </Text>
-                  </View>
-                  <Text style={[styles.foodRowKcal, { color: colors.ink }]}>{f.kcal} kcal</Text>
-                </View>
-              ))
-            )}
-          </View>
-        </View>
-
-        {/* Logging Consistency */}
-        <View style={styles.sectionBlock}>
-          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Logging consistency</Text>
-          <View
-            style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.line }]}
-          >
-            <View style={[styles.consistencyRow, { borderBottomWidth: 0 }]}>
-              <Text style={[styles.consistencyLabel, { color: colors.ink }]}>Logged days</Text>
-              <Text style={[styles.consistencyValue, { color: colors.ink }]}>
-                {analytics ? `${analytics.loggedDaysCount} / ${analytics.totalDaysInRange}` : '—'}{' '}
-                <Text style={{ color: colors.muted }}>
-                  (
-                  {analytics && analytics.totalDaysInRange > 0
-                    ? Math.round((analytics.loggedDaysCount / analytics.totalDaysInRange) * 100)
-                    : 0}
-                  %)
+        {showEmpty ? (
+          <EmptyState
+            icon={Sparkles}
+            title="No nutrition records yet"
+            body="Log meals for a few days to see calorie, protein and macro trends here."
+          />
+        ) : (
+          <>
+            {/* Calories Card */}
+            <View
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}
+            >
+              <View style={styles.cardHeader}>
+                <Text style={[styles.cardTitle, { color: colors.ink }]}>Calories</Text>
+                <Text style={[styles.cardSub, { color: colors.muted }]}>
+                  avg {avgKcal.toLocaleString()} · goal {targetKcal?.toLocaleString() ?? '—'}
                 </Text>
+              </View>
+              <View style={styles.chartWrapper}>
+                <BarChart
+                  key={`c-${range}`}
+                  data={cal}
+                  goal={targetKcal}
+                  height={120}
+                  barColor={colors.ink}
+                  formatValue={(v) => `${v.toLocaleString()} kcal`}
+                />
+              </View>
+              {range === 'week' && (
+                <Text style={[styles.footnote, { color: colors.muted }]}>
+                  Today is still in progress.
+                </Text>
+              )}
+            </View>
+
+            {/* Protein Card */}
+            <View
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}
+            >
+              <View style={styles.cardHeader}>
+                <Text style={[styles.cardTitle, { color: colors.ink }]}>Protein</Text>
+                <Text style={[styles.cardSub, { color: colors.muted }]}>
+                  avg {avgPro} g · goal {targetProtein ?? '—'} g
+                </Text>
+              </View>
+              <View style={styles.chartWrapper}>
+                <BarChart
+                  key={`p-${range}`}
+                  data={pro}
+                  goal={targetProtein}
+                  height={110}
+                  barColor={colors.move}
+                  formatValue={(v) => `${v} g`}
+                />
+              </View>
+            </View>
+
+            {/* Macro Split Card */}
+            <View
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}
+            >
+              <Text style={[styles.cardTitle, { color: colors.ink }]}>Average macro split</Text>
+              <View style={styles.splitTrack}>
+                {splitData.map((m) => {
+                  const bg =
+                    m.label === 'Protein'
+                      ? colors.move
+                      : m.label === 'Carbs'
+                        ? '#38BDF8'
+                        : colors.warn;
+                  return (
+                    <View
+                      key={m.label}
+                      style={{ width: `${m.pct}%`, height: '100%', backgroundColor: bg }}
+                    />
+                  );
+                })}
+              </View>
+              <View style={styles.splitGrid}>
+                {splitData.map((m) => {
+                  const dotBg =
+                    m.label === 'Protein'
+                      ? colors.move
+                      : m.label === 'Carbs'
+                        ? '#38BDF8'
+                        : colors.warn;
+                  return (
+                    <View key={m.label} style={styles.splitItem}>
+                      <View style={styles.splitItemHeader}>
+                        <View style={[styles.dot, { backgroundColor: dotBg }]} />
+                        <Text style={[styles.splitLabel, { color: colors.muted }]}>{m.label}</Text>
+                      </View>
+                      <Text style={[styles.splitPct, { color: colors.ink }]}>{m.pct}%</Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <Text style={[styles.footnote, { color: colors.muted }]}>
+                Macro split is calculated from your logged meals.
               </Text>
             </View>
-          </View>
-        </View>
+
+            {/* Most Logged Section */}
+            <View style={styles.sectionBlock}>
+              <Text style={[styles.sectionHeading, { color: colors.ink }]}>
+                Most logged · {range === 'week' ? '7 days' : '30 days'}
+              </Text>
+              <View
+                style={[
+                  styles.listCard,
+                  { backgroundColor: colors.surface, borderColor: colors.line },
+                ]}
+              >
+                {topItems.length === 0 ? (
+                  <Text
+                    style={{ color: colors.muted, textAlign: 'center', padding: 16, fontSize: 13 }}
+                  >
+                    No food records found for this period.
+                  </Text>
+                ) : (
+                  topItems.map((f, idx) => (
+                    <View
+                      key={f.name}
+                      style={[
+                        styles.listRow,
+                        { borderBottomColor: colors.line },
+                        idx === topItems.length - 1 && { borderBottomWidth: 0 },
+                      ]}
+                    >
+                      <View>
+                        <Text style={[styles.foodRowName, { color: colors.ink }]}>{f.name}</Text>
+                        <Text style={[styles.foodRowSub, { color: colors.muted }]}>
+                          {f.count} times logged
+                        </Text>
+                      </View>
+                      <Text style={[styles.foodRowKcal, { color: colors.ink }]}>{f.kcal} kcal</Text>
+                    </View>
+                  ))
+                )}
+              </View>
+            </View>
+
+            {/* Logging Consistency */}
+            <View style={styles.sectionBlock}>
+              <Text style={[styles.sectionHeading, { color: colors.ink }]}>
+                Logging consistency
+              </Text>
+              <View
+                style={[
+                  styles.listCard,
+                  { backgroundColor: colors.surface, borderColor: colors.line },
+                ]}
+              >
+                <View style={[styles.consistencyRow, { borderBottomWidth: 0 }]}>
+                  <Text style={[styles.consistencyLabel, { color: colors.ink }]}>Logged days</Text>
+                  <Text style={[styles.consistencyValue, { color: colors.ink }]}>
+                    {analytics
+                      ? `${analytics.loggedDaysCount} / ${analytics.totalDaysInRange}`
+                      : '—'}{' '}
+                    <Text style={{ color: colors.muted }}>
+                      (
+                      {analytics && analytics.totalDaysInRange > 0
+                        ? Math.round((analytics.loggedDaysCount / analytics.totalDaysInRange) * 100)
+                        : 0}
+                      %)
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </>
+        )}
 
         {/* Coach Summary */}
         <TouchableOpacity
@@ -239,7 +274,7 @@ export function NutritionAnalyticsScreen() {
           style={[styles.coachBanner, { backgroundColor: colors.surface2 }]}
         >
           <View style={styles.coachIconWrapper}>
-            <Sparkles size={18} color={colors.accent} />
+            <Sparkles size={18} color={colors.accentStrong} />
           </View>
           <View style={styles.coachTextCol}>
             <Text style={[styles.coachHeading, { color: colors.ink }]}>Coach review</Text>
@@ -255,12 +290,11 @@ export function NutritionAnalyticsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
     paddingBottom: 32,
     gap: 16,
   },
   card: {
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
     gap: 12,

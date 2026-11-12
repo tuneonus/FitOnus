@@ -67,21 +67,21 @@ function FoodVerifyForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+    <form onSubmit={handleSubmit} className="space-y-4 text-[13px]">
       {error && (
-        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-400">
+        <div className="alert alert-error">
           {error}
         </div>
       )}
 
       {/* Security Alert: Private custom food restriction */}
       {isCustomFood ? (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-amber-300 space-y-2">
+        <div className="alert alert-warning flex-col gap-2">
           <div className="flex items-center gap-2 font-semibold text-amber-200">
             <Lock className="h-4 w-4 text-amber-400" />
             <span>User Custom Food Promotion Disabled</span>
           </div>
-          <p className="text-[11px] text-amber-300/80 leading-relaxed">
+          <p className="text-xs leading-relaxed text-amber-200/80">
             This item was authored by user{' '}
             <span className="font-mono text-amber-200">{food.createdBy}</span> as a
             private custom food. Promoting custom foods to the global verified
@@ -92,17 +92,18 @@ function FoodVerifyForm({
       ) : (
         <div className="space-y-3">
           <div>
-            <label className="block font-semibold text-slate-300 mb-1.5">
-              Verification Status
-            </label>
-            <div className="grid grid-cols-3 gap-2">
+            <p id="verification-status-label" className="field-label">
+              Verification status
+            </p>
+            <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="verification-status-label">
               <button
                 type="button"
                 onClick={() => setVerificationStatus('verified')}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
+                aria-pressed={verificationStatus === 'verified'}
+                className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center text-xs transition-colors ${
                   verificationStatus === 'verified'
                     ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-300 font-semibold'
-                    : 'border-slate-800 bg-slate-950 text-slate-400 hover:bg-slate-900'
+                    : 'border-ink-700 bg-ink-950 text-ink-300 hover:border-ink-600 hover:bg-ink-850'
                 }`}
               >
                 <ShieldCheck className="h-5 w-5 mb-1 text-emerald-400" />
@@ -112,10 +113,11 @@ function FoodVerifyForm({
               <button
                 type="button"
                 onClick={() => setVerificationStatus('unverified')}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
+                aria-pressed={verificationStatus === 'unverified'}
+                className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center text-xs transition-colors ${
                   verificationStatus === 'unverified'
                     ? 'border-amber-500/60 bg-amber-500/10 text-amber-300 font-semibold'
-                    : 'border-slate-800 bg-slate-950 text-slate-400 hover:bg-slate-900'
+                    : 'border-ink-700 bg-ink-950 text-ink-300 hover:border-ink-600 hover:bg-ink-850'
                 }`}
               >
                 <ShieldAlert className="h-5 w-5 mb-1 text-amber-400" />
@@ -125,10 +127,11 @@ function FoodVerifyForm({
               <button
                 type="button"
                 onClick={() => setVerificationStatus('rejected')}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
+                aria-pressed={verificationStatus === 'rejected'}
+                className={`flex flex-col items-center justify-center rounded-lg border p-3 text-center text-xs transition-colors ${
                   verificationStatus === 'rejected'
                     ? 'border-rose-500/60 bg-rose-500/10 text-rose-300 font-semibold'
-                    : 'border-slate-800 bg-slate-950 text-slate-400 hover:bg-slate-900'
+                    : 'border-ink-700 bg-ink-950 text-ink-300 hover:border-ink-600 hover:bg-ink-850'
                 }`}
               >
                 <AlertTriangle className="h-5 w-5 mb-1 text-rose-400" />
@@ -140,10 +143,11 @@ function FoodVerifyForm({
           {verificationStatus === 'verified' && (
             <>
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label htmlFor="foodverifymodal-field-1" className="field-label">
                   Authoritative Data Source
                 </label>
                 <select
+            id="foodverifymodal-field-1"
                   value={dataSource}
                   onChange={(e) =>
                     setDataSource(
@@ -153,7 +157,7 @@ function FoodVerifyForm({
                         | 'manufacturer_label'
                     )
                   }
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-teal-500 focus:outline-none"
+                  className="input"
                 >
                   <option value="usda_fdc">USDA FoodData Central</option>
                   <option value="manufacturer_label">
@@ -164,15 +168,16 @@ function FoodVerifyForm({
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
+                <label htmlFor="foodverifymodal-field-2" className="field-label">
                   Source Identification (e.g. FDC ID)
                 </label>
                 <input
+            id="foodverifymodal-field-2"
                   type="text"
                   value={sourceId}
                   onChange={(e) => setSourceId(e.target.value)}
                   placeholder="e.g. 171265"
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white placeholder-slate-600 focus:border-teal-500 focus:outline-none font-mono"
+                  className="input font-mono"
                 />
               </div>
             </>
@@ -180,12 +185,12 @@ function FoodVerifyForm({
         </div>
       )}
 
-      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+      <div className="form-actions">
         <button
           type="button"
           onClick={onClose}
           disabled={isSubmitting}
-          className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-slate-300 hover:bg-slate-800 transition-colors"
+          className="btn btn-secondary"
         >
           Cancel
         </button>
@@ -193,9 +198,9 @@ function FoodVerifyForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-2 font-semibold text-slate-950 hover:brightness-110 shadow-lg shadow-teal-500/20 disabled:opacity-50 transition-all"
+            className="btn btn-primary"
           >
-            {isSubmitting ? 'Saving...' : 'Update Status'}
+            {isSubmitting ? 'Saving…' : 'Update Status'}
           </button>
         )}
       </div>

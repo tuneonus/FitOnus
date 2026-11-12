@@ -33,31 +33,14 @@ export function EmptyState({
 
   return (
     <View style={[styles.container, { paddingVertical: compact ? 24 : 48 }, style]}>
-      <View style={[styles.iconBox, { backgroundColor: colors.surface2 }]}>
-        <Icon size={26} color={colors.ink} />
+      <View style={[styles.iconBox, { backgroundColor: colors.accentSoft }]}>
+        <Icon size={24} color={colors.accentStrong} />
       </View>
 
-      <Text
-        accessibilityRole="header"
-        style={[
-          styles.title,
-          appearance === 'premium' && premium.type.title,
-          { color: colors.ink },
-        ]}
-      >
+      <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
         {title}
       </Text>
-      {textBody ? (
-        <Text
-          style={[
-            styles.body,
-            appearance === 'premium' && premium.type.body,
-            { color: colors.muted },
-          ]}
-        >
-          {textBody}
-        </Text>
-      ) : null}
+      {textBody ? <Text style={[styles.body, { color: colors.muted }]}>{textBody}</Text> : null}
 
       {actionLabel && onAction ? (
         appearance === 'premium' ? (
@@ -79,25 +62,25 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 56,
     height: 56,
-    borderRadius: 18,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   title: {
+    ...premium.type.cardTitle,
     fontSize: 17,
     fontWeight: '700',
     textAlign: 'center',
-    letterSpacing: -0.2,
   },
   body: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...premium.type.bodySm,
     textAlign: 'center',
     marginTop: 6,
-    maxWidth: 280,
+    maxWidth: 300,
   },
   actionButton: {
     marginTop: 20,
+    alignSelf: 'center',
   },
 });

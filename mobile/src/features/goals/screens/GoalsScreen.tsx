@@ -52,8 +52,8 @@ export function GoalsScreen() {
         <RefreshControl
           refreshing={isRefreshing}
           onRefresh={onRefresh}
-          tintColor={colors.accent}
-          colors={[colors.accent]}
+          tintColor={colors.accentStrong}
+          colors={[colors.accentStrong]}
         />
       }
     >
@@ -263,7 +263,7 @@ function HabitRow({ habit, onToggle }: { habit: Habit; onToggle: () => void }) {
     >
       <View style={styles.habitCheckIcon}>
         {habit.isCompletedToday ? (
-          <CheckCircle2 size={22} color={colors.accent} />
+          <CheckCircle2 size={22} color={colors.accentStrong} />
         ) : (
           <Circle size={22} color={colors.muted} />
         )}
@@ -288,7 +288,7 @@ function HabitRow({ habit, onToggle }: { habit: Habit; onToggle: () => void }) {
 
       {habit.currentStreak > 0 && (
         <View style={[styles.streakBadge, { backgroundColor: colors.surface2 }]}>
-          <Flame size={13} color={colors.accent} />
+          <Flame size={13} color={colors.accentStrong} />
           <Text style={[styles.streakText, { color: colors.ink }]}>{habit.currentStreak}</Text>
         </View>
       )}

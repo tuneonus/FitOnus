@@ -1,17 +1,12 @@
 'use client';
 
 import React from 'react';
-import {
-  Dumbbell,
-  Edit2,
-  Trash2,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { Dumbbell, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { TablePagination } from '@/components/ui/TablePagination';
 import type { Exercise } from '../types';
 import type { PaginationMeta } from '@/types';
 
@@ -56,164 +51,131 @@ export function ExercisesTable({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm overflow-hidden">
+    <div className="table-shell">
       {isLoading ? (
         <div className="flex h-80 items-center justify-center">
-          <LoadingSpinner size="lg" label="Loading exercises catalog..." />
+          <LoadingSpinner size="lg" label="Loading exercises…" />
         </div>
       ) : error ? (
-        <div className="p-8 text-center text-rose-400">
-          <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-rose-500" />
-          <p className="text-sm font-semibold">{error}</p>
+        <div className="p-4 sm:p-6">
+          <ErrorState title="Couldn't load exercises" message={error} compact />
         </div>
       ) : exercises.length === 0 ? (
         <EmptyState
-          icon={<Dumbbell className="h-6 w-6" />}
+          bare
+          icon={<Dumbbell />}
           title="No exercises match your criteria"
           description="Try adjusting your search query or filter settings to locate catalog exercises."
         />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="table-scroll">
+          <table className="data-table min-w-[900px]">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400">
-                <th className="py-3.5 px-6 font-semibold uppercase tracking-wider">Exercise</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Category</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Primary Muscle</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Equipment</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Difficulty</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Type</th>
-                <th className="py-3.5 px-6 font-semibold uppercase tracking-wider text-right">Actions</th>
+              <tr>
+                <th scope="col" className="pl-5">Exercise</th>
+                <th scope="col">Category</th>
+                <th scope="col">Primary muscle</th>
+                <th scope="col">Equipment</th>
+                <th scope="col">Difficulty</th>
+                <th scope="col">Type</th>
+                <th scope="col" className="pr-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {exercises.map((ex) => (
-                <tr
-                  key={ex.id}
-                  className="hover:bg-slate-800/30 transition-colors"
-                >
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-teal-400 font-bold border border-slate-700/60">
-                        <Dumbbell className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-white">{ex.name}</div>
-                        <div className="text-[11px] text-slate-400 line-clamp-1 max-w-xs">
-                          {ex.description || 'No description provided'}
+            <tbody>
+              {exercises.map((ex) => {
+                const isCustom = ex.isCustom || !ex.isSystem;
+                const isProtected = isProtectedExercise(ex.id);
+                return (
+                  <tr key={ex.id}>
+                    <td className="pl-5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="avatar h-9 w-9 text-ink-300">
+                          <Dumbbell className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="max-w-[280px] truncate font-medium text-white">{ex.name}</p>
+                          <p className="max-w-[280px] truncate text-xs text-ink-400">
+                            {ex.description || 'No description provided'}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 capitalize">
-                    <span className="rounded-md bg-slate-800 px-2 py-0.5 text-slate-300 font-medium">
-                      {ex.category}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 capitalize font-medium text-slate-200">
-                    {ex.primaryMuscles && ex.primaryMuscles.length > 0
-                      ? ex.primaryMuscles.join(', ')
-                      : ex.primaryMuscle || '—'}
-                  </td>
-                  <td className="py-4 px-4 capitalize text-slate-400">
-                    {ex.equipment}
-                  </td>
-                  <td className="py-4 px-4">
-                    <Badge variant={getDifficultyVariant(ex.difficulty)} size="sm">
-                      {ex.difficulty}
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span
-                        className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${
-                          ex.isCustom || !ex.isSystem
-                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        }`}
-                      >
-                        {ex.isCustom || !ex.isSystem ? 'Custom' : 'System'}
-                      </span>
-                      {ex.isCompound && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                          Compound
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => onEditExercise(ex)}
-                        title="Edit Exercise"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onDeleteExercise(ex)}
-                        disabled={isProtectedExercise(ex.id)}
-                        title={
-                          isProtectedExercise(ex.id)
-                            ? 'Foundational system exercises are protected and cannot be deleted'
-                            : 'Delete Exercise'
-                        }
-                        className={`rounded-lg p-1.5 transition-colors ${
-                          isProtectedExercise(ex.id)
-                            ? 'text-slate-600 cursor-not-allowed opacity-40'
-                            : 'text-slate-400 hover:bg-rose-950/40 hover:text-rose-400'
-                        }`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <Badge variant="neutral" size="sm" plain>
+                        {ex.category}
+                      </Badge>
+                    </td>
+                    <td className="capitalize text-ink-100">
+                      {ex.primaryMuscles && ex.primaryMuscles.length > 0
+                        ? ex.primaryMuscles.join(', ')
+                        : ex.primaryMuscle || '—'}
+                    </td>
+                    <td className="capitalize text-ink-300">{ex.equipment}</td>
+                    <td>
+                      <Badge variant={getDifficultyVariant(ex.difficulty)} size="sm">
+                        {ex.difficulty}
+                      </Badge>
+                    </td>
+                    <td>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant={isCustom ? 'admin' : 'active'} size="sm" plain>
+                          {isCustom ? 'Custom' : 'System'}
+                        </Badge>
+                        {ex.isCompound && (
+                          <Badge variant="info" size="sm" plain>
+                            Compound
+                          </Badge>
+                        )}
+                      </div>
+                    </td>
+                    <td className="pr-5 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onEditExercise(ex)}
+                          title="Edit exercise"
+                          aria-label={`Edit ${ex.name}`}
+                          className="btn btn-ghost btn-icon btn-sm"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteExercise(ex)}
+                          disabled={isProtected}
+                          title={
+                            isProtected
+                              ? 'Foundational system exercises are protected and cannot be deleted'
+                              : 'Delete exercise'
+                          }
+                          aria-label={isProtected ? `${ex.name} is protected` : `Delete ${ex.name}`}
+                          className="btn btn-danger-ghost btn-icon btn-sm text-ink-400"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Pagination Footer */}
       {!isLoading && !error && exercises.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800 bg-slate-950/30 px-6 py-4">
-          <div className="flex items-center gap-3 text-xs text-slate-400">
-            <span>Show</span>
-            <select
-              value={limit}
-              onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-xs text-white focus:border-teal-500 focus:outline-none"
-            >
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-            <span>of {meta.total} exercises</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onPageChange(meta.page - 1)}
-              disabled={meta.page <= 1}
-              className="rounded-lg border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="text-xs text-slate-400 px-2">
-              Page {meta.page} of {meta.totalPages || 1}
-            </span>
-            <button
-              onClick={() => onPageChange(meta.page + 1)}
-              disabled={meta.page >= (meta.totalPages || 1)}
-              className="rounded-lg border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          page={meta.page}
+          totalPages={meta.totalPages}
+          total={meta.total}
+          pageSize={meta.limit || limit}
+          onPageChange={onPageChange}
+          itemLabel="exercises"
+          limit={limit}
+          limitOptions={[10, 25, 50]}
+          onLimitChange={onLimitChange}
+        />
       )}
     </div>
   );
 }
-

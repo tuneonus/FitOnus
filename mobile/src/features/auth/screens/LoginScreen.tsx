@@ -7,6 +7,7 @@ import { Button } from '../../../shared/components/ui/Button';
 import { TextField } from '../../../shared/components/ui/TextField';
 import { StatusBanner } from '../../../shared/components/ui/StatusBanner';
 import { PasswordField } from '../components/PasswordField';
+import { AuthHeader, AuthSwitchPrompt } from '../components/AuthHeader';
 import { authService } from '../services/authService';
 import { isValidEmail } from '../utils/validation';
 import { useTheme } from '@/hooks/use-theme';
@@ -63,10 +64,10 @@ export function LoginScreen() {
   return (
     <Screen showBack={true} keyboardAvoiding={true}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.ink }]}>Welcome back</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Log in to pick up where your coach left off.
-        </Text>
+        <AuthHeader
+          title="Welcome back"
+          subtitle="Log in to pick up your training, meals and progress."
+        />
 
         {authError ? (
           <StatusBanner
@@ -98,10 +99,12 @@ export function LoginScreen() {
         </View>
 
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => navigate('forgotPassword')}
           style={styles.forgotLink}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.forgotText, { color: colors.ink }]}>
+          <Text style={[styles.forgotText, { color: colors.accentStrong }]}>
             Forgot password?
           </Text>
         </TouchableOpacity>
@@ -115,15 +118,11 @@ export function LoginScreen() {
           style={styles.loginButton}
         />
 
-        {/* Sign up prompt */}
-        <View style={styles.signupPrompt}>
-          <Text style={{ color: colors.muted }}>Don’t have an account? </Text>
-          <TouchableOpacity onPress={() => navigate('signup')}>
-            <Text style={[styles.signupLink, { color: colors.ink }]}>
-              Create one
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <AuthSwitchPrompt
+          prompt="Don’t have an account?"
+          action="Create one"
+          onPress={() => navigate('signup')}
+        />
       </View>
     </Screen>
   );
@@ -131,74 +130,25 @@ export function LoginScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 8,
     paddingTop: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    marginTop: 6,
   },
   banner: {
     marginTop: 16,
   },
   inputsSection: {
-    marginTop: 20,
-    gap: 12,
+    marginTop: 24,
+    gap: 10,
   },
   forgotLink: {
     alignSelf: 'flex-end',
-    marginTop: 10,
-    paddingVertical: 4,
+    marginTop: 6,
+    paddingVertical: 6,
   },
   forgotText: {
-    fontSize: 13.5,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
   loginButton: {
     marginTop: 20,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    paddingHorizontal: 12,
-    fontSize: 12,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  socialButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  socialText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  signupPrompt: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 28,
-    marginBottom: 16,
-  },
-  signupLink: {
-    fontWeight: '700',
-    textDecorationLine: 'underline',
   },
 });

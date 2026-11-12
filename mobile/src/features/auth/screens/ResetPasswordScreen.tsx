@@ -10,6 +10,7 @@ import { PasswordStrength } from '../components/PasswordStrength';
 import { authService } from '../services/authService';
 import { passwordStrength } from '../utils/validation';
 import { useTheme } from '@/hooks/use-theme';
+import { AuthHeader } from '../components/AuthHeader';
 
 export function ResetPasswordScreen() {
   const { colors } = useTheme();
@@ -50,12 +51,10 @@ export function ResetPasswordScreen() {
   return (
     <Screen showBack={true} keyboardAvoiding={true}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.ink }]}>
-          Choose a new password
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>
-          You’ll use it to log in on all your devices.
-        </Text>
+        <AuthHeader
+          title="Choose a new password"
+          subtitle="You’ll use it to log in on all your devices."
+        />
 
         {apiError ? (
           <View style={styles.bannerWrap}>
@@ -120,17 +119,7 @@ export function ResetPasswordScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 8,
     paddingTop: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    marginTop: 6,
   },
   bannerWrap: {
     marginTop: 16,

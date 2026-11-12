@@ -8,6 +8,7 @@ import { TextField } from '../../../shared/components/ui/TextField';
 import { authService } from '../services/authService';
 import { isValidEmail } from '../utils/validation';
 import { useTheme } from '@/hooks/use-theme';
+import { AuthHeader } from '../components/AuthHeader';
 
 export function ForgotPasswordScreen() {
   const { colors } = useTheme();
@@ -40,7 +41,7 @@ export function ForgotPasswordScreen() {
           <View
             style={[
               styles.iconCircle,
-              { backgroundColor: 'rgba(200, 245, 60, 0.25)' },
+              { backgroundColor: colors.accentSoft },
             ]}
           >
             <MailCheck size={32} color={colors.accentStrong} />
@@ -77,10 +78,10 @@ export function ForgotPasswordScreen() {
   return (
     <Screen showBack={true} keyboardAvoiding={true}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.ink }]}>Reset password</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Enter your email and we’ll send you a secure link.
-        </Text>
+        <AuthHeader
+          title="Reset password"
+          subtitle="Enter the email on your account and we’ll send you a secure reset link."
+        />
 
         <TextField
           label="Email"
@@ -108,23 +109,13 @@ export function ForgotPasswordScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 8,
     paddingTop: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    marginTop: 6,
   },
   input: {
     marginTop: 24,
   },
   sendButton: {
-    marginTop: 24,
+    marginTop: 20,
   },
   sentContainer: {
     alignItems: 'center',
@@ -132,18 +123,19 @@ const styles = StyleSheet.create({
     paddingTop: 48,
   },
   iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
   },
   titleCenter: {
-    fontSize: 26,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: '700',
     textAlign: 'center',
-    letterSpacing: -0.4,
+    letterSpacing: -0.8,
   },
   subtitleCenter: {
     fontSize: 15,

@@ -42,7 +42,7 @@ export function RecoveryScreen() {
             void dashboard.refetch();
             void history.refetch();
           }}
-          tintColor={colors.accent}
+          tintColor={colors.accentStrong}
         />
       }
     >

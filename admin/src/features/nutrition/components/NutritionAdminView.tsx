@@ -1,16 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Utensils,
-  CheckCircle,
-  Lock,
-  Droplets,
-  AlertTriangle,
-} from 'lucide-react';
+import { Utensils, CheckCircle, Lock, Droplets } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { StatsCard } from '@/components/ui/StatsCard';
-import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/context/ToastContext';
 import { FoodFilterBar } from './FoodFilterBar';
 import { FoodsTable } from './FoodsTable';
@@ -166,50 +160,51 @@ export function NutritionAdminView() {
 
   return (
     <AdminLayout
-      title="Nutrition & Food Catalog"
-      subtitle="Manage verified system foods, physical serving contracts, and catalog statistics"
+      title="Nutrition"
+      subtitle="Manage the verified food catalog, serving definitions and nutrition logging statistics."
       onRefresh={handleRefreshAll}
       isRefreshing={isRefreshingFoods}
     >
       <div className="space-y-6">
-        {/* Platform Nutrition KPI Stats Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section aria-label="Nutrition metrics" className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4 sm:gap-4">
           <StatsCard
-            title="Verified Foods"
+            title="Verified foods"
             value={stats ? stats.totalVerifiedFoods : '—'}
             subtitle="Global authoritative catalog"
-            icon={<CheckCircle className="h-5 w-5" />}
+            icon={<CheckCircle />}
             accent="teal"
           />
 
           <StatsCard
-            title="Custom Foods"
+            title="Custom foods"
             value={stats ? stats.totalCustomFoods : '—'}
             subtitle="User-scoped private entries"
-            icon={<Lock className="h-5 w-5" />}
+            icon={<Lock />}
             accent="purple"
           />
 
           <StatsCard
-            title="Meals Logged"
+            title="Meals logged"
             value={stats ? stats.totalMealsLogged : '—'}
             subtitle={
               stats
-                ? `${stats.totalMealItemsLogged} food items snapshot`
+                ? `${stats.totalMealItemsLogged.toLocaleString()} food items logged`
                 : 'Aggregated meal logs'
             }
-            icon={<Utensils className="h-5 w-5" />}
+            icon={<Utensils />}
             accent="emerald"
           />
 
           <StatsCard
-            title="Hydration Logs"
+            title="Hydration logs"
             value={stats ? stats.totalWaterLogs : '—'}
             subtitle="Total water entries logged"
-            icon={<Droplets className="h-5 w-5" />}
+            icon={<Droplets />}
             accent="cyan"
           />
-        </div>
+        </section>
+
+        <div className="space-y-4">
 
         {/* Filter and Action Bar */}
         <FoodFilterBar
@@ -257,6 +252,7 @@ export function NutritionAdminView() {
           onVerifyFood={handleOpenVerify}
           onDeleteFood={handleOpenDelete}
         />
+        </div>
 
         {/* Create / Edit Food Modal */}
         {isFoodModalOpen && (
@@ -292,41 +288,20 @@ export function NutritionAdminView() {
 
         {/* Soft-Delete Confirmation Modal */}
         {foodToDelete && (
-          <Modal
+          <ConfirmDialog
             isOpen={Boolean(foodToDelete)}
             onClose={() => setFoodToDelete(null)}
-            title="Soft-Delete Food Item"
-            description="Are you sure you want to delete this food item from the catalog?"
-            maxWidth="sm"
+            onConfirm={handleDeleteConfirm}
+            isBusy={isDeletingFood}
+            title="Delete food item?"
+            description="The item is soft-deleted from the catalog."
+            confirmLabel="Delete food"
+            busyLabel="Deleting…"
           >
-            <div className="space-y-4 text-xs">
-              <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 flex items-start gap-2 text-rose-300">
-                <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>
-                  Deleting <strong>{foodToDelete.name}</strong> will remove it from active catalog search results. Historical meals already containing this food will preserve their frozen nutrition snapshot.
-                </span>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setFoodToDelete(null)}
-                  disabled={isDeletingFood}
-                  className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 font-medium text-slate-300 hover:bg-slate-800 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteConfirm}
-                  disabled={isDeletingFood}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 font-semibold text-white shadow-md shadow-rose-600/20 transition-all disabled:opacity-50"
-                >
-                  {isDeletingFood ? 'Deleting...' : 'Confirm Soft-Delete'}
-                </button>
-              </div>
-            </div>
-          </Modal>
+            Deleting <strong className="font-semibold text-white">{foodToDelete.name}</strong> removes it
+            from catalog search results. Historical meals that contain this food keep their frozen
+            nutrition snapshot.
+          </ConfirmDialog>
         )}
       </div>
     </AdminLayout>

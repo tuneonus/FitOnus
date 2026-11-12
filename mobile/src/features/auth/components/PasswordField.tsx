@@ -37,6 +37,8 @@ export function PasswordField({
       autoCapitalize="none"
       trailing={
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={visible ? 'Hide password' : 'Show password'}
           onPress={() => setVisible((v) => !v)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={styles.eyeButton}

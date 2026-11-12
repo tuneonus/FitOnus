@@ -20,7 +20,7 @@ const button = ({ children, title, onPress }: any) => {
 };
 const actions = new Map<string, () => unknown>();
 stub('react-native', {
-  View: host('div'), Text: host('span'), ScrollView: host('section'),
+  View: host('div'), Text: host('span'), ScrollView: host('section'), Image: host('img'),
   TouchableOpacity: button, Pressable: button,
   StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
 });

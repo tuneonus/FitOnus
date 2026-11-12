@@ -6,24 +6,28 @@ interface LoadingSpinnerProps {
   label?: string;
 }
 
-export function LoadingSpinner({
-  size = 'md',
-  className = '',
-  label,
-}: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = 'md', className = '', label }: LoadingSpinnerProps) {
   const sizeMap = {
-    sm: 'w-4 h-4 border-2',
-    md: 'w-6 h-6 border-2',
-    lg: 'w-10 h-10 border-3',
+    sm: 'h-4 w-4 border-2',
+    md: 'h-6 w-6 border-2',
+    lg: 'h-8 w-8 border-[3px]',
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
+    <div
+      role="status"
+      aria-live="polite"
+      className={`flex flex-col items-center justify-center gap-3 ${className}`}
+    >
       <div
-        className={`${sizeMap[size]} border-teal-500/20 border-t-teal-400 rounded-full animate-spin`}
+        aria-hidden="true"
+        className={`${sizeMap[size]} animate-spin rounded-full border-ink-700 border-t-brand-500`}
       />
-      {label && <p className="text-xs text-slate-400 font-medium">{label}</p>}
+      {label ? (
+        <p className="text-xs font-medium text-ink-400">{label}</p>
+      ) : (
+        <span className="sr-only">Loading</span>
+      )}
     </div>
   );
 }
-

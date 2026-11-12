@@ -1,19 +1,11 @@
 'use client';
 
 import React from 'react';
-import {
-  Trophy,
-  Edit2,
-  Archive,
-  Send,
-  AlertTriangle,
-  Award,
-  CheckCircle2,
-  Calendar,
-} from 'lucide-react';
+import { Trophy, Pencil, Archive, Send, Award, CheckCircle2, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import type { Challenge } from '../types';
 import {
   CADENCE_LABELS,
@@ -43,174 +35,154 @@ export function ChallengesTable({
   const getStatusBadge = (status: Challenge['status']) => {
     switch (status) {
       case 'published':
-        return <Badge variant="active">Published</Badge>;
+        return <Badge variant="active" size="sm">Published</Badge>;
       case 'draft':
-        return <Badge variant="pending">Draft</Badge>;
+        return <Badge variant="pending" size="sm">Draft</Badge>;
       case 'archived':
-        return <Badge variant="neutral">Archived</Badge>;
+        return <Badge variant="neutral" size="sm">Archived</Badge>;
       default:
-        return <Badge variant="neutral">{status}</Badge>;
+        return <Badge variant="neutral" size="sm">{status}</Badge>;
     }
   };
 
   const getCadenceBadge = (cadence: Challenge['cadence']) => {
     switch (cadence) {
       case 'daily':
-        return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+        return 'bg-cyan-500/10 text-cyan-300 ring-cyan-500/25';
       case 'weekly':
-        return 'bg-teal-500/10 text-teal-300 border border-teal-500/20';
+        return 'bg-brand-500/10 text-brand-300 ring-brand-500/25';
       case 'monthly':
-        return 'bg-purple-500/10 text-purple-300 border border-purple-500/20';
+        return 'bg-purple-500/10 text-purple-300 ring-purple-500/25';
       default:
-        return 'bg-slate-800 text-slate-300 border border-slate-700';
+        return 'bg-ink-800 text-ink-300 ring-ink-700';
     }
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm overflow-hidden">
+    <div className="table-shell">
       {isLoading ? (
         <div className="flex h-80 items-center justify-center">
-          <LoadingSpinner size="lg" label="Loading challenges catalog..." />
+          <LoadingSpinner size="lg" label="Loading challenges…" />
         </div>
       ) : error ? (
-        <div className="p-8 text-center text-rose-400">
-          <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-rose-500" />
-          <p className="text-sm font-semibold">{error}</p>
+        <div className="p-4 sm:p-6">
+          <ErrorState title="Couldn't load challenges" message={error} compact />
         </div>
       ) : challenges.length === 0 ? (
         <EmptyState
-          icon={<Trophy className="h-6 w-6" />}
+          bare
+          icon={<Trophy />}
           title="No challenges found"
           description="Create your first community or system challenge to start rewarding member progress."
         />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="table-scroll">
+          <table className="data-table min-w-[980px]">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400">
-                <th className="py-3.5 px-6 font-semibold uppercase tracking-wider">Challenge</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Cadence</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Goal & Metric</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Rewards</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Auto-Enroll</th>
-                <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Status</th>
-                <th className="py-3.5 px-6 font-semibold uppercase tracking-wider text-right">Actions</th>
+              <tr>
+                <th scope="col" className="pl-5">Challenge</th>
+                <th scope="col">Cadence</th>
+                <th scope="col">Goal</th>
+                <th scope="col">Rewards</th>
+                <th scope="col">Enrollment</th>
+                <th scope="col">Status</th>
+                <th scope="col" className="pr-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody>
               {challenges.map((c) => {
                 const isActing = actionInProgressId === c.id;
                 return (
-                  <tr key={c.id} className="hover:bg-slate-800/30 transition-colors">
-                    {/* Challenge Info */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                  <tr key={c.id}>
+                    <td className="pl-5">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <span className="avatar mt-0.5 h-9 w-9 text-ink-300">
                           <Trophy className="h-4 w-4" />
-                        </div>
+                        </span>
                         <div className="min-w-0">
-                          <p className="font-semibold text-white truncate max-w-xs">{c.title}</p>
-                          <p className="text-[11px] text-slate-400 font-mono truncate max-w-xs">{c.slug}</p>
-                          <p className="text-[11px] text-slate-500 line-clamp-1 max-w-sm mt-0.5">
-                            {c.description}
-                          </p>
+                          <p className="max-w-xs truncate font-medium text-white">{c.title}</p>
+                          <p className="max-w-xs truncate font-mono text-[11px] text-ink-500">{c.slug}</p>
+                          <p className="mt-0.5 line-clamp-1 max-w-sm text-xs text-ink-400">{c.description}</p>
                         </div>
                       </div>
                     </td>
 
-                    {/* Cadence */}
-                    <td className="py-4 px-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ${getCadenceBadge(
-                          c.cadence,
-                        )}`}
+                        className={`inline-flex h-5 items-center gap-1 rounded-md px-1.5 text-[11px] font-medium ring-1 ring-inset ${getCadenceBadge(c.cadence)}`}
                       >
                         <Calendar className="h-3 w-3" />
                         {CADENCE_LABELS[c.cadence] || c.cadence}
                       </span>
                     </td>
 
-                    {/* Goal & Metric */}
-                    <td className="py-4 px-4">
-                      <div>
-                        <span className="font-semibold text-white">
-                          {c.targetValue}{' '}
-                          <span className="text-[11px] font-normal text-slate-400">
-                            {METRIC_TYPE_LABELS[c.metricType] || c.metricType}
-                          </span>
+                    <td>
+                      <p className="whitespace-nowrap">
+                        <span className="font-semibold tabular-nums text-white">{c.targetValue}</span>{' '}
+                        <span className="text-xs text-ink-400">
+                          {METRIC_TYPE_LABELS[c.metricType] || c.metricType}
                         </span>
-                        <div className="text-[11px] text-slate-500 capitalize">
-                          {CATEGORY_LABELS[c.category] || c.category}
-                        </div>
-                      </div>
+                      </p>
+                      <p className="text-xs capitalize text-ink-500">{CATEGORY_LABELS[c.category] || c.category}</p>
                     </td>
 
-                    {/* Rewards */}
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="inline-flex items-center gap-1 font-semibold text-amber-400">
-                          <Award className="h-3.5 w-3.5" />
-                          {c.rewardPoints} pts
-                        </span>
-                        {c.rewardBadgeId && (
-                          <span className="text-[10px] text-purple-400 font-mono">Badge linked</span>
-                        )}
-                      </div>
+                    <td className="whitespace-nowrap">
+                      <p className="inline-flex items-center gap-1 font-medium tabular-nums text-ink-100">
+                        <Award className="h-3.5 w-3.5 text-amber-300" />
+                        {c.rewardPoints} pts
+                      </p>
+                      {c.rewardBadgeId && <p className="text-xs text-ink-400">Badge linked</p>}
                     </td>
 
-                    {/* Auto-Enroll */}
-                    <td className="py-4 px-4 whitespace-nowrap">
+                    <td className="whitespace-nowrap">
                       {c.autoEnroll ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-300">
                           <CheckCircle2 className="h-3.5 w-3.5" />
-                          Yes
+                          Auto-enroll
                         </span>
                       ) : (
-                        <span className="text-[11px] text-slate-500">Manual</span>
+                        <span className="text-xs text-ink-400">Manual</span>
                       )}
                     </td>
 
-                    {/* Status */}
-                    <td className="py-4 px-4 whitespace-nowrap">{getStatusBadge(c.status)}</td>
+                    <td className="whitespace-nowrap">{getStatusBadge(c.status)}</td>
 
-                    {/* Actions */}
-                    <td className="py-4 px-6 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {/* Edit */}
-                        <button
-                          type="button"
-                          onClick={() => onEdit(c)}
-                          disabled={isActing}
-                          title="Edit Challenge"
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors disabled:opacity-40"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </button>
-
-                        {/* Publish (if draft) */}
+                    <td className="whitespace-nowrap pr-5 text-right">
+                      <div className="flex items-center justify-end gap-1">
                         {c.status === 'draft' && (
                           <button
                             type="button"
                             onClick={() => onPublish(c)}
                             disabled={isActing}
-                            title="Publish Challenge"
-                            className="inline-flex items-center gap-1 rounded-lg bg-teal-500/10 border border-teal-500/20 px-2 py-1 text-[11px] font-medium text-teal-300 hover:bg-teal-500/20 transition-colors disabled:opacity-40"
+                            title="Publish challenge"
+                            className="btn btn-secondary btn-sm"
                           >
-                            <Send className="h-3 w-3" />
-                            <span>Publish</span>
+                            <Send className="h-3.5 w-3.5" />
+                            Publish
                           </button>
                         )}
 
-                        {/* Archive (if not archived) */}
+                        <button
+                          type="button"
+                          onClick={() => onEdit(c)}
+                          disabled={isActing}
+                          title="Edit challenge"
+                          aria-label={`Edit ${c.title}`}
+                          className="btn btn-ghost btn-icon btn-sm"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+
                         {c.status !== 'archived' && (
                           <button
                             type="button"
                             onClick={() => onArchive(c)}
                             disabled={isActing}
-                            title="Archive Challenge"
-                            className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-500/10 hover:text-rose-400 transition-colors disabled:opacity-40"
+                            title="Archive challenge"
+                            aria-label={`Archive ${c.title}`}
+                            className="btn btn-danger-ghost btn-icon btn-sm text-ink-400"
                           >
-                            <Archive className="h-3.5 w-3.5" />
+                            <Archive className="h-4 w-4" />
                           </button>
                         )}
                       </div>
@@ -225,4 +197,3 @@ export function ChallengesTable({
     </div>
   );
 }
-

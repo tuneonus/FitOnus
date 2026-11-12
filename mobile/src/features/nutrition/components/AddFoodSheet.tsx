@@ -143,7 +143,7 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
       setForm({ name: '', kcal: '', protein: '', carbs: '', fat: '' });
       close();
     } catch {
-      showToast({ message: 'Couldn’t save food. Please try again.' });
+      showToast({ tone: 'error', message: 'Couldn’t save food. Please try again.' });
     } finally {
       saveLock.current = false;
       setIsSaving(false);

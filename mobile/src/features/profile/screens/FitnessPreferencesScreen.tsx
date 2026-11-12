@@ -76,7 +76,7 @@ export function FitnessPreferencesScreen() {
 
   const save = async () => {
     if (isAuthenticated && !serverProfile) {
-      showToast({ message: 'Your profile could not be loaded. Please try again before saving.' });
+      showToast({ tone: 'error', message: 'Your profile could not be loaded. Please try again before saving.' });
       return;
     }
     if (isAuthenticated && serverProfile) {
@@ -97,7 +97,7 @@ export function FitnessPreferencesScreen() {
           showToast({ message: 'Preferences updated elsewhere. Refreshed latest data.' });
           await refetch();
         } else {
-          showToast({ message: err.message || 'Failed to save preferences' });
+          showToast({ tone: 'error', message: err.message || 'Failed to save preferences' });
         }
       }
     } else {
@@ -117,7 +117,7 @@ export function FitnessPreferencesScreen() {
       }
       contentContainerStyle={styles.container}
     >
-      <Group title="Main goal" color={colors.muted}>
+      <Group title="Main goal" color={colors.ink}>
         {fitnessGoals.map((g) => (
           <Chip
             key={g.value}
@@ -128,7 +128,7 @@ export function FitnessPreferencesScreen() {
         ))}
       </Group>
 
-      <Group title="Experience" color={colors.muted}>
+      <Group title="Experience" color={colors.ink}>
         {experienceLevels.map((e) => (
           <Chip
             key={e.value}
@@ -139,7 +139,7 @@ export function FitnessPreferencesScreen() {
         ))}
       </Group>
 
-      <Group title="Where you train" color={colors.muted}>
+      <Group title="Where you train" color={colors.ink}>
         {workoutPlaces.map((w) => (
           <Chip
             key={w.value}
@@ -164,7 +164,7 @@ export function FitnessPreferencesScreen() {
         </View>
       </View>
 
-      <Group title="Session length" color={colors.muted}>
+      <Group title="Session length" color={colors.ink}>
         {durationOptions.map((m) => (
           <Chip
             key={m}
@@ -175,7 +175,7 @@ export function FitnessPreferencesScreen() {
         ))}
       </Group>
 
-      <Group title="Available equipment" color={colors.muted}>
+      <Group title="Available equipment" color={colors.ink}>
         {equipmentOptions.map((e) => (
           <Chip key={e} label={e} selected={d.equipment.includes(e)} onPress={() => toggleEq(e)} />
         ))}
@@ -194,8 +194,10 @@ const styles = StyleSheet.create({
   },
   groupTitle: {
     fontSize: 13,
-    fontWeight: '500',
-    paddingHorizontal: 4,
+    lineHeight: 18,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+    paddingHorizontal: 2,
   },
   chipsRow: {
     flexDirection: 'row',

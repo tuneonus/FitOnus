@@ -105,7 +105,7 @@ export function FoodDetailScreen() {
 
       popTo('nutrition');
     } catch {
-      showToast({ message: 'Couldn’t save this food. Please try again.' });
+      showToast({ tone: 'error', message: 'Couldn’t save this food. Please try again.' });
     } finally {
       saveLock.current = false;
       setSaving(false);
@@ -117,7 +117,7 @@ export function FoodDetailScreen() {
       <Screen title="Food details">
         {loading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-            <ActivityIndicator size="large" color={colors.accent} />
+            <ActivityIndicator size="large" color={colors.accentStrong} />
           </View>
         ) : (
           <EmptyState
@@ -199,7 +199,7 @@ export function FoodDetailScreen() {
           ) : null}
           {food.isVerified && (
             <View style={[styles.verifiedPill, { backgroundColor: colors.surface2 }]}>
-              <CheckCircle2 size={12} color={colors.accent} />
+              <CheckCircle2 size={12} color={colors.accentStrong} />
               <Text style={[styles.verifiedText, { color: colors.ink }]}>Verified food</Text>
             </View>
           )}

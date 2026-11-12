@@ -1,19 +1,11 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import {
-  Trophy,
-  Plus,
-  CheckCircle,
-  FileEdit,
-  Archive,
-  AlertTriangle,
-  Award,
-  Search,
-} from 'lucide-react';
+import { Trophy, Plus, CheckCircle, FileEdit, Archive, AlertTriangle, Award, Search, X } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { StatsCard } from '@/components/ui/StatsCard';
-import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { TabBar } from '@/components/ui/TabBar';
 import { useToast } from '@/context/ToastContext';
 import { useChallenges } from '../hooks/useChallenges';
 import { challengesApi } from '../api';
@@ -136,166 +128,145 @@ export function ChallengesAdminView() {
 
   return (
     <AdminLayout
-      title="Challenges & Gamification"
-      subtitle="Configure, evaluate, and monitor community fitness challenges and badge rewards"
+      title="Challenges"
+      subtitle="Configure community fitness challenges, badges and rewards."
       onRefresh={refresh}
       isRefreshing={isRefreshing}
     >
       <div className="space-y-6">
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab('challenges')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
-              activeTab === 'challenges'
-                ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Trophy className="h-4 w-4" />
-            <span>Challenges Catalog</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('badges')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
-              activeTab === 'badges'
-                ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Award className="h-4 w-4" />
-            <span>Badges & Rewards</span>
-          </button>
-        </div>
+        <TabBar
+          ariaLabel="Challenges sections"
+          active={activeTab}
+          onChange={setActiveTab}
+          tabs={[
+            { id: 'challenges', label: 'Challenges', icon: <Trophy /> },
+            { id: 'badges', label: 'Badges & rewards', icon: <Award /> },
+          ]}
+        />
 
         {activeTab === 'badges' ? (
           <BadgesCatalogCard />
         ) : (
           <>
-            {/* KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <section aria-label="Challenge metrics" className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4 sm:gap-4">
               <StatsCard
-                title="Total Challenges"
+                title="Total challenges"
                 value={stats.total.toString()}
                 subtitle="Configured in system"
-                icon={<Trophy className="h-5 w-5" />}
+                icon={<Trophy />}
                 accent="teal"
               />
               <StatsCard
-                title="Published Active"
+                title="Published"
                 value={stats.published.toString()}
                 subtitle="Available to members"
-                icon={<CheckCircle className="h-5 w-5" />}
+                icon={<CheckCircle />}
                 accent="emerald"
               />
               <StatsCard
-                title="Draft Challenges"
+                title="Drafts"
                 value={stats.draft.toString()}
                 subtitle="Awaiting publishing"
-                icon={<FileEdit className="h-5 w-5" />}
+                icon={<FileEdit />}
                 accent="amber"
               />
               <StatsCard
                 title="Archived"
                 value={stats.archived.toString()}
                 subtitle="Historical challenges"
-                icon={<Archive className="h-5 w-5" />}
+                icon={<Archive />}
                 accent="rose"
               />
-            </div>
+            </section>
 
-            {/* Action Error Banner */}
             {actionError && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3.5 text-xs text-rose-300">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
+              <div role="alert" className="alert alert-error items-center">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
                 <div className="flex-1">{actionError}</div>
                 <button
+                  type="button"
                   onClick={() => setActionError(null)}
-                  className="text-rose-400 hover:text-white"
+                  aria-label="Dismiss error"
+                  className="btn btn-ghost btn-icon btn-sm text-rose-300"
                 >
-                  ✕
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             )}
 
-            {/* Filter and Control Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
-              {/* Status Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                {(
-                  [
-                    { label: 'All', value: '' },
-                    { label: 'Published', value: 'published' },
-                    { label: 'Drafts', value: 'draft' },
-                    { label: 'Archived', value: 'archived' },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setStatusFilter(tab.value as ChallengeStatus | '')}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
-                      statusFilter === tab.value
-                        ? 'bg-teal-500/10 text-teal-300 border border-teal-500/20 shadow-sm'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Right Controls: Search + Cadence Filter + Create Button */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div className="relative sm:w-48">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search challenges..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800/90 pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
+            <div className="space-y-4">
+              <div className="toolbar">
+                <div className="segmented self-start overflow-x-auto" role="group" aria-label="Filter by status">
+                  {(
+                    [
+                      { label: 'All', value: '' },
+                      { label: 'Published', value: 'published' },
+                      { label: 'Drafts', value: 'draft' },
+                      { label: 'Archived', value: 'archived' },
+                    ] as const
+                  ).map((tab) => (
+                    <button
+                      key={tab.value}
+                      type="button"
+                      onClick={() => setStatusFilter(tab.value as ChallengeStatus | '')}
+                      data-active={statusFilter === tab.value}
+                      aria-pressed={statusFilter === tab.value}
+                      className="segmented-item whitespace-nowrap"
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
 
-                <select
-                  value={cadenceFilter}
-                  onChange={(e) => setCadenceFilter(e.target.value as ChallengeCadence | '')}
-                  className="rounded-xl border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-xs text-slate-200 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                >
-                  <option value="">All Cadences</option>
-                  {(Object.keys(CADENCE_LABELS) as ChallengeCadence[]).map((c) => (
-                    <option key={c} value={c}>
-                      {CADENCE_LABELS[c]}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center lg:ml-auto">
+                  <div className="relative min-w-0 sm:w-56">
+                    <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" />
+                    <label htmlFor="challenge-search" className="sr-only">Search challenges</label>
+                    <input
+                      id="challenge-search"
+                      type="search"
+                      placeholder="Search challenges…"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="input pl-9"
+                    />
+                  </div>
 
-                <button
-                  onClick={handleOpenCreate}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-4 py-1.5 text-xs font-semibold text-slate-950 hover:from-teal-400 hover:to-emerald-400 transition-all shadow-md shadow-teal-500/20 whitespace-nowrap"
-                >
-                  <Plus className="h-4 w-4 stroke-[2.5]" />
-                  <span>New Challenge</span>
-                </button>
+                  <label htmlFor="challenge-cadence" className="sr-only">Cadence</label>
+                  <select
+                    id="challenge-cadence"
+                    value={cadenceFilter}
+                    onChange={(e) => setCadenceFilter(e.target.value as ChallengeCadence | '')}
+                    className="input sm:w-40"
+                  >
+                    <option value="">All cadences</option>
+                    {(Object.keys(CADENCE_LABELS) as ChallengeCadence[]).map((c) => (
+                      <option key={c} value={c}>
+                        {CADENCE_LABELS[c]}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button type="button" onClick={handleOpenCreate} className="btn btn-primary">
+                    <Plus className="h-4 w-4" />
+                    New challenge
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Challenges Table */}
-            <ChallengesTable
-              challenges={filteredChallenges}
-              isLoading={isLoading}
-              error={error}
-              onEdit={handleOpenEdit}
-              onPublish={(c) => setChallengeToPublish(c)}
-              onArchive={(c) => setChallengeToArchive(c)}
-              actionInProgressId={actionInProgressId}
-            />
+              <ChallengesTable
+                challenges={filteredChallenges}
+                isLoading={isLoading}
+                error={error}
+                onEdit={handleOpenEdit}
+                onPublish={(c) => setChallengeToPublish(c)}
+                onArchive={(c) => setChallengeToArchive(c)}
+                actionInProgressId={actionInProgressId}
+              />
+            </div>
           </>
         )}
 
-        {/* Create / Edit Modal */}
         <ChallengeModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -303,73 +274,35 @@ export function ChallengesAdminView() {
           onSubmit={handleSaveChallenge}
         />
 
-        {/* Publish Confirmation Modal */}
-        <Modal
+        <ConfirmDialog
           isOpen={Boolean(challengeToPublish)}
           onClose={() => setChallengeToPublish(null)}
-          title="Publish Challenge"
-          description="Are you sure you want to publish this challenge? It will immediately become eligible for active occurrence windows and member participation."
-          maxWidth="sm"
+          onConfirm={handleConfirmPublish}
+          isBusy={Boolean(actionInProgressId)}
+          tone="primary"
+          title="Publish challenge?"
+          description="It immediately becomes eligible for active occurrence windows and member participation."
+          confirmLabel="Publish"
+          busyLabel="Publishing…"
         >
-          <div className="space-y-4">
-            <div className="rounded-xl border border-teal-500/20 bg-teal-500/10 p-3.5 text-xs text-teal-300">
-              <span className="font-semibold">{challengeToPublish?.title}</span> ({challengeToPublish?.cadence})
-            </div>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setChallengeToPublish(null)}
-                disabled={Boolean(actionInProgressId)}
-                className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmPublish}
-                disabled={Boolean(actionInProgressId)}
-                className="rounded-xl bg-teal-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-teal-400 transition-colors disabled:opacity-50"
-              >
-                {actionInProgressId ? 'Publishing...' : 'Confirm Publish'}
-              </button>
-            </div>
-          </div>
-        </Modal>
+          <span className="font-semibold text-white">{challengeToPublish?.title}</span>{' '}
+          <span className="text-ink-400">({challengeToPublish?.cadence})</span>
+        </ConfirmDialog>
 
-        {/* Archive Confirmation Modal */}
-        <Modal
+        <ConfirmDialog
           isOpen={Boolean(challengeToArchive)}
           onClose={() => setChallengeToArchive(null)}
-          title="Archive Challenge"
-          description="Archiving will disable future automatic occurrence generation. Existing active enrollments will continue until their period ends."
-          maxWidth="sm"
+          onConfirm={handleConfirmArchive}
+          isBusy={Boolean(actionInProgressId)}
+          title="Archive challenge?"
+          description="Archiving disables future automatic occurrence generation. Existing active enrollments continue until their period ends."
+          confirmLabel="Archive"
+          busyLabel="Archiving…"
         >
-          <div className="space-y-4">
-            <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3.5 text-xs text-rose-300">
-              <span className="font-semibold">{challengeToArchive?.title}</span> will be moved to archived state.
-            </div>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setChallengeToArchive(null)}
-                disabled={Boolean(actionInProgressId)}
-                className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmArchive}
-                disabled={Boolean(actionInProgressId)}
-                className="rounded-xl bg-rose-500 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-600 transition-colors disabled:opacity-50"
-              >
-                {actionInProgressId ? 'Archiving...' : 'Confirm Archive'}
-              </button>
-            </div>
-          </div>
-        </Modal>
+          <span className="font-semibold text-white">{challengeToArchive?.title}</span> will be moved to
+          the archived state.
+        </ConfirmDialog>
       </div>
     </AdminLayout>
   );
 }
-

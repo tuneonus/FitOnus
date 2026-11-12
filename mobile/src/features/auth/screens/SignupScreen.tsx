@@ -7,6 +7,7 @@ import { Button } from '../../../shared/components/ui/Button';
 import { TextField } from '../../../shared/components/ui/TextField';
 import { StatusBanner } from '../../../shared/components/ui/StatusBanner';
 import { PasswordField } from '../components/PasswordField';
+import { AuthHeader, AuthSwitchPrompt } from '../components/AuthHeader';
 import { PasswordStrength } from '../components/PasswordStrength';
 import { authService } from '../services/authService';
 import { isValidEmail, passwordStrength } from '../utils/validation';
@@ -56,19 +57,17 @@ export function SignupScreen() {
   return (
     <Screen showBack={true} keyboardAvoiding={true}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.ink }]}>
-          Create your account
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Your health data stays yours. You choose what the coach can see.
-        </Text>
+        <AuthHeader
+          title="Create your account"
+          subtitle="Own your fitness. Your data stays yours — you choose what the coach can see."
+        />
 
         {authError ? (
           <StatusBanner
             tone="error"
             title="Couldn’t create account"
             body={authError}
-            style={{ marginBottom: 16 }}
+            style={{ marginTop: 16 }}
           />
         ) : null}
 
@@ -103,19 +102,21 @@ export function SignupScreen() {
         {/* Terms checkbox */}
         <TouchableOpacity
           activeOpacity={0.8}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: agreed }}
           onPress={() => setAgreed(!agreed)}
-          style={styles.termsRow}
+          style={[styles.termsRow, { backgroundColor: colors.surface2 }]}
         >
           <View
             style={[
               styles.checkbox,
               {
-                borderColor: agreed ? colors.ink : colors.line,
-                backgroundColor: agreed ? colors.ink : 'transparent',
+                borderColor: agreed ? colors.accent : colors.muted,
+                backgroundColor: agreed ? colors.accent : 'transparent',
               },
             ]}
           >
-            {agreed && <Check size={14} color={colors.bg} strokeWidth={3} />}
+            {agreed && <Check size={14} color={colors.accentInk} strokeWidth={3} />}
           </View>
           <Text style={[styles.termsText, { color: colors.muted }]}>
             I agree to OnusFit processing my health data to provide personalized
@@ -137,13 +138,11 @@ export function SignupScreen() {
           style={styles.signupButton}
         />
 
-        {/* Log in prompt */}
-        <View style={styles.loginPrompt}>
-          <Text style={{ color: colors.muted }}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigate('login')}>
-            <Text style={[styles.loginLink, { color: colors.ink }]}>Log in</Text>
-          </TouchableOpacity>
-        </View>
+        <AuthSwitchPrompt
+          prompt="Already have an account?"
+          action="Log in"
+          onPress={() => navigate('login')}
+        />
       </View>
     </Screen>
   );
@@ -151,59 +150,41 @@ export function SignupScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 8,
     paddingTop: 8,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    marginTop: 6,
-  },
   inputsSection: {
-    marginTop: 20,
-    gap: 12,
+    marginTop: 24,
+    gap: 10,
   },
   termsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: 20,
-    gap: 10,
+    marginTop: 16,
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
   },
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 6,
+    borderRadius: 7,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginTop: 1,
   },
   termsText: {
     flex: 1,
-    fontSize: 12.5,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: 12.5,
+    fontWeight: '500',
     marginTop: 6,
-    marginLeft: 32,
+    marginLeft: 4,
   },
   signupButton: {
-    marginTop: 24,
-  },
-  loginPrompt: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 28,
-    marginBottom: 16,
-  },
-  loginLink: {
-    fontWeight: '700',
-    textDecorationLine: 'underline',
+    marginTop: 20,
   },
 });
-

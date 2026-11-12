@@ -94,7 +94,7 @@ export function AccountScreen() {
             <Badge>Premium · Future</Badge>
           </View>
           <Text style={[styles.subText, { color: colors.muted }]}>
-            Premium AI plans aren’t available yet. Everything in this prototype is included.
+            Premium AI plans aren’t available yet. Everything in OnusFit today is included.
           </Text>
         </View>
 

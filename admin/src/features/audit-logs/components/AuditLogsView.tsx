@@ -25,12 +25,12 @@ export function AuditLogsView() {
 
   return (
     <AdminLayout
-      title="Audit Trail"
-      subtitle="Immutable security log of administrative actions, logins, and status changes"
+      title="Audit logs"
+      subtitle="Immutable security record of administrative actions, sign-ins and status changes."
       onRefresh={refresh}
       isRefreshing={isRefreshing}
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         <AuditLogsFilterBar
           actionFilter={actionFilter}
           onActionFilterChange={(val) => {

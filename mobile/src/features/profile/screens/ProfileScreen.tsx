@@ -100,7 +100,7 @@ export function ProfileScreen() {
               .fetchMemories()
               .catch(() => {});
           }}
-          tintColor={colors.accent}
+          tintColor={colors.accentStrong}
         />
       }
       headerRight={

@@ -11,7 +11,18 @@ interface StatsCardProps {
     label?: string;
   };
   accent?: 'teal' | 'emerald' | 'amber' | 'rose' | 'purple' | 'cyan';
+  /** Renders the value muted, e.g. when the metric source is unavailable. */
+  muted?: boolean;
 }
+
+const ACCENT_ICON: Record<NonNullable<StatsCardProps['accent']>, string> = {
+  teal: 'text-brand-500',
+  emerald: 'text-emerald-400',
+  amber: 'text-amber-400',
+  rose: 'text-rose-400',
+  purple: 'text-purple-400',
+  cyan: 'text-cyan-400',
+};
 
 export function StatsCard({
   title,
@@ -20,61 +31,45 @@ export function StatsCard({
   icon,
   trend,
   accent = 'teal',
+  muted,
 }: StatsCardProps) {
-  const accentBorder = {
-    teal: 'hover:border-teal-500/50 group-hover:text-teal-400',
-    emerald: 'hover:border-emerald-500/50 group-hover:text-emerald-400',
-    amber: 'hover:border-amber-500/50 group-hover:text-amber-400',
-    rose: 'hover:border-rose-500/50 group-hover:text-rose-400',
-    purple: 'hover:border-purple-500/50 group-hover:text-purple-400',
-    cyan: 'hover:border-cyan-500/50 group-hover:text-cyan-400',
-  };
-
-  const accentBg = {
-    teal: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
-    emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  };
+  const isUnavailable = muted ?? value === 'Unavailable';
 
   return (
-    <div
-      className={`group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm transition-all duration-200 ${accentBorder[accent]}`}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-            {title}
-          </p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold tracking-tight text-white">
-              {typeof value === 'number' ? value.toLocaleString() : value}
-            </span>
-            {trend && (
-              <span
-                className={`text-xs font-semibold ${
-                  trend.isPositive !== false ? 'text-emerald-400' : 'text-rose-400'
-                }`}
-              >
-                {trend.isPositive !== false ? '+' : ''}
-                {trend.value} {trend.label}
-              </span>
-            )}
-          </div>
-          {subtitle && (
-            <p className="mt-1 text-xs text-slate-400">{subtitle}</p>
-          )}
-        </div>
-
-        <div
-          className={`flex h-11 w-11 items-center justify-center rounded-lg border ${accentBg[accent]} transition-colors`}
+    <div className="card flex min-w-0 flex-col gap-3 p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="truncate text-[13px] font-medium text-ink-300">{title}</p>
+        <span
+          aria-hidden="true"
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-ink-850 ring-1 ring-ink-800 [&>svg]:h-4 [&>svg]:w-4 ${ACCENT_ICON[accent]}`}
         >
           {icon}
-        </div>
+        </span>
       </div>
+
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span
+          className={`truncate font-semibold tracking-tight tabular-nums ${
+            isUnavailable ? 'text-base text-ink-500' : 'text-2xl text-white'
+          }`}
+        >
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </span>
+        {trend && (
+          <span
+            className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${
+              trend.isPositive !== false
+                ? 'bg-emerald-500/10 text-emerald-300'
+                : 'bg-rose-500/10 text-rose-300'
+            }`}
+          >
+            {trend.isPositive !== false ? '+' : ''}
+            {trend.value} {trend.label}
+          </span>
+        )}
+      </div>
+
+      {subtitle && <p className="truncate text-xs text-ink-400" title={subtitle}>{subtitle}</p>}
     </div>
   );
 }
-

@@ -21,6 +21,9 @@ export const Colors = {
     sleep: colorTokens.sleep,
     move: colorTokens.move,
     sky: colorTokens.steps,
+    // Tinted accent surface and hairline separators for lists and dividers
+    accentSoft: '#EEF6DC',
+    lineSoft: '#E7EBE3',
 
     // Compatible aliases
     primary: colorTokens.primary,
@@ -92,6 +95,9 @@ export const Colors = {
     sleep: darkColorTokens.sleep,
     move: darkColorTokens.move,
     sky: darkColorTokens.steps,
+    // Tinted accent surface and hairline separators for lists and dividers
+    accentSoft: 'rgba(199, 239, 114, 0.13)',
+    lineSoft: '#2A372F',
 
     // Compatible aliases
     primary: darkColorTokens.primaryStrong,

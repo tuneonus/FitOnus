@@ -169,7 +169,6 @@ export function WorkoutAnalyticsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 16,
     paddingBottom: 36,
     gap: 16,
   },

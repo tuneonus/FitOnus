@@ -6,8 +6,8 @@ export default function AuditLogsPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-950">
-          <LoadingSpinner size="lg" label="Loading Audit Trail..." />
+        <div className="flex min-h-screen items-center justify-center bg-ink-950">
+          <LoadingSpinner size="lg" label="Loading audit logs…" />
         </div>
       }
     >

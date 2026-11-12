@@ -58,18 +58,23 @@ export function SplashScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.hero }]}>
       <View style={styles.centerBox}>
-        <Logo size={72} />
+        <Logo size={88} />
         <Text style={[styles.title, { color: colors.heroInk }]}>OnusFit</Text>
-        <Text style={[styles.subtitle, { color: colors.heroMuted }]}>
-          Own Your Fitness.
-        </Text>
+        <Text style={[styles.subtitle, { color: colors.accent }]}>Own Your Fitness.</Text>
       </View>
 
-      <View style={[styles.dotsRow, { bottom: Math.max(insets.bottom + 36, 56) }]}>
-        {[0, 1, 2].map((i) => (
+      <View
+        accessibilityRole="progressbar"
+        accessibilityLabel="Loading OnusFit"
+        style={[styles.dotsRow, { bottom: Math.max(insets.bottom + 40, 64) }]}
+      >
+        {[0.35, 1, 0.35].map((opacity, i) => (
           <View
             key={i}
-            style={[styles.dot, { backgroundColor: colors.accent }]}
+            style={[
+              styles.dot,
+              { backgroundColor: colors.accent, opacity, width: i === 1 ? 18 : 6 },
+            ]}
           />
         ))}
       </View>
@@ -77,10 +82,10 @@ export function SplashScreen() {
       <Text
         style={[
           styles.brandBottom,
-          { color: colors.heroMuted, bottom: Math.max(insets.bottom + 8, 24) },
+          { color: colors.heroMuted, bottom: Math.max(insets.bottom + 12, 28) },
         ]}
       >
-        by TuneOnus
+        A TuneOnus product
       </Text>
     </View>
   );
@@ -96,30 +101,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginTop: 20,
-    letterSpacing: -0.6,
+    fontSize: 36,
+    fontWeight: '800',
+    marginTop: 24,
+    letterSpacing: -1.2,
   },
   subtitle: {
-    fontSize: 15,
-    marginTop: 6,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginTop: 8,
   },
   dotsRow: {
     position: 'absolute',
-    bottom: 56,
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
   dot: {
-    width: 6,
     height: 6,
     borderRadius: 3,
   },
   brandBottom: {
     position: 'absolute',
-    bottom: 24,
     fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
 });
-

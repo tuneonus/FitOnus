@@ -35,7 +35,7 @@ export function MonthlyReportScreen() {
         void report.refetch();
         void body.refetch();
       }}
-      tintColor={colors.accent}
+      tintColor={colors.accentStrong}
     />
   );
   const { navigate } = useNavigation();
@@ -121,15 +121,24 @@ export function MonthlyReportScreen() {
       {/* Weight trend 6 months */}
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <Text style={[styles.cardTitle, { color: colors.ink }]}>Weight · recent 6 months</Text>
-        <View style={{ marginTop: 8 }}>
-          <LineChart
-            points={r.weightTrend}
-            target={body.data?.targetWeightKg ?? undefined}
-            formatValue={(v) => `${v} kg`}
-            height={140}
-            strokeColor={colors.accent}
+        {r.weightTrend.length === 0 ? (
+          <EmptyState
+            compact
+            icon={Target}
+            title="No weight history"
+            body="Log a weigh-in to see your six-month trend here."
           />
-        </View>
+        ) : (
+          <View style={{ marginTop: 8 }}>
+            <LineChart
+              points={r.weightTrend}
+              target={body.data?.targetWeightKg ?? undefined}
+              formatValue={(v) => `${v} kg`}
+              height={140}
+              strokeColor={colors.accent}
+            />
+          </View>
+        )}
       </View>
 
       {/* Average recovery 6 months */}
@@ -166,13 +175,13 @@ export function MonthlyReportScreen() {
       {/* AI recommendations */}
       <View style={[styles.recsCard, { backgroundColor: colors.surface2 }]}>
         <View style={styles.recsHeader}>
-          <Sparkles size={14} color={colors.accent} />
+          <Sparkles size={14} color={colors.accentStrong} />
           <Text style={[styles.recsTitle, { color: colors.muted }]}>Report recommendations</Text>
         </View>
         <View style={styles.recsList}>
           {r.recommendations.map((rec, i) => (
             <View key={rec.title} style={styles.recRow}>
-              <Text style={[styles.recNum, { color: colors.accent }]}>{i + 1}</Text>
+              <Text style={[styles.recNum, { color: colors.accentStrong }]}>{i + 1}</Text>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={[styles.recHeading, { color: colors.ink }]}>{rec.title}</Text>
                 <Text style={[styles.recDetail, { color: colors.muted }]}>{rec.detail}</Text>

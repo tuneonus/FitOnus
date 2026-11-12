@@ -28,10 +28,14 @@ const planned = [
 ];
 
 export function WearOsScreen() {
+  // Gate before any hooks run so the Rules of Hooks hold; the screen stays hidden when disabled.
   if (!WEARABLES_ENABLED) {
     return null;
   }
+  return <WearOsScreenContent />;
+}
 
+function WearOsScreenContent() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
 

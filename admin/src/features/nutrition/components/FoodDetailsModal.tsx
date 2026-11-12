@@ -23,7 +23,7 @@ export function FoodDetailsModal({ isOpen, onClose, food }: FoodDetailsModalProp
       description={food.brand ? `Brand: ${food.brand}` : 'Generic Food Record'}
       maxWidth="xl"
     >
-      <div className="space-y-4 text-xs">
+      <div className="space-y-4 text-[13px]">
         {/* Status Banners */}
         <div className="flex flex-wrap items-center gap-2">
           {food.isVerified ? (
@@ -59,13 +59,13 @@ export function FoodDetailsModal({ isOpen, onClose, food }: FoodDetailsModalProp
 
         {/* Security Alert for User Custom Foods */}
         {food.isCustom && (
-          <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-3 text-purple-300 flex items-start gap-2.5">
-            <Lock className="h-4 w-4 shrink-0 text-purple-400 mt-0.5" />
+          <div className="alert border-purple-500/25 bg-purple-500/[0.06] text-purple-200">
+            <Lock className="mt-0.5 h-4 w-4 shrink-0 text-purple-300" />
             <div className="space-y-1">
               <p className="font-semibold text-purple-200">
                 Private User-Owned Food Record
               </p>
-              <p className="text-[11px] text-purple-300/80 leading-relaxed">
+              <p className="text-xs leading-relaxed text-purple-200/75">
                 This custom food is scoped exclusively to user tenant{' '}
                 <span className="font-mono text-purple-200">{food.createdBy}</span>.
                 It is never exposed globally. To preserve user consent and privacy,
@@ -75,12 +75,12 @@ export function FoodDetailsModal({ isOpen, onClose, food }: FoodDetailsModalProp
           </div>
         )}
 
-        {/* Serving Specification Card */}
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2">
-          <div className="flex items-center justify-between text-slate-300">
-            <span className="font-semibold flex items-center gap-1.5 text-teal-400">
-              <Scale className="h-4 w-4" />
-              Serving Specification
+        {/* Serving Card */}
+        <div className="card-inset space-y-2 p-3.5">
+          <div className="flex items-center justify-between text-ink-300">
+            <span className="flex items-center gap-1.5 font-medium text-ink-200">
+              <Scale className="h-4 w-4 text-ink-400" />
+              Serving
             </span>
             <span className="font-mono text-white">
               {food.servingSize} {food.servingUnit} = {food.servingWeightG}g
@@ -88,7 +88,7 @@ export function FoodDetailsModal({ isOpen, onClose, food }: FoodDetailsModalProp
           </div>
 
           {food.servingVolumeMl && food.densityGPerMl && (
-            <div className="text-[11px] text-slate-400 bg-slate-900/60 rounded-lg p-2 flex justify-between font-mono">
+            <div className="flex flex-wrap justify-between gap-2 rounded-md bg-ink-900 p-2 font-mono text-[11px] text-ink-400">
               <span>Volume: {food.servingVolumeMl} ml</span>
               <span>Density ρ: {food.densityGPerMl} g/ml</span>
               <span>Effective: ~{(food.servingVolumeMl * food.densityGPerMl).toFixed(1)}g</span>
@@ -97,89 +97,89 @@ export function FoodDetailsModal({ isOpen, onClose, food }: FoodDetailsModalProp
         </div>
 
         {/* Nutrition Comparison Table: 1-Serving vs Reference 100g */}
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 overflow-hidden">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-hidden rounded-lg border border-ink-800">
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/50 text-slate-400">
-                <th className="py-2.5 px-4 font-semibold">Nutrient</th>
-                <th className="py-2.5 px-4 font-semibold text-teal-300 text-right">
-                  Per Serving ({food.servingWeightG}g)
+              <tr>
+                <th scope="col">Nutrient</th>
+                <th scope="col" className="text-right">
+                  Per serving ({food.servingWeightG} g)
                 </th>
-                <th className="py-2.5 px-4 font-semibold text-slate-400 text-right">
-                  Per 100g (Basis)
+                <th scope="col" className="text-right">
+                  Per 100 g
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/40 font-mono text-[11px]">
+            <tbody className="tabular-nums">
               <tr>
-                <td className="py-2 px-4 text-white font-bold">Calories</td>
-                <td className="py-2 px-4 text-teal-300 font-bold text-right">
+                <td className="text-white">Calories</td>
+                <td className="text-right">
                   {Math.round(food.standardServingNutrients.calories)} kcal
                 </td>
-                <td className="py-2 px-4 text-slate-300 text-right">
+                <td className="text-right">
                   {Math.round(food.referenceNutrients.calories)} kcal
                 </td>
               </tr>
               <tr>
-                <td className="py-2 px-4 text-blue-300">Protein</td>
-                <td className="py-2 px-4 text-blue-300 text-right">
+                <td>Protein</td>
+                <td className="text-right">
                   {food.standardServingNutrients.proteinG} g
                 </td>
-                <td className="py-2 px-4 text-slate-400 text-right">
+                <td className="text-right">
                   {food.referenceNutrients.proteinG} g
                 </td>
               </tr>
               <tr>
-                <td className="py-2 px-4 text-amber-300">Carbohydrates</td>
-                <td className="py-2 px-4 text-amber-300 text-right">
+                <td>Carbohydrates</td>
+                <td className="text-right">
                   {food.standardServingNutrients.carbsG} g
                 </td>
-                <td className="py-2 px-4 text-slate-400 text-right">
+                <td className="text-right">
                   {food.referenceNutrients.carbohydratesG} g
                 </td>
               </tr>
               <tr>
-                <td className="py-2 px-4 text-rose-300">Fat</td>
-                <td className="py-2 px-4 text-rose-300 text-right">
+                <td>Fat</td>
+                <td className="text-right">
                   {food.standardServingNutrients.fatG} g
                 </td>
-                <td className="py-2 px-4 text-slate-400 text-right">
+                <td className="text-right">
                   {food.referenceNutrients.fatG} g
                 </td>
               </tr>
               <tr>
-                <td className="py-2 px-4 text-slate-400">Dietary Fiber</td>
-                <td className="py-2 px-4 text-slate-300 text-right">
+                <td>Dietary Fiber</td>
+                <td className="text-right">
                   {food.standardServingNutrients.fiberG} g
                 </td>
-                <td className="py-2 px-4 text-slate-400 text-right">
+                <td className="text-right">
                   {food.referenceNutrients.fiberG} g
                 </td>
               </tr>
               <tr>
-                <td className="py-2 px-4 text-slate-400">Total Sugars</td>
-                <td className="py-2 px-4 text-slate-300 text-right">
+                <td>Total Sugars</td>
+                <td className="text-right">
                   {((food.referenceNutrients.sugarG * food.servingWeightG) / 100).toFixed(1)} g
                 </td>
-                <td className="py-2 px-4 text-slate-400 text-right">
+                <td className="text-right">
                   {food.referenceNutrients.sugarG} g
                 </td>
               </tr>
               <tr>
-                <td className="py-2 px-4 text-slate-400">Sodium</td>
-                <td className="py-2 px-4 text-slate-300 text-right">
+                <td>Sodium</td>
+                <td className="text-right">
                   {Math.round((food.referenceNutrients.sodiumMg * food.servingWeightG) / 100)} mg
                 </td>
-                <td className="py-2 px-4 text-slate-400 text-right">
+                <td className="text-right">
                   {food.referenceNutrients.sodiumMg} mg
                 </td>
               </tr>
               <tr>
-                <td className="py-2 px-4 text-slate-400">Cholesterol</td>
-                <td className="py-2 px-4 text-slate-300 text-right">
+                <td>Cholesterol</td>
+                <td className="text-right">
                   {Math.round((food.referenceNutrients.cholesterolMg * food.servingWeightG) / 100)} mg
                 </td>
-                <td className="py-2 px-4 text-slate-400 text-right">
+                <td className="text-right">
                   {food.referenceNutrients.cholesterolMg} mg
                 </td>
               </tr>
@@ -187,39 +187,39 @@ export function FoodDetailsModal({ isOpen, onClose, food }: FoodDetailsModalProp
           </table>
         </div>
 
-        {/* Provenance & Metadata */}
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2 text-[11px] text-slate-400">
-          <h4 className="font-semibold text-slate-300 uppercase tracking-wider text-[10px]">
-            Provenance & Metadata
+        {/* Provenance */}
+        <div className="card-inset space-y-3 p-3.5 text-xs text-ink-400">
+          <h4 className="eyebrow">
+            Provenance
           </h4>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div>
-              <span className="text-slate-500">Data Source: </span>
-              <span className="font-semibold text-slate-300">{food.dataSource}</span>
+              <span className="text-ink-500">Data Source: </span>
+              <span className="font-semibold text-ink-300">{food.dataSource}</span>
             </div>
             <div>
-              <span className="text-slate-500">Source ID: </span>
-              <span className="font-mono text-slate-300">{food.sourceId || 'N/A'}</span>
+              <span className="text-ink-500">Source ID: </span>
+              <span className="font-mono text-ink-300">{food.sourceId || 'N/A'}</span>
             </div>
             <div>
-              <span className="text-slate-500">Barcode / UPC: </span>
-              <span className="font-mono text-slate-300">{food.barcode || 'N/A'}</span>
+              <span className="text-ink-500">Barcode / UPC: </span>
+              <span className="font-mono text-ink-300">{food.barcode || 'N/A'}</span>
             </div>
             <div>
-              <span className="text-slate-500">Item UUID: </span>
-              <span className="font-mono text-slate-400 truncate block" title={food.id}>
+              <span className="text-ink-500">Item UUID: </span>
+              <span className="font-mono text-ink-400 truncate block" title={food.id}>
                 {food.id}
               </span>
             </div>
             <div>
-              <span className="text-slate-500">Created At: </span>
-              <span className="text-slate-400">
+              <span className="text-ink-500">Created At: </span>
+              <span className="text-ink-400">
                 {new Date(food.createdAt).toLocaleString()}
               </span>
             </div>
             <div>
-              <span className="text-slate-500">Updated At: </span>
-              <span className="text-slate-400">
+              <span className="text-ink-500">Updated At: </span>
+              <span className="text-ink-400">
                 {new Date(food.updatedAt).toLocaleString()}
               </span>
             </div>
@@ -231,7 +231,7 @@ export function FoodDetailsModal({ isOpen, onClose, food }: FoodDetailsModalProp
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-slate-300 hover:bg-slate-800 transition-colors"
+            className="btn btn-secondary"
           >
             Close
           </button>

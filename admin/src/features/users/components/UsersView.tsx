@@ -131,12 +131,12 @@ export function UsersView() {
 
   return (
     <AdminLayout
-      title="User Directory"
-      subtitle="Manage user accounts, roles, suspensions, and onboarding status"
+      title="Users"
+      subtitle="Manage member accounts, roles, suspensions and onboarding status."
       onRefresh={refresh}
       isRefreshing={isRefreshing}
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         <UsersFilterBar
           search={search}
           onSearchChange={setSearch}

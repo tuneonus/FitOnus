@@ -62,7 +62,7 @@ export function PersonalRecordsScreen() {
             void query.refetch();
             if (activeRec) void progression.refetch();
           }}
-          tintColor={colors.accent}
+          tintColor={colors.accentStrong}
         />
       }
     >
@@ -180,7 +180,6 @@ export function PersonalRecordsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: 16,
     paddingBottom: 32,
     gap: 20,
   },

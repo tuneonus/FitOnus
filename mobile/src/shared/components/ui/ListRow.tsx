@@ -1,7 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/hooks/use-theme';
+import { premium } from '@/shared/theme/premium';
 
 export type ListRowProps = {
   icon?: React.ComponentType<{ size?: number; color?: string }>;
@@ -40,7 +41,7 @@ export function ListRow({
         <View
           style={[
             styles.iconBox,
-            { backgroundColor: colors.surface2 },
+            { backgroundColor: destructive ? colors.errorLight : colors.surface2 },
           ]}
         >
           <Icon size={18} color={effectiveIconColor} />
@@ -71,16 +72,20 @@ export function ListRow({
       {trailing}
 
       {showChevron ? (
-        <ChevronRight size={18} color={colors.muted} style={styles.chevron} />
+        <ChevronRight size={18} color={colors.muted} strokeWidth={2} style={styles.chevron} />
       ) : null}
     </View>
   );
 
   if (onPress) {
     return (
-      <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => (pressed ? { backgroundColor: colors.surface2 } : undefined)}
+      >
         {content}
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 
@@ -95,6 +100,7 @@ export function ListGroup({
   style?: ViewStyle;
 }) {
   const { colors } = useTheme();
+  const rows = React.Children.toArray(children);
 
   return (
     <View
@@ -107,22 +113,29 @@ export function ListGroup({
         style,
       ]}
     >
-      {children}
+      {rows.map((row, index) => (
+        <React.Fragment key={(React.isValidElement(row) && row.key) || index}>
+          {index > 0 ? (
+            <View style={[styles.separator, { backgroundColor: colors.lineSoft }]} />
+          ) : null}
+          {row}
+        </React.Fragment>
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: 56,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   iconBox: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -133,24 +146,32 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 15,
-    fontWeight: '500',
-    letterSpacing: -0.1,
+    lineHeight: 20,
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 12.5,
-    marginTop: 2,
+    ...premium.type.caption,
+    fontWeight: '400',
+    marginTop: 1,
   },
   value: {
     fontSize: 14,
+    fontWeight: '500',
     marginRight: 4,
+    fontVariant: ['tabular-nums'],
   },
   chevron: {
     marginLeft: 6,
   },
   group: {
-    borderRadius: 24,
+    borderRadius: premium.radius.card,
     borderWidth: 1,
     overflow: 'hidden',
     marginVertical: 6,
+  },
+  separator: {
+    height: 1,
+    marginLeft: 16,
   },
 });

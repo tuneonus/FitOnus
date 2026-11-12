@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Dumbbell, ShieldAlert, Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { ShieldAlert, Lock, Mail, ArrowRight, Loader2, Users, Dumbbell, Utensils, Trophy, Sliders } from 'lucide-react';
+import { BrandMark } from '@/components/ui/BrandMark';
 import { useAuth } from '../hooks/useAuth';
 import { ApiError } from '@/lib/api-client';
 
@@ -45,101 +46,135 @@ export function LoginForm() {
     }
   };
 
+  const capabilities = [
+    { icon: Users, label: 'Member accounts & onboarding' },
+    { icon: Dumbbell, label: 'Exercise library & starter routines' },
+    { icon: Utensils, label: 'Verified food catalog' },
+    { icon: Trophy, label: 'Challenges, badges & rewards' },
+    { icon: Sliders, label: 'Remote configuration & AI quotas' },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4 relative overflow-hidden">
-      {/* Decorative background glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-md">
-        {/* Brand Header */}
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 text-slate-950 shadow-xl shadow-teal-500/20 mb-4">
-            <Dumbbell className="h-7 w-7 stroke-[2.5]" />
+    <div className="grid min-h-screen bg-ink-950 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      {/* Brand panel */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-ink-800 bg-ink-900 p-10 lg:flex xl:p-14">
+        <div className="flex items-center gap-3">
+          <BrandMark size={36} />
+          <div className="leading-tight">
+            <p className="text-[15px] font-semibold text-white">OnusFit</p>
+            <p className="text-xs text-ink-400">Admin console</p>
           </div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">OnusFit</h1>
-            <span className="rounded bg-teal-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-teal-300 border border-teal-500/30">
-              Admin
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">
-            Sign in with an authorized Administrator account to manage users, onboarding, and platform security.
-          </p>
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-300">
-            <ShieldAlert className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
-            <div className="flex-1 font-medium">{error}</div>
-          </div>
-        )}
+        <div className="max-w-md">
+          <p className="eyebrow text-brand-500">Own your fitness.</p>
+          <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-white">
+            Run the OnusFit platform from one place.
+          </h2>
+          <ul className="mt-8 space-y-3">
+            {capabilities.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-3 text-[13px] text-ink-300">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-ink-850 text-ink-300 ring-1 ring-ink-800">
+                  <Icon className="h-4 w-4" />
+                </span>
+                {label}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Admin Email
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@fitonus.com"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 transition-colors"
-              />
+        <p className="text-[11px] text-ink-500">
+          Access is limited to administrator accounts. Rate limiting and server-side RBAC apply.
+        </p>
+      </aside>
+
+      {/* Sign-in form */}
+      <main className="flex items-center justify-center px-4 py-12 sm:px-8">
+        <div className="w-full max-w-sm">
+          <div className="mb-8">
+            <div className="mb-6 flex items-center gap-3 lg:hidden">
+              <BrandMark size={36} />
+              <div className="leading-tight">
+                <p className="text-[15px] font-semibold text-white">OnusFit</p>
+                <p className="text-xs text-ink-400">Admin console</p>
+              </div>
             </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Sign in</h1>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-ink-400">
+              Use an authorized administrator account to continue.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-              <input
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 transition-colors"
-              />
+          {error && (
+            <div role="alert" className="alert alert-error mb-5">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="flex-1 font-medium">{error}</div>
             </div>
-          </div>
+          )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-2.5 px-4 text-sm font-semibold text-slate-950 hover:from-teal-400 hover:to-emerald-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all shadow-lg shadow-teal-500/25 disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Authenticating...</span>
-              </>
-            ) : (
-              <>
-                <span>Sign In to Admin Portal</span>
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="login-email" className="field-label">
+                Email
+              </label>
+              <div className="relative">
+                <Mail aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" />
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@fitonus.com"
+                  className="input h-10 pl-9"
+                />
+              </div>
+            </div>
 
-        <div className="mt-6 pt-4 border-t border-slate-800/80 text-center">
-          <p className="text-[11px] text-slate-500">
-            Protected by Rate Limiting & Server-Side RBAC Enforcement
+            <div>
+              <label htmlFor="login-password" className="field-label">
+                Password
+              </label>
+              <div className="relative">
+                <Lock aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" />
+                <input
+                  id="login-password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="input h-10 pl-9"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn btn-primary btn-lg mt-2 w-full"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="mt-8 text-center text-[11px] text-ink-500 lg:hidden">
+            Protected by rate limiting and server-side RBAC.
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
-

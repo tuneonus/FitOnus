@@ -52,7 +52,7 @@ export function PersonalInfoScreen() {
 
   const save = async () => {
     if (isAuthenticated && !serverProfile) {
-      showToast({ message: 'Your profile could not be loaded. Please try again before saving.' });
+      showToast({ tone: 'error', message: 'Your profile could not be loaded. Please try again before saving.' });
       return;
     }
     if (!draft.name.trim()) return setError('Enter your name.');

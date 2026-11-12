@@ -41,7 +41,7 @@ export function SleepScreen() {
         void dashboard.refetch();
         void history.refetch();
       }}
-      tintColor={colors.accent}
+      tintColor={colors.accentStrong}
     />
   );
   return (

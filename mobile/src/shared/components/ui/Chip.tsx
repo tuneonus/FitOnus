@@ -57,16 +57,17 @@ export function Chip({
 
 const styles = StyleSheet.create({
   chip: {
-    height: 32,
-    borderRadius: 16,
-    paddingHorizontal: 12,
+    height: 34,
+    borderRadius: 17,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-start',
   },
   label: {
-    fontSize: 12.5,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
 });

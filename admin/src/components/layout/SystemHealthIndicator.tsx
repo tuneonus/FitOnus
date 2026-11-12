@@ -8,30 +8,30 @@ const STATUS_CONFIG = {
   healthy: {
     dotBg: 'bg-emerald-500',
     pingBg: 'bg-emerald-400',
-    textColor: 'text-emerald-400',
+    textColor: 'text-emerald-300',
     label: 'Online',
     borderColor: 'border-emerald-500/20',
   },
   degraded: {
     dotBg: 'bg-amber-500',
     pingBg: 'bg-amber-400',
-    textColor: 'text-amber-400',
+    textColor: 'text-amber-300',
     label: 'Degraded',
     borderColor: 'border-amber-500/20',
   },
   unavailable: {
     dotBg: 'bg-rose-500',
     pingBg: 'bg-rose-400',
-    textColor: 'text-rose-400',
+    textColor: 'text-rose-300',
     label: 'Offline',
     borderColor: 'border-rose-500/20',
   },
   checking: {
-    dotBg: 'bg-slate-400',
-    pingBg: 'bg-slate-300',
-    textColor: 'text-slate-400',
+    dotBg: 'bg-ink-400',
+    pingBg: 'bg-ink-300',
+    textColor: 'text-ink-400',
     label: 'Checking',
-    borderColor: 'border-slate-700',
+    borderColor: 'border-ink-700',
   },
 };
 
@@ -97,25 +97,27 @@ export function SystemHealthIndicator() {
 
   return (
     <div
-      className={`hidden md:flex items-center gap-2 rounded-full border bg-slate-900/60 px-3 py-1 text-xs transition-colors ${config.borderColor}`}
+      className="hidden h-8 items-center gap-2 rounded-md border border-ink-800 bg-ink-900 pl-2.5 pr-1 text-[12px] md:flex"
       title={`${health.details}${health.latencyMs !== undefined ? ` • Latency: ${health.latencyMs}ms` : ''} • Checked: ${health.checkedAt.toLocaleTimeString()}`}
+      role="status"
+      aria-live="polite"
     >
       <span className="relative flex h-2 w-2">
         {health.status === 'healthy' && (
           <span
-            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${config.pingBg}`}
+            className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 ${config.pingBg}`}
           />
         )}
-        <span className={`relative inline-flex rounded-full h-2 w-2 ${config.dotBg}`} />
+        <span className={`relative inline-flex h-2 w-2 rounded-full ${config.dotBg}`} />
       </span>
 
-      <span className="text-slate-400">Backend API:</span>
-      <span className={`font-semibold ${config.textColor}`}>
-        {isProbing ? 'Checking...' : config.label}
+      <span className="text-ink-400">API</span>
+      <span className={`font-medium ${config.textColor}`}>
+        {isProbing ? 'Checking…' : config.label}
       </span>
 
       {health.latencyMs !== undefined && health.status === 'healthy' && (
-        <span className="text-[10px] text-slate-500 font-mono hidden xl:inline">
+        <span className="hidden font-mono text-[11px] text-ink-500 xl:inline">
           {health.latencyMs}ms
         </span>
       )}
@@ -124,10 +126,10 @@ export function SystemHealthIndicator() {
         type="button"
         onClick={handleManualRefresh}
         disabled={isProbing}
-        aria-label="Refresh backend health"
-        className="text-slate-500 hover:text-slate-300 transition-colors p-0.5 rounded"
+        aria-label="Re-check backend health"
+        className="btn btn-ghost h-6 w-6 rounded px-0 text-ink-500"
       >
-        <RefreshCw className={`h-3 w-3 ${isProbing ? 'animate-spin text-teal-400' : ''}`} />
+        <RefreshCw className={`h-3 w-3 ${isProbing ? 'animate-spin text-brand-500' : ''}`} />
       </button>
     </div>
   );

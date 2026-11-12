@@ -44,7 +44,8 @@ export function WorkoutPlanScreen() {
 
   return (
     <Screen
-      title="Workout"
+      title={plannedSession.title}
+      eyebrow="Workout plan"
       headerRight={
         <TouchableOpacity
           activeOpacity={0.7}
@@ -75,10 +76,9 @@ export function WorkoutPlanScreen() {
       }
     >
       <View style={styles.headerArea}>
-        <Text style={[styles.focus, { color: colors.muted }]}>Workout plan</Text>
-        <Text style={[styles.title, { color: colors.ink }]}>{plannedSession.title}</Text>
-
-        <View style={[styles.statsGrid, { borderColor: colors.line }]}>
+        <View
+          style={[styles.statsGrid, { backgroundColor: colors.surface, borderColor: colors.line }]}
+        >
           {[
             ['Duration', `${plannedSession.durationMin} min`],
             ['Exercises', String(plannedSession.exercises.length)],
@@ -92,7 +92,7 @@ export function WorkoutPlanScreen() {
         </View>
 
         <View style={[styles.progressionCard, { backgroundColor: colors.surface2 }]}>
-          <Sparkles size={15} color={colors.accent} style={{ marginTop: 2 }} />
+          <Sparkles size={15} color={colors.accentStrong} style={{ marginTop: 2 }} />
           <Text style={[styles.progressionText, { color: colors.ink }]}>
             Review your working weights before training. Personal records are calculated from your
             saved sets.
@@ -176,22 +176,14 @@ const styles = StyleSheet.create({
     ...premium.type.body,
   },
   headerArea: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-  },
-  focus: {
-    ...premium.type.caption,
-  },
-  title: {
-    ...premium.type.display,
-    marginTop: 4,
+    gap: 12,
   },
   statsGrid: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    paddingVertical: 14,
-    marginTop: 16,
+    borderWidth: 1,
+    borderRadius: premium.radius.card,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
   },
   statCol: {
     flex: 1,
@@ -209,22 +201,20 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: 16,
     padding: 14,
-    marginTop: 16,
   },
   progressionText: {
     ...premium.type.body,
     flex: 1,
   },
   exercisesList: {
-    paddingHorizontal: 16,
-    marginTop: 20,
+    marginTop: 16,
     gap: 10,
     paddingBottom: 32,
   },
   exerciseItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: premium.radius.card,
     borderWidth: 1,
     overflow: 'hidden',
   },

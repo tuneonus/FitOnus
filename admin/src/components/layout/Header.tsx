@@ -1,101 +1,100 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Menu, RefreshCw, Shield, Settings } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { Menu, Shield, ChevronRight, ChevronDown } from 'lucide-react';
 import { useAuth, AdminAccountSettingsModal } from '@/features/auth';
 import { SystemHealthIndicator } from './SystemHealthIndicator';
+import { NAVIGATION_GROUPS } from './Sidebar';
 
 interface HeaderProps {
   title: string;
-  subtitle?: string;
   onOpenSidebar: () => void;
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
 }
 
-export function Header({
-  title,
-  subtitle,
-  onOpenSidebar,
-  onRefresh,
-  isRefreshing,
-}: HeaderProps) {
+function useBreadcrumb(fallbackTitle: string) {
+  const pathname = usePathname();
+  for (const group of NAVIGATION_GROUPS) {
+    for (const item of group.items) {
+      const match = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+      if (match) return { section: group.label, page: item.name };
+    }
+  }
+  return { section: 'Admin', page: fallbackTitle };
+}
+
+export function Header({ title, onOpenSidebar }: HeaderProps) {
   const { user } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const crumb = useBreadcrumb(title);
+
+  const initials = user?.displayName
+    ? user.displayName.slice(0, 2).toUpperCase()
+    : user?.email
+      ? user.email.slice(0, 2).toUpperCase()
+      : 'AD';
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-950/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-ink-800 bg-ink-950/85 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-2">
           <button
+            type="button"
             onClick={onOpenSidebar}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden"
-            aria-label="Open sidebar"
+            className="btn btn-ghost btn-icon btn-sm -ml-1 lg:hidden"
+            aria-label="Open navigation"
           >
             <Menu className="h-5 w-5" />
           </button>
 
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-white">{title}</h1>
-            {subtitle && (
-              <p className="text-xs text-slate-400 hidden sm:block">{subtitle}</p>
-            )}
-          </div>
+          <nav aria-label="Breadcrumb" className="min-w-0">
+            <ol className="flex min-w-0 items-center gap-1.5 text-[13px]">
+              <li className="hidden sm:block">
+                <Link href="/" className="text-ink-400 transition-colors hover:text-ink-100">
+                  OnusFit
+                </Link>
+              </li>
+              <li aria-hidden="true" className="hidden text-ink-600 sm:block">
+                <ChevronRight className="h-3.5 w-3.5" />
+              </li>
+              <li className="hidden text-ink-400 sm:block">{crumb.section}</li>
+              <li aria-hidden="true" className="hidden text-ink-600 sm:block">
+                <ChevronRight className="h-3.5 w-3.5" />
+              </li>
+              <li aria-current="page" className="truncate font-medium text-ink-100">
+                {crumb.page}
+              </li>
+            </ol>
+          </nav>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Dynamic Backend System Health Probe */}
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <SystemHealthIndicator />
 
-          {/* Role Indicator */}
-          <div className="hidden lg:flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1 text-xs">
-            <Shield className="h-3.5 w-3.5 text-teal-400" />
-            <span className="text-slate-400">Role:</span>
-            <span className="font-semibold text-teal-300 uppercase tracking-wider text-[11px]">
+          <div className="hidden items-center gap-1.5 rounded-md border border-ink-800 bg-ink-900 px-2 py-1 text-[11px] xl:flex">
+            <Shield className="h-3.5 w-3.5 text-brand-500" />
+            <span className="font-semibold uppercase tracking-wider text-ink-200">
               {user?.role || 'Admin'}
             </span>
           </div>
 
-          {/* Account Settings Trigger */}
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            title="Admin Account & Security Settings"
-            className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 hover:border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 transition-colors"
+            title="Account & security settings"
+            aria-haspopup="dialog"
+            className="flex h-9 items-center gap-2 rounded-lg border border-transparent pl-1 pr-2 text-[13px] text-ink-200 transition-colors hover:border-ink-800 hover:bg-ink-900"
           >
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-950 border border-teal-700/50 text-[10px] font-bold text-teal-300">
-              {user?.displayName
-                ? user.displayName.slice(0, 2).toUpperCase()
-                : user?.email
-                ? user.email.slice(0, 2).toUpperCase()
-                : 'AD'}
-            </div>
-            <span className="hidden sm:inline font-medium text-white truncate max-w-[120px]">
+            <span className="avatar h-7 w-7 rounded-md text-[11px] text-brand-300">{initials}</span>
+            <span className="hidden max-w-[140px] truncate font-medium text-white sm:inline">
               {user?.displayName || 'Admin'}
             </span>
-            <Settings className="h-3.5 w-3.5 text-slate-400" />
+            <ChevronDown className="hidden h-3.5 w-3.5 text-ink-500 sm:block" />
           </button>
-
-          {/* Refresh Action */}
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              title="Refresh Data"
-              className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 text-teal-400 ${
-                  isRefreshing ? 'animate-spin' : ''
-                }`}
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-          )}
         </div>
       </header>
 
-      {/* Admin Account Settings Modal */}
       <AdminAccountSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
