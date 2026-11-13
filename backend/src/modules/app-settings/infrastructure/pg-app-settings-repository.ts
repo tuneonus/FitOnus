@@ -1,8 +1,11 @@
 import type { SqlExecutor } from '../../../database/transaction.js';
+import type { UnitOfWork } from '../../../shared/application/unit-of-work.js';
 import { AppError } from '../../../shared/errors/app-error.js';
 import type {
   AiLimitsSettingValue,
   AiUsageActionType,
+  AiUsageReserveInput,
+  AiUsageReserveResult,
   AiUsageStats,
   AppSettingKey,
   AppSettingRecord,
@@ -37,7 +40,14 @@ interface AppSettingRow {
 }
 
 export class PgAppSettingsRepository implements AppSettingsRepository {
-  constructor(private readonly db: SqlExecutor) {}
+  /**
+   * `uow` MUST run on the same `Database` instance as `db`: `reserveAiUsage` relies on
+   * `db.query` joining the unit-of-work transaction so its advisory lock is held until commit.
+   */
+  constructor(
+    private readonly db: SqlExecutor,
+    private readonly uow: UnitOfWork,
+  ) {}
 
   private mapRow(row: AppSettingRow): AppSettingRecord {
     return {
@@ -231,16 +241,63 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
     return res.rows[0]?.request_count ?? 0;
   }
 
-  async incrementUserAiUsage(userId: string, actionType: AiUsageActionType): Promise<number> {
-    const res = await this.db.query<{ request_count: number }>(
-      `INSERT INTO user_ai_usage (user_id, usage_date, action_type, count, updated_at)
-       VALUES ($1, CURRENT_DATE, $2, 1, NOW())
-       ON CONFLICT (user_id, usage_date, action_type)
-       DO UPDATE SET count = user_ai_usage.count + 1, updated_at = NOW()
-       RETURNING count as request_count`,
-      [userId, actionType],
+  async reserveAiUsage(input: AiUsageReserveInput): Promise<AiUsageReserveResult> {
+    const { userId, actionType, actionLimit, totalLimit } = input;
+    return this.uow.run(async () => {
+      // Serialises every reservation of this user. The lock is released at COMMIT/ROLLBACK. The
+      // counts below are read AFTER the lock is held (each statement of a READ COMMITTED
+      // transaction gets a fresh snapshot), so no concurrent reservation can slip between the
+      // read and the increment.
+      await this.db.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`ai_usage:${userId}`]);
+
+      const { rows } = await this.db.query<{ action_count: number; total_count: number; usage_date: string }>(
+        `SELECT COALESCE(SUM(request_count) FILTER (WHERE action_type = $2), 0)::int AS action_count,
+                COALESCE(SUM(request_count), 0)::int AS total_count,
+                CURRENT_DATE::text AS usage_date
+           FROM user_ai_usage
+          WHERE user_id = $1 AND usage_date = CURRENT_DATE`,
+        [userId, actionType],
+      );
+      const current = rows[0]!;
+      const snapshot = {
+        usageDate: current.usage_date,
+        actionCount: current.action_count,
+        totalCount: current.total_count,
+      };
+
+      if (current.action_count >= actionLimit) return { allowed: false, reason: 'action_limit', ...snapshot };
+      if (current.total_count >= totalLimit) return { allowed: false, reason: 'total_limit', ...snapshot };
+
+      const updated = await this.db.query<{ request_count: number }>(
+        `INSERT INTO user_ai_usage (user_id, usage_date, action_type, request_count, updated_at)
+         VALUES ($1, CURRENT_DATE, $2, 1, NOW())
+         ON CONFLICT (user_id, usage_date, action_type)
+         DO UPDATE SET request_count = user_ai_usage.request_count + 1, updated_at = NOW()
+         RETURNING request_count`,
+        [userId, actionType],
+      );
+      return {
+        allowed: true,
+        usageDate: snapshot.usageDate,
+        actionCount: updated.rows[0]!.request_count,
+        totalCount: snapshot.totalCount + 1,
+      };
+    });
+  }
+
+  async releaseAiUsage(input: {
+    userId: string;
+    actionType: AiUsageActionType;
+    usageDate: string;
+  }): Promise<void> {
+    // A single atomic decrement needs no advisory lock: it can only lower a counter, so a
+    // concurrent reservation that read the old value errs on the side of rejecting.
+    await this.db.query(
+      `UPDATE user_ai_usage
+          SET request_count = GREATEST(request_count - 1, 0), updated_at = NOW()
+        WHERE user_id = $1 AND usage_date = $2::date AND action_type = $3`,
+      [input.userId, input.usageDate, input.actionType],
     );
-    return res.rows[0]!.request_count;
   }
 
   // =========================================================================

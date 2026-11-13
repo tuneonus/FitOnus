@@ -44,6 +44,11 @@ export interface ConversationRepository {
   getConversation(userId: string, conversationId: string): Promise<ConversationDetail | null>;
   updateConversation(userId: string, conversationId: string, updates: { title?: string; preview?: string }): Promise<ConversationSummary | null>;
   deleteConversation(userId: string, conversationId: string): Promise<boolean>;
+  /**
+   * Stores (or idempotently re-stores) a message of `userId` in one of their own conversations.
+   * Never modifies a row owned by another user, conversation or role. Throws `not_found` when the
+   * conversation is not the caller's and `conflict` when `message.id` is already taken by another row.
+   */
   addMessage(userId: string, conversationId: string, message: StoredChatMessage): Promise<void>;
   getMessages(userId: string, conversationId: string, limit?: number): Promise<StoredChatMessage[]>;
 }

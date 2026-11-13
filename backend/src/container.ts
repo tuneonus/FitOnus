@@ -110,6 +110,7 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     adminAiBasePath: `${API_PREFIX}/admin/ai`,
     publicBasePath: `${API_PREFIX}/app`,
     db: database,
+    uow,
     auditLogger: admin.repository,
     encryptionKey: process.env.AI_ENCRYPTION_KEY || config.security.hmacSecret,
     fallbackApiKey: config.gemini.apiKey,
@@ -127,6 +128,7 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     db: database,
     uow,
     geminiClient,
+    aiUsageGate: appSettings.aiUsageGate,
   });
   const progress = createProgressModule({
     basePath: `${API_PREFIX}/progress`,
@@ -159,6 +161,7 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
       ...config.gemini,
       runtimeService: appSettings.runtimeService,
     },
+    aiUsageGate: appSettings.aiUsageGate,
     rateLimiter: rateLimiters.aiCoach,
   });
 

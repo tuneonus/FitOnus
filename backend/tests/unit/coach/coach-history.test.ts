@@ -3,6 +3,7 @@ import { ManageConversationsUseCase } from '../../../src/modules/coach/applicati
 import { ChatWithCoachUseCase } from '../../../src/modules/coach/application/use-cases/chat-with-coach.js';
 import type { ConversationRepository, GeminiService, UserContextRepository } from '../../../src/modules/coach/application/ports.js';
 import type { UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
+import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
 describe('AI Coach Conversation History Use Case', () => {
   let mockConvoRepo: ConversationRepository;
@@ -110,6 +111,7 @@ describe('AI Coach Conversation History Use Case', () => {
     const chatUseCase = new ChatWithCoachUseCase(
       mockUserContextRepo,
       mockGeminiService,
+      allowAllAiUsageGate(),
       mockConvoRepo,
     );
 

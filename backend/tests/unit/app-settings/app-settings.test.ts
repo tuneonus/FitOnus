@@ -19,6 +19,8 @@ import {
   type AppSettingKey,
   type AppSettingValueMap,
   type AiUsageActionType,
+  type AiUsageReserveInput,
+  type AiUsageReserveResult,
   GetAppSettingsUseCase,
   UpdateAppSettingsUseCase,
   GetPublicAppConfigUseCase,
@@ -206,11 +208,25 @@ class InMemoryAppSettingsRepository implements AppSettingsRepository {
     return this.usage.get(`${userId}:${actionType}`) ?? 0;
   }
 
-  async incrementUserAiUsage(userId: string, actionType: AiUsageActionType): Promise<number> {
-    const key = `${userId}:${actionType}`;
-    const next = (this.usage.get(key) ?? 0) + 1;
-    this.usage.set(key, next);
-    return next;
+  async reserveAiUsage(input: AiUsageReserveInput): Promise<AiUsageReserveResult> {
+    const key = `${input.userId}:${input.actionType}`;
+    const actionCount = this.usage.get(key) ?? 0;
+    let totalCount = 0;
+    for (const [k, v] of this.usage) if (k.startsWith(`${input.userId}:`)) totalCount += v;
+    const usageDate = '2026-11-12';
+    if (actionCount >= input.actionLimit) {
+      return { allowed: false, reason: 'action_limit', usageDate, actionCount, totalCount };
+    }
+    if (totalCount >= input.totalLimit) {
+      return { allowed: false, reason: 'total_limit', usageDate, actionCount, totalCount };
+    }
+    this.usage.set(key, actionCount + 1);
+    return { allowed: true, usageDate, actionCount: actionCount + 1, totalCount: totalCount + 1 };
+  }
+
+  async releaseAiUsage(input: { userId: string; actionType: AiUsageActionType }): Promise<void> {
+    const key = `${input.userId}:${input.actionType}`;
+    this.usage.set(key, Math.max(0, (this.usage.get(key) ?? 0) - 1));
   }
 
   // Gemini Ports

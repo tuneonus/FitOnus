@@ -1,4 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, type ContentListUnion } from '@google/genai';
+import { runWithAiTimeout } from '../../../shared/ai/ai-timeout.js';
+import { markAiRequestDispatched } from '../../../shared/ai/ai-usage.js';
 import { AppError } from '../../../shared/errors/app-error.js';
 import type { GeminiRuntimeService } from '../../app-settings/application/services/gemini-runtime-service.js';
 import type { GeminiFeature } from '../../app-settings/domain/gemini-config.js';
@@ -31,236 +33,96 @@ export class GeminiClient {
   }
 
   /**
-   * Executes a text generation call with abortion signal timeout and sanitized error handling.
+   * Executes a text generation call with a hard timeout and sanitized error handling.
    */
   async generateText(prompt: string, timeoutMs = 20_000, feature: GeminiFeature = 'coach_chat'): Promise<string> {
-    if (this.runtimeService) {
-      try {
-        const result = await this.runtimeService.executeWithTelemetry({
-          requestId: `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          feature,
-          execute: async (client, model) => {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-              return await client.models.generateContent({
-                model,
-                contents: prompt,
-              });
-            } finally {
-              clearTimeout(timeoutId);
-            }
-          },
-        });
-        return result.text;
-      } catch (err: unknown) {
-        this.handleGeminiError(err, 'Unable to reach AI service right now. Please check your connection and try again.');
-      }
-    }
-
-    if (!this.aiClient) {
-      throw new AppError(
-        'unavailable',
-        'SERVICE_UNAVAILABLE',
-        'AI coaching service is not configured. Please ensure GEMINI_API_KEY is set.',
-      );
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-      const responsePromise = this.aiClient.models.generateContent({
-        model: this.modelName,
-        contents: prompt,
-      });
-
-      const response = await Promise.race([
-        responsePromise,
-        new Promise<never>((_, reject) => {
-          controller.signal.addEventListener('abort', () =>
-            reject(new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'AI request timed out. Please try again.')),
-          );
-        }),
-      ]);
-
-      clearTimeout(timeoutId);
-      return response.text?.trim() || '';
-    } catch (err: unknown) {
-      this.handleGeminiError(err, 'Unable to reach AI service right now. Please check your connection and try again.');
-    }
+    return this.generate({
+      feature,
+      contents: prompt,
+      timeoutMs,
+      failureMessage: 'Unable to reach AI service right now. Please check your connection and try again.',
+      notConfiguredMessage: 'AI coaching service is not configured. Please ensure GEMINI_API_KEY is set.',
+    });
   }
 
   /**
-   * Executes a multimodal image + text generation call with abortion signal timeout.
+   * Executes a multimodal image + text generation call with a hard timeout.
    */
   async generateFromImage(
     image: { mimeType: string; base64: string },
     prompt: string,
     timeoutMs = 25_000,
   ): Promise<string> {
-    // Clean base64 data url prefix if present (e.g. data:image/jpeg;base64,...)
-    let cleanBase64 = image.base64;
-    if (cleanBase64.includes(',')) {
-      cleanBase64 = cleanBase64.split(',')[1]!;
-    }
-
-    if (this.runtimeService) {
-      try {
-        const result = await this.runtimeService.executeWithTelemetry({
-          requestId: `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          feature: 'meal_photo',
-          execute: async (client, model) => {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-              return await client.models.generateContent({
-                model,
-                contents: [
-                  {
-                    inlineData: {
-                      mimeType: image.mimeType,
-                      data: cleanBase64,
-                    },
-                  },
-                  prompt,
-                ],
-              });
-            } finally {
-              clearTimeout(timeoutId);
-            }
-          },
-        });
-        return result.text;
-      } catch (err: unknown) {
-        this.handleGeminiError(err, 'Unable to analyze meal image right now. Please try again.');
-      }
-    }
-
-    if (!this.aiClient) {
-      throw new AppError(
-        'unavailable',
-        'SERVICE_UNAVAILABLE',
-        'AI service is not configured. Please ensure GEMINI_API_KEY is set.',
-      );
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-      const responsePromise = this.aiClient.models.generateContent({
-        model: this.modelName,
-        contents: [
-          {
-            inlineData: {
-              mimeType: image.mimeType,
-              data: cleanBase64,
-            },
-          },
-          prompt,
-        ],
-      });
-
-      const response = await Promise.race([
-        responsePromise,
-        new Promise<never>((_, reject) => {
-          controller.signal.addEventListener('abort', () =>
-            reject(new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'AI image analysis request timed out.')),
-          );
-        }),
-      ]);
-
-      clearTimeout(timeoutId);
-      return response.text?.trim() || '';
-    } catch (err: unknown) {
-      this.handleGeminiError(err, 'Unable to analyze meal image right now. Please try again.');
-    }
+    return this.generate({
+      feature: 'meal_photo',
+      contents: [{ inlineData: { mimeType: image.mimeType, data: stripDataUrlPrefix(image.base64) } }, prompt],
+      timeoutMs,
+      failureMessage: 'Unable to analyze meal image right now. Please try again.',
+      notConfiguredMessage: 'AI service is not configured. Please ensure GEMINI_API_KEY is set.',
+    });
   }
 
   /**
-   * Executes an audio multimodal call with abortion signal timeout.
+   * Executes an audio multimodal call with a hard timeout.
    */
   async generateFromAudio(
     audio: { mimeType: string; base64: string },
     prompt: string,
     timeoutMs = 25_000,
   ): Promise<string> {
-    let cleanBase64 = audio.base64;
-    if (cleanBase64.includes(',')) {
-      cleanBase64 = cleanBase64.split(',')[1]!;
-    }
+    return this.generate({
+      feature: 'voice_meal',
+      contents: [{ inlineData: { mimeType: audio.mimeType, data: stripDataUrlPrefix(audio.base64) } }, prompt],
+      timeoutMs,
+      failureMessage: 'Unable to parse voice meal audio right now. Please try again.',
+      notConfiguredMessage: 'AI service is not configured. Please ensure GEMINI_API_KEY is set.',
+    });
+  }
+
+  /**
+   * The single place that talks to the provider. Every call:
+   * - runs under `runWithAiTimeout`, whose AbortSignal is forwarded to the SDK request, so a timeout
+   *   cancels the HTTP call instead of leaving it running (the signal used to be created and dropped);
+   * - is sent exactly once (no retry, no fallback to a second request), so a timeout cannot double-bill;
+   * - reports a timeout as the same safe 503 for text, image and audio, on both configuration paths.
+   */
+  private async generate(params: {
+    feature: GeminiFeature;
+    contents: ContentListUnion;
+    timeoutMs: number;
+    failureMessage: string;
+    notConfiguredMessage: string;
+  }): Promise<string> {
+    const { feature, contents, timeoutMs, failureMessage, notConfiguredMessage } = params;
+    const request = (client: GoogleGenAI, model: string) =>
+      runWithAiTimeout(timeoutMs, (signal) =>
+        client.models.generateContent({ model, contents, config: { abortSignal: signal } }),
+      );
 
     if (this.runtimeService) {
       try {
         const result = await this.runtimeService.executeWithTelemetry({
           requestId: `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          feature: 'voice_meal',
-          execute: async (client, model) => {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-              return await client.models.generateContent({
-                model,
-                contents: [
-                  {
-                    inlineData: {
-                      mimeType: audio.mimeType,
-                      data: cleanBase64,
-                    },
-                  },
-                  prompt,
-                ],
-              });
-            } finally {
-              clearTimeout(timeoutId);
-            }
-          },
+          feature,
+          execute: request,
         });
         return result.text;
       } catch (err: unknown) {
-        this.handleGeminiError(err, 'Unable to parse voice meal audio right now. Please try again.');
+        this.handleGeminiError(err, failureMessage);
       }
     }
 
-    if (!this.aiClient) {
-      throw new AppError(
-        'unavailable',
-        'SERVICE_UNAVAILABLE',
-        'AI service is not configured. Please ensure GEMINI_API_KEY is set.',
-      );
+    const directClient = this.aiClient;
+    if (!directClient) {
+      throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', notConfiguredMessage);
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-      const responsePromise = this.aiClient.models.generateContent({
-        model: this.modelName,
-        contents: [
-          {
-            inlineData: {
-              mimeType: audio.mimeType,
-              data: cleanBase64,
-            },
-          },
-          prompt,
-        ],
-      });
-
-      const response = await Promise.race([
-        responsePromise,
-        new Promise<never>((_, reject) => {
-          controller.signal.addEventListener('abort', () =>
-            reject(new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'AI audio processing request timed out.')),
-          );
-        }),
-      ]);
-
-      clearTimeout(timeoutId);
+      markAiRequestDispatched();
+      const response = await request(directClient, this.modelName);
       return response.text?.trim() || '';
     } catch (err: unknown) {
-      this.handleGeminiError(err, 'Unable to process meal audio right now. Please try again.');
+      this.handleGeminiError(err, failureMessage);
     }
   }
 
@@ -302,3 +164,7 @@ export class GeminiClient {
   }
 }
 
+/** Accepts both raw base64 and a `data:<mime>;base64,<payload>` URL. */
+function stripDataUrlPrefix(base64: string): string {
+  return base64.includes(',') ? base64.split(',')[1]! : base64;
+}

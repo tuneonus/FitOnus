@@ -42,6 +42,7 @@ export * from './interface/admin-nutrition.routes.js';
 import type { SqlExecutor } from '../../database/transaction.js';
 import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
+import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { GeminiClient } from '../coach/infrastructure/gemini-client.js';
 import { GeminiMealPhotoService } from './infrastructure/gemini-meal-photo-service.js';
 import { GeminiVoiceMealService } from './infrastructure/gemini-voice-meal-service.js';
@@ -89,6 +90,8 @@ export interface CreateNutritionModuleOptions {
   db: SqlExecutor;
   uow: UnitOfWork;
   geminiClient?: GeminiClient;
+  /** Required: photo and voice analysis must never reach Gemini without the flag / quota gate. */
+  aiUsageGate: AiUsageGate;
 }
 
 export function createNutritionModule(deps: CreateNutritionModuleOptions): NutritionModule {
@@ -100,9 +103,9 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
   const auditLogger = new PgNutritionAuditLogger(deps.db);
 
   const mealPhotoService = deps.geminiClient ? new GeminiMealPhotoService(deps.geminiClient) : undefined;
-  const analyzeMealPhotoUseCase = mealPhotoService ? new AnalyzeMealPhotoUseCase(mealPhotoService) : undefined;
+  const analyzeMealPhotoUseCase = mealPhotoService ? new AnalyzeMealPhotoUseCase(mealPhotoService, deps.aiUsageGate) : undefined;
   const voiceMealService = deps.geminiClient ? new GeminiVoiceMealService(deps.geminiClient) : undefined;
-  const parseVoiceMealUseCase = voiceMealService ? new ParseVoiceMealUseCase(voiceMealService) : undefined;
+  const parseVoiceMealUseCase = voiceMealService ? new ParseVoiceMealUseCase(voiceMealService, deps.aiUsageGate) : undefined;
 
   const memberController = createNutritionMemberController({
     getDailyNutrition: new GetDailyNutritionUseCase(mealRepo, waterRepo, targetAdapter),

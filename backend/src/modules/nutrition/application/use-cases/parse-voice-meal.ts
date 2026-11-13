@@ -1,3 +1,4 @@
+import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type {
   VoiceMealParseInput,
@@ -6,7 +7,10 @@ import type {
 import type { GeminiVoiceMealService } from '../../infrastructure/gemini-voice-meal-service.js';
 
 export class ParseVoiceMealUseCase {
-  constructor(private readonly voiceMealService: GeminiVoiceMealService) {}
+  constructor(
+    private readonly voiceMealService: GeminiVoiceMealService,
+    private readonly aiUsageGate: AiUsageGate,
+  ) {}
 
   async execute(input: VoiceMealParseInput): Promise<VoiceMealParseResult> {
     if (!input.userId || !input.userId.trim()) {
@@ -49,18 +53,24 @@ export class ParseVoiceMealUseCase {
         );
       }
 
-      return this.voiceMealService.parseVoiceMeal({
-        audio: { mimeType, base64: input.audioBase64! },
+      // Validation above is free; only an admitted request is charged (see AiUsageGate).
+      return this.aiUsageGate.run({ userId: input.userId, action: 'voice_meal' }, () =>
+        this.voiceMealService.parseVoiceMeal({
+          audio: { mimeType, base64: input.audioBase64! },
+          transcript: input.transcript,
+          lang: input.lang,
+          mealType: input.mealType,
+        }),
+      );
+    }
+
+    // Transcript-only requests also call Gemini (text generation), so they are metered too.
+    return this.aiUsageGate.run({ userId: input.userId, action: 'voice_meal' }, () =>
+      this.voiceMealService.parseVoiceMeal({
         transcript: input.transcript,
         lang: input.lang,
         mealType: input.mealType,
-      });
-    }
-
-    return this.voiceMealService.parseVoiceMeal({
-      transcript: input.transcript,
-      lang: input.lang,
-      mealType: input.mealType,
-    });
+      }),
+    );
   }
 }

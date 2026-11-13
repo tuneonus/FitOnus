@@ -1,3 +1,4 @@
+import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type {
   MealPhotoAnalysisInput,
@@ -6,7 +7,10 @@ import type {
 import type { GeminiMealPhotoService } from '../../infrastructure/gemini-meal-photo-service.js';
 
 export class AnalyzeMealPhotoUseCase {
-  constructor(private readonly mealPhotoService: GeminiMealPhotoService) {}
+  constructor(
+    private readonly mealPhotoService: GeminiMealPhotoService,
+    private readonly aiUsageGate: AiUsageGate,
+  ) {}
 
   async execute(input: MealPhotoAnalysisInput): Promise<MealPhotoAnalysisResult> {
     if (!input.userId || !input.userId.trim()) {
@@ -32,10 +36,13 @@ export class AnalyzeMealPhotoUseCase {
       );
     }
 
-    return this.mealPhotoService.analyzePhoto(
-      { mimeType, base64: input.imageBase64 },
-      input.mealType,
-      input.notes,
+    // Validation above is free; only an admitted request is charged (see AiUsageGate).
+    return this.aiUsageGate.run({ userId: input.userId, action: 'meal_photo' }, () =>
+      this.mealPhotoService.analyzePhoto(
+        { mimeType, base64: input.imageBase64 },
+        input.mealType,
+        input.notes,
+      ),
     );
   }
 }

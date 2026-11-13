@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
 import type { Database } from '../../database/transaction.js';
+import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import { GeminiClient } from './infrastructure/gemini-client.js';
 import { ChatWithCoachUseCase } from './application/use-cases/chat-with-coach.js';
@@ -50,6 +51,8 @@ export interface CreateCoachModuleOptions {
   basePath: string;
   db: Database;
   geminiConfig: GeminiAiConfig;
+  /** Required: chat and insights must never reach Gemini without the feature flag / quota gate. */
+  aiUsageGate: AiUsageGate;
   rateLimiter?: RequestHandler;
 }
 
@@ -62,10 +65,11 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
   const useCase = new ChatWithCoachUseCase(
     userContextRepo,
     geminiService,
+    options.aiUsageGate,
     conversationRepo,
     memoryRepo,
   );
-  const insightsUseCase = new GetCoachInsightsUseCase(userContextRepo, geminiService);
+  const insightsUseCase = new GetCoachInsightsUseCase(userContextRepo, geminiService, options.aiUsageGate);
   const manageConversations = new ManageConversationsUseCase(conversationRepo);
   const manageMemories = new ManageMemoriesUseCase(memoryRepo);
 

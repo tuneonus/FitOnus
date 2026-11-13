@@ -1,4 +1,5 @@
 import { createPool } from '../src/database/pool.js';
+import { Database, PgUnitOfWork } from '../src/database/transaction.js';
 import { loadConfig } from '../src/config/env.js';
 import { PgAppSettingsRepository } from '../src/modules/app-settings/infrastructure/pg-app-settings-repository.js';
 import { UpdateAppSettingsUseCase } from '../src/modules/app-settings/application/use-cases/update-app-settings.js';
@@ -25,7 +26,8 @@ async function main() {
   };
 
   try {
-    const repo = new PgAppSettingsRepository(pool);
+    const database = new Database(pool);
+    const repo = new PgAppSettingsRepository(database, new PgUnitOfWork(database));
     const updateUseCase = new UpdateAppSettingsUseCase({
       repo,
       auditLogger: fakeAuditLogger,
@@ -176,7 +178,7 @@ async function main() {
     if (initialUsage === 0) {
       await pool.query('DELETE FROM user_ai_usage WHERE user_id = $1 AND action_type = $2', [testUserId, 'coach_chat']);
     } else {
-      await pool.query('UPDATE user_ai_usage SET count = $1 WHERE user_id = $2 AND action_type = $3', [initialUsage, testUserId, 'coach_chat']);
+      await pool.query('UPDATE user_ai_usage SET request_count = $1 WHERE user_id = $2 AND action_type = $3', [initialUsage, testUserId, 'coach_chat']);
     }
     console.log('✓ Restored test user AI usage records');
 

@@ -1,4 +1,5 @@
 import { createPool } from '../src/database/pool.js';
+import { Database, PgUnitOfWork } from '../src/database/transaction.js';
 import { loadConfig } from '../src/config/env.js';
 import { PgAppSettingsRepository } from '../src/modules/app-settings/infrastructure/pg-app-settings-repository.js';
 import { GetGeminiConfigUseCase } from '../src/modules/app-settings/application/use-cases/get-gemini-config.js';
@@ -48,7 +49,8 @@ async function main() {
       role: 'admin',
     });
 
-    const repo = new PgAppSettingsRepository(pool);
+    const database = new Database(pool);
+    const repo = new PgAppSettingsRepository(database, new PgUnitOfWork(database));
     const getGeminiConfig = new GetGeminiConfigUseCase({ repo, fallbackApiKey: config.gemini.apiKey });
     const updateGeminiConfig = new UpdateGeminiConfigUseCase({
       repo,

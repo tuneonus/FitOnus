@@ -1,3 +1,4 @@
+import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type { GeminiService, UserContextRepository } from '../ports.js';
 import type { CoachInsightsResponse } from '../../domain/coach.types.js';
@@ -23,6 +24,7 @@ export class GetCoachInsightsUseCase {
   constructor(
     private readonly userContextRepo: UserContextRepository,
     private readonly geminiService: GeminiService,
+    private readonly aiUsageGate: AiUsageGate,
   ) {}
 
   /** Clear cached insights for testing or cache eviction */
@@ -41,6 +43,9 @@ export class GetCoachInsightsUseCase {
     const timezone = input.timezone || 'UTC';
     const cacheKey = `${userId}:${lang}`;
 
+    // Kill switch applies to every request, including ones the cache could serve.
+    await this.aiUsageGate.assertEnabled('coach_chat');
+
     // 1. Check valid cache if not forcing refresh
     if (!input.forceRefresh) {
       const cached = insightsCache.get(cacheKey);
@@ -57,8 +62,12 @@ export class GetCoachInsightsUseCase {
 
     const generatePromise = (async () => {
       try {
-        const context = await this.userContextRepo.getUserFitnessContext(userId, timezone);
-        const insights = await this.geminiService.generateInsights(context, lang);
+        // Only a cache miss that actually generates insights is metered. Insights share the
+        // `coach_chat` quota and `aiCoach` flag (the quota table has no separate action type).
+        const insights = await this.aiUsageGate.run({ userId, action: 'coach_chat' }, async () => {
+          const context = await this.userContextRepo.getUserFitnessContext(userId, timezone);
+          return this.geminiService.generateInsights(context, lang);
+        });
 
         // Store in cache
         insightsCache.set(cacheKey, {

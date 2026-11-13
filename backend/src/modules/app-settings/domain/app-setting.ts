@@ -81,6 +81,26 @@ export interface PublicAppConfig {
 
 export type AiUsageActionType = 'coach_chat' | 'meal_photo' | 'voice_meal' | 'workout_generator';
 
+export interface AiUsageReserveInput {
+  userId: string;
+  actionType: AiUsageActionType;
+  /** Maximum units for this action per user per day. */
+  actionLimit: number;
+  /** Maximum units across all AI actions per user per day (`ai.limits.dailyGlobalLimit`). */
+  totalLimit: number;
+}
+
+/** Counts are post-increment when `allowed`, and the unchanged current counts when rejected. */
+export type AiUsageReserveResult =
+  | { allowed: true; usageDate: string; actionCount: number; totalCount: number }
+  | {
+      allowed: false;
+      reason: 'action_limit' | 'total_limit';
+      usageDate: string;
+      actionCount: number;
+      totalCount: number;
+    };
+
 export interface AiUsageStats {
   todayTotalRequests: number;
   todayActiveAiUsers: number;

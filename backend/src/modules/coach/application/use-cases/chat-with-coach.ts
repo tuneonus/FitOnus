@@ -1,4 +1,6 @@
-import { AppError } from '../../../../shared/errors/app-error.js';
+import { randomUUID } from 'node:crypto';
+import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
+import { AppError, isAppError } from '../../../../shared/errors/app-error.js';
 import type {
   ConversationRepository,
   GeminiService,
@@ -24,6 +26,7 @@ export class ChatWithCoachUseCase {
   constructor(
     private readonly userContextRepo: UserContextRepository,
     private readonly geminiService: GeminiService,
+    private readonly aiUsageGate: AiUsageGate,
     private readonly conversationRepo?: ConversationRepository,
     private readonly memoryRepo?: MemoryRepository,
   ) {}
@@ -39,6 +42,19 @@ export class ChatWithCoachUseCase {
     }
 
     const userId = input.userId.trim();
+
+    // Feature flag + atomic daily quota are enforced before any conversation/message is persisted
+    // and before Gemini is called, so a blocked request has no side effects and costs nothing.
+    return this.aiUsageGate.run({ userId, action: 'coach_chat' }, () =>
+      this.respond(userId, trimmedMessage, input),
+    );
+  }
+
+  private async respond(
+    userId: string,
+    trimmedMessage: string,
+    input: ChatWithCoachInput,
+  ): Promise<ChatWithCoachOutput> {
     const timezone = input.timezone || 'UTC';
     const context = await this.userContextRepo.getUserFitnessContext(userId, timezone);
 
@@ -61,15 +77,15 @@ export class ChatWithCoachUseCase {
     }
 
     // 2. Persist user message to conversation history (idempotent on clientMessageId)
-    const userMsgId = input.clientMessageId?.trim() || `msg-${Date.now()}-u`;
+    let userMsgId = input.clientMessageId?.trim() || newMessageId();
     if (this.conversationRepo && conversationId) {
-      await this.conversationRepo.addMessage(userId, conversationId, {
-        id: userMsgId,
+      userMsgId = await this.persistUserMessage(
+        this.conversationRepo,
+        userId,
         conversationId,
-        role: 'user',
-        text: trimmedMessage,
-        createdAt: new Date().toISOString(),
-      });
+        userMsgId,
+        trimmedMessage,
+      );
     }
 
     // 3. Resolve conversation history if not supplied by client
@@ -107,7 +123,7 @@ export class ChatWithCoachUseCase {
 
     // 6. Persist assistant response to conversation history
     if (this.conversationRepo && conversationId) {
-      const assistantMsgId = `msg-${Date.now()}-a`;
+      const assistantMsgId = newMessageId();
       await this.conversationRepo.addMessage(userId, conversationId, {
         id: assistantMsgId,
         conversationId,
@@ -125,4 +141,44 @@ export class ChatWithCoachUseCase {
       ...(conversationId ? { conversationId } : {}),
     };
   }
+
+  /**
+   * Stores the user's message and returns the ID it was stored under.
+   *
+   * `clientMessageId` makes a retry idempotent for the SAME user, but message IDs share one global
+   * namespace and the client picks them. If the ID already belongs to another user (or another
+   * conversation) the repository refuses to touch that row; the request itself is still legitimate
+   * and already metered, so store this user's message under a server-generated ID instead of failing.
+   * The response is identical either way, so a caller learns nothing about IDs it does not own.
+   */
+  private async persistUserMessage(
+    repo: ConversationRepository,
+    userId: string,
+    conversationId: string,
+    preferredId: string,
+    text: string,
+  ): Promise<string> {
+    const store = (id: string) =>
+      repo.addMessage(userId, conversationId, {
+        id,
+        conversationId,
+        role: 'user',
+        text,
+        createdAt: new Date().toISOString(),
+      });
+
+    try {
+      await store(preferredId);
+      return preferredId;
+    } catch (error) {
+      if (!isAppError(error) || error.kind !== 'conflict') throw error;
+    }
+
+    const fallbackId = newMessageId();
+    await store(fallbackId);
+    return fallbackId;
+  }
 }
+
+/** Server-generated message IDs are random so two requests can never collide (Date.now() could). */
+const newMessageId = (): string => `msg-${randomUUID()}`;

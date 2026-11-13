@@ -3,6 +3,8 @@ import { decryptSecret } from '../../../../shared/security/encryption.js';
 import type { AppSettingsRepository } from '../ports.js';
 import type { GeminiConfigRecord, GeminiFeature, GeminiModelInfo } from '../../domain/gemini-config.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
+import { isAiTimeoutError } from '../../../../shared/ai/ai-timeout.js';
+import { currentAiRequestContext, markAiRequestDispatched } from '../../../../shared/ai/ai-usage.js';
 
 export interface GeminiRuntimeConfig {
   repo: AppSettingsRepository;
@@ -123,8 +125,12 @@ export class GeminiRuntimeService {
     const { apiKey, model } = await this.resolveExecutionTarget(params.feature);
     const client = new GoogleGenAI({ apiKey });
     const startTime = Date.now();
+    // Attribute usage to the authenticated user admitted by the AI usage gate (explicit param wins).
+    const userId = params.userId ?? currentAiRequestContext()?.userId ?? null;
 
     try {
+      // From here on the provider is called, so a failure no longer refunds the quota unit.
+      markAiRequestDispatched();
       const response = await params.execute(client, model);
       const durationMs = Date.now() - startTime;
 
@@ -140,7 +146,7 @@ export class GeminiRuntimeService {
       this.config.repo
         .recordGeminiUsage({
           requestId: params.requestId,
-          userId: params.userId ?? null,
+          userId,
           feature: params.feature,
           model,
           status: 'success',
@@ -174,7 +180,10 @@ export class GeminiRuntimeService {
       let status: 'failed' | 'rate_limited' | 'timeout' = 'failed';
       let errorCategory = 'PROVIDER_ERROR';
 
-      if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
+      if (isAiTimeoutError(err)) {
+        status = 'timeout';
+        errorCategory = 'TIMEOUT';
+      } else if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
         status = 'rate_limited';
         errorCategory = 'RATE_LIMITED';
       } else if (errorMsg.includes('timed out') || errorMsg.includes('timeout')) {
@@ -187,7 +196,7 @@ export class GeminiRuntimeService {
       this.config.repo
         .recordGeminiUsage({
           requestId: params.requestId,
-          userId: params.userId ?? null,
+          userId,
           feature: params.feature,
           model,
           status,

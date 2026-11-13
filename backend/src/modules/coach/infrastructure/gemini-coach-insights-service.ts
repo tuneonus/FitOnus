@@ -50,7 +50,7 @@ export class GeminiCoachInsightsService implements CoachInsightsService {
     const prompt = this.buildInsightsPrompt(context, lang);
 
     try {
-      const rawText = await this.client.generateText(prompt, 20_000);
+      const rawText = await this.client.generateText(prompt, 20_000, 'coach_insights');
       return this.parseInsightsOutput(rawText, context, isTa, isTanglish);
     } catch {
       // Graceful degradation: fallback to deterministic data-backed insights

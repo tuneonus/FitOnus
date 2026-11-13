@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetCoachInsightsUseCase } from '../../../src/modules/coach/application/use-cases/get-coach-insights.js';
 import type { UserContextRepository, GeminiService } from '../../../src/modules/coach/application/ports.js';
 import type { CoachInsightsResponse, UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
+import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
 describe('GetCoachInsightsUseCase', () => {
   let mockUserContextRepo: UserContextRepository;
@@ -96,7 +97,7 @@ describe('GetCoachInsightsUseCase', () => {
       generateCoachResponse: vi.fn(),
       generateInsights: vi.fn().mockResolvedValue(sampleInsightsResponse),
     };
-    useCase = new GetCoachInsightsUseCase(mockUserContextRepo, mockGeminiService);
+    useCase = new GetCoachInsightsUseCase(mockUserContextRepo, mockGeminiService, allowAllAiUsageGate());
   });
 
   it('generates real personalized insights using context and gemini', async () => {

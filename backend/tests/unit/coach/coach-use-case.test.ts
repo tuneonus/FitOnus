@@ -3,6 +3,7 @@ import { ChatWithCoachUseCase } from '../../../src/modules/coach/application/use
 import type { GeminiService, UserContextRepository } from '../../../src/modules/coach/application/ports.js';
 import type { CoachResponse, UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
 import { AppError } from '../../../src/shared/errors/app-error.js';
+import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
 describe('ChatWithCoachUseCase', () => {
   let mockUserContextRepo: UserContextRepository;
@@ -77,7 +78,7 @@ describe('ChatWithCoachUseCase', () => {
       generateCoachResponse: vi.fn().mockResolvedValue(mockResponse),
       generateInsights: vi.fn(),
     };
-    useCase = new ChatWithCoachUseCase(mockUserContextRepo, mockGeminiService);
+    useCase = new ChatWithCoachUseCase(mockUserContextRepo, mockGeminiService, allowAllAiUsageGate());
   });
 
   it('generates coach response when valid input is provided', async () => {

@@ -1,4 +1,6 @@
 import type { SqlExecutor } from '../../database/transaction.js';
+import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
+import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import type { AdminAuditLoggerPort } from './application/ports.js';
 import { GetAppSettingsUseCase } from './application/use-cases/get-app-settings.js';
@@ -11,6 +13,8 @@ import { TestGeminiConnectionUseCase } from './application/use-cases/test-gemini
 import { RollbackGeminiKeyUseCase } from './application/use-cases/rollback-gemini-key.js';
 import { GetGeminiUsageAnalyticsUseCases } from './application/use-cases/get-gemini-usage.js';
 import { GeminiRuntimeService } from './application/services/gemini-runtime-service.js';
+import { createAiRateLimiter } from '../../shared/ai/ai-rate-limit.js';
+import { AiUsageGateService } from './application/services/ai-usage-gate.js';
 import { PgAppSettingsRepository } from './infrastructure/pg-app-settings-repository.js';
 import {
   createAppSettingsController,
@@ -36,6 +40,7 @@ export * from './application/use-cases/test-gemini-connection.js';
 export * from './application/use-cases/rollback-gemini-key.js';
 export * from './application/use-cases/get-gemini-usage.js';
 export * from './application/services/gemini-runtime-service.js';
+export * from './application/services/ai-usage-gate.js';
 export * from './infrastructure/pg-app-settings-repository.js';
 export * from './interface/app-settings.schemas.js';
 export * from './interface/app-settings.controller.js';
@@ -47,6 +52,8 @@ export interface AppSettingsModule {
   publicRoutes: RouteGroup;
   repository: PgAppSettingsRepository;
   runtimeService: GeminiRuntimeService;
+  /** The only sanctioned way to reach Gemini: feature flags, atomic daily quotas, user attribution. */
+  aiUsageGate: AiUsageGate;
   useCases: AppSettingsUseCases & { checkAndRecordAiQuota: CheckAndRecordAiQuotaUseCase };
   controller: AppSettingsController;
 }
@@ -56,6 +63,8 @@ export interface CreateAppSettingsModuleOptions {
   adminAiBasePath: string;
   publicBasePath: string;
   db: SqlExecutor;
+  /** Must wrap the same `Database` as `db` (the AI quota reservation is transactional). */
+  uow: UnitOfWork;
   auditLogger?: AdminAuditLoggerPort;
   encryptionKey: string;
   fallbackApiKey?: string;
@@ -63,7 +72,7 @@ export interface CreateAppSettingsModuleOptions {
 }
 
 export function createAppSettingsModule(options: CreateAppSettingsModuleOptions): AppSettingsModule {
-  const repository = new PgAppSettingsRepository(options.db);
+  const repository = new PgAppSettingsRepository(options.db, options.uow);
 
   const getAppSettings = new GetAppSettingsUseCase(repository);
   const updateAppSettings = new UpdateAppSettingsUseCase({
@@ -72,6 +81,8 @@ export function createAppSettingsModule(options: CreateAppSettingsModuleOptions)
   });
   const getPublicAppConfig = new GetPublicAppConfigUseCase(repository);
   const checkAndRecordAiQuota = new CheckAndRecordAiQuotaUseCase(repository);
+  // Per-user burst limiter (in-memory; see shared/ai/ai-rate-limit.ts for the multi-instance limitation).
+  const aiUsageGate = new AiUsageGateService(checkAndRecordAiQuota, createAiRateLimiter());
 
   const getGeminiConfig = new GetGeminiConfigUseCase({
     repo: repository,
@@ -129,6 +140,7 @@ export function createAppSettingsModule(options: CreateAppSettingsModuleOptions)
     publicRoutes,
     repository,
     runtimeService,
+    aiUsageGate,
     useCases,
     controller,
   };

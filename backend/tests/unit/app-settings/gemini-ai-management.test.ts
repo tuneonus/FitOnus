@@ -103,9 +103,10 @@ class InMemoryAppSettingsRepo implements AppSettingsRepository {
   async getUserTodayAiUsage() {
     return 0;
   }
-  async incrementUserAiUsage() {
-    return 1;
+  async reserveAiUsage() {
+    return { allowed: true as const, usageDate: '2026-11-12', actionCount: 1, totalCount: 1 };
   }
+  async releaseAiUsage() {}
 
   // Gemini Ports
   async getGeminiConfig(): Promise<GeminiConfigRecord> {

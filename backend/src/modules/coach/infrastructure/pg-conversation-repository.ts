@@ -1,4 +1,5 @@
 import type { Database } from '../../../database/transaction.js';
+import { conflict, notFound } from '../../../shared/errors/app-error.js';
 import type { ConversationRepository } from '../application/ports.js';
 import type {
   ConversationDetail,
@@ -120,19 +121,36 @@ export class PgConversationRepository implements ConversationRepository {
     return (res.rowCount ?? 0) > 0;
   }
 
+  /**
+   * Ownership is enforced inside the one statement that writes, so it cannot be raced or bypassed:
+   *
+   * - The row is only inserted for a conversation that belongs to `userId` (INSERT ... SELECT).
+   * - `coach_messages.id` is a global primary key and clients choose message IDs, so on an ID
+   *   collision the existing row is updated ONLY when it is the same user's, in the same
+   *   conversation, with the same role: a legitimate retry. Anything else is left untouched.
+   *
+   * Throws `not_found` when the conversation is not the caller's and `conflict` when the ID is held
+   * by a different user, conversation or role. Neither error carries anything about the other row.
+   */
   async addMessage(
     userId: string,
     conversationId: string,
     message: StoredChatMessage,
   ): Promise<void> {
-    await this.db.query(
+    const written = await this.db.query<{ id: string }>(
       `INSERT INTO coach_messages (id, conversation_id, user_id, role, text, blocks, sources, follow_ups, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       SELECT $1, c.id, c.user_id, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::timestamptz
+       FROM coach_conversations c
+       WHERE c.id = $2 AND c.user_id = $3
        ON CONFLICT (id) DO UPDATE
        SET text = EXCLUDED.text,
            blocks = EXCLUDED.blocks,
            sources = EXCLUDED.sources,
-           follow_ups = EXCLUDED.follow_ups`,
+           follow_ups = EXCLUDED.follow_ups
+       WHERE coach_messages.user_id = EXCLUDED.user_id
+         AND coach_messages.conversation_id = EXCLUDED.conversation_id
+         AND coach_messages.role = EXCLUDED.role
+       RETURNING id`,
       [
         message.id,
         conversationId,
@@ -145,6 +163,15 @@ export class PgConversationRepository implements ConversationRepository {
         message.createdAt ? new Date(message.createdAt) : new Date(),
       ],
     );
+
+    if (written.rows.length === 0) {
+      const owned = await this.db.query(
+        `SELECT 1 FROM coach_conversations WHERE id = $1 AND user_id = $2`,
+        [conversationId, userId],
+      );
+      if (owned.rows.length === 0) throw notFound('NOT_FOUND', 'Conversation not found.');
+      throw conflict('CONFLICT', 'This message ID is already in use.');
+    }
 
     // Update conversation timestamp and preview snippet
     const previewSnippet = message.role === 'assistant' ? message.text.slice(0, 140) : null;

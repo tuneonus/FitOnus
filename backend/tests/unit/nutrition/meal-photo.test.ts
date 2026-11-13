@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AnalyzeMealPhotoUseCase } from '../../../src/modules/nutrition/application/use-cases/analyze-meal-photo.js';
 import type { GeminiMealPhotoService } from '../../../src/modules/nutrition/infrastructure/gemini-meal-photo-service.js';
 import type { MealPhotoAnalysisResult } from '../../../src/modules/nutrition/domain/meal-photo.types.js';
+import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
 describe('AnalyzeMealPhotoUseCase', () => {
   let mockService: GeminiMealPhotoService;
@@ -57,7 +58,7 @@ describe('AnalyzeMealPhotoUseCase', () => {
     mockService = {
       analyzePhoto: vi.fn().mockResolvedValue(samplePhotoResult),
     } as unknown as GeminiMealPhotoService;
-    useCase = new AnalyzeMealPhotoUseCase(mockService);
+    useCase = new AnalyzeMealPhotoUseCase(mockService, allowAllAiUsageGate());
   });
 
   it('successfully analyzes a meal photo and returns structured estimated nutrients', async () => {

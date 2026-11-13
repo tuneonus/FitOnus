@@ -1,5 +1,7 @@
 import type {
   AiUsageActionType,
+  AiUsageReserveInput,
+  AiUsageReserveResult,
   AiUsageStats,
   AppSettingKey,
   AppSettingRecord,
@@ -28,7 +30,14 @@ export interface AppSettingsRepository {
   getPublicConfig(): Promise<PublicAppConfig>;
   getTodayAiUsageStats(): Promise<AiUsageStats>;
   getUserTodayAiUsage(userId: string, actionType: AiUsageActionType): Promise<number>;
-  incrementUserAiUsage(userId: string, actionType: AiUsageActionType): Promise<number>;
+  /**
+   * Atomically checks both daily limits and, only when neither is reached, adds one unit.
+   * Concurrent calls for the same user are serialised, so the limits cannot be exceeded by
+   * parallel requests. Never implement this as a separate read followed by a write.
+   */
+  reserveAiUsage(input: AiUsageReserveInput): Promise<AiUsageReserveResult>;
+  /** Returns one previously reserved unit (never below zero) for the day it was reserved on. */
+  releaseAiUsage(input: { userId: string; actionType: AiUsageActionType; usageDate: string }): Promise<void>;
 
   // Gemini Configuration & Model Management
   getGeminiConfig(): Promise<GeminiConfigRecord>;

@@ -9,6 +9,7 @@ import type {
 } from '../../../src/modules/coach/application/ports.js';
 import type { UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
 import type { MemoryItem } from '../../../src/modules/coach/domain/coach-memory.types.js';
+import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
 describe('AI Coach Memory Use Case', () => {
   let mockMemoryRepo: MemoryRepository;
@@ -151,6 +152,7 @@ describe('AI Coach Memory Use Case', () => {
     const chatUseCase = new ChatWithCoachUseCase(
       mockUserContextRepo,
       mockGeminiService,
+      allowAllAiUsageGate(),
       mockConvoRepo,
       mockMemoryRepo,
     );
