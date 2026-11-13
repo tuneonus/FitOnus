@@ -1,4 +1,5 @@
 import { calculateGoalProgress, type GoalCadence, type GoalDirection } from './goal-calculator.js';
+import { assertGoalValue } from './goal-limits.js';
 
 export type { GoalCadence, GoalDirection };
 
@@ -53,6 +54,10 @@ export class Goal {
     if (!props.title || props.title.trim().length === 0) throw new Error('Goal title is required');
     if (props.startValue < 0 || props.currentValue < 0 || props.targetValue < 0) {
       throw new Error('Goal values cannot be negative');
+    }
+    // Hydration must stay lenient about legacy magnitudes (see goal-limits.ts); only non-numbers are refused.
+    if (![props.startValue, props.currentValue, props.targetValue].every(Number.isFinite)) {
+      throw new Error('Goal values must be finite numbers');
     }
 
     this.props = {
@@ -143,16 +148,18 @@ export class Goal {
     return this.props.status === 'completed';
   }
 
-  updateProgress(newCurrentValue: number): void {
+  /** `now` is the instant of the change (injected by the caller's clock; defaults to the wall clock). */
+  updateProgress(newCurrentValue: number, now: Date = new Date()): void {
     if (newCurrentValue < 0) throw new Error('Progress value cannot be negative');
+    assertGoalValue('currentValue', newCurrentValue);
     this.props.currentValue = newCurrentValue;
-    this.props.updatedAt = new Date();
+    this.props.updatedAt = now;
 
     if (this.props.cadence === 'once') {
       if (this.props.direction === 'decrease' && newCurrentValue <= this.props.targetValue) {
-        this.complete();
+        this.complete(now);
       } else if (this.props.direction === 'increase' && newCurrentValue >= this.props.targetValue) {
-        this.complete();
+        this.complete(now);
       }
     }
   }
@@ -200,6 +207,7 @@ export class Goal {
     }
     if (params.targetValue !== undefined) {
       if (params.targetValue < 0) throw new Error('Target value cannot be negative');
+      assertGoalValue('targetValue', params.targetValue);
       this.props.targetValue = params.targetValue;
     }
     if (params.deadlineLabel !== undefined) {

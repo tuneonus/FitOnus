@@ -75,7 +75,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
   return {
     createGoal: async (req: Request): Promise<RouteResult<GoalView>> => {
       const actor = requireActor(req);
-      const { body } = getValidated(req, createGoalRequest);
+      const { body, query } = getValidated(req, createGoalRequest);
       const result = await useCases.createGoal.execute({
         userId: actor.userId,
         type: body.type,
@@ -90,6 +90,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         deadlineLabel: body.deadlineLabel,
         targetDate: body.targetDate,
         metadata: body.metadata,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -106,6 +107,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         status: query.status,
         isPrimary: query.isPrimary,
         syncTelemetry: query.syncTelemetry,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -115,10 +117,11 @@ export function createGoalsController(useCases: GoalsUseCases) {
 
     getGoalDetails: async (req: Request): Promise<RouteResult<GoalDetailsView>> => {
       const actor = requireActor(req);
-      const { params } = getValidated(req, getGoalDetailsRequest);
+      const { params, query } = getValidated(req, getGoalDetailsRequest);
       const result = await useCases.getGoalDetails.execute({
         id: params.id,
         userId: actor.userId,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -128,7 +131,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
 
     updateGoal: async (req: Request): Promise<RouteResult<GoalView>> => {
       const actor = requireActor(req);
-      const { params, body } = getValidated(req, updateGoalRequest);
+      const { params, query, body } = getValidated(req, updateGoalRequest);
       const result = await useCases.updateGoal.execute({
         id: params.id,
         userId: actor.userId,
@@ -140,6 +143,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         targetDate: body.targetDate,
         status: body.status,
         isPrimary: body.isPrimary,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -190,7 +194,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
 
     logGoalCheckpoint: async (req: Request): Promise<RouteResult<GoalCheckpointView>> => {
       const actor = requireActor(req);
-      const { params, body } = getValidated(req, logGoalCheckpointRequest);
+      const { params, query, body } = getValidated(req, logGoalCheckpointRequest);
       const result = await useCases.logGoalCheckpoint.execute({
         goalId: params.id,
         userId: actor.userId,
@@ -198,6 +202,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         date: body.date,
         notes: body.notes,
         source: body.source,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -234,6 +239,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         category: query.category,
         isArchived: query.isArchived,
         date: query.date,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -248,6 +254,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         habitId: params.id,
         userId: actor.userId,
         limitDays: query.limitDays,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -257,7 +264,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
 
     updateHabit: async (req: Request): Promise<RouteResult<HabitView>> => {
       const actor = requireActor(req);
-      const { params, body } = getValidated(req, updateHabitRequest);
+      const { params, query, body } = getValidated(req, updateHabitRequest);
       const result = await useCases.updateHabit.execute({
         id: params.id,
         userId: actor.userId,
@@ -269,6 +276,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         icon: body.icon,
         color: body.color,
         isArchived: body.isArchived,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -291,7 +299,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
 
     setHabitCompletion: async (req: Request): Promise<RouteResult<SetHabitCompletionResult>> => {
       const actor = requireActor(req);
-      const { params, body } = getValidated(req, setHabitCompletionRequest);
+      const { params, query, body } = getValidated(req, setHabitCompletionRequest);
       const result = await useCases.setHabitCompletion.execute({
         id: body.id,
         habitId: params.id,
@@ -299,6 +307,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         date: body.date,
         completed: body.completed,
         notes: body.notes,
+        timezone: query.timezone,
       });
       return {
         data: result,
@@ -313,6 +322,7 @@ export function createGoalsController(useCases: GoalsUseCases) {
         habitId: params.id,
         userId: actor.userId,
         referenceDate: query.referenceDate,
+        timezone: query.timezone,
       });
       return {
         data: result,

@@ -1,4 +1,12 @@
 import type { Goal, GoalStatus } from '../../domain/goal.js';
+import { clampGoalValue } from '../../domain/goal-limits.js';
+import {
+  localWeekInstants,
+  resolveTimeZone,
+  systemClock,
+  todayInTimeZone,
+  type Clock,
+} from '../../domain/local-date.js';
 import type { IGoalRepository, IGoalsTelemetryPort } from '../ports.js';
 import { toGoalView, type GoalView } from '../goals-view.js';
 
@@ -7,12 +15,15 @@ export interface ListGoalsInput {
   status?: GoalStatus;
   isPrimary?: boolean;
   syncTelemetry?: boolean;
+  /** IANA timezone of the user; decides "today" and the Monday..Sunday week (UTC when missing/invalid). */
+  timezone?: string;
 }
 
 export class ListGoalsUseCase {
   constructor(
     private readonly goalRepo: IGoalRepository,
     private readonly telemetryPort?: IGoalsTelemetryPort,
+    private readonly clock: Clock = systemClock,
   ) {}
 
   async execute(input: ListGoalsInput): Promise<GoalView[]> {
@@ -21,14 +32,15 @@ export class ListGoalsUseCase {
       isPrimary: input.isPrimary,
     });
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const timeZone = resolveTimeZone(input.timezone);
+    const todayStr = todayInTimeZone(this.clock, timeZone);
     const sync = input.syncTelemetry !== false && Boolean(this.telemetryPort);
 
     const views: GoalView[] = [];
 
     for (const goal of goals) {
       if (sync && goal.status === 'active' && this.telemetryPort) {
-        await this.syncGoalTelemetry(goal, todayStr);
+        await this.syncGoalTelemetry(goal, todayStr, timeZone);
       }
 
       let history: number[] = [];
@@ -36,9 +48,9 @@ export class ListGoalsUseCase {
 
       if (goal.cadence === 'daily' && this.telemetryPort) {
         if (goal.type === 'water') {
-          history = await this.telemetryPort.getRecentDailyWaterLiters(input.userId, 7);
+          history = await this.telemetryPort.getRecentDailyWaterLiters(input.userId, 7, todayStr);
         } else if (goal.type === 'protein') {
-          history = await this.telemetryPort.getRecentDailyProteinGrams(input.userId, 7);
+          history = await this.telemetryPort.getRecentDailyProteinGrams(input.userId, 7, todayStr);
         }
         if (history.length > 0) {
           hitDays = history.filter((val) => val >= goal.targetValue).length;
@@ -53,13 +65,13 @@ export class ListGoalsUseCase {
         history = goal.cadence === 'once' ? [goal.startValue, goal.currentValue] : [goal.currentValue];
       }
 
-      views.push(toGoalView(goal, { history, hitDays }));
+      views.push(toGoalView(goal, { history, hitDays, timeZone, today: todayStr }));
     }
 
     return views;
   }
 
-  private async syncGoalTelemetry(goal: Goal, todayStr: string): Promise<void> {
+  private async syncGoalTelemetry(goal: Goal, todayStr: string, timeZone: string): Promise<void> {
     if (!this.telemetryPort) return;
 
     let updatedValue: number | null = null;
@@ -80,30 +92,24 @@ export class ListGoalsUseCase {
         updatedValue = nutrition.proteinG;
       }
     } else if (goal.type === 'streak') {
-      const streak = await this.telemetryPort.getWorkoutStreak(goal.userId, todayStr);
+      const streak = await this.telemetryPort.getWorkoutStreak(goal.userId, todayStr, timeZone);
       if (streak !== goal.currentValue) {
         updatedValue = streak;
       }
     } else if (goal.type === 'workoutFrequency') {
-      const now = new Date();
-      // Start of current week (Monday)
-      const day = now.getUTCDay() || 7;
-      const startOfWeek = new Date(now);
-      startOfWeek.setUTCDate(now.getUTCDate() - day + 1);
-      startOfWeek.setUTCHours(0, 0, 0, 0);
+      // The user's local Monday..Sunday week, expressed as real instants (correct across DST).
+      const week = localWeekInstants(todayStr, timeZone);
+      const weekEnd = new Date(week.endExclusive.getTime() - 1);
 
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
-      endOfWeek.setUTCHours(23, 59, 59, 999);
-
-      const count = await this.telemetryPort.getWeeklyWorkoutCount(goal.userId, startOfWeek, endOfWeek);
+      const count = await this.telemetryPort.getWeeklyWorkoutCount(goal.userId, week.start, weekEnd);
       if (count !== goal.currentValue) {
         updatedValue = count;
       }
     }
 
     if (updatedValue !== null) {
-      goal.updateProgress(updatedValue);
+      // Telemetry sums rows from other tables; never let them push the goal past what it can store.
+      goal.updateProgress(clampGoalValue(updatedValue), this.clock());
       await this.goalRepo.save(goal);
     }
   }

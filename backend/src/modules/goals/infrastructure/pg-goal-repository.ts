@@ -240,7 +240,7 @@ export class PgGoalRepository implements IGoalRepository {
           goalId: r.goal_id,
           userId: r.user_id,
           value: Number(r.value),
-          date: formatDate(r.date) ?? new Date().toISOString().slice(0, 10),
+          date: formatDate(r.date) ?? formatDate(r.recorded_at) ?? '1970-01-01',
           recordedAt: r.recorded_at,
           source: r.source,
           notes: r.notes,

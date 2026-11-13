@@ -1,6 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { badRequest } from '../errors.js';
 import { Habit, type HabitCategory, type HabitFrequency } from '../../domain/habit.js';
+import {
+  HABIT_COLOR_MAX_LENGTH,
+  HABIT_ICON_MAX_LENGTH,
+  HABIT_TITLE_MAX_LENGTH,
+  assertHabitTargetDays,
+  assertMaxLength,
+} from '../../domain/goal-limits.js';
+import { systemClock, type Clock } from '../../domain/local-date.js';
 import type { IHabitRepository } from '../ports.js';
 import { toHabitView, type HabitView } from '../goals-view.js';
 
@@ -17,7 +25,10 @@ export interface CreateHabitInput {
 }
 
 export class CreateHabitUseCase {
-  constructor(private readonly habitRepo: IHabitRepository) {}
+  constructor(
+    private readonly habitRepo: IHabitRepository,
+    private readonly clock: Clock = systemClock,
+  ) {}
 
   async execute(input: CreateHabitInput): Promise<HabitView> {
     if (!input.userId) throw badRequest('User ID is required');
@@ -30,7 +41,12 @@ export class CreateHabitUseCase {
     if (targetDaysPerWeek < 1 || targetDaysPerWeek > 7) {
       throw badRequest('Target days per week must be between 1 and 7');
     }
+    assertHabitTargetDays(targetDaysPerWeek);
+    assertMaxLength('title', title, HABIT_TITLE_MAX_LENGTH);
+    assertMaxLength('icon', input.icon, HABIT_ICON_MAX_LENGTH);
+    assertMaxLength('color', input.color, HABIT_COLOR_MAX_LENGTH);
 
+    const now = this.clock();
     const habit = new Habit({
       id: input.id ?? randomUUID(),
       userId: input.userId,
@@ -45,8 +61,8 @@ export class CreateHabitUseCase {
       longestStreak: 0,
       totalCompletions: 0,
       isArchived: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     });
 
     await this.habitRepo.save(habit);

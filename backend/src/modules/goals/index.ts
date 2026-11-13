@@ -5,6 +5,8 @@ export * from './domain/habit.js';
 export * from './domain/habit-completion.js';
 export * from './domain/goal-calculator.js';
 export * from './domain/streak-calculator.js';
+export * from './domain/local-date.js';
+export * from './domain/goal-limits.js';
 
 // Goals Application Ports & Views
 export * from './application/ports.js';

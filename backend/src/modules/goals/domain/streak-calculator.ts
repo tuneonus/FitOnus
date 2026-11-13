@@ -1,6 +1,10 @@
 /**
  * Pure deterministic habit streak calculation engine.
  * Computes current streak and longest streak across daily and weekly frequencies.
+ *
+ * Every function takes the reference "today" explicitly (`YYYY-MM-DD`, the user's LOCAL calendar day, see
+ * `local-date.ts`). There is deliberately no wall-clock default: a hidden `Date.now()` would be the UTC day,
+ * which is the wrong day for users whose local date differs from UTC's.
  */
 
 export interface StreakResult {
@@ -36,7 +40,7 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
  * - If neither today nor yesterday was completed: current streak is 0.
  * - Longest streak is the maximum consecutive calendar days found across all history.
  */
-export function calculateDailyStreak(completionDates: string[], referenceDateStr?: string): StreakResult {
+export function calculateDailyStreak(completionDates: string[], referenceDateStr: string): StreakResult {
   if (completionDates.length === 0) {
     return { currentStreak: 0, longestStreak: 0, totalCompletions: 0 };
   }
@@ -47,7 +51,7 @@ export function calculateDailyStreak(completionDates: string[], referenceDateStr
 
   const dateSet = new Set(uniqueDateStrings);
 
-  const refDate = referenceDateStr ?? formatDateUtc(Date.now());
+  const refDate = referenceDateStr;
   const refTimestamp = parseDateUtc(refDate);
 
   const todayStr = refDate;
@@ -108,7 +112,7 @@ export function calculateDailyStreak(completionDates: string[], referenceDateStr
 export function calculateWeeklyStreak(
   completionDates: string[],
   targetDaysPerWeek: number,
-  referenceDateStr?: string,
+  referenceDateStr: string,
 ): StreakResult {
   if (completionDates.length === 0) {
     return { currentStreak: 0, longestStreak: 0, totalCompletions: 0 };
@@ -124,7 +128,7 @@ export function calculateWeeklyStreak(
     weekMap.set(weekKey, (weekMap.get(weekKey) ?? 0) + 1);
   }
 
-  const refDate = referenceDateStr ?? formatDateUtc(Date.now());
+  const refDate = referenceDateStr;
   const currentWeekKey = getIsoWeekKey(refDate);
   const previousWeekKey = getPreviousIsoWeekKey(refDate);
 

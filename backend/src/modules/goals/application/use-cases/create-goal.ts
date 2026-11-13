@@ -8,6 +8,15 @@ import {
   type TelemetrySource,
 } from '../../domain/goal.js';
 import { GoalCheckpoint } from '../../domain/goal-checkpoint.js';
+import {
+  GOAL_DEADLINE_LABEL_MAX_LENGTH,
+  GOAL_METRIC_UNIT_MAX_LENGTH,
+  GOAL_TITLE_MAX_LENGTH,
+  assertCalendarDate,
+  assertGoalValue,
+  assertMaxLength,
+} from '../../domain/goal-limits.js';
+import { systemClock, todayInTimeZone, type Clock } from '../../domain/local-date.js';
 import type { IGoalRepository, IGoalsTelemetryPort } from '../ports.js';
 import { toGoalView, type GoalView } from '../goals-view.js';
 
@@ -27,6 +36,8 @@ export interface CreateGoalInput {
   targetDate?: string | null; // YYYY-MM-DD
   telemetrySource?: TelemetrySource | null;
   metadata?: Record<string, unknown>;
+  /** IANA timezone of the user; decides the calendar day of the baseline checkpoint (UTC when missing/invalid). */
+  timezone?: string;
 }
 
 interface GoalTypeDefaults {
@@ -122,6 +133,7 @@ export class CreateGoalUseCase {
   constructor(
     private readonly goalRepo: IGoalRepository,
     private readonly telemetryPort?: IGoalsTelemetryPort,
+    private readonly clock: Clock = systemClock,
   ) {}
 
   async execute(input: CreateGoalInput): Promise<GoalView> {
@@ -129,6 +141,8 @@ export class CreateGoalUseCase {
     if (input.targetValue === undefined || input.targetValue === null || input.targetValue < 0) {
       throw badRequest('Target value must be a non-negative number');
     }
+    assertGoalValue('targetValue', input.targetValue);
+    assertCalendarDate('targetDate', input.targetDate);
 
     const typeDefaults = TYPE_DEFAULTS[input.type] ?? TYPE_DEFAULTS.custom;
     const cadence = input.cadence ?? typeDefaults.cadence;
@@ -142,9 +156,17 @@ export class CreateGoalUseCase {
       startValue = await this.resolveStartValue(input.userId, input.type);
     }
     if (startValue < 0) startValue = 0;
+    assertGoalValue('startValue', startValue);
 
     const title = input.title?.trim() || `${typeDefaults.defaultTitle} · ${input.targetValue} ${metricUnit}`;
     const isPrimary = Boolean(input.isPrimary);
+    const deadlineLabel = input.deadlineLabel ?? 'Ongoing';
+    assertMaxLength('title', title, GOAL_TITLE_MAX_LENGTH);
+    assertMaxLength('metricUnit', metricUnit, GOAL_METRIC_UNIT_MAX_LENGTH);
+    assertMaxLength('deadlineLabel', deadlineLabel, GOAL_DEADLINE_LABEL_MAX_LENGTH);
+
+    const now = this.clock();
+    const today = todayInTimeZone(this.clock, input.timezone);
 
     const goal = new Goal({
       id: input.id ?? randomUUID(),
@@ -160,12 +182,12 @@ export class CreateGoalUseCase {
       direction,
       status: 'active',
       isPrimary,
-      deadlineLabel: input.deadlineLabel ?? 'Ongoing',
+      deadlineLabel,
       targetDate: input.targetDate ?? null,
       telemetrySource,
       metadata: input.metadata ?? {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     });
 
     await this.goalRepo.save(goal);
@@ -176,14 +198,14 @@ export class CreateGoalUseCase {
       goalId: goal.id,
       userId: input.userId,
       value: startValue,
-      date: new Date().toISOString().slice(0, 10),
-      recordedAt: new Date(),
+      date: today,
+      recordedAt: now,
       source: 'initial_baseline',
       notes: 'Initial goal creation baseline',
     });
     await this.goalRepo.addCheckpoint(initialCheckpoint);
 
-    return toGoalView(goal, { history: [startValue] });
+    return toGoalView(goal, { history: [startValue], timeZone: input.timezone, today });
   }
 
   private async resolveStartValue(userId: string, type: GoalType): Promise<number> {

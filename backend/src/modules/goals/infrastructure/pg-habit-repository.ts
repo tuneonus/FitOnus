@@ -177,13 +177,22 @@ export class PgHabitRepository implements IHabitRepository {
     return Boolean(res.rows[0]?.exists);
   }
 
+  /**
+   * The most recent `limitDays` completion days (one row per day), returned in ascending order.
+   * Taking the newest rows matters: streaks and weekly counts are anchored on today, so a LIMIT over the
+   * oldest rows would silently drop exactly the days that count.
+   */
   async getCompletionDates(habitId: string, userId: string, limitDays: number = 365): Promise<string[]> {
     const res = await this.db.query<{ date: string }>(
-      `SELECT date::text
-       FROM habit_completions
-       WHERE habit_id = $1 AND user_id = $2
-       ORDER BY date ASC
-       LIMIT $3`,
+      `SELECT date::text AS date
+       FROM (
+         SELECT date
+         FROM habit_completions
+         WHERE habit_id = $1 AND user_id = $2
+         ORDER BY date DESC
+         LIMIT $3
+       ) recent
+       ORDER BY date ASC`,
       [habitId, userId, limitDays],
     );
 

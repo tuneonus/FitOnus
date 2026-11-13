@@ -1,5 +1,6 @@
 import { badRequest, notFound } from '../errors.js';
 import { calculateGoalProgress } from '../../domain/goal-calculator.js';
+import { assertGoalValue } from '../../domain/goal-limits.js';
 import type { IGoalRepository } from '../ports.js';
 
 export interface CalculateGoalProgressInput {
@@ -34,6 +35,7 @@ export class CalculateGoalProgressUseCase {
     if (valueToCalculate < 0) {
       throw badRequest('Calculation value cannot be negative');
     }
+    if (input.candidateValue !== undefined) assertGoalValue('candidateValue', input.candidateValue);
 
     const progress = calculateGoalProgress({
       start: goal.startValue,

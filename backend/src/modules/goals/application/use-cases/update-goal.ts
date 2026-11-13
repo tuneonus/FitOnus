@@ -2,6 +2,14 @@ import { randomUUID } from 'node:crypto';
 import { badRequest, notFound } from '../errors.js';
 import { GoalCheckpoint } from '../../domain/goal-checkpoint.js';
 import type { GoalStatus } from '../../domain/goal.js';
+import {
+  GOAL_DEADLINE_LABEL_MAX_LENGTH,
+  GOAL_TITLE_MAX_LENGTH,
+  assertCalendarDate,
+  assertGoalValue,
+  assertMaxLength,
+} from '../../domain/goal-limits.js';
+import { systemClock, todayInTimeZone, type Clock } from '../../domain/local-date.js';
 import type { IGoalRepository } from '../ports.js';
 import { toGoalView, type GoalView } from '../goals-view.js';
 
@@ -16,10 +24,15 @@ export interface UpdateGoalInput {
   targetDate?: string | null;
   status?: GoalStatus;
   isPrimary?: boolean;
+  /** IANA timezone of the user; decides the calendar day of the progress checkpoint (UTC when missing/invalid). */
+  timezone?: string;
 }
 
 export class UpdateGoalUseCase {
-  constructor(private readonly goalRepo: IGoalRepository) {}
+  constructor(
+    private readonly goalRepo: IGoalRepository,
+    private readonly clock: Clock = systemClock,
+  ) {}
 
   async execute(input: UpdateGoalInput): Promise<GoalView> {
     if (!input.id) throw badRequest('Goal ID is required');
@@ -36,6 +49,14 @@ export class UpdateGoalUseCase {
     if (input.currentValue !== undefined && input.currentValue < 0) {
       throw badRequest('Current value cannot be negative');
     }
+    // Only values being written are checked; untouched legacy values stay editable.
+    if (input.targetValue !== undefined) assertGoalValue('targetValue', input.targetValue);
+    if (input.currentValue !== undefined) assertGoalValue('currentValue', input.currentValue);
+    assertCalendarDate('targetDate', input.targetDate);
+    assertMaxLength('title', input.title?.trim(), GOAL_TITLE_MAX_LENGTH);
+    assertMaxLength('deadlineLabel', input.deadlineLabel, GOAL_DEADLINE_LABEL_MAX_LENGTH);
+
+    const today = todayInTimeZone(this.clock, input.timezone);
 
     // Handle primary status change
     if (input.isPrimary === true && !goal.isPrimary) {
@@ -56,7 +77,7 @@ export class UpdateGoalUseCase {
 
     // Update progress / current value if provided and changed
     if (input.currentValue !== undefined && input.currentValue !== goal.currentValue) {
-      goal.updateProgress(input.currentValue);
+      goal.updateProgress(input.currentValue, this.clock());
 
       // Record a checkpoint for progress change
       const checkpoint = new GoalCheckpoint({
@@ -64,8 +85,8 @@ export class UpdateGoalUseCase {
         goalId: goal.id,
         userId: input.userId,
         value: input.currentValue,
-        date: new Date().toISOString().slice(0, 10),
-        recordedAt: new Date(),
+        date: today,
+        recordedAt: this.clock(),
         source: 'manual_update',
         notes: 'Manual progress update',
       });
@@ -82,6 +103,6 @@ export class UpdateGoalUseCase {
     const history = await this.goalRepo.getRecentValues(goal.id, input.userId, 10);
     const resolvedHistory = history.length > 0 ? history : [goal.startValue, goal.currentValue];
 
-    return toGoalView(goal, { history: resolvedHistory });
+    return toGoalView(goal, { history: resolvedHistory, timeZone: input.timezone, today });
   }
 }

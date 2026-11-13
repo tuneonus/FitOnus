@@ -50,8 +50,11 @@ export interface IGoalsTelemetryPort {
   getLatestWeight(userId: string): Promise<number | null>;
   getDailyWaterIntakeLiters(userId: string, date: string): Promise<number>;
   getDailyNutrition(userId: string, date: string): Promise<{ calories: number; proteinG: number }>;
+  /** `weekStart` is inclusive, `weekEnd` is the last instant of the week (both are real instants). */
   getWeeklyWorkoutCount(userId: string, weekStart: Date, weekEnd: Date): Promise<number>;
-  getWorkoutStreak(userId: string, referenceDateStr?: string): Promise<number>;
-  getRecentDailyWaterLiters(userId: string, days: number): Promise<number[]>;
-  getRecentDailyProteinGrams(userId: string, days: number): Promise<number[]>;
+  /** Workout days are bucketed in `timeZone` (UTC when omitted); `referenceDateStr` is the user's local today. */
+  getWorkoutStreak(userId: string, referenceDateStr?: string, timeZone?: string): Promise<number>;
+  /** Daily totals for the `days` days up to `referenceDate` (the user's local today; UTC today when omitted). */
+  getRecentDailyWaterLiters(userId: string, days: number, referenceDate?: string): Promise<number[]>;
+  getRecentDailyProteinGrams(userId: string, days: number, referenceDate?: string): Promise<number[]>;
 }

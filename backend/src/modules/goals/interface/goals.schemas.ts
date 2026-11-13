@@ -1,5 +1,38 @@
 import { z } from 'zod';
 import { idempotencyHeadersSchema } from '../../../shared/http/schemas.js';
+import {
+  CHECKPOINT_SOURCE_MAX_LENGTH,
+  GOAL_DEADLINE_LABEL_MAX_LENGTH,
+  GOAL_METRIC_UNIT_MAX_LENGTH,
+  GOAL_VALUE_MAX,
+  HABIT_COLOR_MAX_LENGTH,
+  HABIT_ICON_MAX_LENGTH,
+} from '../domain/goal-limits.js';
+import { isValidCalendarDate } from '../domain/local-date.js';
+
+// --- Shared request building blocks ---
+
+/** A goal or checkpoint value: a finite number between 0 and GOAL_VALUE_MAX (column numeric(10,2)). */
+const goalValue = (label: string) =>
+  z
+    .number()
+    .min(0, `${label} cannot be negative`)
+    .max(GOAL_VALUE_MAX, `${label} cannot exceed ${GOAL_VALUE_MAX}`);
+
+/** A real calendar day, `YYYY-MM-DD` (rejects 2026-02-30 and years PostgreSQL would not store sensibly). */
+const calendarDate = (message = 'Date must be formatted as YYYY-MM-DD') =>
+  z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, message)
+    .refine(isValidCalendarDate, { message: 'Date must be a valid calendar date' });
+
+/**
+ * IANA timezone of the caller (e.g. `Asia/Kolkata`). It decides what "today" and "this week" mean when the
+ * client does not send an explicit date. Deliberately lenient: an unknown value falls back to UTC instead of
+ * failing a request the user cannot fix.
+ */
+export const timezoneQuery = z.string().trim().max(64).optional();
+const timezoneOnlyQuery = z.object({ timezone: timezoneQuery });
 
 // --- View / Output Schemas ---
 
@@ -50,6 +83,7 @@ export const goalViewSchema = z.object({
   deadline: z.string(),
   targetDate: z.string().nullable(),
   completedOn: z.string().nullable(),
+  isOverdue: z.boolean().optional(),
   hitDays: z.number().int().nonnegative().optional(),
   history: z.array(z.number()),
   createdAt: z.string().datetime(),
@@ -136,22 +170,19 @@ export const deleteResultSchema = z.object({
 
 export const createGoalRequest = {
   headers: idempotencyHeadersSchema,
+  query: timezoneOnlyQuery,
   body: z.object({
     type: goalTypeEnum,
     title: z.string().trim().min(1, 'Title is required').max(100).optional(),
     description: z.string().trim().max(500).nullable().optional(),
-    targetValue: z.number().nonnegative('Target value must be non-negative'),
-    startValue: z.number().nonnegative().optional(),
-    metricUnit: z.string().trim().max(30).optional(),
+    targetValue: goalValue('Target value'),
+    startValue: goalValue('Start value').optional(),
+    metricUnit: z.string().trim().max(GOAL_METRIC_UNIT_MAX_LENGTH).optional(),
     cadence: goalCadenceEnum.optional(),
     direction: goalDirectionEnum.optional(),
     isPrimary: z.boolean().optional(),
-    deadlineLabel: z.string().trim().max(50).optional(),
-    targetDate: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
-      .nullable()
-      .optional(),
+    deadlineLabel: z.string().trim().max(GOAL_DEADLINE_LABEL_MAX_LENGTH).optional(),
+    targetDate: calendarDate().nullable().optional(),
     metadata: z.record(z.string(), z.unknown()).optional(),
   }),
 };
@@ -167,6 +198,7 @@ export const listGoalsRequest = {
       (val) => (val === 'false' ? false : true),
       z.boolean().optional().default(true),
     ),
+    timezone: timezoneQuery,
   }),
 };
 
@@ -174,23 +206,21 @@ export const getGoalDetailsRequest = {
   params: z.object({
     id: z.string().uuid('Invalid goal ID format'),
   }),
+  query: timezoneOnlyQuery,
 };
 
 export const updateGoalRequest = {
   params: z.object({
     id: z.string().uuid('Invalid goal ID format'),
   }),
+  query: timezoneOnlyQuery,
   body: z.object({
     title: z.string().trim().min(1).max(100).optional(),
     description: z.string().trim().max(500).nullable().optional(),
-    targetValue: z.number().nonnegative('Target value cannot be negative').optional(),
-    currentValue: z.number().nonnegative('Current value cannot be negative').optional(),
-    deadlineLabel: z.string().trim().max(50).optional(),
-    targetDate: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
-      .nullable()
-      .optional(),
+    targetValue: goalValue('Target value').optional(),
+    currentValue: goalValue('Current value').optional(),
+    deadlineLabel: z.string().trim().max(GOAL_DEADLINE_LABEL_MAX_LENGTH).optional(),
+    targetDate: calendarDate().nullable().optional(),
     status: goalStatusEnum.optional(),
     isPrimary: z.boolean().optional(),
   }),
@@ -208,7 +238,7 @@ export const calculateGoalProgressRequest = {
   }),
   body: z
     .object({
-      candidateValue: z.number().nonnegative('Candidate value cannot be negative').optional(),
+      candidateValue: goalValue('Candidate value').optional(),
     })
     .optional(),
 };
@@ -226,14 +256,12 @@ export const logGoalCheckpointRequest = {
   params: z.object({
     id: z.string().uuid('Invalid goal ID format'),
   }),
+  query: timezoneOnlyQuery,
   body: z.object({
-    value: z.number().nonnegative('Checkpoint value cannot be negative'),
-    date: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
-      .optional(),
+    value: goalValue('Checkpoint value'),
+    date: calendarDate().optional(),
     notes: z.string().trim().max(500).nullable().optional(),
-    source: z.string().trim().max(50).optional(),
+    source: z.string().trim().max(CHECKPOINT_SOURCE_MAX_LENGTH).optional(),
   }),
 };
 
@@ -250,8 +278,8 @@ export const createHabitRequest = {
       .min(1, 'targetDaysPerWeek must be at least 1')
       .max(7, 'targetDaysPerWeek cannot exceed 7')
       .optional(),
-    icon: z.string().trim().max(50).optional().default('check'),
-    color: z.string().trim().max(50).optional().default('teal'),
+    icon: z.string().trim().max(HABIT_ICON_MAX_LENGTH).optional().default('check'),
+    color: z.string().trim().max(HABIT_COLOR_MAX_LENGTH).optional().default('teal'),
   }),
 };
 
@@ -262,10 +290,8 @@ export const listHabitsRequest = {
       (val) => (val === 'true' || val === true ? true : val === 'false' || val === false ? false : undefined),
       z.boolean().optional(),
     ),
-    date: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
-      .optional(),
+    date: calendarDate().optional(),
+    timezone: timezoneQuery,
   }),
 };
 
@@ -275,6 +301,7 @@ export const getHabitHistoryRequest = {
   }),
   query: z.object({
     limitDays: z.coerce.number().int().positive().max(365).optional().default(90),
+    timezone: timezoneQuery,
   }),
 };
 
@@ -282,14 +309,15 @@ export const updateHabitRequest = {
   params: z.object({
     id: z.string().uuid('Invalid habit ID format'),
   }),
+  query: timezoneOnlyQuery,
   body: z.object({
     title: z.string().trim().min(1).max(100).optional(),
     description: z.string().trim().max(500).nullable().optional(),
     category: habitCategoryEnum.optional(),
     frequency: habitFrequencyEnum.optional(),
     targetDaysPerWeek: z.number().int().min(1).max(7).optional(),
-    icon: z.string().trim().max(50).optional(),
-    color: z.string().trim().max(50).optional(),
+    icon: z.string().trim().max(HABIT_ICON_MAX_LENGTH).optional(),
+    color: z.string().trim().max(HABIT_COLOR_MAX_LENGTH).optional(),
     isArchived: z.boolean().optional(),
   }),
 };
@@ -305,9 +333,10 @@ export const setHabitCompletionRequest = {
   params: z.object({
     id: z.string().uuid('Invalid habit ID format'),
   }),
+  query: timezoneOnlyQuery,
   body: z.object({
     id: z.string().uuid().optional(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD'),
+    date: calendarDate(),
     completed: z.boolean({ message: 'completed is required and must be a boolean' }),
     notes: z.string().trim().max(500).nullable().optional(),
   }),
@@ -318,9 +347,7 @@ export const getHabitStreaksRequest = {
     id: z.string().uuid('Invalid habit ID format'),
   }),
   query: z.object({
-    referenceDate: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Reference date must be formatted as YYYY-MM-DD')
-      .optional(),
+    referenceDate: calendarDate('Reference date must be formatted as YYYY-MM-DD').optional(),
+    timezone: timezoneQuery,
   }),
 };

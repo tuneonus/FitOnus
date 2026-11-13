@@ -2,6 +2,7 @@ import type { Goal, GoalType, GoalCadence, GoalDirection, GoalStatus } from '../
 import type { Habit, HabitCategory, HabitFrequency } from '../domain/habit.js';
 import type { GoalCheckpoint } from '../domain/goal-checkpoint.js';
 import type { StreakResult } from '../domain/streak-calculator.js';
+import { isGoalOverdue, localDateString } from '../domain/local-date.js';
 
 export interface GoalView {
   id: string;
@@ -21,13 +22,24 @@ export interface GoalView {
   deadline: string;
   targetDate: string | null;
   completedOn: string | null;
+  /** Active goal whose target date has passed in the user's local calendar. Only set when `today` is known. */
+  isOverdue?: boolean;
   hitDays?: number;
   history: number[];
   createdAt: string;
   updatedAt: string;
 }
 
-export function toGoalView(goal: Goal, options?: { history?: number[]; hitDays?: number }): GoalView {
+export interface GoalViewOptions {
+  history?: number[];
+  hitDays?: number;
+  /** IANA timezone used to express `completedOn` as the user's local calendar date (UTC when absent). */
+  timeZone?: string | null;
+  /** The user's local "today" (`YYYY-MM-DD`); enables the overdue evaluation. */
+  today?: string;
+}
+
+export function toGoalView(goal: Goal, options?: GoalViewOptions): GoalView {
   return {
     id: goal.id,
     userId: goal.userId,
@@ -45,7 +57,8 @@ export function toGoalView(goal: Goal, options?: { history?: number[]; hitDays?:
     isPrimary: goal.isPrimary,
     deadline: goal.deadlineLabel,
     targetDate: goal.targetDate,
-    completedOn: goal.completedAt ? goal.completedAt.toISOString().slice(0, 10) : null,
+    completedOn: goal.completedAt ? localDateString(goal.completedAt, options?.timeZone) : null,
+    ...(options?.today !== undefined ? { isOverdue: isGoalOverdue(goal, options.today) } : {}),
     hitDays: options?.hitDays,
     history:
       options?.history ??

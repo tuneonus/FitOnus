@@ -1,9 +1,16 @@
 import type { SqlExecutor } from '../../../database/transaction.js';
 import { calculateDailyStreak } from '../domain/streak-calculator.js';
+import { localDateString, resolveTimeZone, systemClock, type Clock } from '../domain/local-date.js';
 import type { IGoalsTelemetryPort, ProfileGoalsSummary } from '../application/ports.js';
 
+/** Upper bound on workout rows scanned for a streak; a streak longer than this many sessions is not shown. */
+const WORKOUT_STREAK_SCAN_LIMIT = 5000;
+
 export class PgGoalsTelemetryAdapter implements IGoalsTelemetryPort {
-  constructor(private readonly db: SqlExecutor) {}
+  constructor(
+    private readonly db: SqlExecutor,
+    private readonly clock: Clock = systemClock,
+  ) {}
 
   async getProfileGoals(userId: string): Promise<ProfileGoalsSummary | null> {
     try {
@@ -129,35 +136,42 @@ export class PgGoalsTelemetryAdapter implements IGoalsTelemetryPort {
     }
   }
 
-  async getWorkoutStreak(userId: string, referenceDateStr?: string): Promise<number> {
+  async getWorkoutStreak(userId: string, referenceDateStr?: string, timeZone?: string): Promise<number> {
     try {
-      const res = await this.db.query<{ date: string }>(
-        `SELECT DISTINCT date_trunc('day', started_at AT TIME ZONE 'UTC')::date::text AS date
+      const tz = resolveTimeZone(timeZone);
+      const res = await this.db.query<{ started_at: Date }>(
+        `SELECT started_at
          FROM workout_sessions
          WHERE user_id = $1 AND is_completed = true
-         ORDER BY date ASC`,
-        [userId],
+         ORDER BY started_at DESC
+         LIMIT $2`,
+        [userId, WORKOUT_STREAK_SCAN_LIMIT],
       );
 
-      const dates = res.rows.map((r) => String(r.date).slice(0, 10));
-      const streakResult = calculateDailyStreak(dates, referenceDateStr);
-      return streakResult.currentStreak;
+      // Bucket each workout into the user's local calendar day (a late-night session belongs to that day).
+      const dates = res.rows.map((r) => localDateString(new Date(r.started_at), tz));
+      const reference = referenceDateStr ?? localDateString(this.clock(), tz);
+      return calculateDailyStreak(dates, reference).currentStreak;
     } catch {
       return 0;
     }
   }
 
-  async getRecentDailyWaterLiters(userId: string, days: number = 7): Promise<number[]> {
+  async getRecentDailyWaterLiters(
+    userId: string,
+    days: number = 7,
+    referenceDate?: string,
+  ): Promise<number[]> {
     try {
       const res = await this.db.query<{ date: string; total_ml: number }>(
         `SELECT 
            date::text,
            COALESCE(SUM(amount_ml), 0)::int AS total_ml
          FROM water_intake
-         WHERE user_id = $1 AND date >= CURRENT_DATE - ($2 || ' days')::interval
+         WHERE user_id = $1 AND date >= COALESCE($3::date, CURRENT_DATE) - $2::int
          GROUP BY date
          ORDER BY date ASC`,
-        [userId, days],
+        [userId, days, referenceDate ?? null],
       );
 
       return res.rows.map((r) => Number((r.total_ml / 1000).toFixed(2)));
@@ -166,7 +180,11 @@ export class PgGoalsTelemetryAdapter implements IGoalsTelemetryPort {
     }
   }
 
-  async getRecentDailyProteinGrams(userId: string, days: number = 7): Promise<number[]> {
+  async getRecentDailyProteinGrams(
+    userId: string,
+    days: number = 7,
+    referenceDate?: string,
+  ): Promise<number[]> {
     try {
       const res = await this.db.query<{ date: string; protein_g: string | number }>(
         `SELECT 
@@ -174,10 +192,10 @@ export class PgGoalsTelemetryAdapter implements IGoalsTelemetryPort {
            COALESCE(SUM(total_protein_g), 0) AS protein_g
          FROM meals
          WHERE user_id = $1 AND deleted_at IS NULL
-           AND date >= CURRENT_DATE - ($2 || ' days')::interval
+           AND date >= COALESCE($3::date, CURRENT_DATE) - $2::int
          GROUP BY date
          ORDER BY date ASC`,
-        [userId, days],
+        [userId, days, referenceDate ?? null],
       );
 
       return res.rows.map((r) => Math.round(Number(r.protein_g)));
