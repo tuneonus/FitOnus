@@ -204,7 +204,7 @@ describe('Admin Login Authentication & RBAC Isolation', () => {
     expect(adminRepo.auditLogs).toHaveLength(0);
   });
 
-  it('4. returns 403 FORBIDDEN when user exists but has member role', async () => {
+  it('4. returns the uniform 401 INVALID_CREDENTIALS (not 403) when user exists but has member role', async () => {
     const users = new InMemoryUserRepository();
     const adminRepo = new MockAdminRepository();
     const hash = await passwordHasher.hash('MemberPassword123!');
@@ -236,14 +236,15 @@ describe('Admin Login Authentication & RBAC Isolation', () => {
       error = e;
     }
 
+    // Privilege state must not be disclosed: a member with the right password looks like any bad login.
     expect(error).toBeInstanceOf(AppError);
-    expect(error.code).toBe('FORBIDDEN');
-    expect(STATUS_BY_KIND[error.kind as keyof typeof STATUS_BY_KIND]).toBe(403);
-    expect(error.message).toContain('Administrator privileges are required');
+    expect(error.code).toBe('INVALID_CREDENTIALS');
+    expect(STATUS_BY_KIND[error.kind as keyof typeof STATUS_BY_KIND]).toBe(401);
+    expect(error.message).toBe('Invalid email or password.');
     expect(adminRepo.auditLogs).toHaveLength(0);
   });
 
-  it('5. returns 403 ACCOUNT_DISABLED when admin account is disabled', async () => {
+  it('5. returns the uniform 401 INVALID_CREDENTIALS (not 403) when admin account is disabled', async () => {
     const users = new InMemoryUserRepository();
     const adminRepo = new MockAdminRepository();
     const hash = await passwordHasher.hash('AdminPassword123!');
@@ -275,9 +276,11 @@ describe('Admin Login Authentication & RBAC Isolation', () => {
       error = e;
     }
 
+    // Disabled state must not be disclosed, even to someone who knows the password.
     expect(error).toBeInstanceOf(AppError);
-    expect(error.code).toBe('ACCOUNT_DISABLED');
-    expect(STATUS_BY_KIND[error.kind as keyof typeof STATUS_BY_KIND]).toBe(403);
+    expect(error.code).toBe('INVALID_CREDENTIALS');
+    expect(STATUS_BY_KIND[error.kind as keyof typeof STATUS_BY_KIND]).toBe(401);
+    expect(error.message).toBe('Invalid email or password.');
     expect(adminRepo.auditLogs).toHaveLength(0);
   });
 

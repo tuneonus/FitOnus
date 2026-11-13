@@ -22,8 +22,17 @@ import {
 } from './admin.schemas.js';
 
 export interface AdminRateLimiters {
+  /** Per IP + e-mail budget, shared with the member sign-in route. */
   login: RequestHandler;
   sensitive: RequestHandler;
+  /**
+   * Optional extra guards that run before `login` on the admin sign-in route only. They exist so the
+   * composition root can add a per-IP ceiling across all e-mails (stops one client rotating e-mails)
+   * and a per-account ceiling across all IPs (slows distributed guessing) without touching member
+   * sign-in. Absent means the route behaves exactly as before.
+   */
+  adminLoginByIp?: RequestHandler;
+  adminLoginByAccount?: RequestHandler;
 }
 
 const tags = ['Admin'];
@@ -41,10 +50,14 @@ export function createAdminRoutes(
         path: '/auth/login',
         summary: 'Admin Portal Login',
         description:
-          'Authenticates administrator credentials and returns tokens plus HttpOnly session cookie.',
+          'Authenticates administrator credentials and returns tokens plus HttpOnly session cookie. All failures return an identical 401 INVALID_CREDENTIALS so accounts cannot be enumerated.',
         tags,
         access: { kind: 'public' },
-        middleware: [limiters.login],
+        middleware: [
+          ...(limiters.adminLoginByIp ? [limiters.adminLoginByIp] : []),
+          ...(limiters.adminLoginByAccount ? [limiters.adminLoginByAccount] : []),
+          limiters.login,
+        ],
         request: adminLoginRequest,
         response: {
           status: 200,
@@ -52,7 +65,8 @@ export function createAdminRoutes(
           message: 'Signed in',
           schema: adminLoginResponseSchema,
         },
-        errorStatuses: [401, 403, 429],
+        // Every refusal (unknown e-mail, wrong password, disabled or non-admin account) is the same 401.
+        errorStatuses: [401, 429],
         handler: controller.login,
       }),
       defineRoute({

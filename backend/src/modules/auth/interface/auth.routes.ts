@@ -158,6 +158,9 @@ export function createAuthRoutes(
         method: 'post',
         path: '/forgot-password',
         summary: 'Request password reset email',
+        description:
+          'Always answers 200 with the same body, whether or not the e-mail belongs to an account, so accounts cannot be enumerated. ' +
+          'Answers 503 for every e-mail until a delivery channel is configured. A 6-digit code is e-mailed to existing, active accounts only. Requests inside the 60 second resend cooldown or over the hourly limit are swallowed silently (same 200).',
         tags,
         access: { kind: 'public' },
         middleware: [limiters.sensitive],
@@ -174,7 +177,10 @@ export function createAuthRoutes(
       defineRoute({
         method: 'post',
         path: '/reset-password',
-        summary: 'Reset password using token',
+        summary: 'Reset password using the e-mailed 6-digit OTP',
+        description:
+          'Takes the e-mail address and the 6-digit OTP from the reset e-mail. The OTP is single use, expires after 5 minutes and dies after 5 wrong guesses. ' +
+          'Every unusable combination (unknown e-mail, wrong, expired, used, superseded, locked out) gets the same 400. On success all sessions of the account are revoked; the caller must sign in again.',
         tags,
         access: { kind: 'public' },
         middleware: [limiters.sensitive],

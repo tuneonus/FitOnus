@@ -25,7 +25,12 @@ export const forgotPasswordRequest = {
 
 export const resetPasswordRequest = {
   body: z.strictObject({
-    token: z.string().trim().min(1, 'Token is required').max(512),
+    email,
+    // Exactly six digits; leading zeros matter, so it is a string, never a number.
+    otp: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, 'The code must be exactly 6 digits'),
     newPassword,
   }),
 };

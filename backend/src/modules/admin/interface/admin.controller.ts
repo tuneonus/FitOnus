@@ -4,7 +4,7 @@ import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
 import type { SessionsUseCases } from '../../auth/index.js';
 import type { AdminChangePasswordUseCase } from '../application/use-cases/admin-change-password.js';
-import type { AdminLoginUseCase } from '../application/use-cases/admin-login.js';
+import { getAdminLoginRejection, type AdminLoginUseCase } from '../application/use-cases/admin-login.js';
 import type { AdminChangeUserStatusUseCase } from '../application/use-cases/change-user-status.js';
 import type { GetAdminUserUseCase } from '../application/use-cases/get-admin-user.js';
 import type { GetDashboardStatsUseCase } from '../application/use-cases/get-dashboard-stats.js';
@@ -38,6 +38,21 @@ const clientMeta = (req: Request) => ({
   userAgent: req.get('user-agent') ?? null,
 });
 
+/**
+ * Records WHY an admin sign-in was refused in the per-request log (request-id correlated), while the
+ * client only ever sees the uniform INVALID_CREDENTIALS response. Logs the reason and the matched
+ * account id only: never the submitted e-mail, password or any token.
+ */
+function logAdminLoginRejection(req: Request, error: unknown): void {
+  const rejection = getAdminLoginRejection(error);
+  if (!rejection) return;
+  const log = (req as { log?: { warn(fields: object, message: string): void } }).log;
+  log?.warn(
+    { event: 'admin_login_rejected', reason: rejection.reason, accountId: rejection.accountId },
+    'Admin sign-in rejected',
+  );
+}
+
 export type AdminController = ReturnType<typeof createAdminController>;
 
 export const ADMIN_NO_CACHE_HEADERS: Readonly<Record<string, string>> = {
@@ -53,7 +68,13 @@ export function createAdminController(useCases: AdminUseCases, isProduction: boo
   return {
     login: async (req: Request): Promise<RouteResult<unknown>> => {
       const { body } = getValidated(req, adminLoginRequest);
-      const result = await useCases.login.execute(body, clientMeta(req));
+      let result: Awaited<ReturnType<AdminLoginUseCase['execute']>>;
+      try {
+        result = await useCases.login.execute(body, clientMeta(req));
+      } catch (error) {
+        logAdminLoginRejection(req, error);
+        throw error;
+      }
 
       const cookieHeader = `fitonus_admin_token=${result.tokens.accessToken}; HttpOnly; SameSite=${sameSite}; Path=/; Max-Age=900${cookieSecurity}`;
 

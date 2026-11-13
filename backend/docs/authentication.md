@@ -77,8 +77,9 @@ should serialise refreshes.
   refresh tokens keep working because they are not JWTs). Rotating `HMAC_SECRET` invalidates all refresh tokens.
 - Refresh tokens are returned in the JSON body. Browser clients should keep them out of `localStorage`; if you switch
   to cookies, use `HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth` and add CSRF protection.
-- No MFA, e-mail verification, password reset or account lockout beyond rate limiting. These need a delivery
-  provider and are left as extension points (below).
+- No MFA, e-mail verification or account lockout beyond rate limiting. Password reset exists: the 30-minute single-use
+  token is e-mailed as a copy-paste code through Resend (`EMAIL_PROVIDER=resend`, `EMAIL_API_KEY`, `EMAIL_FROM`; apply
+  migration 0016 first). Without `EMAIL_PROVIDER` both endpoints answer 503. No deep link yet.
 - Rate limits are per process; use a shared store when you run several instances.
 
 ## Extension points

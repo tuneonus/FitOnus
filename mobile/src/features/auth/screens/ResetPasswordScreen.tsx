@@ -8,34 +8,37 @@ import { StatusBanner } from '../../../shared/components/ui/StatusBanner';
 import { PasswordField } from '../components/PasswordField';
 import { PasswordStrength } from '../components/PasswordStrength';
 import { authService } from '../services/authService';
-import { passwordStrength } from '../utils/validation';
+import { isValidEmail, isValidOtp, OTP_LENGTH, passwordStrength, sanitizeOtp } from '../utils/validation';
 import { useTheme } from '@/hooks/use-theme';
 import { AuthHeader } from '../components/AuthHeader';
 
 export function ResetPasswordScreen() {
   const { colors } = useTheme();
   const { reset } = useNavigation();
-  const params = useRouteParams<{ token?: string }>();
+  const params = useRouteParams<{ email?: string }>();
 
-  const [token, setToken] = useState(params.token ?? '');
+  const [email, setEmail] = useState(params.email ?? '');
+  const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const tokenMissing = !token.trim();
+  const emailInvalid = !isValidEmail(email);
+  const otpInvalid = !isValidOtp(otp);
   const weak = passwordStrength(password).score < 3 || password.length < 12;
   const mismatch = confirm !== password;
 
   const handleSubmit = async () => {
     setSubmitted(true);
     setApiError(null);
-    if (tokenMissing || weak || mismatch) return;
+    if (emailInvalid || otpInvalid || weak || mismatch) return;
 
     setLoading(true);
     const result = await authService.resetPassword({
-      token: token.trim(),
+      email: email.trim(),
+      otp,
       newPassword: password,
     });
     setLoading(false);
@@ -63,18 +66,38 @@ export function ResetPasswordScreen() {
         ) : null}
 
         <View style={styles.inputsSection}>
-          {!params.token ? (
+          {!params.email ? (
             <TextField
-              label="Reset token / code"
-              placeholder="Paste the reset code from your email"
-              value={token}
+              label="Email"
+              placeholder="name@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
               onChangeText={(t) => {
-                setToken(t);
+                setEmail(t);
                 setApiError(null);
               }}
-              error={submitted && tokenMissing ? 'Reset token is required.' : undefined}
+              error={submitted && emailInvalid ? 'Enter the email you signed up with.' : undefined}
             />
           ) : null}
+
+          <TextField
+            label="6-digit code"
+            placeholder="123456"
+            hint="Enter the code we emailed you. It expires in 5 minutes."
+            keyboardType="number-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={OTP_LENGTH}
+            textContentType="oneTimeCode"
+            autoComplete="one-time-code"
+            value={otp}
+            onChangeText={(t) => {
+              setOtp(sanitizeOtp(t));
+              setApiError(null);
+            }}
+            error={submitted && otpInvalid ? 'Enter the 6-digit code from your email.' : undefined}
+          />
 
           <View>
             <PasswordField

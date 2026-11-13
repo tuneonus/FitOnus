@@ -9,6 +9,8 @@ import type { ChangePasswordUseCase } from '../application/use-cases/change-pass
 import type { LoginUseCase } from '../application/use-cases/login.js';
 import type { RefreshSessionUseCase } from '../application/use-cases/refresh-session.js';
 import type { RegisterUseCase } from '../application/use-cases/register.js';
+import type { RequestPasswordResetUseCase } from '../application/use-cases/request-password-reset.js';
+import type { ResetPasswordUseCase } from '../application/use-cases/reset-password.js';
 import type { SessionsUseCases, SessionView } from '../application/use-cases/sessions.js';
 import {
   changePasswordRequest,
@@ -27,12 +29,19 @@ export interface AuthUseCases {
   refresh: RefreshSessionUseCase;
   sessions: SessionsUseCases;
   changePassword: ChangePasswordUseCase;
+  /** Absent until a PasswordResetNotifier is configured; the two endpoints then answer 503 for everyone. */
+  passwordReset?: { request: RequestPasswordResetUseCase; reset: ResetPasswordUseCase };
 }
 
 type TokensView = z.output<typeof tokensSchema>;
 
 // Token responses must never be cached by browsers or proxies.
 const NO_STORE = { 'Cache-Control': 'no-store', Pragma: 'no-cache' };
+
+// The same body for every e-mail address, whatever happened behind the scenes.
+const FORGOT_PASSWORD_MESSAGE =
+  'If an account exists for that email address, a 6-digit verification code has been sent.';
+const RESET_PASSWORD_MESSAGE = 'Your password has been reset. Please sign in with your new password.';
 
 const clientMeta = (req: Request): ClientMeta => ({
   ip: req.ip ?? null,
@@ -90,21 +99,32 @@ export function createAuthController(useCases: AuthUseCases) {
     },
 
     forgotPassword: async (req: Request): Promise<RouteResult<{ message: string }>> => {
-      getValidated(req, forgotPasswordRequest);
-      throw new AppError(
-        'unavailable',
-        'SERVICE_UNAVAILABLE',
-        'Password reset email delivery service is currently not configured. Please contact support.',
-      );
+      const { body } = getValidated(req, forgotPasswordRequest);
+      const { passwordReset } = useCases;
+      // Uniform 503 for every e-mail: nothing is looked up or stored without a delivery channel.
+      if (!passwordReset) {
+        throw new AppError(
+          'unavailable',
+          'SERVICE_UNAVAILABLE',
+          'Password reset email delivery service is currently not configured. Please contact support.',
+        );
+      }
+      await passwordReset.request.execute(body, clientMeta(req));
+      return { data: { message: FORGOT_PASSWORD_MESSAGE }, headers: NO_STORE };
     },
 
     resetPassword: async (req: Request): Promise<RouteResult<{ message: string }>> => {
-      getValidated(req, resetPasswordRequest);
-      throw new AppError(
-        'unavailable',
-        'SERVICE_UNAVAILABLE',
-        'Password reset service is currently unavailable. Please contact support.',
-      );
+      const { body } = getValidated(req, resetPasswordRequest);
+      const { passwordReset } = useCases;
+      if (!passwordReset) {
+        throw new AppError(
+          'unavailable',
+          'SERVICE_UNAVAILABLE',
+          'Password reset service is currently unavailable. Please contact support.',
+        );
+      }
+      await passwordReset.reset.execute(body);
+      return { data: { message: RESET_PASSWORD_MESSAGE }, headers: NO_STORE };
     },
   };
 }

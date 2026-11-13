@@ -66,6 +66,14 @@ const appSchema = databaseSchema.extend({
   IDEMPOTENCY_LEASE_SECONDS: integer(60, 5, 3_600),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-3.5-flash-lite'),
+  // Transactional e-mail (password reset). Unset/empty/"none" keeps the feature off (the endpoints answer 503).
+  EMAIL_PROVIDER: z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim().toLowerCase() || undefined : value),
+    z.enum(['none', 'resend']).default('none'),
+  ),
+  EMAIL_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
+  EMAIL_TIMEOUT_MS: integer(5_000, 500, 30_000),
 });
 
 export type DatabaseConfig = {
@@ -76,6 +84,9 @@ export type DatabaseConfig = {
   statementTimeoutMs: number;
   ssl: 'disable' | 'require' | 'verify-full';
 };
+
+export type EmailConfig =
+  { provider: 'none' } | { provider: 'resend'; apiKey: string; from: string; timeoutMs: number };
 
 export type AppConfig = {
   env: 'development' | 'test' | 'production';
@@ -100,6 +111,8 @@ export type AppConfig = {
   };
   security: { hmacSecret: string };
   gemini: { apiKey?: string; model: string };
+  /** Outbound e-mail. `none` means no delivery channel is configured, so password reset stays disabled. */
+  email: EmailConfig;
   rateLimit: { windowMs: number; max: number; authMax: number };
   idempotency: { ttlSeconds: number; leaseSeconds: number };
 };
@@ -141,6 +154,32 @@ function corsIssues(origins: readonly string[]): string[] {
   });
 }
 
+/** `addr@host.tld` or `Display Name <addr@host.tld>`; no control characters, so it is safe in a header-like field. */
+const EMAIL_ADDRESS = '[^\\s<>@,;"]+@[^\\s<>@,;"]+\\.[^\\s<>@,;"]+';
+const EMAIL_FROM_PATTERN = new RegExp(`^(?:[^<>\\r\\n]*[^<>\\s]\\s*<${EMAIL_ADDRESS}>|${EMAIL_ADDRESS})$`);
+
+/** Issues name keys and rules only. The API key and sender are never echoed. */
+function emailIssues(parsed: z.output<typeof appSchema>): string[] {
+  if (parsed.EMAIL_PROVIDER !== 'resend') return [];
+  const issues: string[] = [];
+  if (!parsed.EMAIL_API_KEY?.trim()) issues.push('EMAIL_API_KEY: required when EMAIL_PROVIDER=resend');
+  const from = parsed.EMAIL_FROM?.trim();
+  if (!from) issues.push('EMAIL_FROM: required when EMAIL_PROVIDER=resend');
+  else if (!EMAIL_FROM_PATTERN.test(from)) {
+    issues.push('EMAIL_FROM: must look like "noreply@example.org" or "Name <noreply@example.org>"');
+  }
+  return issues;
+}
+
+function toEmailConfig(parsed: z.output<typeof appSchema>): EmailConfig {
+  if (parsed.EMAIL_PROVIDER !== 'resend') return { provider: 'none' };
+  return {
+    provider: 'resend',
+    apiKey: parsed.EMAIL_API_KEY!.trim(),
+    from: parsed.EMAIL_FROM!.trim(),
+    timeoutMs: parsed.EMAIL_TIMEOUT_MS,
+  };
+}
 const toDatabaseConfig = (parsed: z.output<typeof databaseSchema>): DatabaseConfig => ({
   url: parsed.DATABASE_URL,
   poolMax: parsed.DATABASE_POOL_MAX,
@@ -162,7 +201,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
   if (!result.success) throw new ConfigError(formatIssues(result.error));
   const parsed = result.data;
 
-  const issues = corsIssues(parsed.CORS_ORIGINS);
+  const issues = [...corsIssues(parsed.CORS_ORIGINS), ...emailIssues(parsed)];
   if (parsed.NODE_ENV === 'production') issues.push(...productionIssues(parsed, env));
   if (issues.length > 0) throw new ConfigError(issues);
 
@@ -192,6 +231,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
       apiKey: parsed.GEMINI_API_KEY,
       model: parsed.GEMINI_MODEL,
     },
+    email: toEmailConfig(parsed),
     rateLimit: {
       windowMs: parsed.RATE_LIMIT_WINDOW_MS,
       max: parsed.RATE_LIMIT_MAX,

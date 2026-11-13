@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MailCheck } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
@@ -6,7 +6,7 @@ import { Screen } from '../../../shared/components/ui/Screen';
 import { Button } from '../../../shared/components/ui/Button';
 import { TextField } from '../../../shared/components/ui/TextField';
 import { authService } from '../services/authService';
-import { isValidEmail } from '../utils/validation';
+import { isValidEmail, RESEND_COOLDOWN_SECONDS } from '../utils/validation';
 import { useTheme } from '@/hooks/use-theme';
 import { AuthHeader } from '../components/AuthHeader';
 
@@ -18,6 +18,14 @@ export function ForgotPasswordScreen() {
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Counts down the resend cooldown (the server enforces the same 60 seconds).
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const handleSubmit = async () => {
     if (!isValidEmail(email)) {
@@ -32,6 +40,7 @@ export function ForgotPasswordScreen() {
       return;
     }
     setSent(true);
+    setCooldown(RESEND_COOLDOWN_SECONDS);
   };
 
   if (sent) {
@@ -53,15 +62,24 @@ export function ForgotPasswordScreen() {
           <Text style={[styles.subtitleCenter, { color: colors.muted }]}>
             If an account exists for{' '}
             <Text style={{ fontWeight: '600', color: colors.ink }}>{email}</Text>,
-            we have sent instructions to reset your password. It expires in 30 minutes.
+            we have sent a 6-digit verification code. It expires in 5 minutes.
           </Text>
 
           <Button
-            title="I have a reset code / token"
+            title="Enter verification code"
             size="lg"
             fullWidth
-            onPress={() => navigate('resetPassword')}
+            onPress={() => navigate('resetPassword', { email: email.trim().toLowerCase() })}
             style={styles.openButton}
+          />
+          <Button
+            title={cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+            variant="ghost"
+            fullWidth
+            disabled={cooldown > 0 || loading}
+            loading={loading}
+            onPress={handleSubmit}
+            style={styles.diffButton}
           />
           <Button
             title="Use a different email"
@@ -80,7 +98,7 @@ export function ForgotPasswordScreen() {
       <View style={styles.content}>
         <AuthHeader
           title="Reset password"
-          subtitle="Enter the email on your account and we’ll send you a secure reset link."
+          subtitle="Enter the email on your account and we’ll send you a 6-digit verification code."
         />
 
         <TextField
@@ -95,7 +113,7 @@ export function ForgotPasswordScreen() {
         />
 
         <Button
-          title={loading ? 'Sending…' : 'Send reset link'}
+          title={loading ? 'Sending…' : 'Send code'}
           size="lg"
           fullWidth
           loading={loading}

@@ -1,4 +1,5 @@
 import type { Role } from '../../../shared/auth/permissions.js';
+import type { PasswordResetToken } from '../domain/password-reset.js';
 import type { RevokeReason, Session } from '../domain/session.js';
 
 export interface NewSession {
@@ -77,3 +78,63 @@ export interface AuthTokens {
 }
 
 export type Clock = () => Date;
+
+export interface NewPasswordResetToken {
+  id: string;
+  userId: string;
+  /** Keyed digest of the OTP. The OTP itself is never handed to a repository. */
+  tokenHash: string;
+  createdAt: Date;
+  expiresAt: Date;
+  requestIp: string | null;
+  userAgent: string | null;
+}
+
+/**
+ * Storage of single-use reset tokens. Time is always passed in (`now`) so expiry is decided by the
+ * application clock and tests can pin the boundary exactly.
+ */
+export interface PasswordResetTokenRepository {
+  /** Serialises reset requests/verifications of one user until the surrounding transaction ends. */
+  lockUser(userId: string): Promise<void>;
+  countCreatedSince(userId: string, since: Date): Promise<number>;
+  /** Marks every still-unredeemed OTP of the user as used (superseded). Returns how many changed. */
+  invalidateOutstanding(userId: string, now: Date): Promise<number>;
+  create(token: NewPasswordResetToken): Promise<void>;
+  /** Newest OTP of the user that is unused, unexpired and still under `maxAttempts` failed guesses. */
+  findActiveByUser(userId: string, now: Date, maxAttempts: number): Promise<PasswordResetToken | null>;
+  /** Counts one wrong guess against the OTP (atomic increment). Returns the new count. */
+  recordFailedAttempt(id: string): Promise<number>;
+  /**
+   * Atomic one-time redemption: succeeds only while `used_at IS NULL AND expires_at > now AND
+   * failed_attempts < maxAttempts`, and for exactly one of any number of concurrent callers.
+   */
+  consume(id: string, now: Date, maxAttempts: number): Promise<{ userId: string } | null>;
+  /** Housekeeping: deletes OTPs that expired or were used more than `retentionDays` ago. */
+  purge(retentionDays: number): Promise<number>;
+}
+
+/** What a password reset message needs: the recipient and the 6-digit OTP (there is no link). */
+export interface PasswordResetMessage {
+  email: string;
+  /** The 6-digit one-time code. Handle like a password: never log, never persist. */
+  otp: string;
+  expiresAt: Date;
+}
+
+/**
+ * Delivers a reset message (e-mail today, possibly push/SMS later). No provider is configured in this
+ * repository: composition supplies an implementation or password reset stays disabled (503).
+ * Implementations must not log `otp`, and should throw on failure so it can be reported safely.
+ */
+export interface PasswordResetNotifier {
+  send(message: PasswordResetMessage): Promise<void>;
+}
+
+/** Operational signal about the reset flow. Deliberately carries no secrets, e-mail or error message. */
+export interface PasswordResetFailureEvent {
+  stage: 'issue' | 'deliver';
+  userId: string;
+  /** Constructor/class name of the error only; messages from providers may echo the OTP. */
+  errorName: string;
+}

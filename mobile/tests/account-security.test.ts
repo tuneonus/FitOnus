@@ -419,14 +419,22 @@ describe('Phase 9.4 Mobile: Account Security, Privacy & Secure Deletion', () => 
       }
     });
 
-    it('requires token and minimum length on password reset', async () => {
-      const missingToken = await authService.resetPassword({ token: '', newPassword: 'AValidPassword123!' });
-      assert.equal(missingToken.ok, false);
-      if (!missingToken.ok) {
-        assert.match(missingToken.error, /token is required/i);
+    it('requires email, a 6-digit OTP and minimum length on password reset', async () => {
+      const missingOtp = await authService.resetPassword({
+        email: 'user@example.com',
+        otp: '',
+        newPassword: 'AValidPassword123!',
+      });
+      assert.equal(missingOtp.ok, false);
+      if (!missingOtp.ok) {
+        assert.match(missingOtp.error, /6-digit code/i);
       }
 
-      const shortPassword = await authService.resetPassword({ token: 'abc', newPassword: 'short' });
+      const shortPassword = await authService.resetPassword({
+        email: 'user@example.com',
+        otp: '123456',
+        newPassword: 'short',
+      });
       assert.equal(shortPassword.ok, false);
       if (!shortPassword.ok) {
         assert.match(shortPassword.error, /at least 12 characters/i);

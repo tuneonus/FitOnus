@@ -5,7 +5,11 @@ import { Database, PgUnitOfWork } from './database/transaction.js';
 import { createAuthenticate } from './middleware/authenticate.js';
 import { createRateLimiters, type RateLimiters } from './middleware/rate-limit.js';
 import { createAdminModule } from './modules/admin/index.js';
-import { createAuthModule } from './modules/auth/index.js';
+import {
+  createAuthModule,
+  ResendPasswordResetNotifier,
+  type PasswordResetFailureEvent,
+} from './modules/auth/index.js';
 import { createHealthRoutes } from './modules/health/health.routes.js';
 import { createProfileModule } from './modules/profile/index.js';
 import { createNutritionModule } from './modules/nutrition/index.js';
@@ -21,6 +25,7 @@ import { createAppSettingsModule, type AppSettingsModule } from './modules/app-s
 import type { RouteGroup } from './shared/http/route.js';
 import { IdempotencyService } from './shared/idempotency/idempotency.js';
 import { PgIdempotencyStore } from './shared/idempotency/pg-idempotency-store.js';
+import type { Logger } from './shared/logging/logger.js';
 import { Argon2PasswordHasher } from './shared/security/argon2-password-hasher.js';
 import { HmacKeyedHasher } from './shared/security/hmac-keyed-hasher.js';
 
@@ -40,7 +45,11 @@ export interface Container {
  * Composition root: the only place that knows every concrete class. Modules receive
  * their dependencies as plain arguments; there is no DI container or global state.
  */
-export function createContainer(config: AppConfig, pool: Pool): Container {
+export function createContainer(
+  config: AppConfig,
+  pool: Pool,
+  logger?: Logger,
+): Container {
   const database = new Database(pool);
   const uow = new PgUnitOfWork(database);
   const passwordHasher = new Argon2PasswordHasher();
@@ -67,6 +76,22 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     passwordHasher,
     idempotency,
   });
+  // Password reset is enabled only when a delivery channel is configured (EMAIL_PROVIDER=resend);
+  // otherwise POST /auth/forgot-password and /auth/reset-password answer 503 and store nothing.
+  const passwordReset =
+    config.email.provider === 'resend'
+      ? {
+          notifier: new ResendPasswordResetNotifier({
+            apiKey: config.email.apiKey,
+            from: config.email.from,
+            timeoutMs: config.email.timeoutMs,
+          }),
+          // Only these three secret-free fields are logged: never the e-mail address, token or provider text.
+          onFailure: ({ stage, userId, errorName }: PasswordResetFailureEvent): void => {
+            logger?.error({ stage, userId, errorName }, 'Password reset email flow failed');
+          },
+        }
+      : undefined;
   const auth = createAuthModule({
     basePath: `${API_PREFIX}/auth`,
     db: database,
@@ -76,6 +101,7 @@ export function createContainer(config: AppConfig, pool: Pool): Container {
     accounts: users.accounts,
     config: config.auth,
     limiters: rateLimiters,
+    passwordReset,
   });
   const health = createHealthRoutes({
     checkReady: () => database.ping(READINESS_TIMEOUT_MS),

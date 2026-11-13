@@ -30,8 +30,12 @@ function main(): void {
     logger.warn('DATABASE_SSL=disable in production: only acceptable on a trusted private network');
   }
 
+  if (config.email.provider === 'none') {
+    logger.warn('EMAIL_PROVIDER is not configured: password reset is disabled (endpoints answer 503)');
+  }
+
   const pool = createPool(config.database, logger);
-  const container = createContainer(config, pool);
+  const container = createContainer(config, pool, logger);
   const app = createApp({ config, logger, container });
   const server = http.createServer(app);
   server.requestTimeout = 30_000;

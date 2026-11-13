@@ -14,3 +14,14 @@ export const invalidRefreshToken = () =>
 
 export const refreshTokenReused = () =>
   unauthorized('REFRESH_TOKEN_REUSED', 'The refresh token was already used. The session has been revoked.');
+
+/**
+ * One message for unknown e-mail, wrong, malformed, expired, used, superseded, locked-out and
+ * disabled-account codes, so a caller learns nothing beyond "this code does not work".
+ */
+export const invalidResetCode = () =>
+  new AppError(
+    'bad_request',
+    'BAD_REQUEST',
+    'This verification code is invalid or has expired. Please request a new one.',
+  );
