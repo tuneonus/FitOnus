@@ -88,13 +88,13 @@ export function StepGoalConfirmation({ onEdit }: StepGoalConfirmationProps) {
     <View style={styles.container}>
       <View style={[styles.heroBox, { backgroundColor: colors.hero }]}>
         <View style={styles.heroHeading}>
-          <Sparkles size={16} color={colors.accent} />
+          <Sparkles size={16} color={colors.highlight} />
           <Text style={[styles.heroSub, { color: colors.heroMuted }]}>YOUR STARTING PLAN</Text>
         </View>
         <Text style={[styles.goalTitle, { color: colors.heroInk }]}>
           {goal?.label ?? 'Your personal plan'}
         </Text>
-        <Text style={[styles.calorieValue, { color: colors.accent }]}>
+        <Text style={[styles.calorieValue, { color: colors.highlight }]}>
           {displayCalories.toLocaleString()}
           <Text style={[styles.calorieUnit, { color: colors.heroMuted }]}> kcal / day</Text>
         </Text>

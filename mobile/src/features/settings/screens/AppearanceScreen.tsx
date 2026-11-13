@@ -36,12 +36,11 @@ const options: {
 
 export function AppearanceScreen() {
   const { colors, setThemeMode } = useTheme();
-  const { theme, setTheme } = useSettingsStore();
+  const theme = useSettingsStore((s) => s.theme);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { mutate: updateSettings } = useUpdateSettings();
 
   const handleSelect = (v: ThemePreference) => {
-    setTheme(v);
     setThemeMode(v);
     if (isAuthenticated) {
       updateSettings({ themeMode: v });

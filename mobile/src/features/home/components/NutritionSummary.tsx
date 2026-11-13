@@ -84,7 +84,7 @@ export function NutritionSummary({
               size={112}
               stroke={7}
               value={ratio}
-              color={colors.accent}
+              color={colors.highlight}
               trackColor="rgba(244,244,238,0.12)"
             >
               {goals.kcal !== null && totals.kcal !== null ? (
@@ -95,7 +95,7 @@ export function NutritionSummary({
                   <Text style={[premium.type.caption, { color: colors.heroMuted }]}>of goal</Text>
                 </>
               ) : (
-                <Utensils size={25} color={colors.accent} />
+                <Utensils size={25} color={colors.highlight} />
               )}
             </ProgressRing>
           </View>
@@ -104,14 +104,14 @@ export function NutritionSummary({
       {compact ? (
         <ProgressBar
           value={ratio}
-          color={colors.accent}
+          color={colors.highlight}
           trackColor="rgba(244,244,238,0.12)"
           height={5}
           style={styles.compactProgress}
         />
       ) : null}
       <Text
-        style={[styles.remaining, compact && styles.compactRemaining, { color: colors.accent }]}
+        style={[styles.remaining, compact && styles.compactRemaining, { color: colors.highlight }]}
       >
         {remaining === null
           ? 'Log a meal to build your day.'
@@ -137,7 +137,7 @@ export function NutritionSummary({
               value={progressRatio(totals[key], goals[key])}
               color={
                 key === 'protein'
-                  ? colors.accent
+                  ? colors.highlight
                   : key === 'carbs'
                     ? premium.chart.inverseCarbs
                     : premium.chart.inverseFat
@@ -163,8 +163,8 @@ export function NutritionSummary({
             onPress={() => navigate('nutritionPreferences')}
             style={styles.goalAction}
           >
-            <Text style={[premium.type.caption, { color: colors.accent }]}>Set goals</Text>
-            <ArrowUpRight size={14} color={colors.accent} />
+            <Text style={[premium.type.caption, { color: colors.highlight }]}>Set goals</Text>
+            <ArrowUpRight size={14} color={colors.highlight} />
           </Pressable>
         ) : null}
       </View>

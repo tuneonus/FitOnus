@@ -237,7 +237,7 @@ function GoalRow({ goal, onOpen }: { goal: Goal; onOpen: () => void }) {
           <ProgressBar
             value={p}
             max={1}
-            color={colors.accent}
+            color={colors.accentStrong}
             trackColor={colors.surface2}
             style={{ height: 6 }}
           />

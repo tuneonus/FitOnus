@@ -133,13 +133,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       >
                         <span
                           aria-hidden="true"
-                          className={`absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand-500 transition-opacity ${
+                          className={`absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent-600 transition-opacity ${
                             active ? 'opacity-100' : 'opacity-0'
                           }`}
                         />
                         <Icon
                           className={`h-4 w-4 shrink-0 ${
-                            active ? 'text-brand-500' : 'text-ink-500 group-hover:text-ink-300'
+                            active ? 'text-brand-300' : 'text-ink-500 group-hover:text-ink-300'
                           }`}
                         />
                         {item.name}

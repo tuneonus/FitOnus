@@ -16,8 +16,8 @@ interface StatsCardProps {
 }
 
 const ACCENT_ICON: Record<NonNullable<StatsCardProps['accent']>, string> = {
-  teal: 'text-brand-500',
-  emerald: 'text-emerald-400',
+  teal: 'text-brand-300',
+  emerald: 'text-accent-500',
   amber: 'text-amber-400',
   rose: 'text-rose-400',
   purple: 'text-purple-400',

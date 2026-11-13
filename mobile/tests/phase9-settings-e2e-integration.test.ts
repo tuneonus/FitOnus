@@ -346,7 +346,7 @@ describe('Phase 9.6: Settings & Privacy Mobile + Backend Integration Verificatio
         assert.equal(useAuthStore.getState().user, null);
 
         // Settings store reset
-        assert.equal(useSettingsStore.getState().theme, 'system');
+        assert.equal(useSettingsStore.getState().theme, 'dark'); // theme is a device preference: it survives logout and account switches
 
         // Query cache cleared
         assert.equal(queryClient.getQueryData(SETTINGS_QUERY_KEY), undefined);

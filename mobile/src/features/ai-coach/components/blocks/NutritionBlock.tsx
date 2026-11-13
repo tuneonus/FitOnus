@@ -93,7 +93,7 @@ export function NutritionBlock({ block }: { block: Extract<Block, { type: 'nutri
               <ProgressBar
                 value={m.value}
                 max={m.goal}
-                color={macroColors[m.label] || colors.accent}
+                color={macroColors[m.label] || colors.accentStrong}
                 height={6}
                 style={{ marginTop: 4 }}
               />

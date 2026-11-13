@@ -2,7 +2,7 @@ import { colorTokens, darkColorTokens } from '@/shared/theme/tokens';
 
 export const Colors = {
   light: {
-    // FitOnus: chalk, forest, and a single athletic citron accent
+    // OnusFit brand: logo blue as the main accent, logo orange as the highlight
     accent: colorTokens.primary,
     accentInk: colorTokens.primaryInk,
     accentStrong: colorTokens.primaryStrong,
@@ -22,27 +22,31 @@ export const Colors = {
     move: colorTokens.move,
     sky: colorTokens.steps,
     // Tinted accent surface and hairline separators for lists and dividers
-    accentSoft: '#EEF6DC',
-    lineSoft: '#E7EBE3',
+    accentSoft: '#E2E8F4',
+    lineSoft: '#E8ECF2',
+    // Brand orange highlight (streaks, AI Coach, accents on dark hero surfaces)
+    highlight: colorTokens.highlight,
+    highlightInk: colorTokens.highlightInk,
+    highlightSoft: '#FFF0E5',
 
     // Compatible aliases
     primary: colorTokens.primary,
-    primaryLight: '#ECF5DC',
+    primaryLight: '#E2E8F4',
     primaryDark: colorTokens.primaryStrong,
     secondary: colorTokens.text,
     secondaryLight: colorTokens.surfaceAlt,
     success: colorTokens.success,
-    successLight: '#E2F7E8',
+    successLight: '#E6F7EE',
     warning: colorTokens.warning,
-    warningLight: '#FDF1DE',
+    warningLight: '#FFF4E0',
     error: colorTokens.error,
-    errorLight: '#FCEAEA',
+    errorLight: '#FDEBEC',
     info: colorTokens.steps,
     infoLight: '#E3F4FC',
 
     text: colorTokens.text,
     textSecondary: colorTokens.mutedText,
-    textTertiary: '#A6B5A8',
+    textTertiary: '#8A94A8',
     textInverse: colorTokens.primaryInk,
 
     background: colorTokens.background,
@@ -76,8 +80,8 @@ export const Colors = {
     poor: colorTokens.error,
   },
   dark: {
-    // FitOnus: chalk, forest, and a single athletic citron accent
-    accent: darkColorTokens.primaryStrong,
+    // OnusFit brand: logo blue as the main accent, logo orange as the highlight
+    accent: darkColorTokens.primary,
     accentInk: darkColorTokens.primaryInk,
     accentStrong: darkColorTokens.primaryStrong,
     bg: darkColorTokens.background,
@@ -96,27 +100,30 @@ export const Colors = {
     move: darkColorTokens.move,
     sky: darkColorTokens.steps,
     // Tinted accent surface and hairline separators for lists and dividers
-    accentSoft: 'rgba(199, 239, 114, 0.13)',
-    lineSoft: '#2A372F',
+    accentSoft: '#242A34',
+    lineSoft: '#202734',
+    highlight: darkColorTokens.highlight,
+    highlightInk: darkColorTokens.highlightInk,
+    highlightSoft: 'rgba(255, 120, 1, 0.16)',
 
     // Compatible aliases
     primary: darkColorTokens.primaryStrong,
-    primaryLight: '#253819',
-    primaryDark: '#ADD55D',
+    primaryLight: '#242A34',
+    primaryDark: '#E1E6EE',
     secondary: darkColorTokens.heroInk,
     secondaryLight: darkColorTokens.surfaceAlt,
     success: darkColorTokens.success,
-    successLight: '#112F1B',
+    successLight: '#0D2A1C',
     warning: darkColorTokens.warning,
-    warningLight: '#35290A',
+    warningLight: '#2E2108',
     error: darkColorTokens.error,
-    errorLight: '#381616',
+    errorLight: '#321418',
     info: darkColorTokens.steps,
     infoLight: '#0E2938',
 
     text: darkColorTokens.heroInk,
     textSecondary: darkColorTokens.mutedText,
-    textTertiary: '#606C63',
+    textTertiary: '#667084',
     textInverse: darkColorTokens.primaryInk,
 
     background: darkColorTokens.background,
@@ -206,81 +213,25 @@ export const BorderRadius = {
   full: 9999,
 };
 
+/**
+ * TuneStack shadows: boxShadow (follows border radius, unlike Android elevation),
+ * tinted with the darkest ink. Dark themes drop them and rely on borders.
+ */
+const none = { boxShadow: '0px 0px 0px rgba(0, 0, 0, 0)' };
 export const Shadows = {
   light: {
-    shadowNone: {
-      shadowColor: 'transparent',
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0,
-      shadowRadius: 0,
-      elevation: 0,
-    },
-    shadowSmall: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 3,
-      elevation: 2,
-    },
-    shadowMedium: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    shadowLarge: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 16,
-      elevation: 8,
-    },
-    shadowXLarge: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.16,
-      shadowRadius: 24,
-      elevation: 12,
-    },
+    shadowNone: none,
+    shadowSmall: { boxShadow: '0px 1px 3px rgba(14, 23, 38, 0.06)' },
+    shadowMedium: { boxShadow: '0px 6px 20px rgba(14, 23, 38, 0.12)' },
+    shadowLarge: { boxShadow: '0px -2px 16px rgba(14, 23, 38, 0.07)' },
+    shadowXLarge: { boxShadow: '0px -8px 32px rgba(14, 23, 38, 0.16)' },
   },
   dark: {
-    // In dark mode, we usually rely on border colors rather than shadows for elevation.
-    shadowNone: {
-      shadowColor: 'transparent',
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0,
-      shadowRadius: 0,
-      elevation: 0,
-    },
-    shadowSmall: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.3,
-      shadowRadius: 3,
-      elevation: 2,
-    },
-    shadowMedium: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.4,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    shadowLarge: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.5,
-      shadowRadius: 16,
-      elevation: 8,
-    },
-    shadowXLarge: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.6,
-      shadowRadius: 24,
-      elevation: 12,
-    },
+    shadowNone: none,
+    shadowSmall: none,
+    shadowMedium: none,
+    shadowLarge: none,
+    shadowXLarge: none,
   },
 };
 

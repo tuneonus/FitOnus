@@ -588,7 +588,7 @@ export function ProgressScreen() {
                     },
                   ]}
                 >
-                  <Medal size={20} color={a.earned ? colors.accent : colors.muted} />
+                  <Medal size={20} color={a.earned ? colors.accentStrong : colors.muted} />
                   <Text style={[styles.achTitle, { color: colors.ink }]}>{a.title}</Text>
                   <Text style={[styles.achDetail, { color: colors.muted }]}>
                     {a.earned ? a.detail : `In progress · ${a.detail}`}

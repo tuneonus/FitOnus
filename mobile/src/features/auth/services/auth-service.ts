@@ -1,4 +1,5 @@
 import { SecureStorageService } from '../../../services/secure-storage';
+import { refreshAccessToken } from '../../../services/api-client';
 import { AuthRepository, type LoginRequest, type RegisterRequest } from '../api/auth-repository';
 import { useAuthStore } from '../stores/auth-store';
 import { useSettingsStore } from '../../../shared/stores/settingsStore';
@@ -119,12 +120,12 @@ export const AuthService = {
         }
       }
 
-      // If accessToken failed or missing, but refreshToken exists, try refresh
+      // If accessToken failed or missing, try one shared refresh. The refresh token is re-read from storage
+      // inside refreshAccessToken: the copy read above may already have been rotated (or cleared) by the
+      // API client's own refresh, and replaying a rotated token revokes the whole session server-side.
       if (refreshToken) {
         try {
-          const newTokens = await AuthRepository.refreshToken(refreshToken);
-          await SecureStorageService.setItem(ACCESS_TOKEN_KEY, newTokens.accessToken);
-          await SecureStorageService.setItem(REFRESH_TOKEN_KEY, newTokens.refreshToken);
+          await refreshAccessToken();
           const user = await AuthRepository.getCurrentUser();
           setAuth(user);
           return;

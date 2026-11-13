@@ -378,7 +378,7 @@ describe('Phase 9.4 Mobile: Account Security, Privacy & Secure Deletion', () => 
         assert.equal(useAuthStore.getState().user, null);
 
         // Check settings wiped
-        assert.equal(useSettingsStore.getState().theme, 'system');
+        assert.equal(useSettingsStore.getState().theme, 'dark'); // theme is a device preference: it survives logout and account switches
       } finally {
         apiClient.post = originalLogout;
       }

@@ -45,7 +45,7 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
           }}
           style={styles.actionBtn}
         >
-          <Text style={[styles.actionLabel, { color: colors.accent }]}>{toast.actionLabel}</Text>
+          <Text style={[styles.actionLabel, { color: colors.accentStrong }]}>{toast.actionLabel}</Text>
         </TouchableOpacity>
       ) : null}
     </View>

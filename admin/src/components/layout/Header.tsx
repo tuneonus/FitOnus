@@ -73,7 +73,7 @@ export function Header({ title, onOpenSidebar }: HeaderProps) {
           <SystemHealthIndicator />
 
           <div className="hidden items-center gap-1.5 rounded-md border border-ink-800 bg-ink-900 px-2 py-1 text-[11px] xl:flex">
-            <Shield className="h-3.5 w-3.5 text-brand-500" />
+            <Shield className="h-3.5 w-3.5 text-brand-300" />
             <span className="font-semibold uppercase tracking-wider text-ink-200">
               {user?.role || 'Admin'}
             </span>

@@ -67,7 +67,7 @@ export function AiMemoryScreen() {
         {/* Hero Banner */}
         <View style={[styles.heroCard, { backgroundColor: colors.hero }]}>
           <View style={styles.heroTop}>
-            <Brain size={22} color={colors.accent} style={{ marginTop: 2 }} />
+            <Brain size={22} color={colors.highlight} style={{ marginTop: 2 }} />
             <View style={styles.heroText}>
               <Text style={[styles.heroTitle, { color: colors.heroInk }]}>
                 Coach memory

@@ -6,7 +6,6 @@ import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useProfile } from '@/features/profile/hooks/use-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { premium } from '@/shared/theme/premium';
-import { Logo } from '@/shared/components/common/Logo';
 
 export function HomeHeader() {
   const { colors } = useTheme();
@@ -34,77 +33,59 @@ export function HomeHeader() {
   return (
     <View style={styles.header}>
       <View style={styles.topRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open your profile"
+          onPress={() => switchTab('profile')}
+          style={({ pressed }) => [
+            styles.avatar,
+            { backgroundColor: colors.hero, opacity: pressed ? 0.6 : 1 },
+          ]}
+        >
+          <Text style={[premium.type.label, { color: colors.heroInk }]}>{initials}</Text>
+        </Pressable>
         <View style={styles.brand}>
-          <Logo size={36} />
-          <View>
-            <Text style={[styles.wordmark, { color: colors.ink }]}>OnusFit</Text>
-            <Text style={[premium.type.caption, { color: colors.muted }]}>{dateLabel}</Text>
-          </View>
+          <Text style={[styles.greeting, { color: colors.muted }]}>
+            {greeting} · {dateLabel}
+          </Text>
+          <Text accessibilityRole="header" style={[styles.name, { color: colors.ink }]} numberOfLines={1}>
+            {firstName}
+          </Text>
         </View>
-        <View style={styles.actions}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-            onPress={() => navigate('notifications')}
-            style={({ pressed }) => [
-              styles.iconButton,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.line,
-                opacity: pressed ? 0.6 : 1,
-              },
-            ]}
-          >
-            <Bell size={21} color={colors.ink} strokeWidth={1.7} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open your profile"
-            onPress={() => switchTab('profile')}
-            style={({ pressed }) => [
-              styles.avatar,
-              { backgroundColor: colors.hero, opacity: pressed ? 0.6 : 1 },
-            ]}
-          >
-            <Text style={[premium.type.label, { color: colors.heroInk }]}>{initials}</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+          onPress={() => navigate('notifications')}
+          style={({ pressed }) => [
+            styles.iconButton,
+            { backgroundColor: colors.accentSoft, opacity: pressed ? 0.6 : 1 },
+          ]}
+        >
+          <Bell size={21} color={colors.accentStrong} strokeWidth={1.8} />
+        </Pressable>
       </View>
-      <Text style={[styles.greeting, { color: colors.muted }]}>{greeting}</Text>
-      <Text accessibilityRole="header" style={[styles.name, { color: colors.ink }]}>
-        {firstName}.
-      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: 12, paddingBottom: premium.space.xl },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 24,
-  },
-  brand: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  wordmark: { fontSize: 16, lineHeight: 20, fontWeight: '800', letterSpacing: -0.4 },
-  actions: { flexDirection: 'row', gap: 8 },
+  header: { paddingTop: 12, paddingBottom: premium.space.lg },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  brand: { flex: 1 },
   iconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  greeting: { ...premium.type.body, fontWeight: '500' },
-  name: { ...premium.type.display, marginTop: 2 },
+  greeting: { ...premium.type.caption },
+  name: { fontSize: 24, lineHeight: 30, fontWeight: '800', letterSpacing: -0.6 },
 });

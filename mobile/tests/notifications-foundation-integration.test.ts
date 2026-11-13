@@ -418,7 +418,7 @@ describe('Notification small icon', () => {
       Record<string, unknown>,
     ];
     assert.equal(plugin[1].icon, './assets/images/notification-icon.png');
-    assert.equal(plugin[1].color, '#208AEF');
+    assert.equal(plugin[1].color, '#208AEF'); // circle behind the white logo glyph
 
     // Launcher, adaptive and splash icons are not part of this change.
     assert.equal(config.icon, './assets/images/icon.png');

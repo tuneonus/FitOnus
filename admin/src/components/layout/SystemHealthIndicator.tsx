@@ -129,7 +129,7 @@ export function SystemHealthIndicator() {
         aria-label="Re-check backend health"
         className="btn btn-ghost h-6 w-6 rounded px-0 text-ink-500"
       >
-        <RefreshCw className={`h-3 w-3 ${isProbing ? 'animate-spin text-brand-500' : ''}`} />
+        <RefreshCw className={`h-3 w-3 ${isProbing ? 'animate-spin text-brand-300' : ''}`} />
       </button>
     </div>
   );

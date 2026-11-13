@@ -65,7 +65,7 @@ describe('Phase 9.3 Settings: Storage Scoping & User Isolation', () => {
     // Store is back to clean defaults
     assert.equal(useSettingsStore.getState().userId, null);
     assert.equal(useSettingsStore.getState().units, 'metric');
-    assert.equal(useSettingsStore.getState().theme, 'system');
+    assert.equal(useSettingsStore.getState().theme, 'dark'); // theme is a device preference: it survives logout and account switches
     assert.equal(useSettingsStore.getState().language, 'en');
     assert.equal(useSettingsStore.getState().privacyCoachSharing, false);
 
@@ -75,7 +75,7 @@ describe('Phase 9.3 Settings: Storage Scoping & User Isolation', () => {
     // User B receives clean defaults, zero leakage from User A
     assert.equal(useSettingsStore.getState().userId, userB);
     assert.equal(useSettingsStore.getState().units, 'metric');
-    assert.equal(useSettingsStore.getState().theme, 'system');
+    assert.equal(useSettingsStore.getState().theme, 'dark'); // theme is a device preference: it survives logout and account switches
     assert.equal(useSettingsStore.getState().language, 'en');
     assert.equal(useSettingsStore.getState().privacyCoachSharing, false);
 

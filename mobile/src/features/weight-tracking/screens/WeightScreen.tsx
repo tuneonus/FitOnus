@@ -188,7 +188,7 @@ export function WeightScreen() {
             <ProgressBar
               value={goalProgress}
               max={1}
-              color={colors.accent}
+              color={colors.accentStrong}
               trackColor={colors.surface2}
               style={{ marginTop: 12, height: 8 }}
             />

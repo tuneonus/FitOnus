@@ -78,7 +78,7 @@ describe('Phase 9.5 QA: Full Settings Integration & Security Quality Assurance',
       useSettingsStore.getState().resetSettings();
       assert.equal(useSettingsStore.getState().userId, null);
       assert.equal(useSettingsStore.getState().units, 'metric');
-      assert.equal(useSettingsStore.getState().theme, 'system');
+      assert.equal(useSettingsStore.getState().theme, 'dark'); // theme is a device preference: it survives logout and account switches
       assert.equal(useSettingsStore.getState().language, 'en');
       assert.equal(useSettingsStore.getState().privacyCoachSharing, false);
 
@@ -86,7 +86,7 @@ describe('Phase 9.5 QA: Full Settings Integration & Security Quality Assurance',
       await useSettingsStore.getState().hydrateForUser(userB);
       assert.equal(useSettingsStore.getState().userId, userB);
       assert.equal(useSettingsStore.getState().units, 'metric');
-      assert.equal(useSettingsStore.getState().theme, 'system');
+      assert.equal(useSettingsStore.getState().theme, 'dark'); // theme is a device preference: it survives logout and account switches
       assert.equal(useSettingsStore.getState().language, 'en');
       assert.equal(useSettingsStore.getState().privacyCoachSharing, false);
 
@@ -282,7 +282,7 @@ describe('Phase 9.5 QA: Full Settings Integration & Security Quality Assurance',
 
         assert.equal(useAuthStore.getState().isAuthenticated, false);
         assert.equal(useAuthStore.getState().user, null);
-        assert.equal(useSettingsStore.getState().theme, 'system');
+        assert.equal(useSettingsStore.getState().theme, 'dark'); // theme is a device preference: it survives logout and account switches
       } finally {
         apiClient.delete = originalDelete;
       }

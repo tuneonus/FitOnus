@@ -51,8 +51,8 @@ export function StepIntro() {
           importantForAccessibility="no-hide-descendants"
         >
           <View style={styles.orbitRing} />
-          <View style={[styles.coachCore, { backgroundColor: colors.accent }]}>
-            <Sparkles size={36} color={colors.accentInk} strokeWidth={1.6} />
+          <View style={[styles.coachCore, { backgroundColor: colors.highlight }]}>
+            <Sparkles size={36} color={colors.highlightInk} strokeWidth={1.6} />
           </View>
           {[
             { icon: Dumbbell, top: 3, left: 22 },
@@ -66,7 +66,7 @@ export function StepIntro() {
                 { top, left, backgroundColor: colors.hero, borderColor: 'rgba(244,244,238,0.16)' },
               ]}
             >
-              <Icon size={19} color={colors.accent} />
+              <Icon size={19} color={colors.highlight} />
             </View>
           ))}
         </View>
@@ -473,7 +473,7 @@ export function StepDuration() {
         ))}
       </View>
       <View style={[styles.timeSummary, { backgroundColor: colors.hero }]}>
-        <Clock3 size={22} color={colors.accent} />
+        <Clock3 size={22} color={colors.highlight} />
         <View style={styles.flex}>
           <Text style={[styles.featureTitle, { color: colors.heroInk }]}>
             {durationMin} minutes, made for you.
@@ -606,7 +606,7 @@ export function StepDevice() {
             { backgroundColor: colors.hero, borderColor: colors.heroMuted },
           ]}
         >
-          <HeartPulse size={32} color={colors.accent} />
+          <HeartPulse size={32} color={colors.highlight} />
           <Text style={[styles.watchFaceText, { color: colors.heroInk }]}>ONUSFIT</Text>
         </View>
         <Text style={[styles.connectionTitle, { color: colors.heroInk }]}>
@@ -639,8 +639,8 @@ export function StepSummary() {
   return (
     <View style={styles.stack}>
       <View style={[styles.readyCard, { backgroundColor: colors.hero }]}>
-        <View style={[styles.readyCircle, { backgroundColor: colors.accent }]}>
-          <Check size={40} color={colors.accentInk} strokeWidth={2.5} />
+        <View style={[styles.readyCircle, { backgroundColor: colors.highlight }]}>
+          <Check size={40} color={colors.highlightInk} strokeWidth={2.5} />
         </View>
         <Text style={[styles.readyTitle, { color: colors.heroInk }]}>
           {name.trim().split(' ')[0] || 'You'}, let’s make it happen.

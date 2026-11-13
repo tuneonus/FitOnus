@@ -212,7 +212,7 @@ export function UserDetailModal({
                     secondary={`${activity?.weight.totalEntries ?? 0} check-ins`}
                   />
                   <ActivityTile
-                    icon={<Activity className="text-brand-500" />}
+                    icon={<Activity className="text-brand-300" />}
                     label="Sessions"
                     primary={`${userDetail.sessionsSummary.activeSessionsCount} active`}
                     secondary={userDetail.sessionsSummary.lastActiveAt ? 'Recently active' : 'No active session'}

@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E1E6',
   },
   activeDot: {
-    backgroundColor: '#208AEF', // primary
+    backgroundColor: '#0D1B4C', // primary
     width: 24,
   },
   button: {

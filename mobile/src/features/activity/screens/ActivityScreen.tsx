@@ -68,7 +68,7 @@ export function ActivityScreen() {
       label: 'Active minutes',
       value: activeMinutes,
       goal: null,
-      color: colors.accent,
+      color: colors.accentStrong,
       size: 134,
       unavailable: !summary,
     },

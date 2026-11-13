@@ -25,7 +25,7 @@ export function Sparkline({
   const { colors } = useTheme();
 
   const data = values ?? points ?? [];
-  const stroke = strokeColor ?? color ?? colors.accent;
+  const stroke = strokeColor ?? color ?? colors.accentStrong;
 
   const path = useMemo(() => {
     if (!data || data.length < 2) return '';

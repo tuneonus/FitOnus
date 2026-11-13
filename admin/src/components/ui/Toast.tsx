@@ -29,7 +29,7 @@ const TOAST_STYLES: Record<ToastType, { accent: string; icon: string }> = {
   success: { accent: 'bg-emerald-400', icon: 'text-emerald-400' },
   error: { accent: 'bg-rose-400', icon: 'text-rose-400' },
   warning: { accent: 'bg-amber-400', icon: 'text-amber-400' },
-  info: { accent: 'bg-brand-500', icon: 'text-brand-500' },
+  info: { accent: 'bg-brand-500', icon: 'text-brand-300' },
 };
 
 export function Toast({ toast, onDismiss }: ToastProps) {

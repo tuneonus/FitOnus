@@ -3,40 +3,55 @@
 /*
  * OnusFit Admin design system
  * ---------------------------------------------------------------
- * Mirrors the OnusFit app language: forest-tinted neutrals ("ink")
- * with a single athletic citron accent ("brand").
+ * Follows the OnusFit mobile app's dark theme (itself built on the
+ * TuneStack palette): cool neutrals ("ink"), TuneStack navy/blue
+ * ("brand") and the logo orange ("accent").
  * Status colours keep Tailwind's emerald / amber / rose / cyan / purple.
  */
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  /* Forest-tinted neutral scale (dark UI surfaces, borders, text) */
-  --color-ink-50: #f5f7f3;
-  --color-ink-100: #e9ede6;
-  --color-ink-200: #d3dbd0;
-  --color-ink-300: #b6c2b6;
-  --color-ink-400: #94a497;
-  --color-ink-500: #6e7f72;
-  --color-ink-600: #4f5f53;
-  --color-ink-700: #36443a;
-  --color-ink-800: #26322a;
-  --color-ink-850: #1d2821;
-  --color-ink-900: #161f1a;
-  --color-ink-950: #0e1411;
+  /* Neutral scale — the mobile dark theme: 950 page, 900 surface, 800 border, 50 text, 400 muted */
+  --color-ink-50: #f1f4f9;
+  --color-ink-100: #e1e6ee;
+  --color-ink-200: #d2d8e3;
+  --color-ink-300: #a7b0c2;
+  --color-ink-400: #8a94a8;
+  --color-ink-500: #667084;
+  --color-ink-600: #515b6f;
+  --color-ink-700: #353e4c;
+  --color-ink-800: #2b3342;
+  --color-ink-850: #1f2633;
+  --color-ink-900: #141a25;
+  --color-ink-950: #0b0f17;
 
-  /* Citron brand accent — 500 is the OnusFit primary (#C7EF72) */
-  --color-brand-50: #fafdf0;
-  --color-brand-100: #f3fbd9;
-  --color-brand-200: #e7f7b4;
-  --color-brand-300: #dcf597;
-  --color-brand-400: #d2f285;
-  --color-brand-500: #c7ef72;
-  --color-brand-600: #a6d14a;
-  --color-brand-700: #7fa332;
-  --color-brand-800: #5b7a24;
-  --color-brand-900: #3d5419;
-  --color-brand-950: #192812;
+  /* TuneStack blue — 500 is the primary fill (white text, as in the mobile app),
+     300/400 are the readable tints for text and icons on dark surfaces. */
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #d5e4ff;
+  --color-brand-200: #adcbff;
+  --color-brand-300: #8db6fb;
+  --color-brand-400: #4f8ae6;
+  --color-brand-500: #0a56cc;
+  --color-brand-600: #0846a8;
+  --color-brand-700: #083a8c;
+  --color-brand-800: #0d2a6e;
+  --color-brand-900: #0d1b4c;
+  --color-brand-950: #050b2e;
+
+  /* Logo orange accent scale — 600 is the OnusFit orange (#FD6D01). Use dark text on 400-600. */
+  --color-accent-50: #fff4ea;
+  --color-accent-100: #ffe5cf;
+  --color-accent-200: #ffc99d;
+  --color-accent-300: #ffab66;
+  --color-accent-400: #ff8a33;
+  --color-accent-500: #ff7801;
+  --color-accent-600: #fd6d01;
+  --color-accent-700: #d95a00;
+  --color-accent-800: #a84500;
+  --color-accent-900: #6e2e00;
+  --color-accent-950: #1a1200;
 
   --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 1px 2px 0 rgb(0 0 0 / 0.35);
   --shadow-pop: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 16px 40px -12px rgb(0 0 0 / 0.65);
@@ -69,7 +84,7 @@
 
   /* Visible, consistent keyboard focus for every interactive element. */
   :where(a, button, [role="button"], summary, input[type="checkbox"], input[type="radio"], [tabindex]):focus-visible {
-    outline: 2px solid var(--color-brand-500);
+    outline: 2px solid var(--color-brand-300);
     outline-offset: 2px;
     border-radius: 6px;
   }
@@ -86,7 +101,7 @@
 
   input[type="checkbox"],
   input[type="radio"] {
-    accent-color: var(--color-brand-500);
+    accent-color: var(--color-brand-400);
   }
 
   input[type="date"]::-webkit-calendar-picker-indicator,
@@ -138,7 +153,10 @@
     @apply h-8 w-8 px-0;
   }
   .btn-primary {
-    @apply bg-brand-500 text-brand-950 hover:bg-brand-400 active:bg-brand-600;
+    @apply bg-brand-500 text-white hover:bg-brand-400 active:bg-brand-600;
+  }
+  .btn-accent {
+    @apply bg-accent-500 text-accent-950 hover:bg-accent-400 active:bg-accent-600;
   }
   .btn-secondary {
     @apply border border-ink-700 bg-ink-850 text-ink-100 hover:border-ink-600 hover:bg-ink-800 hover:text-white;
@@ -177,7 +195,7 @@
   }
   select.input {
     @apply appearance-none bg-no-repeat pr-9;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a497' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238d9bb5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-position: right 0.6rem center;
     background-size: 16px;
   }

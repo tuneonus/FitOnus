@@ -189,7 +189,8 @@ describe('Premium Home: readable semantic palette', () => {
         [colors.muted, colors.surface2],
         [colors.heroInk, colors.hero],
         [colors.heroMuted, colors.hero],
-        [colors.accent, colors.hero],
+        [colors.highlight, colors.hero],
+        [colors.highlightInk, colors.highlight],
         [colors.accentInk, colors.accent],
         [colors.accentStrong, colors.surface2],
       ]) {

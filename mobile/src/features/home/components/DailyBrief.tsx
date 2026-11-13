@@ -31,12 +31,12 @@ export function DailyBrief() {
   return (
     <View style={styles.container}>
       <View style={[styles.heroCard, { backgroundColor: colors.hero }]}>
-        <View pointerEvents="none" style={[styles.halo, { borderColor: `${colors.accent}12` }]} />
+        <View pointerEvents="none" style={[styles.halo, { borderColor: `${colors.highlight}12` }]} />
         {/* Header */}
         <View style={styles.cardHeader}>
           <View style={styles.titleRow}>
             <View style={styles.sparkleBadge}>
-              <Sparkles size={14} color={colors.accent} />
+              <Sparkles size={14} color={colors.highlight} />
             </View>
             <Text style={[styles.cardTitle, { color: colors.heroMuted }]}>YOUR DAILY BRIEF</Text>
           </View>
@@ -69,7 +69,7 @@ export function DailyBrief() {
             size={compact ? 92 : 112}
             stroke={9}
             value={hasData ? dailyBrief.recovery / 100 : 0}
-            color={colors.accent}
+            color={colors.highlight}
             trackColor="rgba(244, 244, 238, 0.1)"
           >
             {hasData ? (
@@ -77,7 +77,7 @@ export function DailyBrief() {
                 {dailyBrief.recovery}
               </Text>
             ) : (
-              <Link2 size={28} color={colors.accent} />
+              <Link2 size={28} color={colors.highlight} />
             )}
             <Text style={[styles.recoveryLabel, { color: colors.heroMuted }]}>
               {hasData ? 'Recovery' : 'Connect'}
@@ -95,11 +95,11 @@ export function DailyBrief() {
 
             {hasData ? (
               <View style={[styles.recPill, { backgroundColor: 'rgba(200, 245, 60, 0.15)' }]}>
-                <View style={[styles.recDot, { backgroundColor: colors.accent }]} />
-                <Text style={[styles.recText, { color: colors.accent }]}>
+                <View style={[styles.recDot, { backgroundColor: colors.highlight }]} />
+                <Text style={[styles.recText, { color: colors.highlight }]}>
                   {dailyBrief.recommendation}
                 </Text>
-                <ChevronRight size={13} color={colors.accent} />
+                <ChevronRight size={13} color={colors.highlight} />
               </View>
             ) : (
               <Text style={[styles.noDataText, { color: colors.heroMuted }]}>
@@ -116,12 +116,12 @@ export function DailyBrief() {
             accessibilityRole="button"
             activeOpacity={0.8}
             onPress={() => navigate('healthIntegration')}
-            style={[styles.connectButton, { backgroundColor: colors.accent }]}
+            style={[styles.connectButton, { backgroundColor: colors.highlight }]}
           >
-            <Text style={[styles.connectText, { color: colors.accentInk }]}>
+            <Text style={[styles.connectText, { color: colors.highlightInk }]}>
               Connect health data
             </Text>
-            <ArrowUpRight size={18} color={colors.accentInk} />
+            <ArrowUpRight size={18} color={colors.highlightInk} />
           </TouchableOpacity>
         )}
 
@@ -147,7 +147,7 @@ export function DailyBrief() {
                       </Text>
                     ) : null}
                   </Text>
-                  <Text style={[styles.driverDelta, { color: colors.accent }]}>{driver.delta}</Text>
+                  <Text style={[styles.driverDelta, { color: colors.highlight }]}>{driver.delta}</Text>
                 </View>
               ))}
             </View>

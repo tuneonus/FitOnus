@@ -528,7 +528,7 @@ export function AppSettingsView() {
                       aria-label="Enable AI Meal Photo Scanner"
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    <div className="w-11 h-6 bg-ink-800 ring-1 ring-inset ring-ink-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/60 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between text-xs text-ink-500 border-t border-ink-800 pt-2">

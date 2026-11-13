@@ -33,7 +33,7 @@ export function WorkoutsScreen() {
         <RecommendedWorkout showLibraryLink={false} />
         {hasPlan ? (
           <Card tone="hero" appearance="premium">
-            <Text style={[premium.type.eyebrow, { color: colors.accent }]}>
+            <Text style={[premium.type.eyebrow, { color: colors.highlight }]}>
               BUILD YOUR NEXT SESSION
             </Text>
             <Text style={[styles.title, { color: colors.heroInk }]}>Make it fit your day.</Text>

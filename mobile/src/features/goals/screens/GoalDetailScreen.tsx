@@ -90,7 +90,7 @@ export function GoalDetailScreen() {
           size={112}
           strokeWidth={11}
           value={p}
-          color={colors.accent}
+          color={colors.accentStrong}
           trackColor={colors.surface2}
         >
           <View style={styles.ringCenter}>

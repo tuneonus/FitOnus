@@ -56,7 +56,7 @@ export function RecoveryScreen() {
       {score != null ? (
         <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
           <View style={styles.heroContent}>
-            <ProgressRing size={120} strokeWidth={11} value={score / 100} color={colors.accent}>
+            <ProgressRing size={120} strokeWidth={11} value={score / 100} color={colors.accentStrong}>
               <Text style={[styles.scoreNumber, { color: colors.ink }]}>{score}</Text>
             </ProgressRing>
             <View style={styles.heroDetails}>

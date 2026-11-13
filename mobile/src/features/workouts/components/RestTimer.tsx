@@ -33,7 +33,7 @@ export function RestTimer({ remaining, total, nextLabel, onAdd, onSkip }: Props)
       <ProgressBar
         value={total > 0 ? remaining / total : 0}
         height={3}
-        color={colors.accent}
+        color={colors.highlight}
         trackColor="rgba(255,255,255,0.12)"
       />
       <View style={styles.row}>

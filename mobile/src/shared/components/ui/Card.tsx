@@ -22,10 +22,10 @@ export function Card({
   appearance = 'default',
   style,
 }: CardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   let bgColor = colors.surface;
-  let borderColor = colors.line;
+  let borderColor = isDark ? '#FFFFFF59' : colors.line;
 
   if (tone === 'muted') {
     bgColor = colors.surface2;
@@ -47,6 +47,8 @@ export function Card({
           borderColor,
           padding: padded ? (appearance === 'premium' ? premium.space.xl : 18) : 0,
           borderRadius: appearance === 'premium' ? premium.radius.hero : premium.radius.card,
+          // Soft ink-tinted shadow on resting surfaces; dark themes rely on the border.
+          ...(tone === 'default' && !isDark ? restingShadow : null),
         },
         style,
       ]}
@@ -55,6 +57,8 @@ export function Card({
     </View>
   );
 }
+
+const restingShadow: ViewStyle = { boxShadow: '0px 1px 3px rgba(14, 23, 38, 0.06)' };
 
 const styles = StyleSheet.create({
   card: {

@@ -21,22 +21,80 @@ export const apiClient = axios.create({
   },
 });
 
-let isRefreshing = false;
-let failedQueue: {
-  resolve: (value?: unknown) => void;
-  reject: (reason?: unknown) => void;
-}[] = [];
+const ACCESS_TOKEN_KEY = 'auth.access_token';
+const REFRESH_TOKEN_KEY = 'auth.refresh_token';
 
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
+const AUTH_ROUTE_PATTERN = /\/auth\/(login|register|refresh|forgot-password|reset-password)/;
+const isAuthRouteUrl = (url?: string) => AUTH_ROUTE_PATTERN.test(url ?? '');
+
+/** The refresh token was missing or definitively rejected by the server: the session cannot be recovered. */
+class SessionExpiredError extends Error {
+  constructor(cause?: unknown) {
+    super('Your session has expired. Please sign in again.');
+    this.name = 'SessionExpiredError';
+    (this as { cause?: unknown }).cause = cause;
+  }
+}
+
+/**
+ * Only an explicit rejection of the refresh token ends the session. Offline, timeouts, 5xx and 429 are
+ * transient: the stored tokens stay valid and the next request tries again.
+ */
+function isDefinitiveRefreshRejection(error: unknown): boolean {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  return status === 400 || status === 401 || status === 403;
+}
+
+async function endSession(refreshTokenUsed: string | null): Promise<void> {
+  // A newer sign-in may have replaced the tokens while the refresh was in flight; never wipe those.
+  const stored = await SecureStorageService.getItem(REFRESH_TOKEN_KEY);
+  if (stored && stored !== refreshTokenUsed) return;
+  await SecureStorageService.removeItem(ACCESS_TOKEN_KEY);
+  await SecureStorageService.removeItem(REFRESH_TOKEN_KEY);
+  useAuthStore.getState().clearAuth(); // AppShell redirects unauthenticated users to the welcome/login flow
+}
+
+async function performRefresh(): Promise<string> {
+  const session = captureUserSession();
+  const refreshToken = await SecureStorageService.getItem(REFRESH_TOKEN_KEY);
+  session.assertCurrent();
+
+  try {
+    if (!refreshToken) throw new SessionExpiredError();
+    // AuthRepository.refreshToken posts to /auth/refresh, which the interceptors treat as a public
+    // auth route: no Authorization header is sent and a failure never triggers another refresh.
+    const tokens = await AuthRepository.refreshToken(refreshToken);
+    session.assertCurrent();
+    // Persist the rotated refresh token first: the server revokes the session if the old one is replayed.
+    await SecureStorageService.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+    await SecureStorageService.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+    return tokens.accessToken;
+  } catch (error) {
+    if (error instanceof SessionExpiredError || isDefinitiveRefreshRejection(error)) {
+      if (session.isCurrent()) await endSession(refreshToken);
+      throw error instanceof SessionExpiredError ? error : new SessionExpiredError(error);
     }
-  });
-  failedQueue = [];
-};
+    throw error;
+  }
+}
+
+let refreshInFlight: Promise<string> | null = null;
+
+/**
+ * Single-flight token refresh: every caller that needs a new access token while one is being fetched
+ * shares the same request, so a rotating refresh token is never presented twice.
+ */
+export function refreshAccessToken(): Promise<string> {
+  if (!refreshInFlight) {
+    const attempt = performRefresh();
+    refreshInFlight = attempt;
+    const release = () => {
+      if (refreshInFlight === attempt) refreshInFlight = null;
+    };
+    attempt.then(release, release);
+  }
+  return refreshInFlight;
+}
 
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
@@ -44,15 +102,10 @@ apiClient.interceptors.request.use(
     config.fitonusSession.assertCurrent();
     config.baseURL = Config.API_BASE_URL;
 
-    const isPublicAuthRoute =
-      config.url?.includes('/auth/login') ||
-      config.url?.includes('/auth/register') ||
-      config.url?.includes('/auth/refresh') ||
-      config.url?.includes('/auth/forgot-password') ||
-      config.url?.includes('/auth/reset-password');
+    const isPublicAuthRoute = isAuthRouteUrl(config.url);
 
     if (!isPublicAuthRoute) {
-      const accessToken = await SecureStorageService.getItem('auth.access_token');
+      const accessToken = await SecureStorageService.getItem(ACCESS_TOKEN_KEY);
       if (accessToken && config.headers && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
@@ -79,76 +132,34 @@ apiClient.interceptors.response.use(
     const errorData = error?.response?.data;
     const errorMessage = errorData?.error?.message || errorData?.message || error.message;
 
-    logger.error('API Response Error:', {
-      status: error.response?.status,
-      baseURL: originalRequest?.baseURL,
-      url: originalRequest?.url,
-      message: errorMessage,
-    });
-
-    const isAuthRoute =
-      originalRequest?.url?.includes('/auth/login') ||
-      originalRequest?.url?.includes('/auth/register') ||
-      originalRequest?.url?.includes('/auth/refresh') ||
-      originalRequest?.url?.includes('/auth/forgot-password') ||
-      originalRequest?.url?.includes('/auth/reset-password');
-
-    if (
-      originalRequest &&
+    // One refresh + one retry per request: `_retry` guards against loops, auth routes never refresh.
+    const canRefresh =
+      Boolean(originalRequest) &&
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !isAuthRoute
-    ) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.fitonusSession?.assertCurrent();
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return apiClient(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
+      !isAuthRouteUrl(originalRequest.url);
 
-      originalRequest._retry = true;
-      isRefreshing = true;
+    // Messages and URLs only; never log headers, request bodies or tokens.
+    const details = { status: error.response?.status, url: originalRequest?.url, message: errorMessage };
+    if (canRefresh) logger.info('Access token rejected, refreshing session', details);
+    else logger.error('API Response Error:', details);
 
-      try {
-        const refreshToken = await SecureStorageService.getItem('auth.refresh_token');
-        originalRequest.fitonusSession?.assertCurrent();
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
+    if (!canRefresh) return Promise.reject(error);
 
-        const newTokens = await AuthRepository.refreshToken(refreshToken);
-        originalRequest.fitonusSession?.assertCurrent();
-        await SecureStorageService.setItem('auth.access_token', newTokens.accessToken);
-        await SecureStorageService.setItem('auth.refresh_token', newTokens.refreshToken);
+    originalRequest._retry = true;
+    const sentAuthorization = originalRequest.headers?.Authorization;
 
-        processQueue(null, newTokens.accessToken);
+    // A request that was already in flight when another request refreshed carries the old token. If the
+    // stored token has moved on, retry with it instead of spending another (rotating) refresh token.
+    const storedAccessToken = await SecureStorageService.getItem(ACCESS_TOKEN_KEY);
+    originalRequest.fitonusSession?.assertCurrent();
+    const alreadyRefreshed =
+      !refreshInFlight && storedAccessToken && sentAuthorization !== `Bearer ${storedAccessToken}`;
 
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
-        }
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        if (!originalRequest.fitonusSession?.isCurrent()) {
-          processQueue(refreshError, null);
-          return Promise.reject(refreshError);
-        }
-        processQueue(refreshError, null);
-        useAuthStore.getState().clearAuth();
-        await SecureStorageService.removeItem('auth.access_token');
-        await SecureStorageService.removeItem('auth.refresh_token');
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
-    }
+    const accessToken = alreadyRefreshed ? storedAccessToken : await refreshAccessToken();
+    originalRequest.fitonusSession?.assertCurrent();
 
-    return Promise.reject(error);
+    originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+    return apiClient(originalRequest);
   },
 );

@@ -67,7 +67,7 @@ export function LoginForm() {
         </div>
 
         <div className="max-w-md">
-          <p className="eyebrow text-brand-500">Own your fitness.</p>
+          <p className="eyebrow text-brand-300">Own your fitness.</p>
           <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-white">
             Run the OnusFit platform from one place.
           </h2>

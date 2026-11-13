@@ -61,7 +61,7 @@ export function WelcomeScreen() {
         <View style={styles.spacer} />
 
         <View>
-          <Text style={[styles.eyebrow, { color: colors.accent }]}>OWN YOUR FITNESS.</Text>
+          <Text style={[styles.eyebrow, { color: colors.highlight }]}>OWN YOUR FITNESS.</Text>
           <Text accessibilityRole="header" style={[styles.headline, { color: colors.heroInk }]}>
             Train with intent.{'\n'}Eat with purpose.{'\n'}See real progress.
           </Text>
@@ -76,7 +76,7 @@ export function WelcomeScreen() {
                 key={label}
                 style={[styles.pillar, { backgroundColor: 'rgba(244, 244, 238, 0.08)' }]}
               >
-                <Icon size={15} color={colors.accent} strokeWidth={2.2} />
+                <Icon size={15} color={colors.highlight} strokeWidth={2.2} />
                 <Text style={[styles.pillarText, { color: colors.heroInk }]}>{label}</Text>
               </View>
             ))}

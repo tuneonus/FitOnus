@@ -41,7 +41,7 @@ export function WorkoutCompleteScreen() {
           },
         ]}
       >
-        <Text style={[styles.eyebrow, { color: colors.accent, marginBottom: 8 }]}>
+        <Text style={[styles.eyebrow, { color: colors.highlight, marginBottom: 8 }]}>
           No active session
         </Text>
         <Text
@@ -103,7 +103,7 @@ export function WorkoutCompleteScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>Workout complete</Text>
+        <Text style={[styles.eyebrow, { color: colors.highlight }]}>Workout complete</Text>
         <Text style={[styles.heading, { color: colors.heroInk }]}>{lastCompleted.title}</Text>
 
         {/* Stats Grid */}
@@ -136,8 +136,8 @@ export function WorkoutCompleteScreen() {
 
         {/* PR or Volume notice */}
         {lastCompleted.prs > 0 ? (
-          <View style={[styles.prNotice, { backgroundColor: `${colors.accent}20` }]}>
-            <Trophy size={22} color={colors.accent} />
+          <View style={[styles.prNotice, { backgroundColor: `${colors.highlight}20` }]}>
+            <Trophy size={22} color={colors.highlight} />
             <Text style={[styles.prText, { color: colors.heroInk }]}>
               {lastCompleted.prs} personal record{lastCompleted.prs === 1 ? '' : 's'} recorded
             </Text>
@@ -187,7 +187,7 @@ export function WorkoutCompleteScreen() {
                   style={[
                     styles.feelBtn,
                     {
-                      backgroundColor: isSelected ? colors.accent : `${colors.heroInk}10`,
+                      backgroundColor: isSelected ? colors.highlight : `${colors.heroInk}10`,
                     },
                   ]}
                 >
@@ -195,7 +195,7 @@ export function WorkoutCompleteScreen() {
                     style={[
                       styles.feelText,
                       {
-                        color: isSelected ? colors.accentInk : colors.heroInk,
+                        color: isSelected ? colors.highlightInk : colors.heroInk,
                         fontWeight: isSelected ? '600' : '400',
                       },
                     ]}

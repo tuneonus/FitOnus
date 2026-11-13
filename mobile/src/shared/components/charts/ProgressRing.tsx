@@ -31,7 +31,7 @@ export function ProgressRing({
   const progress = Math.max(0, Math.min(1, isNaN(value) ? 0 : value));
   const strokeDashoffset = circumference * (1 - progress);
 
-  const ringColor = color ?? colors.accent;
+  const ringColor = color ?? colors.accentStrong;
   const track = trackColor ?? (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)');
 
   return (

@@ -100,7 +100,7 @@ export function LineChart({
               {selPoint.label}
             </Text>
             {subtitle ? (
-              <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '500' }}>
+              <Text style={{ color: colors.accentStrong, fontSize: 11, fontWeight: '500' }}>
                 {subtitle}
               </Text>
             ) : null}
@@ -161,7 +161,7 @@ export function LineChart({
                   cx={cx}
                   cy={cy}
                   r={isSel ? 5.5 : 3.5}
-                  fill={isSel ? colors.accent : dot}
+                  fill={isSel ? colors.accentStrong : dot}
                   stroke={colors.surface}
                   strokeWidth={isSel ? 2 : 1}
                 />

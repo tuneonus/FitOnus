@@ -28,7 +28,7 @@ export function ProgressBar({
   const numValue = value ?? progress ?? 0;
   const ratio = max && max > 0 ? numValue / max : numValue;
   const clamped = Math.max(0, Math.min(1, isNaN(ratio) ? 0 : ratio));
-  const fillColor = color ?? colors.accent;
+  const fillColor = color ?? colors.accentStrong;
   const bgTrack = trackColor ?? colors.surface2;
 
   return (

@@ -63,7 +63,7 @@ function AppleWatchScreenContent() {
       {/* Watch Hero Card */}
       <View style={[styles.heroCard, { backgroundColor: colors.surface2 }]}>
         <View style={[styles.heroIconBox, { backgroundColor: colors.surface }]}>
-          <Watch size={28} color={colors.accent} />
+          <Watch size={28} color={colors.accentStrong} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[styles.heroTitle, { color: colors.ink }]}>Apple Watch</Text>

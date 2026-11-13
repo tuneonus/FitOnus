@@ -42,6 +42,19 @@ const sideTabs: {
   { key: 'profile', label: 'Profile', icon: CircleUserRound },
 ];
 
+/**
+ * TuneStack tab bar palette: a navy capsule with white active content in light
+ * mode, and a white capsule with navy active content in dark mode.
+ */
+export function tabBarPalette(isDark: boolean) {
+  return {
+    bar: isDark ? '#FFFFFF' : '#0D1B4C',
+    active: isDark ? '#0D1B4C' : '#FFFFFF',
+    inactive: isDark ? '#64708F' : '#B1B9D0',
+  };
+}
+type TabPalette = ReturnType<typeof tabBarPalette>;
+
 function triggerTickHaptic() {
   try {
     Haptics.selectionAsync().catch(() => {});
@@ -55,7 +68,7 @@ function TabButton({
   dragSlot,
   isDragging,
   onPress,
-  colors,
+  palette,
 }: {
   tab: (typeof sideTabs)[number];
   slotIndex: number;
@@ -63,7 +76,7 @@ function TabButton({
   dragSlot: SharedValue<number>;
   isDragging: SharedValue<boolean>;
   onPress: () => void;
-  colors: ReturnType<typeof useTheme>['colors'];
+  palette: TabPalette;
 }) {
   const reducedMotion = useReducedMotion();
   const scale = useSharedValue(1);
@@ -124,7 +137,7 @@ function TabButton({
     };
   });
 
-  const iconColor = isActive ? colors.accentStrong : colors.muted;
+  const iconColor = isActive ? palette.active : palette.inactive;
 
   const handlePressIn = () => {
     scale.set(withTiming(0.92, { duration: reducedMotion ? 0 : 80 }));
@@ -151,16 +164,11 @@ function TabButton({
       onPress={handlePress}
       style={[styles.tabButton, buttonAnimatedStyle]}
     >
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.pillFill, { backgroundColor: `${palette.active}29` }, pillAnimatedStyle]}
+      />
       <View style={styles.iconPill}>
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFill,
-            styles.pillFill,
-            { backgroundColor: `${colors.accent}24` },
-            pillAnimatedStyle,
-          ]}
-        />
         <Animated.View style={iconAnimatedStyle}>
           <Icon size={22} color={iconColor} strokeWidth={isActive ? 2.3 : 1.8} />
         </Animated.View>
@@ -169,8 +177,8 @@ function TabButton({
         style={[
           styles.tabLabel,
           {
-            color: isActive ? colors.ink : colors.muted,
-            fontWeight: isActive ? '700' : '500',
+            color: isActive ? palette.active : palette.inactive,
+            fontWeight: '600',
           },
         ]}
       >
@@ -187,7 +195,8 @@ function CoachButton({
   dragSlot,
   isDragging,
   onPress,
-  colors,
+  palette,
+  accent,
 }: {
   tab: (typeof sideTabs)[number];
   slotIndex: number;
@@ -195,7 +204,8 @@ function CoachButton({
   dragSlot: SharedValue<number>;
   isDragging: SharedValue<boolean>;
   onPress: () => void;
-  colors: ReturnType<typeof useTheme>['colors'];
+  palette: TabPalette;
+  accent: string;
 }) {
   const reducedMotion = useReducedMotion();
   const scale = useSharedValue(1);
@@ -265,32 +275,11 @@ function CoachButton({
         onPress={handlePress}
         style={[styles.coachButton, buttonAnimatedStyle]}
       >
-        <View
-          style={[
-            styles.coachCircle,
-            {
-              backgroundColor: colors.accent,
-              borderColor: colors.surface,
-              shadowColor: colors.accent,
-            },
-          ]}
-        >
+        <View style={[styles.coachCircle, { backgroundColor: palette.active }]}>
           <Animated.View style={iconAnimatedStyle}>
-            <Sparkles size={24} color={colors.accentInk} strokeWidth={isActive ? 2.4 : 2.0} />
+            <Sparkles size={24} color={accent} strokeWidth={isActive ? 2.6 : 2.2} />
           </Animated.View>
         </View>
-        <Text
-          style={[
-            styles.tabLabel,
-            styles.coachLabel,
-            {
-              color: isActive ? colors.ink : colors.muted,
-              fontWeight: isActive ? '700' : '600',
-            },
-          ]}
-        >
-          {tab.label}
-        </Text>
       </AnimatedPressable>
     </View>
   );
@@ -298,7 +287,8 @@ function CoachButton({
 
 export function BottomNav() {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const palette = tabBarPalette(isDark);
   const { activeTab, switchTab } = useNavigation();
   const reducedMotion = useReducedMotion();
   const [barWidth, setBarWidth] = useState(0);
@@ -370,8 +360,7 @@ export function BottomNav() {
       style={[
         styles.container,
         {
-          backgroundColor: colors.surface,
-          borderColor: colors.line,
+          backgroundColor: palette.bar,
           bottom: Math.max(insets.bottom, 12),
         },
       ]}
@@ -394,7 +383,8 @@ export function BottomNav() {
                   dragSlot={dragSlot}
                   isDragging={isDragging}
                   onPress={() => switchTab(tab.key)}
-                  colors={colors}
+                  palette={palette}
+                  accent={colors.highlight}
                 />
               );
             }
@@ -407,7 +397,7 @@ export function BottomNav() {
                 dragSlot={dragSlot}
                 isDragging={isDragging}
                 onPress={() => switchTab(tab.key)}
-                colors={colors}
+                palette={palette}
               />
             );
           })}
@@ -418,31 +408,26 @@ export function BottomNav() {
 }
 
 const styles = StyleSheet.create({
+  // TuneStack capsule: 8px side gutter, fully rounded, 64px tall, soft ink shadow.
   container: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    borderWidth: 1,
-    borderRadius: 28,
+    left: 8,
+    right: 8,
+    borderRadius: 9999,
     zIndex: 50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 8,
+    boxShadow: '0px 6px 20px rgba(14, 23, 38, 0.12)',
   },
   tabsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    minHeight: 64,
   },
   tabButton: {
     flex: 1,
-    minHeight: 56,
+    minHeight: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 2,
   },
   tabLabel: {
     fontSize: 10.5,
@@ -450,14 +435,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   iconPill: {
-    width: 48,
-    height: 32,
-    borderRadius: 14,
+    width: 46,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Selection highlight covers the whole slot (icon and label), like TuneStack.
   pillFill: {
-    borderRadius: 14,
+    position: 'absolute',
+    top: 6,
+    bottom: 6,
+    left: 3,
+    right: 3,
+    borderRadius: 9999,
   },
   centerFabContainer: {
     flex: 1,
@@ -466,22 +456,13 @@ const styles = StyleSheet.create({
   },
   coachButton: {
     alignItems: 'center',
-    top: -18,
-    gap: 3,
+    justifyContent: 'center',
   },
   coachCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 3.5,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  coachLabel: {
-    marginTop: 1,
   },
 });

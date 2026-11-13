@@ -258,10 +258,10 @@ export function VoiceCoachScreen() {
                           styles.commandChip,
                           {
                             borderColor: isSelected
-                              ? colors.accent
+                              ? colors.highlight
                               : `${colors.heroInk}20`,
                             backgroundColor: isSelected
-                              ? `${colors.accent}20`
+                              ? `${colors.highlight}20`
                               : 'transparent',
                           },
                         ]}
@@ -270,7 +270,7 @@ export function VoiceCoachScreen() {
                           style={[
                             styles.commandChipText,
                             {
-                              color: isSelected ? colors.accent : colors.heroInk,
+                              color: isSelected ? colors.highlight : colors.heroInk,
                             },
                           ]}
                         >
@@ -303,12 +303,12 @@ export function VoiceCoachScreen() {
                   style={[
                     styles.bigMicBtn,
                     {
-                      backgroundColor: colors.accent,
+                      backgroundColor: colors.highlight,
                       opacity: phase === 'processing' ? 0.5 : 1,
                     },
                   ]}
                 >
-                  <Mic size={30} color={colors.accentInk} />
+                  <Mic size={30} color={colors.highlightInk} />
                 </TouchableOpacity>
               )}
             </View>

@@ -44,6 +44,8 @@ export interface SettingsState extends StorableSettings {
 
   // Actions
   setTheme: (theme: ThemePreference) => void;
+  /** Loads the saved device theme into the store. Never throws. */
+  hydrateTheme: () => Promise<ThemePreference>;
   setUnits: (units: Units) => void;
   setLanguage: (language: LanguagePreference) => void;
   setPrivacy: (privacy: Partial<PrivacySettings>) => void;
@@ -67,6 +69,22 @@ export const DEFAULT_SETTINGS: StorableSettings = {
 };
 
 export const THEME_STORAGE_KEY = 'app.theme_mode';
+
+/**
+ * The theme is a device-level preference: THEME_STORAGE_KEY is its single
+ * source of truth on this device, and it is loaded once at the app root
+ * (hydrateTheme) before any navigation renders. Per-user records, logout and
+ * login must never reset it back to 'system' behind the user's back.
+ *
+ * Until the stored value has been read, nothing may write THEME_STORAGE_KEY,
+ * otherwise an early setter (e.g. setUnits) would persist the default
+ * 'system' over the saved choice.
+ */
+let themeLoaded = false;
+
+function isThemePreference(value: unknown): value is ThemePreference {
+  return value === 'system' || value === 'light' || value === 'dark';
+}
 
 let overrideStorage: SettingsStorageEngine | null = null;
 const memoryFallback = new Map<string, string>();
@@ -112,11 +130,22 @@ async function persistSettings(userId: string | null, settings: StorableSettings
     const storage = await getStorageEngine();
 
     await storage.setItem(key, serialized);
-    if (settings.theme && storage.setItem) {
+    if (themeLoaded && settings.theme && storage.setItem) {
       await storage.setItem(THEME_STORAGE_KEY, settings.theme);
     }
   } catch (error) {
     logError('Failed to persist user settings to disk', error);
+  }
+}
+
+async function readDeviceTheme(): Promise<ThemePreference | undefined> {
+  try {
+    const storage = await getStorageEngine();
+    const saved = await storage.getItem(THEME_STORAGE_KEY);
+    return isThemePreference(saved) ? saved : undefined;
+  } catch (error) {
+    logError('Failed to read saved theme', error);
+    return undefined;
   }
 }
 
@@ -160,7 +189,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   isLoading: false,
   error: null,
 
+  hydrateTheme: async () => {
+    const saved = await readDeviceTheme();
+    themeLoaded = true;
+    if (saved && get().theme !== saved) set({ theme: saved });
+    return get().theme;
+  },
+
   setTheme: (theme: ThemePreference) => {
+    themeLoaded = true;
     const nextState = { ...get(), theme };
     set({ theme });
     void persistSettings(get().userId, {
@@ -260,10 +297,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const raw = await readSettings(userId);
+      const deviceTheme = await readDeviceTheme();
+      themeLoaded = true;
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<StorableSettings>;
         const hydrated = {
-          theme: parsed.theme ?? DEFAULT_SETTINGS.theme,
+          theme: deviceTheme ?? parsed.theme ?? DEFAULT_SETTINGS.theme,
           units: parsed.units ?? DEFAULT_SETTINGS.units,
           language: parsed.language ?? DEFAULT_SETTINGS.language,
           privacyAnalytics: parsed.privacyAnalytics ?? DEFAULT_SETTINGS.privacyAnalytics,
@@ -283,6 +322,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // No saved record yet for this user -> initialize with clean defaults
       const defaults = {
         ...DEFAULT_SETTINGS,
+        theme: deviceTheme ?? get().theme,
         userId,
         isHydrated: true,
         isLoading: false,
@@ -293,6 +333,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       logError(`Error hydrating settings for user ${userId}`, err);
       set({
         ...DEFAULT_SETTINGS,
+        theme: get().theme,
         userId,
         isHydrated: true,
         isLoading: false,
@@ -309,8 +350,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return;
     }
 
+    if (isThemePreference(serverSettings.themeMode)) themeLoaded = true;
+
     const merged: StorableSettings = {
-      theme: (serverSettings.themeMode as ThemePreference) || current.theme,
+      theme: isThemePreference(serverSettings.themeMode) ? serverSettings.themeMode : current.theme,
       units: (serverSettings.unitSystem as Units) || current.units,
       language: (serverSettings.language as LanguagePreference) || current.language || 'en',
       privacyAnalytics:
@@ -349,6 +392,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   resetSettings: () => {
     set({
       ...DEFAULT_SETTINGS,
+      // Appearance belongs to the device, not the account: logging out keeps it.
+      theme: get().theme,
       userId: null,
       isHydrated: true,
       isLoading: false,

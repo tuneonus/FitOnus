@@ -309,7 +309,7 @@ export function ChallengesScreen() {
                           </View>
                           <ProgressBar
                             progress={Math.min(Math.max(enrollment.progressRatio, 0), 1)}
-                            color={isCompleted ? colors.accentStrong : colors.accent}
+                            color={isCompleted ? colors.accentStrong : colors.accentStrong}
                             height={6}
                           />
 

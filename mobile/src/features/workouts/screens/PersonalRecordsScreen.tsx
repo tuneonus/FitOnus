@@ -144,7 +144,7 @@ export function PersonalRecordsScreen() {
                       idx > 0 && { borderTopWidth: 1, borderTopColor: colors.line },
                     ]}
                   >
-                    <Trophy size={18} color={isSelected ? colors.accent : colors.muted} />
+                    <Trophy size={18} color={isSelected ? colors.accentStrong : colors.muted} />
                     <View style={styles.liftTextCol}>
                       <Text
                         style={[

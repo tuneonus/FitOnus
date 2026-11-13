@@ -1,42 +1,47 @@
+// OnusFit brand: blue and orange sampled from the logo.
 export const colorTokens = {
-  primary: '#C7EF72', // Lime — primary actions, recovery, AI
-  primaryInk: '#192812', // Text on primary
-  primaryStrong: '#42651E', // Lime readable on light surfaces
-  background: '#F5F5F0',
+  primary: '#0D1B4C', // TuneStack navy — primary actions, links, active states
+  primaryInk: '#FFFFFF', // Text on primary
+  primaryStrong: '#0D1B4C', // Navy readable on light surfaces
+  highlight: '#FD6D01', // Brand orange — highlights, streaks, AI Coach
+  highlightInk: '#1A1200', // Text on orange (white on orange is only 2.9:1)
+  background: '#FFFFFF',
   surface: '#FFFFFF',
-  surfaceAlt: '#EAEDE5',
-  border: '#DCE2D8',
-  text: '#17231D',
-  mutedText: '#606C63',
-  hero: '#14291F', // Inverse AI surfaces
-  heroInk: '#F4F4EE',
-  heroMuted: '#B1C1B4',
-  success: '#168C40',
-  warning: '#D6780A',
-  error: '#D62828',
+  surfaceAlt: '#F3F5F9',
+  border: '#D5DBE5',
+  text: '#0E1726',
+  mutedText: '#667084',
+  hero: '#0D1B4C', // Inverse AI surfaces (TuneStack navy)
+  heroInk: '#FFFFFF',
+  heroMuted: '#C4CFE5',
+  success: '#0B7F47',
+  warning: '#A06200',
+  error: '#D6293E',
   sleep: '#605AAB',
-  move: '#B14C32',
+  move: '#E65F00',
   steps: '#147A91',
 } as const;
 
 export const darkColorTokens = {
-  primary: '#C7EF72',
-  primaryInk: '#192812',
-  primaryStrong: '#C7EF72',
-  background: '#101713',
-  surface: '#1A251E',
-  surfaceAlt: '#243128',
-  border: '#35453A',
-  text: '#F4F4EE',
-  mutedText: '#A6B5A8',
-  hero: '#1A3024',
-  heroInk: '#F4F4EE',
-  heroMuted: '#B1C1B4',
-  success: '#4ADE80',
-  warning: '#FBBF24',
-  error: '#F87171',
+  primary: '#0A56CC', // TuneStack dark primary fill
+  primaryInk: '#FFFFFF',
+  primaryStrong: '#BBC4D1', // TuneStack dark brand[500]: accent text and icons on dark surfaces
+  highlight: '#FF7801',
+  highlightInk: '#1A1200',
+  background: '#0B0F17',
+  surface: '#141A25',
+  surfaceAlt: '#1A202C',
+  border: '#2B3342',
+  text: '#F1F4F9',
+  mutedText: '#8A94A8',
+  hero: '#0D1B4C',
+  heroInk: '#F1F4F9',
+  heroMuted: '#C4CFE5',
+  success: '#3CCF80',
+  warning: '#F2A93B',
+  error: '#F26D7C',
   sleep: '#818CF8',
-  move: '#F2A080',
+  move: '#FF8A33',
   steps: '#38BDF8',
 } as const;
 
