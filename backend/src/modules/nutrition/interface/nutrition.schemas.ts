@@ -1,4 +1,39 @@
 import { z } from 'zod';
+import { isValidCalendarDate } from '../domain/local-date.js';
+import {
+  FOOD_BRAND_MAX_LENGTH,
+  FOOD_LIMITS,
+  FOOD_NAME_MAX_LENGTH,
+  MEAL_ITEM_LIMITS,
+  MEAL_LIMITS,
+  SERVING_UNIT_MAX_LENGTH,
+  WATER_LIMITS,
+  type NumericLimit,
+} from '../domain/nutrition-limits.js';
+
+// --- Shared request building blocks ---
+
+/**
+ * A finite number inside the domain limit, which is always strictly inside the PostgreSQL column that stores
+ * it (see domain/nutrition-limits.ts). Out-of-range values are a 400 VALIDATION_FAILED, never a numeric overflow.
+ */
+export const boundedNumber = (limit: NumericLimit) =>
+  z.number().min(limit.min, `Must be at least ${limit.min}`).max(limit.max, `Must be at most ${limit.max}`);
+
+/** A real calendar day, `YYYY-MM-DD` (rejects 2026-02-30 and years PostgreSQL would not store sensibly). */
+export const calendarDate = () =>
+  z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
+    .refine(isValidCalendarDate, { message: 'Date must be a valid calendar date' });
+
+/**
+ * IANA timezone of the caller (e.g. `Asia/Kolkata`). It decides what "today" means when the client does not
+ * send an explicit date. Deliberately lenient: an unknown value falls back to UTC instead of failing a request
+ * the user cannot fix.
+ */
+export const timezoneQuery = z.string().trim().max(64).optional();
+const timezoneOnlyQuery = z.object({ timezone: timezoneQuery });
 
 // --- Shared Nutrition View Schemas ---
 
@@ -164,7 +199,9 @@ export const deleteFavoriteResultSchema = z.object({
 
 export const getDailyNutritionRequest = {
   query: z.object({
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD'),
+    /** Optional: defaults to today in `timezone` (UTC when no timezone is sent). */
+    date: calendarDate().optional(),
+    timezone: timezoneQuery,
   }),
 };
 
@@ -198,49 +235,54 @@ export const getFoodByBarcodeRequest = {
 export const createCustomFoodRequest = {
   body: z.object({
     id: z.string().uuid().optional(),
-    name: z.string().trim().min(1).max(200),
-    brand: z.string().trim().max(100).nullable().optional(),
+    name: z.string().trim().min(1).max(FOOD_NAME_MAX_LENGTH),
+    brand: z.string().trim().max(FOOD_BRAND_MAX_LENGTH).nullable().optional(),
     barcode: z.string().trim().max(50).nullable().optional(),
-    servingSize: z.number().positive(),
-    servingUnit: z.string().trim().min(1).max(50),
-    servingWeightG: z.number().positive(),
-    servingVolumeMl: z.number().positive().nullable().optional(),
-    densityGPerMl: z.number().positive().nullable().optional(),
+    servingSize: boundedNumber(FOOD_LIMITS.servingSize),
+    servingUnit: z.string().trim().min(1).max(SERVING_UNIT_MAX_LENGTH),
+    servingWeightG: boundedNumber(FOOD_LIMITS.servingWeightG),
+    servingVolumeMl: boundedNumber(FOOD_LIMITS.servingVolumeMl).nullable().optional(),
+    densityGPerMl: boundedNumber(FOOD_LIMITS.densityGPerMl).nullable().optional(),
     servingBasis: z.enum(['100g', 'serving', '100ml']).default('100g'),
-    calories: z.number().nonnegative(),
-    proteinG: z.number().nonnegative(),
-    carbohydratesG: z.number().nonnegative(),
-    fatG: z.number().nonnegative(),
-    fiberG: z.number().nonnegative().optional(),
-    sugarG: z.number().nonnegative().nullable().optional(),
-    sodiumMg: z.number().nonnegative().nullable().optional(),
-    cholesterolMg: z.number().nonnegative().nullable().optional(),
+    calories: boundedNumber(FOOD_LIMITS.calories),
+    proteinG: boundedNumber(FOOD_LIMITS.macroG),
+    carbohydratesG: boundedNumber(FOOD_LIMITS.macroG),
+    fatG: boundedNumber(FOOD_LIMITS.macroG),
+    fiberG: boundedNumber(FOOD_LIMITS.macroG).optional(),
+    sugarG: boundedNumber(FOOD_LIMITS.macroG).nullable().optional(),
+    sodiumMg: boundedNumber(FOOD_LIMITS.sodiumMg).nullable().optional(),
+    cholesterolMg: boundedNumber(FOOD_LIMITS.cholesterolMg).nullable().optional(),
   }),
 };
 
 export const logMealItemInputSchema = z.object({
   foodId: z.string().uuid().nullable().optional(),
-  foodName: z.string().trim().min(1).max(200).optional(),
-  foodBrand: z.string().trim().max(100).nullable().optional(),
-  servingSize: z.number().positive().optional(),
-  servingUnit: z.string().trim().min(1).max(50).optional(),
-  servingWeightG: z.number().positive().optional(),
-  servingMultiplier: z.number().positive(),
-  loggedWeightG: z.number().positive().optional(),
-  calories: z.number().nonnegative().optional(),
-  proteinG: z.number().nonnegative().optional(),
-  carbsG: z.number().nonnegative().optional(),
-  fatG: z.number().nonnegative().optional(),
-  fiberG: z.number().nonnegative().optional(),
+  foodName: z.string().trim().min(1).max(FOOD_NAME_MAX_LENGTH).optional(),
+  foodBrand: z.string().trim().max(FOOD_BRAND_MAX_LENGTH).nullable().optional(),
+  servingSize: boundedNumber(FOOD_LIMITS.servingSize).optional(),
+  servingUnit: z.string().trim().min(1).max(SERVING_UNIT_MAX_LENGTH).optional(),
+  servingWeightG: boundedNumber(FOOD_LIMITS.servingWeightG).optional(),
+  servingMultiplier: boundedNumber(MEAL_ITEM_LIMITS.servingMultiplier),
+  loggedWeightG: boundedNumber(MEAL_ITEM_LIMITS.loggedWeightG).optional(),
+  calories: boundedNumber(MEAL_ITEM_LIMITS.calories).optional(),
+  proteinG: boundedNumber(MEAL_ITEM_LIMITS.macroG).optional(),
+  carbsG: boundedNumber(MEAL_ITEM_LIMITS.macroG).optional(),
+  fatG: boundedNumber(MEAL_ITEM_LIMITS.macroG).optional(),
+  fiberG: boundedNumber(MEAL_ITEM_LIMITS.macroG).optional(),
 });
 
 export const logMealRequest = {
+  query: timezoneOnlyQuery,
   body: z.object({
     id: z.string().uuid().optional(),
     mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'snacks']),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD'),
+    /** Optional: defaults to today in `timezone` (UTC when no timezone is sent). */
+    date: calendarDate().optional(),
     notes: z.string().trim().max(500).nullable().optional(),
-    items: z.array(logMealItemInputSchema).min(1, 'At least one meal item is required'),
+    items: z
+      .array(logMealItemInputSchema)
+      .min(1, 'At least one meal item is required')
+      .max(MEAL_LIMITS.maxItems, `A meal cannot contain more than ${MEAL_LIMITS.maxItems} items`),
   }),
 };
 
@@ -250,12 +292,9 @@ export const updateMealRequest = {
   }),
   body: z.object({
     mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'snacks']).optional(),
-    date: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
-      .optional(),
+    date: calendarDate().optional(),
     notes: z.string().trim().max(500).nullable().optional(),
-    items: z.array(logMealItemInputSchema).min(1).optional(),
+    items: z.array(logMealItemInputSchema).min(1).max(MEAL_LIMITS.maxItems).optional(),
   }),
 };
 
@@ -266,10 +305,17 @@ export const getMealRequest = {
 };
 
 export const logWaterRequest = {
+  query: timezoneOnlyQuery,
   body: z.object({
     id: z.string().uuid().optional(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD'),
-    amountMl: z.number().int().positive('Water intake amount must be positive'),
+    /** Optional: defaults to the day of `loggedAt` (or of now) in `timezone`. */
+    date: calendarDate().optional(),
+    amountMl: z
+      .number()
+      .int()
+      .positive('Water intake amount must be positive')
+      .min(WATER_LIMITS.amountMl.min)
+      .max(WATER_LIMITS.amountMl.max, `A single water entry cannot exceed ${WATER_LIMITS.amountMl.max} ml`),
     loggedAt: z.string().datetime().optional(),
   }),
 };
@@ -277,10 +323,8 @@ export const logWaterRequest = {
 export const getNutritionAnalyticsRequest = {
   query: z.object({
     range: z.enum(['week', 'month']).default('week'),
-    endDate: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD')
-      .optional(),
+    endDate: calendarDate().optional(),
+    timezone: timezoneQuery,
   }),
 };
 

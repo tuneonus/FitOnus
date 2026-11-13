@@ -189,10 +189,17 @@ describe('Nutrition HTTP API (Real PostgreSQL)', () => {
   });
 
   it('7. GET /api/v1/nutrition/analytics returns real aggregated trends', async () => {
-    const res = await api().get('/api/v1/nutrition/analytics?range=week').set(member1.auth);
+    // The meals above are logged on a fixed fixture date (2026-11-05). The analytics window is a rolling
+    // 7 days that, by default, ends on the server's "today", so without an explicit endDate this test
+    // silently starts failing once that date scrolls out of the window, in every timezone. Pin the window.
+    const res = await api()
+      .get('/api/v1/nutrition/analytics?range=week&endDate=2026-11-05')
+      .set(member1.auth);
 
     expect(res.status).toBe(200);
     expect(res.body.data.range).toBe('week');
+    expect(res.body.data.startDate).toBe('2026-10-30');
+    expect(res.body.data.endDate).toBe('2026-11-05');
     expect(res.body.data.loggedDaysCount).toBeGreaterThanOrEqual(1);
     expect(res.body.data.avgCalories).toBeGreaterThan(0);
     expect(res.body.data.macroSplit).toHaveLength(3);

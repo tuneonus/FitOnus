@@ -2,6 +2,14 @@ import crypto from 'node:crypto';
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type { FoodDataSource, FoodProps, VerificationStatus } from '../../domain/food.js';
 import { Food } from '../../domain/food.js';
+import {
+  FOOD_BARCODE_MAX_LENGTH,
+  FOOD_BRAND_MAX_LENGTH,
+  FOOD_NAME_MAX_LENGTH,
+  SERVING_UNIT_MAX_LENGTH,
+  assertFoodWithinLimits,
+  assertMaxLength,
+} from '../../domain/nutrition-limits.js';
 import type { IFoodRepository, INutritionAuditLogger } from '../ports.js';
 import { toAdminFoodView, type AdminFoodView } from '../nutrition-view.js';
 
@@ -173,6 +181,12 @@ export class AdminManageFoodUseCase {
   }
 
   async create(input: AdminCreateFoodInput): Promise<AdminFoodView> {
+    assertFoodWithinLimits(input);
+    assertMaxLength('name', input.name.trim(), FOOD_NAME_MAX_LENGTH);
+    assertMaxLength('brand', input.brand?.trim(), FOOD_BRAND_MAX_LENGTH);
+    assertMaxLength('barcode', input.barcode?.trim(), FOOD_BARCODE_MAX_LENGTH);
+    assertMaxLength('servingUnit', input.servingUnit.trim(), SERVING_UNIT_MAX_LENGTH);
+
     validateMacroSanity({
       calories: input.calories,
       proteinG: input.proteinG,
@@ -244,6 +258,13 @@ export class AdminManageFoodUseCase {
     if (!existing) {
       throw new AppError('not_found', 'NOT_FOUND', 'Food not found.');
     }
+
+    // Only the fields being changed are range-checked, so a catalog row that predates the limits stays editable.
+    assertFoodWithinLimits(input);
+    assertMaxLength('name', input.name?.trim(), FOOD_NAME_MAX_LENGTH);
+    assertMaxLength('brand', input.brand?.trim(), FOOD_BRAND_MAX_LENGTH);
+    assertMaxLength('barcode', input.barcode?.trim(), FOOD_BARCODE_MAX_LENGTH);
+    assertMaxLength('servingUnit', input.servingUnit?.trim(), SERVING_UNIT_MAX_LENGTH);
 
     const servingWeightG = input.servingWeightG ?? existing.servingWeightG;
     const servingVolumeMl =

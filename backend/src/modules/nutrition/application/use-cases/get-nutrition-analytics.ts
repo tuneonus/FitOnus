@@ -1,37 +1,38 @@
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type { IMealRepository, IUserProfileTargetPort } from '../ports.js';
 import type { DailyTrendPoint, MacroSplitView, NutritionAnalyticsView } from '../nutrition-view.js';
+import {
+  addDaysToDate,
+  isValidCalendarDate,
+  systemClock,
+  todayInTimeZone,
+  type Clock,
+} from '../../domain/local-date.js';
 
 export interface GetNutritionAnalyticsInput {
   userId: string;
   range: 'week' | 'month';
+  /** Last day of the window (YYYY-MM-DD), chosen by the client and used as given. Defaults to today in `timezone`. */
   endDate?: string;
+  /** IANA timezone of the user; decides "today" when `endDate` is omitted (UTC when missing/invalid). */
+  timezone?: string;
 }
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-function formatDateUtc(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + 'T12:00:00Z');
-  d.setUTCDate(d.getUTCDate() + days);
-  return formatDateUtc(d);
-}
 
 function generateDateSeries(startDate: string, endDate: string): string[] {
   const dates: string[] = [];
   let curr = startDate;
   while (curr <= endDate) {
     dates.push(curr);
-    curr = addDays(curr, 1);
+    curr = addDaysToDate(curr, 1);
   }
   return dates;
 }
 
 function getDayLabel(dateStr: string, range: 'week' | 'month'): string {
+  // Pure calendar arithmetic on a YYYY-MM-DD string; noon UTC keeps every getUTC* read on the same day.
   const d = new Date(dateStr + 'T12:00:00Z');
   if (range === 'week') {
     return WEEKDAY_NAMES[d.getUTCDay()]!;
@@ -46,6 +47,7 @@ export class GetNutritionAnalyticsUseCase {
   constructor(
     private readonly mealRepo: IMealRepository,
     private readonly targetPort: IUserProfileTargetPort,
+    private readonly clock: Clock = systemClock,
   ) {}
 
   async execute(input: GetNutritionAnalyticsInput): Promise<NutritionAnalyticsView> {
@@ -56,10 +58,14 @@ export class GetNutritionAnalyticsUseCase {
     if (input.endDate && !DATE_REGEX.test(input.endDate)) {
       throw new AppError('bad_request', 'VALIDATION_FAILED', 'Invalid endDate format (must be YYYY-MM-DD)');
     }
+    if (input.endDate && !isValidCalendarDate(input.endDate)) {
+      throw new AppError('bad_request', 'VALIDATION_FAILED', 'Invalid endDate (must be a real calendar day)');
+    }
 
     const totalDaysInRange = input.range === 'week' ? 7 : 28;
-    const endDate = input.endDate ?? formatDateUtc(new Date());
-    const startDate = addDays(endDate, -(totalDaysInRange - 1));
+    // An explicit client endDate is a calendar day and is used as given; only the default is "today".
+    const endDate = input.endDate ?? todayInTimeZone(this.clock, input.timezone);
+    const startDate = addDaysToDate(endDate, -(totalDaysInRange - 1));
 
     const [meals, profileTargets, topFoods] = await Promise.all([
       this.mealRepo.listDateRange(input.userId, startDate, endDate),

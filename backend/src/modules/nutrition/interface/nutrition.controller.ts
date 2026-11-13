@@ -70,6 +70,7 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
       const data = await useCases.getDailyNutrition.execute({
         userId: actor.userId,
         date: query.date,
+        timezone: query.timezone,
       });
       return { data, message: 'Daily nutrition retrieved successfully' };
     },
@@ -142,12 +143,13 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
 
     logMeal: async (req: Request): Promise<RouteResult<MealView>> => {
       const actor = requireActor(req);
-      const { body } = getValidated(req, logMealRequest);
+      const { body, query } = getValidated(req, logMealRequest);
       const result = await useCases.logMeal.execute({
         userId: actor.userId,
         id: body.id,
         mealType: body.mealType,
         date: body.date,
+        timezone: query.timezone,
         notes: body.notes,
         items: body.items,
       });
@@ -183,11 +185,12 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
 
     logWater: async (req: Request): Promise<RouteResult<WaterIntakeView>> => {
       const actor = requireActor(req);
-      const { body } = getValidated(req, logWaterRequest);
+      const { body, query } = getValidated(req, logWaterRequest);
       const result = await useCases.logWater.execute({
         userId: actor.userId,
         id: body.id,
         date: body.date,
+        timezone: query.timezone,
         amountMl: body.amountMl,
         loggedAt: body.loggedAt ? new Date(body.loggedAt) : undefined,
       });
@@ -207,6 +210,7 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
         userId: actor.userId,
         range: query.range,
         endDate: query.endDate,
+        timezone: query.timezone,
       });
       return { data, message: 'Nutrition analytics retrieved successfully' };
     },
@@ -252,7 +256,11 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
       const actor = requireActor(req);
       const { body } = getValidated(req, analyzeMealPhotoRequest);
       if (!useCases.analyzeMealPhoto) {
-        throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'Meal photo analysis service is not available.');
+        throw new AppError(
+          'unavailable',
+          'SERVICE_UNAVAILABLE',
+          'Meal photo analysis service is not available.',
+        );
       }
       const data = await useCases.analyzeMealPhoto.execute({
         userId: actor.userId,
@@ -272,7 +280,11 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
       const actor = requireActor(req);
       const { body } = getValidated(req, parseVoiceMealRequest);
       if (!useCases.parseVoiceMeal) {
-        throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'Voice meal parsing service is not available.');
+        throw new AppError(
+          'unavailable',
+          'SERVICE_UNAVAILABLE',
+          'Voice meal parsing service is not available.',
+        );
       }
       const data = await useCases.parseVoiceMeal.execute({
         userId: actor.userId,

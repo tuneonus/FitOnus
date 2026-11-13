@@ -3,6 +3,14 @@ import { AppError } from '../../../../shared/errors/app-error.js';
 import type { IFoodRepository } from '../ports.js';
 import { toFoodView, type FoodView } from '../nutrition-view.js';
 import { Food, type ServingBasis } from '../../domain/food.js';
+import {
+  FOOD_BARCODE_MAX_LENGTH,
+  FOOD_BRAND_MAX_LENGTH,
+  FOOD_NAME_MAX_LENGTH,
+  SERVING_UNIT_MAX_LENGTH,
+  assertFoodWithinLimits,
+  assertMaxLength,
+} from '../../domain/nutrition-limits.js';
 
 export interface CreateCustomFoodInput {
   id?: string;
@@ -49,6 +57,12 @@ export class CreateCustomFoodUseCase {
     if (input.calories < 0 || input.proteinG < 0 || input.carbohydratesG < 0 || input.fatG < 0) {
       throw new AppError('bad_request', 'VALIDATION_FAILED', 'Nutrient values cannot be negative');
     }
+    // Every number below ends up in a fixed-size NUMERIC column: refuse values the column cannot hold.
+    assertFoodWithinLimits(input);
+    assertMaxLength('name', input.name.trim(), FOOD_NAME_MAX_LENGTH);
+    assertMaxLength('brand', input.brand?.trim(), FOOD_BRAND_MAX_LENGTH);
+    assertMaxLength('barcode', input.barcode?.trim(), FOOD_BARCODE_MAX_LENGTH);
+    assertMaxLength('servingUnit', input.servingUnit.trim(), SERVING_UNIT_MAX_LENGTH);
 
     const foodId = input.id ?? crypto.randomUUID();
 

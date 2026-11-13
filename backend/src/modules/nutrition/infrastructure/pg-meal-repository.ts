@@ -37,11 +37,19 @@ interface MealItemRow {
   created_at: Date;
 }
 
+/**
+ * `pg` parses a DATE column into a `Date` at LOCAL midnight of the Node process, so the calendar day must be
+ * read back with the local getters. `toISOString()` converts to UTC first and returns the PREVIOUS day on any
+ * host whose timezone is ahead of UTC (for example a developer machine in IST).
+ */
 function formatDate(dateVal: string | Date): string {
   if (typeof dateVal === 'string') {
     return dateVal.slice(0, 10);
   }
-  return dateVal.toISOString().slice(0, 10);
+  const year = String(dateVal.getFullYear()).padStart(4, '0');
+  const month = String(dateVal.getMonth() + 1).padStart(2, '0');
+  const day = String(dateVal.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function toItemDomain(row: MealItemRow): MealItem {
