@@ -20,6 +20,9 @@ export interface RateLimiters {
   refresh: RequestHandler;
   sensitive: RequestHandler;
   aiCoach: RequestHandler;
+  notificationsMember: RequestHandler;
+  notificationDevices: RequestHandler;
+  notificationsAdmin: RequestHandler;
 }
 
 /**
@@ -34,6 +37,12 @@ export function createRateLimiters(config: AppConfig['rateLimit']): RateLimiters
     handler: rejectWithAppError,
   } as const;
 
+  // Per-user budgets where a bearer token is present (limiters run before authentication), else per IP.
+  const byBearerOrIp = (req: Request): string => {
+    const auth = req.headers.authorization;
+    return auth && auth.length > 20 ? auth.slice(-24) : clientIp(req);
+  };
+
   return {
     global: rateLimit({ ...base, limit: config.max, skip: (req) => req.path.startsWith('/health') }),
     // Keyed by IP + e-mail so one attacker cannot lock out an unrelated account from another network.
@@ -45,6 +54,11 @@ export function createRateLimiters(config: AppConfig['rateLimit']): RateLimiters
     register: rateLimit({ ...base, limit: config.authMax }),
     refresh: rateLimit({ ...base, limit: config.authMax * 6 }),
     sensitive: rateLimit({ ...base, limit: config.authMax }),
+    notificationsMember: rateLimit({ ...base, limit: 300, keyGenerator: byBearerOrIp }),
+    // Registration runs at launch, on token rotation and on sign-in/out: generous for real use, tight for abuse.
+    notificationDevices: rateLimit({ ...base, limit: 40, keyGenerator: byBearerOrIp }),
+    // Sends are deliberate human actions; this stops a stolen or scripted admin session from fanning out freely.
+    notificationsAdmin: rateLimit({ ...base, limit: 60, keyGenerator: byBearerOrIp }),
     aiCoach: rateLimit({
       ...base,
       limit: 30, // 30 requests per 15-minute window

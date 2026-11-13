@@ -1,0 +1,18 @@
+--- a/mobile/src/app/AppShell.tsx
++++ b/mobile/src/app/AppShell.tsx
+@@ -26,6 +26,7 @@
+ import { ToastHost } from '@/shared/components/common/ToastHost';
+ import { MaintenanceModal } from '@/shared/components/common/MaintenanceModal';
+ import { ForceUpdateModal } from '@/shared/components/common/ForceUpdateModal';
++import { NotificationBridge } from '@/features/notifications/components/NotificationBridge';
+ import { useRemoteConfigStore } from '@/features/app-config/store/remoteConfigStore';
+ import { useTheme } from '@/hooks/use-theme';
+ import { notificationService } from '@/services/notificationService';
+@@ -302,6 +303,7 @@
+       <ToastHost raised={showBottomNav} />
+       <MaintenanceModal />
+       <ForceUpdateModal />
++      <NotificationBridge />
+     </View>
+   );
+ }

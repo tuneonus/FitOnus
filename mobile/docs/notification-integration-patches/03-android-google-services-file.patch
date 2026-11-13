@@ -1,0 +1,10 @@
+--- a/mobile/app.json
++++ b/mobile/app.json
+@@ -20,6 +20,7 @@
+         "backgroundColor": "#0A0E1A"
+       },
+       "predictiveBackGestureEnabled": false,
++      "googleServicesFile": "./google-services.json",
+       "versionCode": 1,
+       "blockedPermissions": [
+         "android.permission.ACCESS_COARSE_LOCATION",

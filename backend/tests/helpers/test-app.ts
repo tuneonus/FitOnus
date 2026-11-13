@@ -3,7 +3,7 @@ import type pg from 'pg';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { loadConfig, type AppConfig } from '../../src/config/env.js';
-import { createContainer, type Container } from '../../src/container.js';
+import { createContainer, type Container, type ContainerOverrides } from '../../src/container.js';
 import type { Role } from '../../src/shared/auth/permissions.js';
 import { createLogger } from '../../src/shared/logging/logger.js';
 import { Argon2PasswordHasher } from '../../src/shared/security/argon2-password-hasher.js';
@@ -30,11 +30,14 @@ export interface TestContext {
   close(): Promise<void>;
 }
 
-export async function createTestContext(overrides: Record<string, string> = {}): Promise<TestContext> {
+export async function createTestContext(
+  overrides: Record<string, string> = {},
+  containerOverrides: ContainerOverrides = {},
+): Promise<TestContext> {
   const db = await createTestDatabase();
   try {
     const config = loadConfig({ ...TEST_ENV, DATABASE_URL: db.url, ...overrides });
-    const container = createContainer(config, db.pool);
+    const container = createContainer(config, db.pool, undefined, containerOverrides);
     const app = createApp({ config, logger: createLogger({ level: 'silent', pretty: false }), container });
     return { app, db, config, container, close: () => db.drop() };
   } catch (error) {

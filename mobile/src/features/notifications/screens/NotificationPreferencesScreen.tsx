@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Bell } from 'lucide-react-native';
+import { Bell, BellOff } from 'lucide-react-native';
 import { Screen } from '@/shared/components/ui/Screen';
 import { Toggle } from '@/shared/components/ui/Toggle';
 import { BottomSheet } from '@/shared/components/ui/BottomSheet';
@@ -13,6 +13,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { useUpdateSettings } from '@/features/profile/hooks/use-settings';
 import { notificationService } from '@/services/notificationService';
+import { useNotifications } from '../hooks/useNotifications';
+import { useServerCategoryPreferences } from '../hooks/useServerCategoryPreferences';
+import { CATEGORY_COPY } from '../services/notification-category-preferences';
+import { SERVER_CATEGORIES } from '../services/notification-inbox-api';
+import { getPermissionCardModel } from '../services/notification-permission-card';
 import {
   DEFAULT_NOTIFICATION_SCHEDULE,
   timeTo12h,
@@ -56,7 +61,12 @@ export function NotificationPreferencesScreen() {
   const setNotificationSchedule = useSettingsStore((s) => s.setNotificationSchedule);
   const updateSettingsMutation = useUpdateSettings();
 
+  const { permission, enable, openSystemSettings } = useNotifications();
+  const permissionCard = getPermissionCardModel(permission);
+  const [enablingPermission, setEnablingPermission] = useState(false);
+
   const { preferences, setPreferenceTime } = useNotificationsStore();
+  const serverPrefs = useServerCategoryPreferences();
 
   const [editingSheet, setEditingSheet] = useState<'workout' | 'water' | 'quiet' | NotificationKind | null>(null);
 
@@ -204,8 +214,50 @@ export function NotificationPreferencesScreen() {
     showToast({ message: 'Quiet hours window updated' });
   };
 
+  // Runs only from the permission card's button press: an explicit user action, never automatically.
+  const handlePermissionAction = async () => {
+    if (!permissionCard) return;
+    if (permissionCard.action === 'open-settings') {
+      try {
+        await openSystemSettings();
+      } catch {
+        showToast({ message: 'Open system settings to allow notifications' });
+      }
+      return;
+    }
+    setEnablingPermission(true);
+    try {
+      const result = await enable();
+      showToast({
+        message: result?.permission.granted ? 'Notifications enabled' : 'Notification permission was not granted',
+      });
+    } catch {
+      showToast({ message: 'Could not enable notifications' });
+    } finally {
+      setEnablingPermission(false);
+    }
+  };
+
   return (
     <Screen title="Notification settings" contentContainerStyle={styles.container}>
+      {/* OS permission card: shown only while notifications are not allowed on this device */}
+      {permissionCard && (
+        <View style={[styles.permissionCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <View style={styles.permissionHeader}>
+            <View style={[styles.iconBox, { backgroundColor: colors.surface2 }]}>
+              <BellOff size={18} color={colors.ink} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[styles.prefLabel, { color: colors.ink }]}>{permissionCard.title}</Text>
+              <Text style={[styles.prefDesc, { color: colors.muted }]}>{permissionCard.body}</Text>
+            </View>
+          </View>
+          <Button fullWidth size="md" loading={enablingPermission} onPress={handlePermissionAction}>
+            {permissionCard.actionLabel}
+          </Button>
+        </View>
+      )}
+
       {/* Master Toggle Card */}
       <View style={[styles.masterCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
         <View style={[styles.iconBox, { backgroundColor: colors.surface2 }]}>
@@ -288,6 +340,44 @@ export function NotificationPreferencesScreen() {
           );
         })}
       </View>
+
+      {/* Updates sent by OnusFit (push + inbox). Each choice is saved to the server. */}
+      <Text style={[styles.sectionHeading, { color: colors.muted }]}>Updates from OnusFit</Text>
+      <View
+        style={[
+          styles.listCard,
+          { backgroundColor: colors.surface, borderColor: colors.line, opacity: notificationsEnabled ? 1 : 0.6 },
+        ]}
+      >
+        {SERVER_CATEGORIES.map((key, idx) => (
+          <View
+            key={key}
+            style={[
+              styles.prefRow,
+              { borderBottomColor: colors.line },
+              idx === SERVER_CATEGORIES.length - 1 && { borderBottomWidth: 0 },
+            ]}
+          >
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[styles.prefLabel, { color: colors.ink }]}>{CATEGORY_COPY[key].label}</Text>
+              <Text style={[styles.prefDesc, { color: colors.muted }]}>{CATEGORY_COPY[key].description}</Text>
+            </View>
+            <Toggle
+              checked={serverPrefs.categories[key]}
+              disabled={!notificationsEnabled || !serverPrefs.loaded}
+              onChange={async () => {
+                const saved = await serverPrefs.toggle(key);
+                if (!saved) showToast({ message: 'Could not save. Check your connection and try again.' });
+              }}
+            />
+          </View>
+        ))}
+      </View>
+      {serverPrefs.error && !serverPrefs.loaded && (
+        <TouchableOpacity activeOpacity={0.7} onPress={() => void serverPrefs.reload()}>
+          <Text style={[styles.footnote, { color: colors.muted }]}>Couldn’t load these settings. Tap to retry.</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Quiet hours Card */}
       <View
@@ -396,6 +486,13 @@ export function NotificationPreferencesScreen() {
 }
 
 const styles = StyleSheet.create({
+  sectionHeading: {
+    fontSize: 12,
+    fontWeight: '600',
+    paddingHorizontal: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   container: {
     paddingBottom: 24,
     gap: 16,
@@ -407,6 +504,18 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 24,
     borderWidth: 1,
+    gap: 12,
+  },
+  permissionCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 24,
+    borderWidth: 1,
+    gap: 12,
+  },
+  permissionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
   listCard: {

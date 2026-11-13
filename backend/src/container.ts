@@ -21,6 +21,12 @@ import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
 import { createDashboardModule } from './modules/dashboard/index.js';
 import { createCoachModule, GeminiClient } from './modules/coach/index.js';
+import {
+  createNotificationsModule,
+  FcmHttpV1Sender,
+  type NotificationsModule,
+  type PushSender,
+} from './modules/notifications/index.js';
 import { createAppSettingsModule, type AppSettingsModule } from './modules/app-settings/index.js';
 import type { RouteGroup } from './shared/http/route.js';
 import { IdempotencyService } from './shared/idempotency/idempotency.js';
@@ -39,6 +45,12 @@ export interface Container {
   rateLimiters: RateLimiters;
   lifecycle: { isShuttingDown: () => boolean; beginShutdown: () => void };
   appSettings?: AppSettingsModule;
+  notifications?: NotificationsModule;
+}
+
+export interface ContainerOverrides {
+  /** Replaces the push provider (tests inject a fake; production builds it from FCM_* configuration). */
+  pushSender?: PushSender | null;
 }
 
 /**
@@ -49,6 +61,7 @@ export function createContainer(
   config: AppConfig,
   pool: Pool,
   logger?: Logger,
+  overrides: ContainerOverrides = {},
 ): Container {
   const database = new Database(pool);
   const uow = new PgUnitOfWork(database);
@@ -191,6 +204,40 @@ export function createContainer(
     rateLimiter: rateLimiters.aiCoach,
   });
 
+  const fcm = config.notifications.fcm;
+  const pushSender: PushSender | null =
+    overrides.pushSender !== undefined
+      ? overrides.pushSender
+      : fcm
+        ? new FcmHttpV1Sender({
+            credentials: {
+              projectId: fcm.projectId,
+              clientEmail: fcm.clientEmail,
+              privateKey: fcm.privateKey,
+              tokenUri: fcm.tokenUri,
+            },
+            dryRun: fcm.dryRun,
+            timeoutMs: fcm.timeoutMs,
+          })
+        : null;
+  const notifications = createNotificationsModule({
+    memberBasePath: `${API_PREFIX}/notifications`,
+    adminBasePath: `${API_PREFIX}/admin/notifications`,
+    internalBasePath: `${API_PREFIX}/internal/notifications`,
+    db: database,
+    uow,
+    idempotency,
+    auditLogger: admin.repository,
+    limiters: rateLimiters,
+    sender: pushSender,
+    dispatchSecret: config.notifications.dispatchSecret,
+    dispatcher: {
+      maxAttempts: config.notifications.dispatcher.maxAttempts,
+      pollIntervalMs: config.notifications.dispatcher.pollIntervalMs,
+    },
+    logger,
+  });
+
   return {
     database,
     routeGroups: [
@@ -215,10 +262,14 @@ export function createContainer(
       analytics.routes,
       dashboard.routes,
       coach.routes,
+      notifications.memberRoutes,
+      notifications.adminRoutes,
+      notifications.internalRoutes,
     ],
     authenticate: createAuthenticate(auth.authenticateAccessToken),
     rateLimiters,
     lifecycle,
     appSettings,
+    notifications,
   };
 }

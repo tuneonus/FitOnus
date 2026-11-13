@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth-store';
 import { useSettingsStore } from '../../../shared/stores/settingsStore';
 import { logger } from '../../../utils/logger';
 import { queryClient } from '../../../providers/query-provider';
+import { runSessionEndCleanups } from '../../notifications/services/notification-logout-hook';
 
 const ACCESS_TOKEN_KEY = 'auth.access_token';
 const REFRESH_TOKEN_KEY = 'auth.refresh_token';
@@ -191,6 +192,8 @@ export const AuthService = {
   },
 
   logout: async () => {
+    // Deregister this device's push token while the session is still valid (bounded, never throws).
+    await runSessionEndCleanups();
     try {
       await AuthRepository.logout();
     } catch {
@@ -228,6 +231,7 @@ export const AuthService = {
       throw new Error(message);
     }
 
+    await runSessionEndCleanups();
     try {
       await SecureStorageService.removeItem(ACCESS_TOKEN_KEY);
       await SecureStorageService.removeItem(REFRESH_TOKEN_KEY);

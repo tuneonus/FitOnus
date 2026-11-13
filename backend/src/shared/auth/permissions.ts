@@ -14,6 +14,8 @@ export const PERMISSIONS = [
   'admin:access',
   'admin:audit',
   'admin:stats',
+  'notifications:read',
+  'notifications:send',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -27,6 +29,8 @@ export const ROLE_PERMISSIONS: Readonly<Record<Role, readonly Permission[]>> = {
     'admin:access',
     'admin:audit',
     'admin:stats',
+    'notifications:read',
+    'notifications:send',
   ],
   member: [],
 };

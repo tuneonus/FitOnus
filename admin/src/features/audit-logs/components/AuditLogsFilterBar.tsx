@@ -33,6 +33,10 @@ export function AuditLogsFilterBar({
           <option value="admin.settings_update">Settings updates (admin.settings_update)</option>
           <option value="user.suspend">User suspensions (user.suspend)</option>
           <option value="user.reactivate">User reactivations (user.reactivate)</option>
+          <option value="notification.create">Notification drafts (notification.create)</option>
+          <option value="notification.update">Notification edits (notification.update)</option>
+          <option value="notification.schedule">Notifications sent or scheduled (notification.schedule)</option>
+          <option value="notification.cancel">Notification cancellations (notification.cancel)</option>
         </select>
       </div>
 

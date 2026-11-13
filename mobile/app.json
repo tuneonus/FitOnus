@@ -20,6 +20,7 @@
         "backgroundColor": "#0A0E1A"
       },
       "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1,
       "blockedPermissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -59,8 +60,9 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#208AEF",
+          "defaultChannel": "remote-updates",
           "sounds": []
         }
       ]

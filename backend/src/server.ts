@@ -34,9 +34,18 @@ function main(): void {
     logger.warn('EMAIL_PROVIDER is not configured: password reset is disabled (endpoints answer 503)');
   }
 
+  if (!config.notifications.fcm) {
+    logger.warn(
+      'FCM_SERVICE_ACCOUNT_JSON/_BASE64 not configured: push notifications cannot be sent (inbox still works)',
+    );
+  } else if (config.notifications.fcm.dryRun) {
+    logger.warn('FCM_DRY_RUN=true: pushes are validated by FCM but never delivered');
+  }
+
   const pool = createPool(config.database, logger);
   const container = createContainer(config, pool, logger);
   const app = createApp({ config, logger, container });
+  if (config.notifications.dispatcher.enabled) container.notifications?.dispatcher?.start();
   const server = http.createServer(app);
   server.requestTimeout = 30_000;
   server.headersTimeout = 20_000;
@@ -56,9 +65,13 @@ function main(): void {
     }, config.http.shutdownTimeoutMs);
     forceExit.unref();
 
+    // Stop scheduling new sends immediately; in-flight ones finish before the pool closes.
+    const dispatcherStopped = container.notifications?.dispatcher?.stop() ?? Promise.resolve();
+
     server.close((error) => {
-      pool
-        .end()
+      dispatcherStopped
+        .catch(() => undefined)
+        .then(() => pool.end())
         .catch((poolError: unknown) => logger.error({ err: poolError }, 'Error closing database pool'))
         .finally(() => {
           if (error) logger.error({ err: error }, 'Error closing HTTP server');

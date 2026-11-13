@@ -9,7 +9,11 @@ export type AuditAction =
   | 'user.suspend'
   | 'user.reactivate'
   | 'user.role_change'
-  | 'profile.view_metadata';
+  | 'profile.view_metadata'
+  | 'notification.create'
+  | 'notification.update'
+  | 'notification.schedule'
+  | 'notification.cancel';
 
 export interface AdminAuditLog {
   id: string;

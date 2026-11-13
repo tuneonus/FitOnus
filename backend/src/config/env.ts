@@ -74,6 +74,20 @@ const appSchema = databaseSchema.extend({
   EMAIL_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   EMAIL_TIMEOUT_MS: integer(5_000, 500, 30_000),
+  // Push notifications (FCM HTTP v1). Credentials are a Google service-account key, supplied either as the raw JSON
+  // or base64 of it (base64 survives dashboards that mangle newlines). Both unset keeps push delivery off.
+  FCM_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  FCM_SERVICE_ACCOUNT_BASE64: z.string().optional(),
+  FCM_PROJECT_ID: z.string().optional(),
+  // Provider validates every message but delivers nothing. For wiring checks on DEV.
+  FCM_DRY_RUN: booleanString('false'),
+  FCM_REQUEST_TIMEOUT_MS: integer(10_000, 1_000, 60_000),
+  // Runs the scheduler inside this process. Turn off when a separate worker or external cron drives dispatch.
+  NOTIFICATIONS_DISPATCHER_ENABLED: booleanString('true'),
+  NOTIFICATIONS_POLL_INTERVAL_MS: integer(10_000, 1_000, 3_600_000),
+  NOTIFICATIONS_MAX_ATTEMPTS: integer(4, 1, 10),
+  // Enables POST /api/v1/internal/notifications/dispatch for an external scheduler. Unset = endpoint disabled.
+  NOTIFICATIONS_DISPATCH_SECRET: z.string().optional(),
 });
 
 export type DatabaseConfig = {
@@ -87,6 +101,20 @@ export type DatabaseConfig = {
 
 export type EmailConfig =
   { provider: 'none' } | { provider: 'resend'; apiKey: string; from: string; timeoutMs: number };
+
+export type NotificationsConfig = {
+  /** Null when no service account is configured: campaigns cannot be sent, the inbox still works. */
+  fcm: {
+    projectId: string;
+    clientEmail: string;
+    privateKey: string;
+    tokenUri: string;
+    dryRun: boolean;
+    timeoutMs: number;
+  } | null;
+  dispatcher: { enabled: boolean; pollIntervalMs: number; maxAttempts: number };
+  dispatchSecret: string | undefined;
+};
 
 export type AppConfig = {
   env: 'development' | 'test' | 'production';
@@ -113,6 +141,7 @@ export type AppConfig = {
   gemini: { apiKey?: string; model: string };
   /** Outbound e-mail. `none` means no delivery channel is configured, so password reset stays disabled. */
   email: EmailConfig;
+  notifications: NotificationsConfig;
   rateLimit: { windowMs: number; max: number; authMax: number };
   idempotency: { ttlSeconds: number; leaseSeconds: number };
 };
@@ -180,6 +209,94 @@ function toEmailConfig(parsed: z.output<typeof appSchema>): EmailConfig {
     timeoutMs: parsed.EMAIL_TIMEOUT_MS,
   };
 }
+
+interface ParsedServiceAccount {
+  projectId: string;
+  clientEmail: string;
+  privateKey: string;
+  tokenUri: string | undefined;
+}
+
+/**
+ * Reads the service-account key. Issues name the variable and the rule only: neither the key material nor any
+ * fragment of the parse error (which can quote the input) is ever echoed.
+ */
+function parseServiceAccount(
+  parsed: z.output<typeof appSchema>,
+  issues: string[],
+): ParsedServiceAccount | null {
+  const raw = parsed.FCM_SERVICE_ACCOUNT_JSON?.trim();
+  const encoded = parsed.FCM_SERVICE_ACCOUNT_BASE64?.trim();
+  if (!raw && !encoded) return null;
+
+  let source = raw;
+  let key = 'FCM_SERVICE_ACCOUNT_JSON';
+  if (!source) {
+    key = 'FCM_SERVICE_ACCOUNT_BASE64';
+    source = Buffer.from(encoded!, 'base64').toString('utf8');
+  }
+
+  let json: unknown;
+  try {
+    json = JSON.parse(source);
+  } catch {
+    issues.push(`${key}: must be a service-account JSON document`);
+    return null;
+  }
+  const record = (json && typeof json === 'object' ? json : {}) as Record<string, unknown>;
+  const text = (name: string): string => {
+    const value = record[name];
+    return typeof value === 'string' ? value.trim() : '';
+  };
+  const clientEmail = text('client_email');
+  const privateKey = text('private_key');
+  const projectId = parsed.FCM_PROJECT_ID?.trim() || text('project_id');
+  if (!clientEmail) issues.push(`${key}: missing client_email`);
+  if (!/-----BEGIN PRIVATE KEY-----/.test(privateKey))
+    issues.push(`${key}: missing or malformed private_key`);
+  if (!projectId) issues.push(`${key}: missing project_id (or set FCM_PROJECT_ID)`);
+  if (issues.length > 0 && (!clientEmail || !privateKey || !projectId)) return null;
+  return { projectId, clientEmail, privateKey, tokenUri: text('token_uri') || undefined };
+}
+
+const GOOGLE_TOKEN_URI = 'https://oauth2.googleapis.com/token';
+
+/** Only Google token endpoints are trusted, so a tampered key file cannot redirect the signed assertion. */
+function trustedTokenUri(candidate: string | undefined): string {
+  try {
+    const url = new URL(candidate ?? GOOGLE_TOKEN_URI);
+    return url.protocol === 'https:' && url.hostname.endsWith('.googleapis.com')
+      ? url.toString()
+      : GOOGLE_TOKEN_URI;
+  } catch {
+    return GOOGLE_TOKEN_URI;
+  }
+}
+
+function toNotificationsConfig(
+  parsed: z.output<typeof appSchema>,
+  account: ParsedServiceAccount | null,
+): NotificationsConfig {
+  return {
+    fcm: account
+      ? {
+          projectId: account.projectId,
+          clientEmail: account.clientEmail,
+          privateKey: account.privateKey,
+          tokenUri: trustedTokenUri(account.tokenUri),
+          dryRun: parsed.FCM_DRY_RUN,
+          timeoutMs: parsed.FCM_REQUEST_TIMEOUT_MS,
+        }
+      : null,
+    dispatcher: {
+      enabled: parsed.NOTIFICATIONS_DISPATCHER_ENABLED,
+      pollIntervalMs: parsed.NOTIFICATIONS_POLL_INTERVAL_MS,
+      maxAttempts: parsed.NOTIFICATIONS_MAX_ATTEMPTS,
+    },
+    dispatchSecret: parsed.NOTIFICATIONS_DISPATCH_SECRET?.trim() || undefined,
+  };
+}
+
 const toDatabaseConfig = (parsed: z.output<typeof databaseSchema>): DatabaseConfig => ({
   url: parsed.DATABASE_URL,
   poolMax: parsed.DATABASE_POOL_MAX,
@@ -202,6 +319,11 @@ export function loadConfig(env: Env = process.env): AppConfig {
   const parsed = result.data;
 
   const issues = [...corsIssues(parsed.CORS_ORIGINS), ...emailIssues(parsed)];
+  const serviceAccount = parseServiceAccount(parsed, issues);
+  const dispatchSecret = parsed.NOTIFICATIONS_DISPATCH_SECRET?.trim();
+  if (dispatchSecret && dispatchSecret.length < 32) {
+    issues.push('NOTIFICATIONS_DISPATCH_SECRET: must be at least 32 characters');
+  }
   if (parsed.NODE_ENV === 'production') issues.push(...productionIssues(parsed, env));
   if (issues.length > 0) throw new ConfigError(issues);
 
@@ -232,6 +354,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
       model: parsed.GEMINI_MODEL,
     },
     email: toEmailConfig(parsed),
+    notifications: toNotificationsConfig(parsed, serviceAccount),
     rateLimit: {
       windowMs: parsed.RATE_LIMIT_WINDOW_MS,
       max: parsed.RATE_LIMIT_MAX,

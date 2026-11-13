@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { BellOff, CheckCheck, Settings, Trash2 } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
@@ -19,9 +19,14 @@ const groups = ['Today', 'Yesterday', 'Earlier'] as const;
 export function NotificationsScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const { items, markRead, markAllRead, remove } = useNotificationsStore();
+  const { items, markRead, markAllRead, remove, syncInbox } = useNotificationsStore();
   const [open, setOpen] = useState<AppNotification | null>(null);
   const unread = items.filter((n) => !n.read).length;
+
+  // Fetch the latest server inbox whenever the screen opens (the bridge also syncs on sign-in and foreground).
+  useEffect(() => {
+    void syncInbox();
+  }, [syncInbox]);
 
   const openItem = (n: AppNotification) => {
     markRead(n.id);
@@ -55,7 +60,7 @@ export function NotificationsScreen() {
           <EmptyState
             icon={BellOff}
             title="No notifications"
-            body="Reminders, achievements and reports will show up here."
+            body="Updates from OnusFit, achievements and reports will show up here."
             actionLabel="Notification settings"
             onAction={() => navigate('notificationPreferences')}
           />

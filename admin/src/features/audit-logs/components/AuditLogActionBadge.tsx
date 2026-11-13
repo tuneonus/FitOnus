@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UserCheck, UserX, LogIn, Activity, KeyRound, Sliders } from 'lucide-react';
+import { UserCheck, UserX, LogIn, Activity, KeyRound, Sliders, Bell } from 'lucide-react';
 
 interface AuditLogActionBadgeProps {
   action: string;
@@ -10,6 +10,14 @@ interface AuditLogActionBadgeProps {
 export function AuditLogActionBadge({ action }: AuditLogActionBadgeProps) {
   const act = action.toLowerCase();
 
+  if (act.startsWith('notification.')) {
+    return (
+      <span className="inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-md bg-purple-500/10 px-2 font-mono text-xs font-medium text-purple-300 ring-1 ring-inset ring-purple-500/25">
+        <Bell className="h-3 w-3" />
+        {action}
+      </span>
+    );
+  }
   if (act.includes('setting')) {
     return (
       <span className="inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-md bg-brand-500/10 px-2 font-mono text-xs font-medium text-brand-300 ring-1 ring-inset ring-brand-500/25">

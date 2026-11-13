@@ -11,6 +11,7 @@ import {
   Dumbbell,
   Utensils,
   Trophy,
+  Bell,
   Sliders,
   X,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ export const NAVIGATION_GROUPS = [
       { name: 'Workouts', href: '/workouts', icon: Dumbbell },
       { name: 'Nutrition', href: '/nutrition', icon: Utensils },
       { name: 'Challenges', href: '/challenges', icon: Trophy },
+      { name: 'Notifications', href: '/notifications', icon: Bell },
     ],
   },
   {

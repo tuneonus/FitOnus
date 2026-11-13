@@ -1,0 +1,10 @@
+--- a/mobile/app.json
++++ b/mobile/app.json
+@@ -61,6 +61,7 @@
+         {
+           "icon": "./assets/images/icon.png",
+           "color": "#208AEF",
++          "defaultChannel": "remote-updates",
+           "sounds": []
+         }
+       ]

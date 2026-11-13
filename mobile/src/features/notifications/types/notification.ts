@@ -20,6 +20,8 @@ export type AppNotification = {
   read: boolean;
   actionLabel?: string;
   actionRoute?: RouteName;
+  /** True for items that live on the server (inbox). Local-only items never touch the API. */
+  remote?: boolean;
 };
 
 export type NotificationPreference = {
