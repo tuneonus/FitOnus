@@ -82,6 +82,29 @@ export interface NotificationCoordinator {
   logoutCleanup: () => Promise<LogoutCleanupResult>;
 }
 
+/**
+ * A log-safe summary of a push state: the status plus the reason or counters, and NEVER the device token
+ * (which `registered`, `token-acquired` and `pending-retry` carry).
+ */
+export function describePushState(state: PushState): Record<string, string | number | boolean> {
+  switch (state.status) {
+    case 'unsupported':
+      return { status: state.status, reason: state.reason };
+    case 'permission-required':
+      return {
+        status: state.status,
+        canAskAgain: state.canAskAgain,
+        requiresSystemSettings: state.requiresSystemSettings,
+      };
+    case 'pending-retry':
+      return { status: state.status, kind: state.kind, attempts: state.attempts };
+    case 'failed':
+      return { status: state.status, reason: state.reason, retryable: state.retryable };
+    default:
+      return { status: state.status };
+  }
+}
+
 const DEFAULT_SLEEP = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | 'timeout'> {
@@ -238,14 +261,21 @@ export function createNotificationCoordinator(deps: CoordinatorDeps): Notificati
     userId: string,
     options: { devicePushToken?: PushTokenChange; force?: boolean } = {},
   ): Promise<PushState> => {
-    // Coalesce overlapping triggers (auth-ready + token event + foreground) into one run.
-    if (inflight) return inflight;
+    // Coalesce overlapping passive triggers (auth-ready + foreground) into one run.
+    if (inflight && !options.force) return inflight;
     const syncOptions: { devicePushToken?: PushTokenChange; force: boolean } = {
       force: options.force ?? false,
     };
     if (options.devicePushToken) syncOptions.devicePushToken = options.devicePushToken;
 
-    const run = runSync(userId, syncOptions)
+    // A forced sync (permission just granted, token rotated) must not adopt the result of a run that started
+    // earlier: that run may have read the permission BEFORE it was granted (the foreground re-sync fires when
+    // the system dialog closes) and would report `permission-required` with no device registered. Run after it.
+    const previous = inflight;
+    const run = (async () => {
+      if (previous) await previous.catch(() => undefined);
+      return runSync(userId, syncOptions);
+    })()
       .catch((error: unknown) =>
         setState({
           status: 'failed',

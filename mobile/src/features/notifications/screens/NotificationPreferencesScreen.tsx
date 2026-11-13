@@ -14,6 +14,7 @@ import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { useUpdateSettings } from '@/features/profile/hooks/use-settings';
 import { notificationService } from '@/services/notificationService';
 import { useNotifications } from '../hooks/useNotifications';
+import { DevFcmTokenButton } from '../components/DevFcmTokenButton';
 import { useServerCategoryPreferences } from '../hooks/useServerCategoryPreferences';
 import { CATEGORY_COPY } from '../services/notification-category-preferences';
 import { SERVER_CATEGORIES } from '../services/notification-inbox-api';
@@ -257,6 +258,9 @@ export function NotificationPreferencesScreen() {
           </Button>
         </View>
       )}
+
+      {/* TEMPORARY: dev builds only, for Firebase console test sends. Remove after FCM testing. */}
+      {__DEV__ ? <DevFcmTokenButton /> : null}
 
       {/* Master Toggle Card */}
       <View style={[styles.masterCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>

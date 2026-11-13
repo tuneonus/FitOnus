@@ -146,7 +146,17 @@ export class NotificationDispatcher {
     const now = this.deps.now ?? Date.now;
     const deadline = now() + this.options.maxRunMs;
 
-    if (!campaign.fannedOutAt) await this.deps.repo.fanOut(campaign);
+    if (!campaign.fannedOutAt) {
+      const fanOut = await this.deps.repo.fanOut(campaign);
+      this.deps.logger?.info({ campaignId: campaign.id, ...fanOut }, 'Notification campaign fanned out');
+      if (fanOut.notificationCount > 0 && fanOut.deliveryCount === 0) {
+        // The inbox rows exist, but no member has an active registered device, so nothing can reach a phone.
+        this.deps.logger?.warn(
+          { campaignId: campaign.id, notificationCount: fanOut.notificationCount },
+          'Campaign has inbox notifications but no active push devices to deliver to',
+        );
+      }
+    }
 
     for (;;) {
       const jobs = await this.deps.repo.claimDeliveries(
@@ -189,7 +199,15 @@ export class NotificationDispatcher {
     summary.attempted += 1;
     const { repo, sender } = this.deps;
 
+    // Only opaque ids and provider error codes are logged: never the device token, title or body.
+    const logOutcome = (outcome: string, code: string): void =>
+      this.deps.logger?.warn(
+        { campaignId: job.campaignId, deliveryId: job.id, notificationId: job.notificationId, outcome, code },
+        'Push delivery not accepted',
+      );
+
     if (!job.token) {
+      logOutcome('failed', 'DEVICE_INACTIVE');
       summary.failed += 1;
       await repo.recordOutcome(job.id, { kind: 'failed', errorCode: 'DEVICE_INACTIVE' });
       return;
@@ -222,11 +240,13 @@ export class NotificationDispatcher {
         });
         return;
       case 'invalid_token':
+        logOutcome('invalid_token', result.code);
         summary.invalidTokens += 1;
         await repo.recordOutcome(job.id, { kind: 'invalid_token', errorCode: result.code });
         if (job.deviceId) await repo.invalidateDevice(job.deviceId, result.code);
         return;
       case 'retryable':
+        logOutcome('retryable', result.code);
         if (job.attempts >= this.options.retry.maxAttempts) {
           summary.failed += 1;
           await repo.recordOutcome(job.id, { kind: 'failed', errorCode: result.code });
@@ -240,6 +260,7 @@ export class NotificationDispatcher {
         });
         return;
       case 'failed':
+        logOutcome('failed', result.code);
         summary.failed += 1;
         await repo.recordOutcome(job.id, { kind: 'failed', errorCode: result.code });
     }

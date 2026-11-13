@@ -28,6 +28,11 @@ const BRAND_COLOR = '#208AEF';
 /**
  * Single source of truth for every channel the app owns.
  *
+ * SOUND: in expo-notifications SDK 58 a channel's `sound` is the file name of a bundled raw resource, so
+ * `'default'` is looked up as a file called "default", is not found, and logs "Custom sound 'default' not found
+ * in native app". The system notification sound is what you get by OMITTING the key; `sound: null` means silent.
+ * No custom sound files are shipped (`sounds: []` in app.json), so loud channels simply leave `sound` out.
+ *
  * The three legacy channels mirror the names/sounds the existing service
  * already uses, but with importance values expressed in Expo's numbering.
  * (The existing service passes the raw numbers 4/3/2 labelled HIGH/DEFAULT/LOW,
@@ -40,14 +45,12 @@ export const CHANNEL_DEFINITIONS: Readonly<Record<string, AndroidChannelConfig>>
     importance: EXPO_ANDROID_IMPORTANCE.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: BRAND_COLOR,
-    sound: 'default',
   },
   [NOTIFICATION_CHANNELS.WATER]: {
     name: 'Water & Hydration Reminders',
     importance: EXPO_ANDROID_IMPORTANCE.DEFAULT,
     vibrationPattern: [0, 200],
     lightColor: BRAND_COLOR,
-    sound: 'default',
   },
   [NOTIFICATION_CHANNELS.SYSTEM]: {
     name: 'System Notifications',
@@ -59,14 +62,16 @@ export const CHANNEL_DEFINITIONS: Readonly<Record<string, AndroidChannelConfig>>
     importance: EXPO_ANDROID_IMPORTANCE.DEFAULT,
     vibrationPattern: [0, 200],
     lightColor: BRAND_COLOR,
-    sound: 'default',
   },
+  // The channel every server push (FCM `android.notification.channel_id`, and the manifest's
+  // `default_notification_channel_id`) lands in. It must be HIGH, or Android only adds a silent tray
+  // entry instead of a heads-up banner. Android never lets an app raise an existing channel's importance,
+  // so this value only applies to installs where the channel has not been created yet.
   [PUSH_CHANNELS.REMOTE]: {
     name: 'Coach & Account Updates',
-    importance: EXPO_ANDROID_IMPORTANCE.DEFAULT,
-    vibrationPattern: [0, 200],
+    importance: EXPO_ANDROID_IMPORTANCE.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
     lightColor: BRAND_COLOR,
-    sound: 'default',
   },
 };
 

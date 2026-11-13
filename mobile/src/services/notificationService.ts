@@ -96,7 +96,6 @@ export const notificationService = {
           importance: 4, // AndroidImportance.HIGH
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#208AEF',
-          sound: 'default',
         });
 
         await engine.setNotificationChannelAsync(NOTIFICATION_CHANNELS.WATER, {
@@ -104,7 +103,6 @@ export const notificationService = {
           importance: 3, // AndroidImportance.DEFAULT
           vibrationPattern: [0, 200],
           lightColor: '#208AEF',
-          sound: 'default',
         });
 
         await engine.setNotificationChannelAsync(NOTIFICATION_CHANNELS.SYSTEM, {

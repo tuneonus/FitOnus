@@ -38,8 +38,19 @@ function main(): void {
     logger.warn(
       'FCM_SERVICE_ACCOUNT_JSON/_BASE64 not configured: push notifications cannot be sent (inbox still works)',
     );
-  } else if (config.notifications.fcm.dryRun) {
-    logger.warn('FCM_DRY_RUN=true: pushes are validated by FCM but never delivered');
+  } else {
+    // The project id is not a secret; it must equal `project_id` in the mobile google-services.json.
+    logger.info(
+      {
+        fcmProjectId: config.notifications.fcm.projectId,
+        dryRun: config.notifications.fcm.dryRun,
+        dispatcherEnabled: config.notifications.dispatcher.enabled,
+      },
+      'Push delivery configured (FCM HTTP v1)',
+    );
+    if (config.notifications.fcm.dryRun) {
+      logger.warn('FCM_DRY_RUN=true: pushes are validated by FCM but never delivered');
+    }
   }
 
   const pool = createPool(config.database, logger);

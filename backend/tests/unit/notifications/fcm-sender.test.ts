@@ -132,7 +132,14 @@ describe('FcmHttpV1Sender', () => {
       token: message.token,
       notification: { title: 'Hello', body: 'World' },
       data: { notificationId: 'n1', category: 'announcements' },
-      android: { priority: 'HIGH', notification: { channel_id: 'remote-updates' } },
+      android: {
+        priority: 'HIGH',
+        notification: {
+          channel_id: 'remote-updates',
+          notification_priority: 'PRIORITY_HIGH',
+          sound: 'default',
+        },
+      },
     });
   });
 

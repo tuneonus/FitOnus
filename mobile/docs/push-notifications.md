@@ -17,8 +17,9 @@ Written for: OnusFit mobile and backend engineers. Expo SDK 58 (`expo-notificati
 
 ## 2. How a server push reaches the user
 
-1. Sign-in (or token rotation): the app obtains the **native FCM token** (`getDevicePushTokenAsync`) only if the OS permission was already granted by a user action, then `PUT /notifications/devices/{installationId}` with `{ installationId, pushToken, platform, appVersion, timeZone }`. No EAS project id and no Expo push token are involved; the backend talks to FCM directly.
-2. The backend sends through FCM HTTP v1 on channel `remote-updates` (created before the Android 13 prompt and before the token request) with data `{ notificationId, category, destination? }`.
+0. **Permission (once).** After sign-in, on the first usable screen (not splash/auth/onboarding, not under a maintenance/forced-update modal), `NotificationPermissionPrompt` shows a short in-app explanation. Only the **Allow notifications** press opens the Android 13+ system dialog, so the "OS prompt only from a user gesture" rule still holds. The answer (allow or *Not now*) is stored once per install (`fitonus.push.permission-prompt.v1`): a denial is never re-prompted automatically, and Settings → Notifications keeps the **Enable notifications / Open settings** card. Android < 13 grants permission at install, so no prompt is shown and registration just happens at sign-in. Policy: `notification-permission-prompt.ts`.
+1. Sign-in, token rotation, or returning to the foreground (e.g. after granting in Android settings): the app obtains the **native FCM token** (`getDevicePushTokenAsync`) only if the OS permission is already granted, never prompting, then `PUT /notifications/devices/{installationId}` with `{ installationId, pushToken, platform, appVersion, timeZone }`. No EAS project id and no Expo push token are involved; the backend talks to FCM directly.
+2. The backend sends through FCM HTTP v1 on channel `remote-updates` (HIGH importance, so it can heads-up; created at every app launch, before the Android 13 prompt and before the token request; Android never raises the importance of a channel that already exists) with data `{ notificationId, category, destination? }`.
 3. **Foreground:** the banner shows; the app confirms receipt (`POST /notifications/:id/received`) and refreshes the inbox.
 4. **Background / terminated:** Android shows it; tapping launches or resumes the app. The response listener (and the cold-start `getLastNotificationResponseAsync`) marks it read, confirms receipt and refreshes. A tap before sign-in or during onboarding is held and delivered after. With direct FCM (no JSON `body` key) Expo copies the data keys as-is into `content.data` (verified in the installed SDK source).
 5. **Navigation** is a closed allow-list: `destination` ∈ `home, activity, coach, progress, profile, workouts, nutrition, goals, challenges, badges, weekly_report, notifications`. A payload that names `route`, `screen` or `url`, an unknown key, or has no valid `notificationId` navigates nowhere.
@@ -58,9 +59,9 @@ From the earlier foundation (unchanged here): `AppShell.tsx` mounts the bridge, 
 
 Preconditions: migration `0018` applied to DEV, `FCM_SERVICE_ACCOUNT_BASE64` set on DEV Render, an admin and a member account.
 
-1. **No launch prompt.** Fresh install, sign in: no OS prompt appears on its own.
-2. **Permission.** Settings → Notifications → **Enable notifications** → grant. Within a few seconds `adb`/DB shows one row in `user_push_devices` for the member (`GET /notifications/devices` lists it, without the token).
-3. **Channels.** `adb shell dumpsys notification | grep -A6 com.tuneonus.onusfit` lists `remote-updates` (DEFAULT) plus the reminder channels.
+1. **Launch offer.** Fresh install, sign in, reach Home: after ~1 s the in-app "Stay on track with OnusFit" dialog appears, once. **Not now** ends it for good; **Allow notifications** opens the Android system dialog (Android 13+).
+2. **Permission.** Grant it (or, after a denial, Settings → Notifications → **Open settings**). Within a few seconds `adb`/DB shows one row in `user_push_devices` for the member (`GET /notifications/devices` lists it, without the token).
+3. **Channels.** `adb shell dumpsys notification | grep -A6 com.tuneonus.onusfit` lists `remote-updates` (IMPORTANCE_HIGH, `mImportance=4`) plus the reminder channels.
 4. **Foreground push.** Admin → Notifications → send to the member only. Banner appears; inbox updates without reopening; delivery moves to **Received**.
 5. **Background push.** Background the app, send again. Notification in the shade; tap → opens the chosen screen; item is read; delivery **Received**.
 6. **Killed app.** Swipe the app away, send, tap: app cold-starts through splash/auth, then opens the destination.
@@ -80,3 +81,20 @@ NODE_PATH=node_modules ../backend/node_modules/.bin/tsx --test tests/notificatio
 ```
 
 `tests/notifications-remote-inbox.test.ts` (new) covers the inbox client, id/URL safety, destination allow-list, payload parsing, foreground de-duplication, cold-start taps, the receipt/read handlers, category preference rollback and ordering, the inbox store (including a late response after logout), and the device endpoint paths. The foundation tests were updated from Expo tokens to FCM tokens. Every test runs against fakes; none runs on a device.
+
+## 9. Troubleshooting (device logs)
+
+| Log line | Meaning | Fix |
+| --- | --- | --- |
+| `Push registration: failed { reason: endpoint-missing }`, and `404` on `/notifications*` | The server answering does not contain the notification routes, i.e. the deployed backend is older than `a5f47fb`. The app is classifying it correctly. `GET <api>/openapi.json` will have no `notif` paths. | Deploy the backend **and** run the release step `node dist/scripts/migrate.js` (migration `0018`). Foreground the app; registration retries by itself. |
+| `Push registration: permission-required { canAskAgain: true }` | Signed in, but the OS permission has not been granted yet (the in-app offer is unanswered, or *Not now* was chosen). Not an error. | Answer the offer, or Settings → Notifications → Enable. |
+| `expo-notifications: Custom sound 'default' not found in native app` | A channel was created with `sound: 'default'`. In SDK 58 `sound` is a raw-resource file name. | Omit `sound` for the system default sound (`null` = silent). Fixed in `notification-channels.ts`. |
+
+Confirm a device is stored (DEV database; shows only a token prefix and its length, never the full token):
+
+```sql
+SELECT u.email, d.platform, d.status, left(d.push_token, 8) || '…' AS token_prefix, length(d.push_token) AS token_len,
+       d.app_version, d.last_registered_at
+  FROM user_push_devices d JOIN users u ON u.id = d.user_id
+ ORDER BY d.last_registered_at DESC LIMIT 5;
+```
