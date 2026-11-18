@@ -218,6 +218,7 @@ describe('AI coach chat', () => {
       deleteConversation: vi.fn(),
       addMessage: vi.fn().mockResolvedValue(undefined),
       getMessages: vi.fn().mockResolvedValue([]),
+      setMessageFeedback: vi.fn().mockResolvedValue(true),
     };
     useCase = new ChatWithCoachUseCase(
       contextRepo as unknown as UserContextRepository,

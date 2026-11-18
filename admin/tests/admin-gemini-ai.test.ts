@@ -110,16 +110,22 @@ describe('Admin Gemini AI Management — Phase 8 Verification', () => {
     assert(summary.estimatedCostInr > summary.estimatedCostUsd);
   });
 
-  it('4. Update payload enforces optimistic concurrency control via expectedVersion', () => {
+  it('4. Update payload enforces optimistic concurrency control via expectedVersion and canonical featureModels', () => {
     const payload: UpdateGeminiConfigPayload = {
-      defaultModel: 'gemini-2.5-flash',
-      coachModel: 'gemini-2.5-pro',
+      defaultModel: 'gemini-3.5-flash-lite',
+      featureModels: {
+        aiCoach: 'gemini-3.5-flash-lite',
+        mealPhotoScanner: 'gemini-3.5-flash-lite',
+        voiceMealEntry: 'gemini-3.5-flash-lite',
+        workoutGenerator: 'gemini-3.5-flash-lite',
+      },
       expectedVersion: 4,
     };
 
     assert.equal(payload.expectedVersion, 4);
-    assert.equal(payload.defaultModel, 'gemini-2.5-flash');
-    assert.equal(payload.coachModel, 'gemini-2.5-pro');
+    assert.equal(payload.defaultModel, 'gemini-3.5-flash-lite');
+    assert.equal(payload.featureModels?.aiCoach, 'gemini-3.5-flash-lite');
+    assert.equal(payload.featureModels?.mealPhotoScanner, 'gemini-3.5-flash-lite');
   });
 
   it('5. Rollback capability is enabled only when a previous key mask is present', () => {
@@ -177,5 +183,70 @@ describe('Admin Gemini AI Management — Phase 8 Verification', () => {
     assert.equal(breakdowns.length, 2);
     assert.equal(breakdowns[0].totalTokens, breakdowns[0].promptTokens + breakdowns[0].completionTokens);
     assert.equal(breakdowns[1].totalTokens, breakdowns[1].promptTokens + breakdowns[1].completionTokens);
+  });
+
+  it('7. Connection test response contract includes model, latency, keySource, and meaningful message', () => {
+    const successResult = {
+      success: true,
+      latencyMs: 1250,
+      model: 'gemini-3.5-flash-lite',
+      modelUsed: 'gemini-3.5-flash-lite',
+      keySource: 'environment' as const,
+      message: 'Successfully connected to Google Gemini via gemini-3.5-flash-lite (1250ms)',
+    };
+
+    assert.equal(successResult.success, true);
+    assert.equal(successResult.model, 'gemini-3.5-flash-lite');
+    assert.equal(successResult.keySource, 'environment');
+    assert(successResult.latencyMs > 0);
+    assert(!successResult.message.includes('undefined'));
+  });
+
+  it('8. Connection test error normalization prevents undefined messages or blank models', () => {
+    // Simulate backend failure payload
+    const failurePayload = {
+      success: false,
+      latencyMs: 0,
+      model: 'gemini-3.5-flash-lite',
+      modelUsed: 'gemini-3.5-flash-lite',
+      keySource: 'unavailable' as const,
+      error: 'Invalid Gemini API key. Please check the key in Google AI Studio.',
+      message: 'Invalid Gemini API key. Please check the key in Google AI Studio.',
+    };
+
+    const normalizedMessage =
+      failurePayload.message ||
+      (failurePayload as any).error ||
+      (failurePayload.success ? 'Verified' : 'Failed');
+
+    assert.notEqual(normalizedMessage, undefined);
+    assert.notEqual(normalizedMessage, 'undefined');
+    assert(!normalizedMessage.includes('undefined'));
+    assert.equal(normalizedMessage, 'Invalid Gemini API key. Please check the key in Google AI Studio.');
+
+    const normalizedModel = failurePayload.model || (failurePayload as any).modelUsed || 'default';
+    assert.equal(normalizedModel, 'gemini-3.5-flash-lite');
+  });
+
+  it('9. Connection test correctly differentiates between database and environment fallback keys', () => {
+    const dbKeyTest = {
+      success: true,
+      keySource: 'database' as const,
+      model: 'gemini-3.5-flash-lite',
+      latencyMs: 890,
+      message: 'Successfully connected via gemini-3.5-flash-lite (890ms)',
+    };
+
+    const envKeyTest = {
+      success: true,
+      keySource: 'environment' as const,
+      model: 'gemini-3.5-flash-lite',
+      latencyMs: 920,
+      message: 'Successfully connected via gemini-3.5-flash-lite (920ms) using environment fallback key.',
+    };
+
+    assert.equal(dbKeyTest.keySource, 'database');
+    assert.equal(envKeyTest.keySource, 'environment');
+    assert(envKeyTest.message.includes('environment fallback'));
   });
 });

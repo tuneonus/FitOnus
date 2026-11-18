@@ -147,6 +147,7 @@ describe('AI Coach Memory Use Case', () => {
       deleteConversation: vi.fn(),
       addMessage: vi.fn(),
       getMessages: vi.fn().mockResolvedValue([]),
+      setMessageFeedback: vi.fn().mockResolvedValue(true),
     };
 
     const chatUseCase = new ChatWithCoachUseCase(

@@ -3,18 +3,25 @@ import { create } from 'zustand';
 import type {
   ActionStatus,
   CoachMessage,
+  CoachResponse,
   ConversationDetail,
   StoredChatMessage,
 } from '../types/coach';
 import { CoachApi, type ChatHistoryTurn } from '../services/coach-api';
+import { speechService } from '../services/speech-service';
 import { useHealthStore } from '../../health-integration/store/healthStore';
+import { normalizeMobileApiError } from '@/services/error-normalizer';
 
 type CoachState = {
   conversationId: string | null;
   messages: CoachMessage[];
   busy: boolean;
+  speakingMessageId: string | null;
   send: (text: string) => void;
   retry: (assistantId: string) => void;
+  toggleSpeech: (messageId: string, text: string) => Promise<void>;
+  stopSpeech: () => Promise<void>;
+  setFeedback: (messageId: string, feedback: 'like' | 'dislike' | 'none') => Promise<void>;
   setActionStatus: (
     messageId: string,
     actionId: string,
@@ -23,6 +30,7 @@ type CoachState = {
   ) => void;
   newConversation: () => void;
   setConversationId: (id: string | null) => void;
+  addCompletedTurn: (userText: string, response: CoachResponse) => void;
   /** Resume a past conversation: loads real conversation messages or questions. */
   loadConversation: (
     convo: ConversationDetail | { id: string; messages: StoredChatMessage[] } | string[],
@@ -98,11 +106,20 @@ async function sendToApi(
     }));
   } catch (err: unknown) {
     if (!session.isCurrent()) return;
-    const errorData = (err as any)?.response?.data;
-    const errorMessage =
-      errorData?.error?.message ||
-      errorData?.message ||
-      (err instanceof Error ? err.message : 'Unable to reach coach right now. Please try again.');
+    const normalized = normalizeMobileApiError(err, 'Unable to reach coach right now. Please tap Try again.');
+    let friendlyMessage = normalized.userMessage;
+
+    if (normalized.code === 'AI_QUOTA_EXCEEDED') {
+      friendlyMessage = 'AI coaching daily limit reached. Please try again tomorrow.';
+    } else if (normalized.code === 'AI_UNAVAILABLE') {
+      friendlyMessage = normalized.userMessage;
+    } else if (normalized.isNetworkError) {
+      friendlyMessage = 'Unable to connect. Check your internet connection.';
+    } else if (normalized.isTimeout) {
+      friendlyMessage = 'Request timed out. Please tap Try again.';
+    } else if (!friendlyMessage || friendlyMessage.includes('status code 5')) {
+      friendlyMessage = 'Unable to reach coach right now. Please tap Try again.';
+    }
 
     set((s) => ({
       busy: false,
@@ -111,7 +128,7 @@ async function sendToApi(
           ? {
               ...m,
               status: 'error' as const,
-              text: errorMessage,
+              text: friendlyMessage,
             }
           : m,
       ),
@@ -123,6 +140,7 @@ export const useCoachStore = create<CoachState>((set, get) => ({
   conversationId: null,
   messages: [],
   busy: false,
+  speakingMessageId: null,
   setConversationId: (conversationId) => set({ conversationId }),
   send: (text) => {
     const trimmed = text.trim();
@@ -149,7 +167,29 @@ export const useCoachStore = create<CoachState>((set, get) => ({
 
     void sendToApi(set, get, assistantId, userMessageId, trimmed);
   },
+  addCompletedTurn: (userText, response) => {
+    const userMsg: CoachMessage = {
+      id: newId(),
+      role: 'user',
+      text: userText,
+      status: 'done',
+    };
+    const assistantMsg: CoachMessage = {
+      id: newId(),
+      role: 'assistant',
+      text: response.text,
+      status: 'done',
+      blocks: response.blocks,
+      sources: response.sources,
+      followUps: response.followUps,
+    };
+    set((s) => ({
+      conversationId: response.conversationId || s.conversationId,
+      messages: [...s.messages, userMsg, assistantMsg],
+    }));
+  },
   retry: (assistantId) => {
+    if (get().busy) return;
     const msgs = get().messages;
     const idx = msgs.findIndex((m) => m.id === assistantId);
     const userMsg = msgs
@@ -169,6 +209,44 @@ export const useCoachStore = create<CoachState>((set, get) => ({
 
     void sendToApi(set, get, assistantId, userMsgId, question);
   },
+  toggleSpeech: async (messageId: string, text: string) => {
+    const currentSpeaking = get().speakingMessageId;
+    if (currentSpeaking === messageId) {
+      await speechService.stop();
+      set({ speakingMessageId: null });
+      return;
+    }
+
+    set({ speakingMessageId: messageId });
+    await speechService.speak(messageId, text, {
+      onDone: () => {
+        if (get().speakingMessageId === messageId) {
+          set({ speakingMessageId: null });
+        }
+      },
+      onError: () => {
+        if (get().speakingMessageId === messageId) {
+          set({ speakingMessageId: null });
+        }
+      },
+    });
+  },
+  stopSpeech: async () => {
+    await speechService.stop();
+    set({ speakingMessageId: null });
+  },
+  setFeedback: async (messageId: string, feedback: 'like' | 'dislike' | 'none') => {
+    set((s) => ({
+      messages: s.messages.map((m) =>
+        m.id === messageId ? { ...m, feedback } : m,
+      ),
+    }));
+    try {
+      await CoachApi.setMessageFeedback(messageId, feedback);
+    } catch {
+      // Optimistic update retained; non-blocking
+    }
+  },
   setActionStatus: (messageId, actionId, status, resultText) =>
     set((s) => ({
       messages: s.messages.map((m) =>
@@ -182,12 +260,17 @@ export const useCoachStore = create<CoachState>((set, get) => ({
           : m,
       ),
     })),
-  newConversation: () => set({ conversationId: null, messages: [], busy: false }),
+  newConversation: () => {
+    void speechService.stop();
+    set({ conversationId: null, messages: [], busy: false, speakingMessageId: null });
+  },
   loadConversation: (convo) => {
+    void speechService.stop();
     if (Array.isArray(convo)) {
       // Legacy string array fallback
       set({
         busy: false,
+        speakingMessageId: null,
         messages: convo.map((q) => ({
           id: newId(),
           role: 'user' as const,
@@ -205,12 +288,14 @@ export const useCoachStore = create<CoachState>((set, get) => ({
       blocks: m.blocks,
       sources: m.sources,
       followUps: m.followUps,
+      feedback: m.feedback,
       status: 'done' as const,
     }));
 
     set({
       conversationId: convo.id,
       busy: false,
+      speakingMessageId: null,
       messages,
     });
   },

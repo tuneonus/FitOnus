@@ -51,9 +51,22 @@ describe('Coach REST API HTTP Integration', () => {
       }),
     };
 
+    const mockManageConversations = {
+      setFeedback: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const mockGeminiClient = {
+      transcribeAudio: vi.fn().mockResolvedValue({
+        transcript: 'Today I ran 5 kilometers',
+        detectedLanguage: 'en',
+      }),
+    };
+
     const controller = createCoachController({
       chatWithCoach: mockUseCase,
       getCoachInsights: mockGetInsightsUseCase as any,
+      manageConversations: mockManageConversations as any,
+      geminiClient: mockGeminiClient as any,
     });
 
     const rateLimiter: express.RequestHandler = (_req, _res, next) => {
@@ -197,6 +210,65 @@ describe('Coach REST API HTTP Integration', () => {
         lang: 'en',
         forceRefresh: false,
       });
+    });
+  });
+
+  describe('PATCH /api/v1/coach/messages/:id/feedback', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const { app } = createTestApp({ authenticated: false });
+      const res = await request(app)
+        .patch('/api/v1/coach/messages/msg-123/feedback')
+        .send({ feedback: 'like' });
+      expect(res.status).toBe(401);
+    });
+
+    it('updates message feedback successfully', async () => {
+      const { app } = createTestApp({ authenticated: true });
+      const res = await request(app)
+        .patch('/api/v1/coach/messages/msg-123/feedback')
+        .send({ feedback: 'like' });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.success).toBe(true);
+    });
+
+    it('rejects invalid feedback value with 400', async () => {
+      const { app } = createTestApp({ authenticated: true });
+      const res = await request(app)
+        .patch('/api/v1/coach/messages/msg-123/feedback')
+        .send({ feedback: 'invalid_rating' });
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+  });
+
+  describe('POST /api/v1/coach/transcribe', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const { app } = createTestApp({ authenticated: false });
+      const res = await request(app)
+        .post('/api/v1/coach/transcribe')
+        .send({ audio: { mimeType: 'audio/m4a', base64: 'AAAA' } });
+      expect(res.status).toBe(401);
+    });
+
+    it('transcribes audio payload successfully', async () => {
+      const { app } = createTestApp({ authenticated: true });
+      const res = await request(app)
+        .post('/api/v1/coach/transcribe')
+        .send({ audio: { mimeType: 'audio/m4a', base64: 'AAAA' } });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.transcript).toBe('Today I ran 5 kilometers');
+      expect(res.body.data.detectedLanguage).toBe('en');
+    });
+
+    it('rejects missing audio payload with 400', async () => {
+      const { app } = createTestApp({ authenticated: true });
+      const res = await request(app)
+        .post('/api/v1/coach/transcribe')
+        .send({});
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
     });
   });
 });

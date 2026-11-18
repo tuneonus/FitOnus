@@ -252,6 +252,22 @@ describe('Android notification channels', () => {
     const custom = { name: 'Custom', importance: 3 };
     assert.equal(resolveChannelConfig('some-other-channel', custom), custom);
   });
+
+  it('never passes sound: null to any channel (guards against Android native NPE in AudioAttributes serialization)', async () => {
+    // Regression test for: ExpoNotificationsChannelSerializer.toBundle() calls getClass() on a null
+    // AudioAttributes object when sound is explicitly null, causing a NullPointerException.
+    // sound must be omitted (undefined) or a non-null string — never null.
+    const native = createFakeNative();
+    await ensureNotificationChannels(native, createEnv());
+
+    for (const [id, channel] of native.channels) {
+      assert.notEqual(
+        channel.sound,
+        null,
+        `${id} channel must not set sound: null — use sound: 'default' or omit sound entirely`,
+      );
+    }
+  });
 });
 
 describe('Device (FCM) push token acquisition', () => {

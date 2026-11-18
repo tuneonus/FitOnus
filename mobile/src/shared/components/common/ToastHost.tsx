@@ -14,9 +14,21 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
 
   if (!toast) return null;
 
-  const Icon = toast.tone === 'error' ? AlertTriangle : toast.tone === 'info' ? Info : CheckCircle;
+  const Icon =
+    toast.tone === 'error' || toast.tone === 'warning'
+      ? AlertTriangle
+      : toast.tone === 'info'
+      ? Info
+      : CheckCircle;
 
-  const iconColor = toast.tone === 'error' ? colors.bad : colors.accent;
+  const iconColor =
+    toast.tone === 'error'
+      ? colors.bad
+      : toast.tone === 'warning'
+      ? colors.warn
+      : toast.tone === 'info'
+      ? (colors.sky || colors.accent)
+      : (colors.good || colors.accent);
 
   return (
     <View

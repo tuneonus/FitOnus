@@ -15,6 +15,7 @@ import {
   Dumbbell,
   Layers,
   Cpu,
+  ShieldCheck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -29,6 +30,7 @@ interface GeminiConfigSectionProps {
   models: GeminiModelInfo[];
   modelDraft: {
     defaultModel: string;
+    fallbackModel: string;
     coachModel: string;
     mealPhotoModel: string;
     voiceMealModel: string;
@@ -37,6 +39,7 @@ interface GeminiConfigSectionProps {
   setModelDraft: React.Dispatch<
     React.SetStateAction<{
       defaultModel: string;
+      fallbackModel: string;
       coachModel: string;
       mealPhotoModel: string;
       voiceMealModel: string;
@@ -185,7 +188,7 @@ export function GeminiConfigSection({
         {/* Live Test Connection Result Banner */}
         {activeTestResult && (
           <div
-            className={`rounded-lg border p-3 text-xs flex items-center justify-between ${
+            className={`rounded-lg border p-3 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
               activeTestResult.success
                 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
                 : 'border-rose-500/30 bg-rose-500/10 text-rose-300'
@@ -198,12 +201,22 @@ export function GeminiConfigSection({
                 <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />
               )}
               <span>
-                {activeTestResult.message} (Tested with model: <code className="font-mono font-bold">{activeTestResult.model}</code>)
+                {activeTestResult.message}
+                {activeTestResult.model && (
+                  <> (Tested with model: <code className="font-mono font-bold">{activeTestResult.model}</code>)</>
+                )}
+                {activeTestResult.keySource && (
+                  <span className="ml-1.5 opacity-80 font-mono text-[10px]">
+                    [{activeTestResult.keySource === 'environment' ? 'ENV Key' : activeTestResult.keySource === 'database' ? 'DB Key' : activeTestResult.keySource}]
+                  </span>
+                )}
               </span>
             </div>
-            <span className="font-mono text-xs font-semibold">
-              Latency: {activeTestResult.latencyMs}ms
-            </span>
+            {activeTestResult.latencyMs > 0 && (
+              <span className="font-mono text-xs font-semibold shrink-0">
+                Latency: {activeTestResult.latencyMs}ms
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -268,6 +281,34 @@ export function GeminiConfigSection({
                 <option key={`default-${modelKey}`} value={modelKey}>
                   {m.displayName} ({modelKey}) — Input: ${m.inputPricePerMillion}/M, Output: ${m.outputPricePerMillion}/M
                   {(m.isRecommendedDefault || m.isDefault) ? ' [Recommended]' : ''}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {/* Automatic Failover / Fallback Model */}
+        <div className="card-inset space-y-2 p-4">
+          <label className="text-xs font-semibold text-ink-300 flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-amber-400" />
+              Automatic Failover Fallback Model
+            </span>
+            <span className="text-[11px] text-ink-500">Auto-activated on rate limits or temporary provider overload</span>
+          </label>
+          <select
+            value={modelDraft.fallbackModel || 'gemini-3.1-flash-lite'}
+            onChange={(e) =>
+              setModelDraft((prev) => ({ ...prev, fallbackModel: e.target.value }))
+            }
+            className="input"
+          >
+            {models.map((m, idx) => {
+              const modelKey = m.model || m.id || `model-${idx}`;
+              return (
+                <option key={`fallback-${modelKey}`} value={modelKey}>
+                  {m.displayName} ({modelKey}) — Input: ${m.inputPricePerMillion}/M, Output: ${m.outputPricePerMillion}/M
+                  {modelKey === 'gemini-3.1-flash-lite' ? ' [Preferred Fallback]' : ''}
                 </option>
               );
             })}

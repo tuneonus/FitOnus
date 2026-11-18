@@ -11,6 +11,10 @@ import type {
   SendCoachMessageParams,
   MemoryListApiResponse,
 } from '../src/features/ai-coach/services/coach-api';
+import {
+  stripMarkdownForSpeech,
+  detectLanguageHint,
+} from '../src/features/ai-coach/services/speech-service';
 
 describe('AI Coach Chat Mobile Contracts & Integration', () => {
   it('validates SendCoachMessageParams structure with conversationId and clientMessageId', () => {
@@ -176,5 +180,54 @@ describe('AI Coach Chat Mobile Contracts & Integration', () => {
     assert.equal(memoryResponse.items.length, 1);
     assert.equal(memoryResponse.suggestions.length, 1);
     assert.equal(memoryResponse.items[0]?.category, 'food');
+  });
+
+  it('validates stripMarkdownForSpeech removes formatting while keeping natural prose', () => {
+    const raw = '### Workout Tip\nHere is your **routine**:\n- 3 sets of `squats`\n- Drink [water](https://fitonus.com)!\n> Rest 60s.';
+    const stripped = stripMarkdownForSpeech(raw);
+
+    assert.ok(!stripped.includes('###'));
+    assert.ok(!stripped.includes('**'));
+    assert.ok(!stripped.includes('`'));
+    assert.ok(!stripped.includes('[water]'));
+    assert.ok(!stripped.includes('>'));
+    assert.ok(stripped.includes('Workout Tip'));
+    assert.ok(stripped.includes('routine'));
+    assert.ok(stripped.includes('3 sets of squats'));
+    assert.ok(stripped.includes('Drink water!'));
+    assert.ok(stripped.includes('Rest 60s.'));
+  });
+
+  it('validates detectLanguageHint distinguishes Tamil script from English/Tanglish', () => {
+    const tamilText = 'இன்றைய உடற்பயிற்சி அருமை! 350 கலோரிகள் எரித்துள்ளீர்கள்.';
+    const tanglishText = 'Innaiku workout super! 350 calories burn panniteenga.';
+    const englishText = 'Great job today! You burned 350 calories.';
+
+    assert.equal(detectLanguageHint(tamilText), 'ta-IN');
+    assert.equal(detectLanguageHint(tanglishText), 'en-IN');
+    assert.equal(detectLanguageHint(englishText), 'en-IN');
+  });
+
+  it('validates feedback field on CoachMessage and StoredChatMessage', () => {
+    const assistantMsg: CoachMessage = {
+      id: 'msg-feedback-1',
+      role: 'assistant',
+      status: 'done',
+      text: 'You reached your protein goal!',
+      feedback: 'like',
+    };
+
+    assert.equal(assistantMsg.feedback, 'like');
+
+    const storedMsg = {
+      id: 'msg-db-1',
+      conversationId: 'convo-1',
+      role: 'assistant' as const,
+      text: 'Try 8 hours of sleep tonight.',
+      createdAt: new Date().toISOString(),
+      feedback: 'dislike' as const,
+    };
+
+    assert.equal(storedMsg.feedback, 'dislike');
   });
 });

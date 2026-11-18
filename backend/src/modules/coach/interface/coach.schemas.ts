@@ -91,6 +91,7 @@ export const storedChatMessageSchema = z.object({
   blocks: z.array(z.record(z.string(), z.any())).optional(),
   sources: z.array(z.string()).optional(),
   followUps: z.array(z.string()).optional(),
+  feedback: z.enum(['like', 'dislike', 'none']).nullable().optional(),
   createdAt: z.string(),
 });
 
@@ -158,7 +159,26 @@ export const setMemorySettingsSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const setMessageFeedbackSchema = z.object({
+  feedback: z.enum(['like', 'dislike', 'none']),
+});
+
+export const transcribeAudioSchema = z.object({
+  audio: z.object({
+    mimeType: z.string().min(1, 'Audio mimeType is required'),
+    base64: z.string().min(1, 'Audio base64 data is required'),
+  }),
+});
+
+export const transcribeResponseSchema = z.object({
+  transcript: z.string(),
+  detectedLanguage: z.string(),
+});
+
 export type ChatRequestDto = z.infer<typeof chatRequestSchema>;
 export type CoachResponseDto = z.infer<typeof coachResponseSchema>;
 export type GetInsightsQueryDto = z.infer<typeof getInsightsQuerySchema>;
 export type CoachInsightsResponseDto = z.infer<typeof coachInsightsResponseSchema>;
+export type SetMessageFeedbackDto = z.infer<typeof setMessageFeedbackSchema>;
+export type TranscribeAudioDto = z.infer<typeof transcribeAudioSchema>;
+export type TranscribeResponseDto = z.infer<typeof transcribeResponseSchema>;

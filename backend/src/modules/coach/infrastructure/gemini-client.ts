@@ -4,6 +4,7 @@ import { markAiRequestDispatched } from '../../../shared/ai/ai-usage.js';
 import { AppError } from '../../../shared/errors/app-error.js';
 import type { GeminiRuntimeService } from '../../app-settings/application/services/gemini-runtime-service.js';
 import type { GeminiFeature } from '../../app-settings/domain/gemini-config.js';
+import { classifyGeminiError } from '../../../shared/ai/ai-error-classifier.js';
 
 export interface GeminiClientConfig {
   apiKey?: string;
@@ -21,7 +22,7 @@ export class GeminiClient {
   private readonly runtimeService?: GeminiRuntimeService;
 
   constructor(config: GeminiClientConfig) {
-    this.modelName = config.model || 'gemini-3.5-flash-lite';
+    this.modelName = config.model || 'gemini-3.5-flash';
     this.runtimeService = config.runtimeService;
     if (config.apiKey && config.apiKey.trim()) {
       this.aiClient = new GoogleGenAI({ apiKey: config.apiKey.trim() });
@@ -40,6 +41,7 @@ export class GeminiClient {
       feature,
       contents: prompt,
       timeoutMs,
+      modality: 'text',
       failureMessage: 'Unable to reach AI service right now. Please check your connection and try again.',
       notConfiguredMessage: 'AI coaching service is not configured. Please ensure GEMINI_API_KEY is set.',
     });
@@ -57,6 +59,7 @@ export class GeminiClient {
       feature: 'meal_photo',
       contents: [{ inlineData: { mimeType: image.mimeType, data: stripDataUrlPrefix(image.base64) } }, prompt],
       timeoutMs,
+      modality: 'vision',
       failureMessage: 'Unable to analyze meal image right now. Please try again.',
       notConfiguredMessage: 'AI service is not configured. Please ensure GEMINI_API_KEY is set.',
     });
@@ -74,9 +77,58 @@ export class GeminiClient {
       feature: 'voice_meal',
       contents: [{ inlineData: { mimeType: audio.mimeType, data: stripDataUrlPrefix(audio.base64) } }, prompt],
       timeoutMs,
+      modality: 'audio',
       failureMessage: 'Unable to parse voice meal audio right now. Please try again.',
       notConfiguredMessage: 'AI service is not configured. Please ensure GEMINI_API_KEY is set.',
     });
+  }
+
+  /**
+   * Transcribes spoken audio (Tamil, Tanglish, English) to text using Gemini multimodal input.
+   */
+  async transcribeAudio(
+    audio: { mimeType: string; base64: string },
+    timeoutMs = 25_000,
+  ): Promise<{ transcript: string; detectedLanguage: string }> {
+    const prompt = `You are an accurate multilingual speech-to-text transcriber for the FitOnus health app.
+Transcribe the speech in this audio clip into text.
+RULES:
+1. Accurately support English, Tamil (தமிழ் script), and Tanglish (Tamil written phonetically in English script, e.g. "inniku leg workout mudichiten", "two dosai and sambar sapten").
+2. Output your response STRICTLY as a VALID JSON object matching:
+{
+  "transcript": "Exact transcription of the spoken words",
+  "detectedLanguage": "en | ta | tanglish"
+}
+Do not include any explanation or extra text outside the JSON object.`;
+
+    const raw = await this.generate({
+      feature: 'coach_chat',
+      contents: [{ inlineData: { mimeType: audio.mimeType, data: stripDataUrlPrefix(audio.base64) } }, prompt],
+      timeoutMs,
+      modality: 'audio',
+      failureMessage: 'Unable to transcribe spoken audio right now. Please try again.',
+      notConfiguredMessage: 'AI coaching service is not configured. Please ensure GEMINI_API_KEY is set.',
+    });
+
+    let cleaned = raw.trim();
+    if (cleaned.startsWith('```json')) {
+      cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+
+    try {
+      const parsed = JSON.parse(cleaned);
+      return {
+        transcript: String(parsed.transcript || '').trim(),
+        detectedLanguage: String(parsed.detectedLanguage || 'en'),
+      };
+    } catch {
+      return {
+        transcript: raw.trim(),
+        detectedLanguage: 'en',
+      };
+    }
   }
 
   /**
@@ -92,8 +144,9 @@ export class GeminiClient {
     timeoutMs: number;
     failureMessage: string;
     notConfiguredMessage: string;
+    modality?: 'text' | 'vision' | 'audio';
   }): Promise<string> {
-    const { feature, contents, timeoutMs, failureMessage, notConfiguredMessage } = params;
+    const { feature, contents, timeoutMs, failureMessage, notConfiguredMessage, modality } = params;
     const request = (client: GoogleGenAI, model: string) =>
       runWithAiTimeout(timeoutMs, (signal) =>
         client.models.generateContent({ model, contents, config: { abortSignal: signal } }),
@@ -104,6 +157,7 @@ export class GeminiClient {
         const result = await this.runtimeService.executeWithTelemetry({
           requestId: `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           feature,
+          modality,
           execute: request,
         });
         return result.text;
@@ -129,34 +183,38 @@ export class GeminiClient {
   private handleGeminiError(err: unknown, defaultMessage = 'AI service is temporarily unavailable. Please try again.'): never {
     if (err instanceof AppError) throw err;
 
-    const errorMessage = err instanceof Error ? err.message : String(err);
-
-    if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-      throw new AppError(
-        'rate_limited',
-        'RATE_LIMITED',
-        'The AI service is currently busy due to high traffic. Please wait a moment and try again.',
-      );
-    }
-
-    if (errorMessage.includes('404') || errorMessage.includes('NOT_FOUND')) {
+    const classified = classifyGeminiError(err);
+    if (classified.kind === 'AUTH_ERROR') {
       throw new AppError(
         'unavailable',
         'SERVICE_UNAVAILABLE',
-        'Configured AI model is unavailable. Please verify model configuration.',
+        'AI coaching service configuration error. Please ensure credentials are valid.',
       );
     }
 
-    if (
-      errorMessage.includes('503') ||
-      errorMessage.includes('UNAVAILABLE') ||
-      errorMessage.includes('demand') ||
-      errorMessage.includes('high demand')
-    ) {
+    if (classified.isRateLimited) {
+      throw new AppError(
+        'rate_limited',
+        'RATE_LIMITED',
+        classified.userFriendlyMessage,
+        { retryAfterSeconds: classified.retryAfterSeconds },
+      );
+    }
+
+    if (classified.kind === 'HIGH_DEMAND_503') {
       throw new AppError(
         'unavailable',
         'SERVICE_UNAVAILABLE',
         'AI service is experiencing temporary peak demand. Please try again shortly.',
+        { retryAfterSeconds: classified.retryAfterSeconds },
+      );
+    }
+
+    if (classified.kind === 'MODEL_NOT_FOUND') {
+      throw new AppError(
+        'unavailable',
+        'SERVICE_UNAVAILABLE',
+        'Configured AI model is unavailable. Please verify model configuration.',
       );
     }
 

@@ -66,6 +66,7 @@ const appSchema = databaseSchema.extend({
   IDEMPOTENCY_LEASE_SECONDS: integer(60, 5, 3_600),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-3.5-flash-lite'),
+  GEMINI_FALLBACK_MODEL: z.string().default('gemini-3.1-flash-lite'),
   // Transactional e-mail (password reset). Unset/empty/"none" keeps the feature off (the endpoints answer 503).
   EMAIL_PROVIDER: z.preprocess(
     (value) => (typeof value === 'string' ? value.trim().toLowerCase() || undefined : value),
@@ -138,7 +139,7 @@ export type AppConfig = {
     publicRegistration: boolean;
   };
   security: { hmacSecret: string };
-  gemini: { apiKey?: string; model: string };
+  gemini: { apiKey?: string; model: string; fallbackModel: string };
   /** Outbound e-mail. `none` means no delivery channel is configured, so password reset stays disabled. */
   email: EmailConfig;
   notifications: NotificationsConfig;
@@ -352,6 +353,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
     gemini: {
       apiKey: parsed.GEMINI_API_KEY,
       model: parsed.GEMINI_MODEL,
+      fallbackModel: parsed.GEMINI_FALLBACK_MODEL,
     },
     email: toEmailConfig(parsed),
     notifications: toNotificationsConfig(parsed, serviceAccount),

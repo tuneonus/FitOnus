@@ -153,7 +153,7 @@ export function createContainer(
     auditLogger: admin.repository,
     encryptionKey: process.env.AI_ENCRYPTION_KEY || config.security.hmacSecret,
     fallbackApiKey: config.gemini.apiKey,
-    fallbackModel: config.gemini.model,
+    fallbackModel: config.gemini.fallbackModel,
   });
 
   const geminiClient = new GeminiClient({

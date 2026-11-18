@@ -8,6 +8,7 @@ export interface GeminiConfigResponse {
   previousKeyMask?: string | null;
   source?: 'database' | 'environment' | 'unconfigured';
   defaultModel: string;
+  fallbackModel?: string;
   featureModels?: {
     aiCoach: string;
     mealPhotoScanner: string;
@@ -27,16 +28,13 @@ export interface GeminiConfigResponse {
 export interface UpdateGeminiConfigPayload {
   apiKey?: string;
   defaultModel?: string;
+  fallbackModel?: string;
   featureModels?: {
     aiCoach?: string;
     mealPhotoScanner?: string;
     voiceMealEntry?: string;
     workoutGenerator?: string;
   };
-  coachModel?: string;
-  mealPhotoModel?: string;
-  voiceMealModel?: string;
-  workoutGeneratorModel?: string;
   expectedVersion?: number;
 }
 
@@ -45,12 +43,17 @@ export interface TestGeminiConnectionPayload {
   model?: string;
 }
 
+export type GeminiKeySource = 'database' | 'environment' | 'candidate' | 'unavailable';
+
 export interface TestGeminiConnectionResponse {
   success: boolean;
   latencyMs: number;
   model: string;
+  modelUsed?: string;
+  keySource?: GeminiKeySource;
   message: string;
-  testedAt: string;
+  error?: string;
+  testedAt?: string;
 }
 
 export interface RollbackGeminiKeyPayload {
@@ -76,6 +79,14 @@ export interface GeminiModelInfo {
   isDefault?: boolean;
 }
 
+export interface ModelCooldownStatus {
+  model: string;
+  isCoolingDown: boolean;
+  remainingSeconds: number;
+  reason: string;
+  failureCount?: number;
+}
+
 export interface GeminiUsageSummaryResponse {
   todayRequests: number;
   monthlyRequests?: number;
@@ -91,6 +102,9 @@ export interface GeminiUsageSummaryResponse {
   estimatedCostInr?: number;
   failedRequests: number;
   avgDurationMs: number;
+  fallbackCount?: number;
+  rateLimitedCount?: number;
+  cooldownStatus?: ModelCooldownStatus[];
 }
 
 export interface FeatureUsageBreakdown {

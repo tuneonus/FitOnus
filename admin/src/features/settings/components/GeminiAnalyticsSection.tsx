@@ -16,6 +16,7 @@ import {
   Mic,
   Dumbbell,
   CheckCircle2,
+  Zap,
 } from 'lucide-react';
 import { StatsCard } from '@/components/ui/StatsCard';
 import { Badge } from '@/components/ui/Badge';
@@ -127,6 +128,60 @@ export function GeminiAnalyticsSection({
           icon={<AlertTriangle className="h-4 w-4" />}
           accent="rose"
         />
+      </div>
+
+      {/* 1.5. Live Model Health & Cooldown Status */}
+      <div className="card space-y-3 p-4 border border-ink-800 bg-ink-900/50">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-brand-400" />
+            <h4 className="text-sm font-semibold text-ink-100">Live Model Availability & Rate Limit Protection</h4>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-ink-400">
+            <span>
+              Fallback Activations:{' '}
+              <strong className="text-amber-400 font-mono">{summary.fallbackCount ?? 0}</strong>
+            </span>
+            <span>
+              Rate Limit Throttles:{' '}
+              <strong className="text-rose-400 font-mono">{summary.rateLimitedCount ?? 0}</strong>
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          <div className="card-inset flex items-center justify-between p-3">
+            <div>
+              <p className="text-xs font-medium text-ink-300">Preferred Primary Model</p>
+              <p className="font-mono text-xs font-semibold text-ink-100">gemini-3.5-flash-lite</p>
+            </div>
+            {summary.cooldownStatus?.find((c) => c.model === 'gemini-3.5-flash-lite' && c.isCoolingDown) ? (
+              <Badge variant="warning" size="sm">
+                Cooling down ({summary.cooldownStatus.find((c) => c.model === 'gemini-3.5-flash-lite')?.remainingSeconds}s)
+              </Badge>
+            ) : (
+              <Badge variant="completed" size="sm">
+                Ready & Available
+              </Badge>
+            )}
+          </div>
+
+          <div className="card-inset flex items-center justify-between p-3">
+            <div>
+              <p className="text-xs font-medium text-ink-300">Preferred Fallback Model</p>
+              <p className="font-mono text-xs font-semibold text-ink-100">gemini-3.1-flash-lite</p>
+            </div>
+            {summary.cooldownStatus?.find((c) => c.model === 'gemini-3.1-flash-lite' && c.isCoolingDown) ? (
+              <Badge variant="warning" size="sm">
+                Cooling down ({summary.cooldownStatus.find((c) => c.model === 'gemini-3.1-flash-lite')?.remainingSeconds}s)
+              </Badge>
+            ) : (
+              <Badge variant="completed" size="sm">
+                Ready & Available
+              </Badge>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 2. Usage Breakdowns: Per-Feature & Per-Model */}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Keyboard, type TextInputInstance } from 'react-native';
 import { Check } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Screen } from '../../../shared/components/ui/Screen';
@@ -24,6 +24,10 @@ export function SignupScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  const nameRef = useRef<TextInputInstance>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   const strength = passwordStrength(password);
   const errors = {
@@ -55,7 +59,19 @@ export function SignupScreen() {
   };
 
   return (
-    <Screen showBack={true} keyboardAvoiding={true}>
+    <Screen
+      showBack={true}
+      keyboardAvoiding={true}
+      footer={
+        <Button
+          title={loading ? 'Creating account…' : 'Create account'}
+          size="lg"
+          fullWidth
+          loading={loading}
+          onPress={handleSubmit}
+        />
+      }
+    >
       <View style={styles.content}>
         <AuthHeader
           title="Create your account"
@@ -73,27 +89,41 @@ export function SignupScreen() {
 
         <View style={styles.inputsSection}>
           <TextField
+            ref={nameRef}
             label="First name"
+            placeholder="Enter your name"
             value={name}
             onChangeText={setName}
             error={submitted ? errors.name : undefined}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => emailRef.current?.focus()}
           />
 
           <TextField
+            ref={emailRef}
             label="Email"
+            placeholder="name@example.com"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
             error={submitted ? errors.email : undefined}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
 
           <View>
             <PasswordField
+              ref={passwordRef}
               label="Password"
+              placeholder="Enter password"
               value={password}
               onChange={setPassword}
               error={submitted ? errors.password : undefined}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
             />
             <PasswordStrength password={password} />
           </View>
@@ -128,15 +158,6 @@ export function SignupScreen() {
             {errors.terms}
           </Text>
         ) : null}
-
-        <Button
-          title={loading ? 'Creating account…' : 'Create account'}
-          size="lg"
-          fullWidth
-          loading={loading}
-          onPress={handleSubmit}
-          style={styles.signupButton}
-        />
 
         <AuthSwitchPrompt
           prompt="Already have an account?"
@@ -183,8 +204,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 6,
     marginLeft: 4,
-  },
-  signupButton: {
-    marginTop: 20,
   },
 });

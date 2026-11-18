@@ -7,12 +7,20 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { Mic, MicOff, Square, X } from 'lucide-react-native';
+import { Mic, MicOff, Square, Volume2, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
 import { Button } from '../../../shared/components/ui/Button';
-import { requestRecordingPermissionsAsync } from 'expo-audio';
+import {
+  requestRecordingPermissionsAsync,
+  useAudioRecorder,
+  RecordingPresets,
+  setAudioModeAsync,
+} from 'expo-audio';
+import { File } from 'expo-file-system';
 import { CoachApi } from '../../ai-coach/services/coach-api';
+import { speechService } from '../../ai-coach/services/speech-service';
+import { useCoachStore } from '../../ai-coach/store/coachStore';
 import { ActionBlock } from '../../ai-coach/components/blocks/ActionBlock';
 import { MetricsBlock } from '../../ai-coach/components/blocks/MetricsBlock';
 import type { Block, CoachResponse } from '../../ai-coach/types/coach';
@@ -20,6 +28,7 @@ import { useVoiceStore } from '../store/voiceStore';
 import { voiceCommands } from '../constants/commands';
 import { VoiceWaveform } from '../components/VoiceWaveform';
 import { useTheme } from '@/hooks/use-theme';
+import { normalizeMobileApiError } from '@/services/error-normalizer';
 
 type Phase = 'idle' | 'listening' | 'processing' | 'response' | 'error';
 
@@ -29,19 +38,50 @@ export function VoiceCoachScreen() {
   const { goBack } = useNavigation();
   const params = useRouteParams<{ cmd?: string }>();
   const { micPermission, setMicPermission } = useVoiceStore();
+  const addCompletedTurn = useCoachStore((s) => s.addCompletedTurn);
+  const conversationId = useCoachStore((s) => s.conversationId);
+
   const [phase, setPhase] = useState<Phase>('idle');
   const [command, setCommand] = useState(params.cmd ?? voiceCommands[0]!);
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState<CoachResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const sentParam = useRef(false);
+
+  // Stop recording, speech and reset audio mode when unmounting
+  useEffect(() => {
+    return () => {
+      if (recorder.isRecording) {
+        void recorder.stop();
+      }
+      void speechService.stop();
+      void setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
+      });
+    };
+  }, [recorder]);
 
   const handleRequestPermission = async () => {
     try {
       const res = await requestRecordingPermissionsAsync();
       setMicPermission(res.granted ? 'granted' : 'denied');
+      return res.granted;
     } catch {
       setMicPermission('denied');
+      return false;
     }
+  };
+
+  const handleClose = async () => {
+    if (recorder.isRecording) {
+      await recorder.stop();
+    }
+    await speechService.stop();
+    goBack();
   };
 
   const askCoach = async (queryText: string) => {
@@ -49,34 +89,126 @@ export function VoiceCoachScreen() {
     setResponse(null);
     setTranscript(queryText);
     setPhase('processing');
+    void speechService.stop();
+    setIsSpeaking(false);
 
     try {
-      const realResponse = await CoachApi.sendMessage({ message: queryText });
+      const currentConvoId = conversationId ?? undefined;
+      const realResponse = await CoachApi.sendMessage({
+        message: queryText,
+        conversationId: currentConvoId,
+      });
       setResponse(realResponse);
+      addCompletedTurn(queryText, realResponse);
       setPhase('response');
+
+      // Voice conversation mode: automatically read aloud the assistant's reply
+      if (realResponse.text) {
+        setIsSpeaking(true);
+        void speechService.speak('voice-response', realResponse.text, {
+          onDone: () => setIsSpeaking(false),
+          onError: () => setIsSpeaking(false),
+        });
+      }
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.error?.message ||
-        err?.response?.data?.message ||
-        err?.message ||
-        'Unable to reach AI Coach right now. Please check your network connection.';
-      setErrorMessage(msg);
+      const normalized = normalizeMobileApiError(
+        err,
+        'Unable to reach AI Coach right now. Please check your network connection.'
+      );
+      setErrorMessage(normalized.userMessage);
       setPhase('error');
     }
   };
 
-  const listen = () => {
-    if (micPermission !== 'granted') {
-      void handleRequestPermission();
-      return;
+  // If a command param was passed, trigger it once
+  useEffect(() => {
+    if (params.cmd && !sentParam.current) {
+      sentParam.current = true;
+      setCommand(params.cmd);
+      void askCoach(params.cmd);
     }
-    setPhase('listening');
-    setTranscript(command);
+  }, [params.cmd]);
+
+  const toggleAssistantSpeech = async () => {
+    if (!response?.text) return;
+    if (isSpeaking) {
+      await speechService.stop();
+      setIsSpeaking(false);
+    } else {
+      setIsSpeaking(true);
+      await speechService.speak('voice-response', response.text, {
+        onDone: () => setIsSpeaking(false),
+        onError: () => setIsSpeaking(false),
+      });
+    }
   };
 
-  const stop = () => {
-    setPhase('idle');
-    void askCoach(command);
+  const listen = async () => {
+    let granted = micPermission === 'granted';
+    if (!granted) {
+      granted = await handleRequestPermission();
+      if (!granted) return;
+    }
+
+    void speechService.stop();
+    setIsSpeaking(false);
+    setErrorMessage(null);
+
+    try {
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+      });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      setPhase('listening');
+      setTranscript('');
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Could not start microphone recording.');
+      setPhase('error');
+    }
+  };
+
+  const stop = async () => {
+    setPhase('processing');
+    try {
+      await recorder.stop();
+      const uri = recorder.uri;
+      if (!uri) {
+        setPhase('idle');
+        return;
+      }
+
+      const file = new File(uri);
+      const base64 = await file.base64();
+      if (!base64) {
+        setErrorMessage('Voice recording was empty. Please try speaking again.');
+        setPhase('error');
+        return;
+      }
+
+      const result = await CoachApi.transcribeAudio({
+        mimeType: 'audio/m4a',
+        base64,
+      });
+
+      const heardText = result.transcript?.trim();
+      if (!heardText) {
+        setErrorMessage("We couldn't hear any speech. Please try speaking again.");
+        setPhase('error');
+        return;
+      }
+
+      setTranscript(heardText);
+      await askCoach(heardText);
+    } catch (err: any) {
+      const normalized = normalizeMobileApiError(
+        err,
+        'Could not transcribe voice audio. Please try again.'
+      );
+      setErrorMessage(normalized.userMessage);
+      setPhase('error');
+    }
   };
 
   const updateBlock = (
@@ -97,7 +229,7 @@ export function VoiceCoachScreen() {
   const statusText: Record<Phase, string> = {
     idle: 'Tap the mic and speak',
     listening: 'Listening…',
-    processing: 'Thinking…',
+    processing: 'Understanding your request…',
     response: 'Coach',
     error: 'I didn’t catch that',
   };
@@ -120,7 +252,9 @@ export function VoiceCoachScreen() {
         </Text>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={goBack}
+          onPress={handleClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close voice coach"
           style={[styles.closeBtn, { backgroundColor: `${colors.heroInk}15` }]}
         >
           <X size={20} color={colors.heroInk} />
@@ -207,7 +341,13 @@ export function VoiceCoachScreen() {
                 </Text>
                 <Button
                   title="Try again"
-                  onPress={() => askCoach(command)}
+                  onPress={() => {
+                    if (transcript) {
+                      void askCoach(transcript);
+                    } else {
+                      void listen();
+                    }
+                  }}
                   style={{ marginTop: 20 }}
                 />
               </View>
@@ -215,6 +355,31 @@ export function VoiceCoachScreen() {
 
             {phase === 'response' && response && (
               <View style={styles.responseWrap}>
+                <View style={styles.responseHeaderRow}>
+                  <Text style={[styles.responseRole, { color: colors.heroMuted }]}>
+                    AI Coach
+                  </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={toggleAssistantSpeech}
+                    accessibilityRole="button"
+                    accessibilityLabel={isSpeaking ? 'Stop speaking' : 'Read aloud'}
+                    style={[
+                      styles.speakerBtn,
+                      {
+                        backgroundColor: isSpeaking
+                          ? `${colors.highlight}30`
+                          : `${colors.heroInk}15`,
+                      },
+                    ]}
+                  >
+                    {isSpeaking ? (
+                      <Square size={16} color={colors.highlight} fill={colors.highlight} />
+                    ) : (
+                      <Volume2 size={16} color={colors.heroInk} />
+                    )}
+                  </TouchableOpacity>
+                </View>
                 <Text style={[styles.responseText, { color: colors.heroInk }]}>
                   {response.text}
                 </Text>
@@ -253,7 +418,10 @@ export function VoiceCoachScreen() {
                       <TouchableOpacity
                         key={c}
                         activeOpacity={0.7}
-                        onPress={() => setCommand(c)}
+                        onPress={() => {
+                          setCommand(c);
+                          void askCoach(c);
+                        }}
                         style={[
                           styles.commandChip,
                           {
@@ -288,6 +456,8 @@ export function VoiceCoachScreen() {
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={stop}
+                  accessibilityRole="button"
+                  accessibilityLabel="Stop recording and send"
                   style={[
                     styles.bigMicBtn,
                     { backgroundColor: colors.heroInk },
@@ -300,6 +470,8 @@ export function VoiceCoachScreen() {
                   activeOpacity={0.85}
                   onPress={listen}
                   disabled={phase === 'processing'}
+                  accessibilityRole="button"
+                  accessibilityLabel="Start voice recording"
                   style={[
                     styles.bigMicBtn,
                     {
@@ -427,6 +599,24 @@ const styles = StyleSheet.create({
     marginTop: 24,
     gap: 16,
   },
+  responseHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  responseRole: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  speakerBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   responseText: {
     fontSize: 16,
     lineHeight: 24,
@@ -479,4 +669,3 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
 });
-

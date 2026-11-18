@@ -70,13 +70,13 @@ export const DEFAULT_PUBLIC_APP_CONFIG: PublicAppConfig = {
     storeUrl: 'https://play.google.com/store/apps/details?id=com.tuneonus.onusfit',
   },
   support: {
-    email: 'support@fitonus.com',
-    website: 'https://fitonus.com/support',
+    email: 'support@tuneonus.com',
+    website: 'https://www.tuneonus.com/onusfit/support',
     contactInfo: '+1 (800) 555-ONUS',
   },
   legal: {
-    privacyPolicyUrl: 'https://fitonus.com/privacy',
-    termsOfServiceUrl: 'https://fitonus.com/terms',
+    privacyPolicyUrl: 'https://www.tuneonus.com/privacy/onusfit',
+    termsOfServiceUrl: 'https://www.tuneonus.com/onusfit/terms',
   },
   features: {
     aiCoach: true,

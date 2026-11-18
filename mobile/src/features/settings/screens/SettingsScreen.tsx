@@ -4,6 +4,7 @@ import {
   Bell,
   Brain,
   CircleUserRound,
+  ExternalLink,
   Globe,
   HeartPulse,
   LogOut,
@@ -23,6 +24,8 @@ import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { AuthService } from '@/features/auth/services/auth-service';
 import { useSettings, useUpdateSettings } from '@/features/profile/hooks/use-settings';
 import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
+import { openUrl } from '@/shared/utils/openUrl';
+import { LEGAL_URLS } from '@/shared/constants/legalUrls';
 
 export function SettingsScreen() {
   const { colors } = useTheme();
@@ -133,6 +136,31 @@ export function SettingsScreen() {
               destructive
               chevron={false}
               onPress={() => setConfirmLogout(true)}
+            />
+          </ListGroup>
+        </View>
+
+        {/* About & Legal */}
+        <View style={styles.sectionBlock}>
+          <Text style={[styles.sectionHeading, { color: colors.muted }]}>About & Legal</Text>
+          <ListGroup>
+            <ListRow
+              icon={Shield}
+              title="Privacy Policy"
+              subtitle="How we handle your data"
+              onPress={() => void openUrl(LEGAL_URLS.privacy)}
+            />
+            <ListRow
+              icon={ExternalLink}
+              title="Terms of Service"
+              subtitle="Rules and health disclaimers"
+              onPress={() => void openUrl(LEGAL_URLS.terms)}
+            />
+            <ListRow
+              icon={ExternalLink}
+              title="Help & Support"
+              subtitle="FAQs and contact"
+              onPress={() => void openUrl(LEGAL_URLS.support)}
             />
           </ListGroup>
         </View>

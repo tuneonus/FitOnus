@@ -2,10 +2,12 @@ import type { Actor } from '../../../../shared/auth/actor.js';
 import { assertPermission } from '../../../../shared/auth/actor.js';
 import type { GeminiAdminConfigView } from '../../domain/gemini-config.js';
 import type { AdminAuditLoggerPort, AppSettingsRepository } from '../ports.js';
+import type { GeminiRuntimeService } from '../services/gemini-runtime-service.js';
 
 export interface RollbackGeminiKeyDeps {
   repo: AppSettingsRepository;
   auditLogger?: AdminAuditLoggerPort;
+  runtimeService?: GeminiRuntimeService;
 }
 
 export class RollbackGeminiKeyUseCase {
@@ -22,6 +24,11 @@ export class RollbackGeminiKeyUseCase {
       expectedVersion,
       actor.userId,
     );
+
+    // Refresh runtime cache immediately
+    if (this.deps.runtimeService) {
+      await this.deps.runtimeService.refreshCache().catch(() => {});
+    }
 
     if (this.deps.auditLogger) {
       await this.deps.auditLogger
@@ -46,6 +53,7 @@ export class RollbackGeminiKeyUseCase {
       isConfigured: Boolean(updated.encryptedApiKey),
       canRollbackKey: Boolean(updated.previousEncryptedApiKey),
       defaultModel,
+      fallbackModel: updated.fallbackModel || 'gemini-3.1-flash-lite',
       featureModels: {
         aiCoach: updated.coachModel || defaultModel,
         mealPhotoScanner: updated.mealPhotoModel || defaultModel,

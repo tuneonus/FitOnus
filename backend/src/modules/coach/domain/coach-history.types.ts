@@ -16,6 +16,7 @@ export interface StoredChatMessage {
   blocks?: Block[];
   sources?: string[];
   followUps?: string[];
+  feedback?: 'like' | 'dislike' | 'none' | null;
   createdAt: string;
 }
 

@@ -1,6 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Brain, Database, RefreshCw, Sparkles, AlertTriangle } from 'lucide-react-native';
+import {
+  Brain,
+  Database,
+  RefreshCw,
+  Sparkles,
+  AlertTriangle,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  Volume2,
+  VolumeX,
+} from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
+import { showToast } from '@/shared/stores/toastStore';
+import { useCoachStore } from '../store/coachStore';
 import type { ActionStatus, Block, CoachMessage } from '../types/coach';
 import { ThinkingIndicator } from './ThinkingIndicator';
 import { MetricsBlock } from './blocks/MetricsBlock';
@@ -28,6 +44,40 @@ export function AssistantMessage({
   readOnly,
 }: AssistantMessageProps) {
   const { colors } = useTheme();
+  const [copied, setCopied] = useState(false);
+
+  const speakingMessageId = useCoachStore((s) => s.speakingMessageId);
+  const toggleSpeech = useCoachStore((s) => s.toggleSpeech);
+  const setFeedback = useCoachStore((s) => s.setFeedback);
+  const isSpeaking = speakingMessageId === message.id;
+
+  const handleCopy = async () => {
+    if (!message.text) return;
+    try {
+      Haptics.selectionAsync().catch(() => {});
+      await Clipboard.setStringAsync(message.text);
+      setCopied(true);
+      showToast({ message: 'Copied to clipboard' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast({ tone: 'error', message: 'Failed to copy text' });
+    }
+  };
+
+  const handleFeedback = (val: 'like' | 'dislike') => {
+    Haptics.selectionAsync().catch(() => {});
+    const newFeedback = message.feedback === val ? 'none' : val;
+    void setFeedback(message.id, newFeedback);
+    if (newFeedback !== 'none') {
+      showToast({ message: newFeedback === 'like' ? 'Thanks for the feedback!' : 'Feedback recorded' });
+    }
+  };
+
+  const handleToggleSpeech = () => {
+    if (!message.text) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    void toggleSpeech(message.id, message.text);
+  };
 
   const renderBlock = (block: Block, i: number) => {
     switch (block.type) {
@@ -162,6 +212,83 @@ export function AssistantMessage({
                 Coaching insight from your data, not a medical diagnosis. Talk to a
                 doctor about symptoms or persistent changes.
               </Text>
+            )}
+
+            {message.text && (
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleCopy}
+                  accessibilityLabel="Copy response"
+                  style={[styles.actionBtn, { borderColor: colors.line }]}
+                >
+                  {copied ? (
+                    <Check size={13} color={colors.accentStrong} />
+                  ) : (
+                    <Copy size={13} color={colors.muted} />
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => handleFeedback('like')}
+                  accessibilityLabel="Like response"
+                  style={[
+                    styles.actionBtn,
+                    { borderColor: colors.line },
+                    message.feedback === 'like' && {
+                      backgroundColor: `${colors.accent}20`,
+                      borderColor: colors.accent,
+                    },
+                  ]}
+                >
+                  <ThumbsUp
+                    size={13}
+                    color={message.feedback === 'like' ? colors.accentStrong : colors.muted}
+                    fill={message.feedback === 'like' ? colors.accentStrong : 'none'}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => handleFeedback('dislike')}
+                  accessibilityLabel="Dislike response"
+                  style={[
+                    styles.actionBtn,
+                    { borderColor: colors.line },
+                    message.feedback === 'dislike' && {
+                      backgroundColor: `${colors.bad}20`,
+                      borderColor: colors.bad,
+                    },
+                  ]}
+                >
+                  <ThumbsDown
+                    size={13}
+                    color={message.feedback === 'dislike' ? colors.bad : colors.muted}
+                    fill={message.feedback === 'dislike' ? colors.bad : 'none'}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleToggleSpeech}
+                  accessibilityLabel={isSpeaking ? 'Stop speech' : 'Read aloud'}
+                  style={[
+                    styles.actionBtn,
+                    { borderColor: colors.line },
+                    isSpeaking && {
+                      backgroundColor: `${colors.accent}25`,
+                      borderColor: colors.accentStrong,
+                    },
+                  ]}
+                >
+                  {isSpeaking ? (
+                    <VolumeX size={14} color={colors.accentStrong} />
+                  ) : (
+                    <Volume2 size={14} color={colors.muted} />
+                  )}
+                </TouchableOpacity>
+              </View>
             )}
 
             {!readOnly && message.followUps && onFollowUp && (
@@ -303,6 +430,21 @@ const styles = StyleSheet.create({
   },
   followUpText: {
     fontSize: 13,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  actionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

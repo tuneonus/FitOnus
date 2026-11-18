@@ -4,10 +4,12 @@ import { AppError } from '../../../../shared/errors/app-error.js';
 import { encryptSecret, maskApiKey } from '../../../../shared/security/encryption.js';
 import type { GeminiAdminConfigView, GeminiConfigRecord } from '../../domain/gemini-config.js';
 import type { AdminAuditLoggerPort, AppSettingsRepository } from '../ports.js';
+import type { GeminiRuntimeService } from '../services/gemini-runtime-service.js';
 
 export interface UpdateGeminiConfigInput {
   apiKey?: string;
   defaultModel?: string;
+  fallbackModel?: string;
   featureModels?: {
     aiCoach?: string;
     mealPhotoScanner?: string;
@@ -21,6 +23,7 @@ export interface UpdateGeminiConfigDeps {
   repo: AppSettingsRepository;
   encryptionKey: string;
   auditLogger?: AdminAuditLoggerPort;
+  runtimeService?: GeminiRuntimeService;
 }
 
 export class UpdateGeminiConfigUseCase {
@@ -74,6 +77,18 @@ export class UpdateGeminiConfigUseCase {
       auditDetails.defaultModel = input.defaultModel;
     }
 
+    if (input.fallbackModel) {
+      if (!validModelNames.has(input.fallbackModel)) {
+        throw new AppError(
+          'bad_request',
+          'VALIDATION_FAILED',
+          `Fallback model "${input.fallbackModel}" is not supported. Supported models: ${Array.from(validModelNames).join(', ')}`,
+        );
+      }
+      updates.fallbackModel = input.fallbackModel;
+      auditDetails.fallbackModel = input.fallbackModel;
+    }
+
     if (input.featureModels) {
       const fm = input.featureModels;
 
@@ -114,6 +129,11 @@ export class UpdateGeminiConfigUseCase {
       actor.userId,
     );
 
+    // Refresh runtime cache immediately
+    if (this.deps.runtimeService) {
+      await this.deps.runtimeService.refreshCache().catch(() => {});
+    }
+
     // 3. Write Audit Log
     if (this.deps.auditLogger) {
       const action = updates.encryptedApiKey
@@ -142,6 +162,7 @@ export class UpdateGeminiConfigUseCase {
       isConfigured: Boolean(updated.encryptedApiKey),
       canRollbackKey: Boolean(updated.previousEncryptedApiKey),
       defaultModel,
+      fallbackModel: updated.fallbackModel || 'gemini-3.1-flash-lite',
       featureModels: {
         aiCoach: updated.coachModel || defaultModel,
         mealPhotoScanner: updated.mealPhotoModel || defaultModel,

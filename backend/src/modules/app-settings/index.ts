@@ -90,10 +90,18 @@ export function createAppSettingsModule(options: CreateAppSettingsModuleOptions)
     fallbackModel: options.fallbackModel,
   });
 
+  const runtimeService = new GeminiRuntimeService({
+    repo: repository,
+    encryptionKey: options.encryptionKey,
+    fallbackApiKey: options.fallbackApiKey,
+    fallbackModel: options.fallbackModel,
+  });
+
   const updateGeminiConfig = new UpdateGeminiConfigUseCase({
     repo: repository,
     encryptionKey: options.encryptionKey,
     auditLogger: options.auditLogger,
+    runtimeService,
   });
 
   const testGeminiConnection = new TestGeminiConnectionUseCase({
@@ -106,16 +114,10 @@ export function createAppSettingsModule(options: CreateAppSettingsModuleOptions)
   const rollbackGeminiKey = new RollbackGeminiKeyUseCase({
     repo: repository,
     auditLogger: options.auditLogger,
+    runtimeService,
   });
 
   const geminiUsageAnalytics = new GetGeminiUsageAnalyticsUseCases(repository);
-
-  const runtimeService = new GeminiRuntimeService({
-    repo: repository,
-    encryptionKey: options.encryptionKey,
-    fallbackApiKey: options.fallbackApiKey,
-    fallbackModel: options.fallbackModel,
-  });
 
   const useCases = {
     getAppSettings,

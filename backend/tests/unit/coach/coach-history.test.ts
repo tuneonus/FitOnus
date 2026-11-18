@@ -50,6 +50,7 @@ describe('AI Coach Conversation History Use Case', () => {
       deleteConversation: vi.fn().mockResolvedValue(true),
       addMessage: vi.fn().mockResolvedValue(undefined),
       getMessages: vi.fn().mockResolvedValue([]),
+      setMessageFeedback: vi.fn().mockResolvedValue(true),
     };
     useCase = new ManageConversationsUseCase(mockConvoRepo);
   });

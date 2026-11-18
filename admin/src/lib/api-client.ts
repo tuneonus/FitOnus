@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@/types';
 import { getAuthToken } from './token-storage';
+import { normalizeAdminApiError } from './error-normalizer';
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1/admin';
@@ -47,13 +48,24 @@ export async function apiClient<T>(
       ? AbortSignal.timeout(15000)
       : undefined;
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-    cache: options.cache ?? 'no-store',
-    signal: options.signal ?? timeoutSignal,
-    credentials: 'include', // Sends HttpOnly fitonus_admin_token cookie
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      cache: options.cache ?? 'no-store',
+      signal: options.signal ?? timeoutSignal,
+      credentials: 'include', // Sends HttpOnly fitonus_admin_token cookie
+    });
+  } catch (networkErr: unknown) {
+    const normalized = normalizeAdminApiError(networkErr);
+    throw new ApiError(
+      normalized.userMessage,
+      normalized.status ?? 0,
+      normalized.code,
+      networkErr
+    );
+  }
 
   const contentType = res.headers.get('content-type') || '';
   const isJson = contentType.includes('application/json');
@@ -61,10 +73,27 @@ export async function apiClient<T>(
 
   if (!res.ok) {
     const errorData = data?.error || {};
-    const message =
-      errorData.message ||
-      data?.message ||
-      `Request failed with status ${res.status}`;
+    let details: Record<string, unknown> | unknown[] | unknown = errorData.details;
+
+    if (res.status === 429) {
+      const retryHeader = res.headers.get('retry-after') || res.headers.get('Retry-After');
+      if (retryHeader) {
+        const retrySeconds = Number(retryHeader);
+        if (!Number.isNaN(retrySeconds)) {
+          details = {
+            ...(typeof details === 'object' && details ? details : {}),
+            retryAfterSeconds: retrySeconds,
+          };
+        }
+      }
+    }
+
+    const normalized = normalizeAdminApiError({
+      status: res.status,
+      code: errorData.code,
+      details,
+      message: errorData.message || data?.message,
+    });
 
     // Broadcast session expiration event for unauthenticated responses on protected endpoints
     if (
@@ -73,11 +102,13 @@ export async function apiClient<T>(
       !window.location.pathname.startsWith('/login')
     ) {
       window.dispatchEvent(
-        new CustomEvent('fitonus:auth:expired', { detail: { message } })
+        new CustomEvent('fitonus:auth:expired', {
+          detail: { message: errorData.message || normalized.userMessage },
+        })
       );
     }
 
-    throw new ApiError(message, res.status, errorData.code, errorData.details);
+    throw new ApiError(normalized.userMessage, res.status, errorData.code, details);
   }
 
   return data as ApiResponse<T>;

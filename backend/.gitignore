@@ -20,3 +20,6 @@ Thumbs.db
 # Local database files (never commit data)
 *.sqlite
 pgdata/
+backups/
+*.sql
+*.dump

@@ -7,6 +7,7 @@ import type { ChatWithCoachUseCase } from '../application/use-cases/chat-with-co
 import type { GetCoachInsightsUseCase } from '../application/use-cases/get-coach-insights.js';
 import type { ManageConversationsUseCase } from '../application/use-cases/manage-conversations.js';
 import type { ManageMemoriesUseCase } from '../application/use-cases/manage-memories.js';
+import type { GeminiClient } from '../infrastructure/gemini-client.js';
 import {
   chatRequestSchema,
   createConversationSchema,
@@ -14,10 +15,13 @@ import {
   getInsightsQuerySchema,
   listConversationsQuerySchema,
   renameConversationSchema,
+  setMessageFeedbackSchema,
   setMemorySettingsSchema,
+  transcribeAudioSchema,
   updateMemoryRequestSchema,
   type CoachInsightsResponseDto,
   type CoachResponseDto,
+  type TranscribeResponseDto,
 } from './coach.schemas.js';
 import type {
   ConversationDetail,
@@ -36,6 +40,8 @@ export interface CoachController {
   getConversation(req: Request): Promise<RouteResult<ConversationDetail>>;
   renameConversation(req: Request): Promise<RouteResult<ConversationSummary>>;
   deleteConversation(req: Request): Promise<RouteResult<{ success: boolean }>>;
+  setMessageFeedback(req: Request): Promise<RouteResult<{ success: boolean }>>;
+  transcribeAudio(req: Request): Promise<RouteResult<TranscribeResponseDto>>;
   listMemories(req: Request): Promise<RouteResult<MemoryListResponse>>;
   createMemory(req: Request): Promise<RouteResult<MemoryItem>>;
   updateMemory(req: Request): Promise<RouteResult<MemoryItem>>;
@@ -51,6 +57,7 @@ export function createCoachController(deps: {
   getCoachInsights: GetCoachInsightsUseCase;
   manageConversations?: ManageConversationsUseCase;
   manageMemories?: ManageMemoriesUseCase;
+  geminiClient?: GeminiClient;
 }): CoachController {
   const getConvoUseCase = () => {
     if (!deps.manageConversations) {
@@ -156,6 +163,32 @@ export function createCoachController(deps: {
         status: 200,
         message: 'Conversation deleted successfully',
         data: { success: true },
+      };
+    },
+
+    async setMessageFeedback(req: Request) {
+      const actor = requireActor(req);
+      const messageId = String(req.params.messageId || req.params.id);
+      const { body } = getValidated(req, { body: setMessageFeedbackSchema });
+      await getConvoUseCase().setFeedback(actor.userId, messageId, body.feedback);
+      return {
+        status: 200,
+        message: 'Feedback updated successfully',
+        data: { success: true },
+      };
+    },
+
+    async transcribeAudio(req: Request) {
+      requireActor(req);
+      if (!deps.geminiClient) {
+        throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'AI audio transcription is not configured.');
+      }
+      const { body } = getValidated(req, { body: transcribeAudioSchema });
+      const data = await deps.geminiClient.transcribeAudio(body.audio);
+      return {
+        status: 200,
+        message: 'Audio transcribed successfully',
+        data,
       };
     },
 

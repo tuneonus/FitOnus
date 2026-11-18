@@ -1,37 +1,34 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet, type TextInputInstance } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
-import { TextField } from '../../../shared/components/ui/TextField';
+import { TextField, type TextFieldProps } from '../../../shared/components/ui/TextField';
 import { useTheme } from '@/hooks/use-theme';
 
-export type PasswordFieldProps = {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string | undefined;
-  error?: string | undefined;
-  hint?: string | undefined;
-  autoComplete?: string | undefined;
+export type PasswordFieldProps = Omit<TextFieldProps, 'trailing' | 'secureTextEntry' | 'onChange'> & {
+  onChange?: (value: string) => void;
 };
 
-export function PasswordField({
+export const PasswordField = React.forwardRef<TextInputInstance, PasswordFieldProps>(({
   label,
   value,
   onChange,
+  onChangeText,
   placeholder,
   error,
   hint,
-}: PasswordFieldProps) {
+  ...rest
+}, ref) => {
   const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
 
   return (
     <TextField
+      ref={ref}
       label={label}
       placeholder={placeholder}
       secureTextEntry={!visible}
       value={value}
-      onChangeText={onChange}
+      onChangeText={onChangeText ?? onChange}
       error={error}
       hint={hint}
       autoCapitalize="none"
@@ -50,9 +47,12 @@ export function PasswordField({
           )}
         </TouchableOpacity>
       }
+      {...rest}
     />
   );
-}
+});
+
+PasswordField.displayName = 'PasswordField';
 
 const styles = StyleSheet.create({
   eyeButton: {

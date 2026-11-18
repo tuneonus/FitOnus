@@ -16,7 +16,10 @@ import {
   memoryItemSchema,
   memoryListResponseSchema,
   renameConversationSchema,
+  setMessageFeedbackSchema,
   setMemorySettingsSchema,
+  transcribeAudioSchema,
+  transcribeResponseSchema,
   updateMemoryRequestSchema,
 } from './coach.schemas.js';
 
@@ -159,6 +162,48 @@ export function createCoachRoutes(
           schema: z.object({ success: z.boolean() }),
         },
         handler: (req) => controller.deleteConversation(req),
+      }),
+
+      // 7b. Set Message Feedback
+      defineRoute({
+        method: 'patch',
+        path: '/messages/:id/feedback',
+        summary: 'Set feedback for a coach message',
+        description: 'Records user feedback (like, dislike, none) for an assistant message.',
+        tags: ['Coach'],
+        access: { kind: 'authenticated' },
+        request: {
+          params: z.object({ id: z.string() }),
+          body: setMessageFeedbackSchema,
+        },
+        response: {
+          status: 200,
+          description: 'Feedback updated successfully',
+          message: 'Feedback updated successfully',
+          schema: z.object({ success: z.boolean() }),
+        },
+        handler: (req) => controller.setMessageFeedback(req),
+      }),
+
+      // 7c. Transcribe Spoken Audio
+      defineRoute({
+        method: 'post',
+        path: '/transcribe',
+        summary: 'Transcribe spoken audio to text',
+        description: 'Transcribes recorded speech in English, Tamil, or Tanglish into text.',
+        tags: ['Coach'],
+        access: { kind: 'authenticated' },
+        middleware: authMiddleware,
+        request: {
+          body: transcribeAudioSchema,
+        },
+        response: {
+          status: 200,
+          description: 'Audio transcribed successfully',
+          message: 'Audio transcribed successfully',
+          schema: transcribeResponseSchema,
+        },
+        handler: (req) => controller.transcribeAudio(req),
       }),
 
       // 8. List Memories & Suggestions

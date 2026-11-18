@@ -12,6 +12,7 @@ export interface GeminiConfigRecord {
   previousEncryptedApiKey: string | null;
   previousKeyMask: string | null;
   defaultModel: string;
+  fallbackModel: string;
   coachModel: string;
   mealPhotoModel: string;
   voiceMealModel: string;
@@ -27,6 +28,7 @@ export interface GeminiAdminConfigView {
   isConfigured: boolean;
   canRollbackKey: boolean;
   defaultModel: string;
+  fallbackModel: string;
   featureModels: {
     aiCoach: string;
     mealPhotoScanner: string;
@@ -81,6 +83,15 @@ export interface GeminiUsageSummary {
   estimatedMonthlyCostUsd: number;
   failedRequests: number;
   avgDurationMs: number;
+  fallbackCount?: number;
+  rateLimitedCount?: number;
+  cooldownStatus?: Array<{
+    model: string;
+    isCoolingDown: boolean;
+    remainingSeconds: number;
+    reason: string;
+    failureCount: number;
+  }>;
 }
 
 export interface GeminiFeatureUsage {

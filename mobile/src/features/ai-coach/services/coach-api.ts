@@ -180,6 +180,28 @@ export const CoachApi = {
     return response.data.data;
   },
 
+  setMessageFeedback: async (
+    messageId: string,
+    feedback: 'like' | 'dislike' | 'none',
+  ): Promise<boolean> => {
+    const response = await apiClient.patch<{
+      success: boolean;
+      data: { success: boolean };
+    }>(`/coach/messages/${messageId}/feedback`, { feedback });
+    return Boolean(response.data?.data?.success);
+  },
+
+  transcribeAudio: async (audio: {
+    mimeType: string;
+    base64: string;
+  }): Promise<{ transcript: string; detectedLanguage: string }> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      data: { transcript: string; detectedLanguage: string };
+    }>('/coach/transcribe', { audio }, { timeout: 35_000 });
+    return response.data.data;
+  },
+
   /** @deprecated Use InsightsApi.getInsights directly */
   getInsights: InsightsApi.getInsights,
 };

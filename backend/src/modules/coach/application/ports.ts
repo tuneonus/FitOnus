@@ -51,6 +51,7 @@ export interface ConversationRepository {
    */
   addMessage(userId: string, conversationId: string, message: StoredChatMessage): Promise<void>;
   getMessages(userId: string, conversationId: string, limit?: number): Promise<StoredChatMessage[]>;
+  setMessageFeedback(userId: string, messageId: string, feedback: 'like' | 'dislike' | 'none'): Promise<boolean>;
 }
 
 export interface MemoryRepository {

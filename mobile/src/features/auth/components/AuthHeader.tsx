@@ -18,7 +18,7 @@ export function AuthHeader({ title, subtitle, showMark = true }: AuthHeaderProps
     <View style={styles.container}>
       {showMark ? (
         <View style={styles.mark}>
-          <Logo size={44} />
+          <Logo size={64} />
         </View>
       ) : null}
       <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>

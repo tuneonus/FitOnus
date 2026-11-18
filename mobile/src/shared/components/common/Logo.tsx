@@ -12,7 +12,7 @@ export type LogoProps = {
 };
 
 export function Logo({
-  size = 40,
+  size = 56,
   withWordmark = false,
   tone = 'default',
   withTagline = false,

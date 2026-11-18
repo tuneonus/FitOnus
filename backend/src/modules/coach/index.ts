@@ -78,6 +78,7 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
     getCoachInsights: insightsUseCase,
     manageConversations,
     manageMemories,
+    geminiClient: geminiService.client,
   });
   const routes = createCoachRoutes(options.basePath, controller, options.rateLimiter);
 

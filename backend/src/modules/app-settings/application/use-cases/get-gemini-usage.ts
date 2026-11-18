@@ -9,6 +9,7 @@ import type {
   GeminiUsageSummary,
 } from '../../domain/gemini-config.js';
 import type { AppSettingsRepository } from '../ports.js';
+import { defaultModelCooldownTracker } from '../../../../shared/ai/model-cooldown-tracker.js';
 
 export interface GetGeminiUsageEventsFilters {
   feature?: string;
@@ -25,7 +26,11 @@ export class GetGeminiUsageAnalyticsUseCases {
 
   async getSummary(actor: Actor): Promise<GeminiUsageSummary> {
     assertPermission(actor, 'admin:access');
-    return this.repo.getGeminiUsageSummary();
+    const summary = await this.repo.getGeminiUsageSummary();
+    return {
+      ...summary,
+      cooldownStatus: defaultModelCooldownTracker.getStatus(),
+    };
   }
 
   async getByFeature(actor: Actor, from?: string, to?: string): Promise<GeminiFeatureUsage[]> {

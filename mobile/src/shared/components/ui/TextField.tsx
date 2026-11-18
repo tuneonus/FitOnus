@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TextInputProps, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, TextInput, TextInputProps, StyleSheet, ViewStyle, type TextInputInstance } from 'react-native';
 import { premium } from '@/shared/theme/premium';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -14,7 +14,7 @@ export type TextFieldProps = Omit<TextInputProps, 'style'> & {
   style?: ViewStyle | undefined;
 };
 
-export function TextField({
+export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(({
   appearance = 'default',
   label,
   error,
@@ -24,11 +24,12 @@ export function TextField({
   hideLabel = false,
   style,
   ...inputProps
-}: TextFieldProps) {
+}, ref) => {
   const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 
-  const defaultPlaceholderColor = isDark ? 'rgba(164, 166, 154, 0.6)' : 'rgba(92, 93, 86, 0.6)';
+  const defaultPlaceholderColor = isDark ? 'rgba(241, 244, 249, 0.55)' : 'rgba(92, 93, 86, 0.65)';
+  const defaultBorderColor = isDark ? 'rgba(255, 255, 255, 0.25)' : colors.line;
 
   return (
     <View style={[styles.wrapper, style]}>
@@ -42,11 +43,13 @@ export function TextField({
             ...(appearance === 'premium'
               ? { minHeight: 56, height: undefined, borderRadius: premium.radius.control }
               : {}),
-            borderColor: error ? colors.bad : isFocused ? colors.accentStrong : 'transparent',
+            borderColor: error ? colors.bad : isFocused ? colors.accentStrong : defaultBorderColor,
+            borderWidth: isFocused || error ? 2 : 1.5,
           },
         ]}
       >
         <TextInput
+          ref={ref}
           style={[
             styles.input,
             appearance === 'premium' && { minHeight: 52, height: undefined, paddingVertical: 12 },
@@ -79,7 +82,9 @@ export function TextField({
       ) : null}
     </View>
   );
-}
+});
+
+TextField.displayName = 'TextField';
 
 const styles = StyleSheet.create({
   wrapper: {

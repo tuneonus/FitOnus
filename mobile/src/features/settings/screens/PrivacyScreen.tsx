@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Download, Eye } from 'lucide-react-native';
+import { Download, Eye, ExternalLink } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { Screen } from '@/shared/components/ui/Screen';
 import { Toggle } from '@/shared/components/ui/Toggle';
@@ -10,6 +10,8 @@ import { showToast } from '@/shared/stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { useUpdateSettings } from '@/features/profile/hooks/use-settings';
+import { openUrl } from '@/shared/utils/openUrl';
+import { LEGAL_URLS } from '@/shared/constants/legalUrls';
 
 const aiAccess = [
   'Today’s health data and trends',
@@ -130,6 +132,12 @@ export function PrivacyScreen() {
               title="AI memory"
               subtitle="View, edit or delete what the coach remembers"
               onPress={() => navigate('aiMemory')}
+            />
+            <ListRow
+              icon={ExternalLink}
+              title="Full Privacy Policy"
+              subtitle="View the complete policy on tuneonus.com"
+              onPress={() => void openUrl(LEGAL_URLS.privacy)}
             />
           </ListGroup>
 

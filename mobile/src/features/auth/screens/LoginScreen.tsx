@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Keyboard, type TextInputInstance } from 'react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Screen } from '../../../shared/components/ui/Screen';
 import { Button } from '../../../shared/components/ui/Button';
@@ -23,6 +23,9 @@ export function LoginScreen() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [failures, setFailures] = useState(0);
+
+  const emailRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   const handleSubmit = async () => {
     const nextErrors: typeof errors = {};
@@ -62,7 +65,19 @@ export function LoginScreen() {
   };
 
   return (
-    <Screen showBack={true} keyboardAvoiding={true}>
+    <Screen
+      showBack={true}
+      keyboardAvoiding={true}
+      footer={
+        <Button
+          title={loading ? 'Logging in…' : 'Log in'}
+          size="lg"
+          fullWidth
+          loading={loading}
+          onPress={handleSubmit}
+        />
+      }
+    >
       <View style={styles.content}>
         <AuthHeader
           title="Welcome back"
@@ -80,6 +95,7 @@ export function LoginScreen() {
 
         <View style={styles.inputsSection}>
           <TextField
+            ref={emailRef}
             label="Email"
             placeholder="name@example.com"
             keyboardType="email-address"
@@ -87,14 +103,20 @@ export function LoginScreen() {
             value={email}
             onChangeText={setEmail}
             error={errors.email}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
 
           <PasswordField
+            ref={passwordRef}
             label="Password"
             placeholder="Enter password"
             value={password}
             onChange={setPassword}
             error={errors.password}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
         </View>
 
@@ -108,15 +130,6 @@ export function LoginScreen() {
             Forgot password?
           </Text>
         </TouchableOpacity>
-
-        <Button
-          title={loading ? 'Logging in…' : 'Log in'}
-          size="lg"
-          fullWidth
-          loading={loading}
-          onPress={handleSubmit}
-          style={styles.loginButton}
-        />
 
         <AuthSwitchPrompt
           prompt="Don’t have an account?"
@@ -147,8 +160,5 @@ const styles = StyleSheet.create({
   forgotText: {
     fontSize: 14,
     fontWeight: '700',
-  },
-  loginButton: {
-    marginTop: 20,
   },
 });

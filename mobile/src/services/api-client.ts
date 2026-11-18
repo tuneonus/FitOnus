@@ -6,11 +6,19 @@ import { logger } from '../utils/logger';
 import { SecureStorageService } from './secure-storage';
 import { AuthRepository } from '../features/auth/api/auth-repository';
 import { useAuthStore } from '../features/auth/stores/auth-store';
+import { normalizeMobileApiError, type NormalizedError } from './error-normalizer';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
     fitonusSession?: ReturnType<typeof captureUserSession>;
   }
+}
+
+export interface ApiClientError extends Error {
+  normalized?: NormalizedError;
+  userMessage?: string;
+  response?: any;
+  config?: any;
 }
 
 export const apiClient = axios.create({
@@ -129,8 +137,36 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     originalRequest?.fitonusSession?.assertCurrent();
+
+    // Enrich 429 response details with Retry-After header if available
+    if (error?.response?.status === 429) {
+      const headers = error.response.headers;
+      const retryHeader = headers?.['retry-after'] || headers?.['Retry-After'];
+      if (retryHeader) {
+        const retrySeconds = Number(retryHeader);
+        if (!Number.isNaN(retrySeconds)) {
+          if (!error.response.data || typeof error.response.data !== 'object') {
+            error.response.data = {};
+          }
+          if (!error.response.data.error || typeof error.response.data.error !== 'object') {
+            error.response.data.error = {};
+          }
+          const currentDetails = error.response.data.error.details;
+          error.response.data.error.details = {
+            ...(typeof currentDetails === 'object' && currentDetails ? currentDetails : {}),
+            retryAfterSeconds: retrySeconds,
+          };
+        }
+      }
+    }
+
+    // Attach normalized error for all downstream consumers
+    const normalized = normalizeMobileApiError(error);
+    error.normalized = normalized;
+    error.userMessage = normalized.userMessage;
+
     const errorData = error?.response?.data;
-    const errorMessage = errorData?.error?.message || errorData?.message || error.message;
+    const errorMessage = errorData?.error?.message || errorData?.message || normalized.userMessage;
 
     // One refresh + one retry per request: `_retry` guards against loops, auth routes never refresh.
     const canRefresh =

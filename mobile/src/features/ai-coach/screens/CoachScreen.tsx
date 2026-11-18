@@ -15,9 +15,15 @@ import { Composer } from '../components/Composer';
 export function CoachScreen() {
   const { navigate, isTabRoot } = useNavigation();
   const params = useRouteParams<{ q?: string }>();
-  const { messages, busy, send, retry, setActionStatus, newConversation } = useCoachStore();
+  const { messages, busy, send, retry, setActionStatus, newConversation, stopSpeech } = useCoachStore();
   const offline = useHealthStore((s) => s.status === 'offline');
   const sentParam = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      void stopSpeech();
+    };
+  }, [stopSpeech]);
 
   useEffect(() => {
     if (params.q && !sentParam.current) {

@@ -78,5 +78,19 @@ export class ManageConversationsUseCase {
       throw new AppError('not_found', 'NOT_FOUND', 'Conversation not found.');
     }
   }
+
+  async setFeedback(
+    userId: string,
+    messageId: string,
+    feedback: 'like' | 'dislike' | 'none',
+  ): Promise<void> {
+    if (!userId?.trim()) {
+      throw new AppError('unauthorized', 'UNAUTHENTICATED', 'Authentication is required.');
+    }
+    if (!messageId?.trim()) {
+      throw new AppError('validation', 'VALIDATION_FAILED', 'Message ID is required.');
+    }
+    await this.conversationRepo.setMessageFeedback(userId, messageId, feedback);
+  }
 }
 

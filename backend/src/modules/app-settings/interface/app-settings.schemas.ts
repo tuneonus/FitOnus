@@ -127,6 +127,7 @@ export const geminiAdminConfigResponseSchema = z.object({
   isConfigured: z.boolean(),
   canRollbackKey: z.boolean(),
   defaultModel: z.string(),
+  fallbackModel: z.string().default('gemini-3.1-flash-lite'),
   featureModels: z.object({
     aiCoach: z.string(),
     mealPhotoScanner: z.string(),
@@ -143,6 +144,7 @@ export const updateGeminiConfigRequest = {
   body: z.strictObject({
     apiKey: z.string().min(15, 'API key must be at least 15 characters').optional(),
     defaultModel: z.string().min(1).max(64).optional(),
+    fallbackModel: z.string().min(1).max(64).optional(),
     featureModels: z
       .strictObject({
         aiCoach: z.string().min(1).max(64).optional(),
@@ -165,7 +167,9 @@ export const testGeminiConnectionRequest = {
 export const testGeminiConnectionResponseSchema = z.object({
   success: z.boolean(),
   latencyMs: z.number().optional(),
+  model: z.string().optional(),
   modelUsed: z.string().optional(),
+  keySource: z.enum(['database', 'environment', 'candidate', 'unavailable']).optional(),
   message: z.string().optional(),
   error: z.string().optional(),
 });

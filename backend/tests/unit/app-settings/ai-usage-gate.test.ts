@@ -400,6 +400,7 @@ describe('Gemini usage telemetry records the authenticated user', () => {
     previousEncryptedApiKey: null,
     previousKeyMask: null,
     defaultModel: 'gemini-2.5-flash',
+    fallbackModel: 'gemini-3.1-flash-lite',
     coachModel: 'gemini-2.5-flash',
     mealPhotoModel: 'gemini-2.5-flash',
     voiceMealModel: 'gemini-2.5-flash',
@@ -456,11 +457,11 @@ describe('Gemini usage telemetry records the authenticated user', () => {
           requestId: 'req-2',
           feature: 'coach_chat',
           execute: async () => {
-            throw new Error('503 UNAVAILABLE');
+            throw new Error('provider network failure');
           },
         }),
       ),
-    ).rejects.toThrow('503 UNAVAILABLE');
+    ).rejects.toThrow('provider network failure');
 
     expect(recorded).toEqual([{ userId: USER, feature: 'coach_chat', status: 'failed' }]);
     expect(settings.store.actionCount(USER, 'coach_chat')).toBe(1);

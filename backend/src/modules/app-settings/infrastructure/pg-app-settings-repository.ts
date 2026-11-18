@@ -311,11 +311,12 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
       keyMask: row.key_mask ?? null,
       previousEncryptedApiKey: row.previous_encrypted_api_key ?? null,
       previousKeyMask: row.previous_key_mask ?? null,
-      defaultModel: row.default_model || 'gemini-2.5-flash',
-      coachModel: row.coach_model || row.default_model || 'gemini-2.5-flash',
-      mealPhotoModel: row.meal_photo_model || row.default_model || 'gemini-2.5-flash',
-      voiceMealModel: row.voice_meal_model || row.default_model || 'gemini-2.5-flash',
-      workoutGeneratorModel: row.workout_generator_model || row.default_model || 'gemini-2.5-flash',
+      defaultModel: row.default_model || 'gemini-3.5-flash-lite',
+      fallbackModel: row.fallback_model || 'gemini-3.1-flash-lite',
+      coachModel: row.coach_model || row.default_model || 'gemini-3.5-flash-lite',
+      mealPhotoModel: row.meal_photo_model || row.default_model || 'gemini-3.5-flash-lite',
+      voiceMealModel: row.voice_meal_model || row.default_model || 'gemini-3.5-flash-lite',
+      workoutGeneratorModel: row.workout_generator_model || row.default_model || 'gemini-3.5-flash-lite',
       version: row.version,
       updatedBy: row.updated_by ?? null,
       updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : String(row.updated_at),
@@ -325,7 +326,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
   async getGeminiConfig(): Promise<GeminiConfigRecord> {
     const res = await this.db.query(
       `SELECT provider, encrypted_api_key, key_mask, previous_encrypted_api_key, previous_key_mask,
-              default_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model,
+              default_model, fallback_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model,
               version, updated_by, updated_at
        FROM gemini_config
        WHERE provider = 'google_gemini'`,
@@ -333,11 +334,11 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
 
     if (res.rows.length === 0) {
       const inserted = await this.db.query(
-        `INSERT INTO gemini_config (provider, default_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model, version)
-         VALUES ('google_gemini', 'gemini-2.5-flash', 'gemini-2.5-flash', 'gemini-2.5-flash', 'gemini-2.5-flash', 'gemini-2.5-flash', 1)
+        `INSERT INTO gemini_config (provider, default_model, fallback_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model, version)
+         VALUES ('google_gemini', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash-lite', 1)
          ON CONFLICT (provider) DO UPDATE SET updated_at = NOW()
          RETURNING provider, encrypted_api_key, key_mask, previous_encrypted_api_key, previous_key_mask,
-                   default_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model,
+                   default_model, fallback_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model,
                    version, updated_by, updated_at`,
       );
       return this.mapGeminiConfigRow(inserted.rows[0]);
@@ -375,6 +376,10 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
       setClauses.push(`default_model = $${idx++}`);
       values.push(updates.defaultModel);
     }
+    if (updates.fallbackModel !== undefined) {
+      setClauses.push(`fallback_model = $${idx++}`);
+      values.push(updates.fallbackModel);
+    }
     if (updates.coachModel !== undefined) {
       setClauses.push(`coach_model = $${idx++}`);
       values.push(updates.coachModel);
@@ -407,7 +412,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
       SET ${setClauses.join(', ')}
       ${whereClause}
       RETURNING provider, encrypted_api_key, key_mask, previous_encrypted_api_key, previous_key_mask,
-                default_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model,
+                default_model, fallback_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model,
                 version, updated_by, updated_at
     `;
 
@@ -462,7 +467,8 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
 
     const modelDisplayNames: Record<string, string> = {
       'gemini-3.5-flash': 'Gemini 3.5 Flash (Fast, Multimodal, Recommended)',
-      'gemini-3.5-flash-lite': 'Gemini 3.5 Flash Lite (Lightweight, High-Volume)',
+      'gemini-3.5-flash-lite': 'Gemini 3.5 Flash Lite (Lightweight, High-Volume, Preferred Primary)',
+      'gemini-3.1-flash-lite': 'Gemini 3.1 Flash Lite (Fast Fallback, Multimodal)',
       'gemini-2.5-flash': 'Gemini 2.5 Flash (Fast, Multimodal)',
       'gemini-2.5-flash-lite': 'Gemini 2.5 Flash Lite (Lightweight, High-Volume)',
       'gemini-2.5-pro': 'Gemini 2.5 Pro (Deep Reasoning & Analysis)',
@@ -604,6 +610,8 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
       estimated_monthly_cost_usd: string;
       failed_requests: string;
       avg_duration_ms: string;
+      fallback_count: string;
+      rate_limited_count: string;
     }>(
       `SELECT
          COUNT(CASE WHEN created_at >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::DATE THEN 1 END)::text AS today_requests,
@@ -614,7 +622,9 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
          COALESCE(SUM(cached_tokens), 0)::text AS cached_tokens,
          COALESCE(SUM(CASE WHEN created_at >= date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') THEN estimated_cost_usd ELSE 0 END), 0)::text AS estimated_monthly_cost_usd,
          COUNT(CASE WHEN status != 'success' THEN 1 END)::text AS failed_requests,
-         COALESCE(ROUND(AVG(duration_ms)), 0)::text AS avg_duration_ms
+         COALESCE(ROUND(AVG(duration_ms)), 0)::text AS avg_duration_ms,
+         COUNT(CASE WHEN error_category = 'FALLBACK_SUCCESS' THEN 1 END)::text AS fallback_count,
+         COUNT(CASE WHEN status = 'rate_limited' THEN 1 END)::text AS rate_limited_count
        FROM gemini_usage_events`,
     );
 
@@ -629,6 +639,8 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
       estimatedMonthlyCostUsd: Number(row?.estimated_monthly_cost_usd ?? 0),
       failedRequests: parseInt(row?.failed_requests ?? '0', 10),
       avgDurationMs: parseInt(row?.avg_duration_ms ?? '0', 10),
+      fallbackCount: parseInt(row?.fallback_count ?? '0', 10),
+      rateLimitedCount: parseInt(row?.rate_limited_count ?? '0', 10),
     };
   }
 

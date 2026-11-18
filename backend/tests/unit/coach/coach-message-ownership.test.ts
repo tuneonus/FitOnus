@@ -32,6 +32,7 @@ describe('ChatWithCoachUseCase message ID handling', () => {
       deleteConversation: vi.fn(),
       addMessage,
       getMessages: vi.fn().mockResolvedValue([]),
+      setMessageFeedback: vi.fn().mockResolvedValue(true),
     };
     const gemini: GeminiService = {
       generateCoachResponse: vi.fn().mockResolvedValue({ text: 'answer' }),

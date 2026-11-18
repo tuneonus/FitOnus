@@ -31,6 +31,7 @@ const CONFIG: GeminiConfigRecord = {
   previousEncryptedApiKey: null,
   previousKeyMask: null,
   defaultModel: MODEL,
+  fallbackModel: MODEL,
   coachModel: MODEL,
   mealPhotoModel: MODEL,
   voiceMealModel: MODEL,

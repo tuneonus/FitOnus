@@ -23,6 +23,7 @@ interface MessageRow {
   blocks: any;
   sources: any;
   follow_ups: any;
+  feedback?: 'like' | 'dislike' | 'none' | null;
   created_at: Date;
 }
 
@@ -190,7 +191,7 @@ export class PgConversationRepository implements ConversationRepository {
     limit = 100,
   ): Promise<StoredChatMessage[]> {
     const res = await this.db.query<MessageRow>(
-      `SELECT id, conversation_id, role, text, blocks, sources, follow_ups, created_at
+      `SELECT id, conversation_id, role, text, blocks, sources, follow_ups, created_at, feedback
        FROM coach_messages
        WHERE conversation_id = $1 AND user_id = $2
        ORDER BY created_at ASC
@@ -206,8 +207,28 @@ export class PgConversationRepository implements ConversationRepository {
       blocks: typeof r.blocks === 'string' ? JSON.parse(r.blocks) : r.blocks ?? [],
       sources: typeof r.sources === 'string' ? JSON.parse(r.sources) : r.sources ?? [],
       followUps: typeof r.follow_ups === 'string' ? JSON.parse(r.follow_ups) : r.follow_ups ?? [],
+      feedback: r.feedback ?? null,
       createdAt: r.created_at.toISOString(),
     }));
+  }
+
+  async setMessageFeedback(
+    userId: string,
+    messageId: string,
+    feedback: 'like' | 'dislike' | 'none',
+  ): Promise<boolean> {
+    const feedbackValue = feedback === 'none' ? null : feedback;
+    const res = await this.db.query(
+      `UPDATE coach_messages
+       SET feedback = $3
+       WHERE id = $1 AND user_id = $2`,
+      [messageId, userId, feedbackValue],
+    );
+
+    if ((res.rowCount ?? 0) === 0) {
+      throw notFound('NOT_FOUND', 'Message not found or not owned by user.');
+    }
+    return true;
   }
 
   private mapSummary(row: ConvoRow): ConversationSummary {

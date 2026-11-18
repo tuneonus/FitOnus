@@ -3,8 +3,29 @@ import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import type { AppConfig } from '../config/env.js';
 import { AppError } from '../shared/errors/app-error.js';
 
-const rejectWithAppError: RequestHandler = (_req, _res, next) =>
-  next(new AppError('rate_limited', 'RATE_LIMITED', 'Too many requests. Try again later.'));
+const rejectWithAppError: RequestHandler = (req, res, next) => {
+  const rateLimitInfo = (req as unknown as { rateLimit?: { resetTime?: Date } }).rateLimit;
+  let retryAfterSeconds: number | undefined;
+  if (rateLimitInfo?.resetTime instanceof Date) {
+    retryAfterSeconds = Math.max(1, Math.ceil((rateLimitInfo.resetTime.getTime() - Date.now()) / 1000));
+  } else {
+    const existing = res.getHeader('Retry-After');
+    if (existing) retryAfterSeconds = Number(existing);
+  }
+
+  if (retryAfterSeconds) {
+    res.setHeader('Retry-After', String(retryAfterSeconds));
+  }
+
+  next(
+    new AppError(
+      'rate_limited',
+      'RATE_LIMITED',
+      'Too many requests. Try again later.',
+      retryAfterSeconds ? { retryAfterSeconds } : undefined,
+    ),
+  );
+};
 
 const clientIp = (req: Request): string => ipKeyGenerator(req.ip ?? 'unknown');
 

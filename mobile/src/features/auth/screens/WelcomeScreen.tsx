@@ -56,7 +56,7 @@ export function WelcomeScreen() {
         bounces={false}
         showsVerticalScrollIndicator={false}
       >
-        <Logo size={40} withWordmark tone="hero" />
+        <Logo size={52} withWordmark tone="hero" />
 
         <View style={styles.spacer} />
 

@@ -23,6 +23,7 @@ import type {
   GeminiUsageSummary,
 } from '../../../src/modules/app-settings/domain/gemini-config.js';
 import type { Actor } from '../../../src/shared/auth/actor.js';
+import { createActor } from '../../../src/shared/auth/actor.js';
 import { decryptSecret } from '../../../src/shared/security/encryption.js';
 import { AppError } from '../../../src/shared/errors/app-error.js';
 import { errorHandler, notFoundHandler } from '../../../src/middleware/error-handler.js';
@@ -39,6 +40,7 @@ class InMemoryAppSettingsRepo implements AppSettingsRepository {
     previousEncryptedApiKey: null,
     previousKeyMask: null,
     defaultModel: 'gemini-2.5-flash',
+    fallbackModel: 'gemini-3.1-flash-lite',
     coachModel: 'gemini-2.5-flash',
     mealPhotoModel: 'gemini-2.5-flash',
     voiceMealModel: 'gemini-2.5-flash',
@@ -49,6 +51,24 @@ class InMemoryAppSettingsRepo implements AppSettingsRepository {
   };
 
   public models: GeminiModelInfo[] = [
+    {
+      model: 'gemini-3.5-flash',
+      displayName: 'Gemini 3.5 Flash',
+      capabilities: { text: true, vision: true, audio: true },
+      inputPricePerMillion: 0.075,
+      outputPricePerMillion: 0.3,
+      cachedInputPricePerMillion: 0.01875,
+      isDefault: true,
+    },
+    {
+      model: 'gemini-3.5-flash-lite',
+      displayName: 'Gemini 3.5 Flash Lite',
+      capabilities: { text: true, vision: true, audio: true },
+      inputPricePerMillion: 0.0375,
+      outputPricePerMillion: 0.15,
+      cachedInputPricePerMillion: 0.009375,
+      isDefault: false,
+    },
     {
       model: 'gemini-2.5-flash',
       displayName: 'Gemini 2.5 Flash',
@@ -392,6 +412,122 @@ describe('FitOnus Admin Gemini AI Management & Security Suite', () => {
     expect(res.body.error.code).toBe('VERSION_CONFLICT');
   });
 
+  it('2d. PATCH /api/v1/admin/ai/configuration successfully saves canonical Gemini 3.5 Flash Lite settings with featureModels', async () => {
+    const app = createTestApp();
+    const res = await request(app)
+      .patch('/api/v1/admin/ai/configuration')
+      .send({
+        defaultModel: 'gemini-3.5-flash-lite',
+        featureModels: {
+          aiCoach: 'gemini-3.5-flash-lite',
+          mealPhotoScanner: 'gemini-3.5-flash-lite',
+          voiceMealEntry: 'gemini-3.5-flash-lite',
+          workoutGenerator: 'gemini-3.5-flash-lite',
+        },
+        expectedVersion: 1,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.version).toBe(2);
+    expect(res.body.data.defaultModel).toBe('gemini-3.5-flash-lite');
+    expect(res.body.data.featureModels.aiCoach).toBe('gemini-3.5-flash-lite');
+    expect(res.body.data.featureModels.mealPhotoScanner).toBe('gemini-3.5-flash-lite');
+    expect(res.body.data.featureModels.voiceMealEntry).toBe('gemini-3.5-flash-lite');
+    expect(res.body.data.featureModels.workoutGenerator).toBe('gemini-3.5-flash-lite');
+
+    // Verify DB state
+    expect(repo.geminiConfig.defaultModel).toBe('gemini-3.5-flash-lite');
+    expect(repo.geminiConfig.coachModel).toBe('gemini-3.5-flash-lite');
+    expect(repo.geminiConfig.version).toBe(2);
+  });
+
+  it('2e. PATCH /api/v1/admin/ai/configuration supports independent per-feature model overrides', async () => {
+    const app = createTestApp();
+    const res = await request(app)
+      .patch('/api/v1/admin/ai/configuration')
+      .send({
+        defaultModel: 'gemini-3.5-flash',
+        featureModels: {
+          aiCoach: 'gemini-3.5-flash-lite',
+          mealPhotoScanner: 'gemini-2.5-pro',
+        },
+        expectedVersion: 1,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.defaultModel).toBe('gemini-3.5-flash');
+    expect(res.body.data.featureModels.aiCoach).toBe('gemini-3.5-flash-lite');
+    expect(res.body.data.featureModels.mealPhotoScanner).toBe('gemini-2.5-pro');
+    expect(repo.geminiConfig.coachModel).toBe('gemini-3.5-flash-lite');
+    expect(repo.geminiConfig.mealPhotoModel).toBe('gemini-2.5-pro');
+  });
+
+  it('2f. PATCH /api/v1/admin/ai/configuration strictly rejects unrecognized root keys with 400', async () => {
+    const app = createTestApp();
+    const res = await request(app)
+      .patch('/api/v1/admin/ai/configuration')
+      .send({
+        defaultModel: 'gemini-3.5-flash-lite',
+        coachModel: 'gemini-3.5-flash-lite', // Disallowed flat key at root
+        expectedVersion: 1,
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_FAILED');
+  });
+
+  it('2g. PATCH /api/v1/admin/ai/configuration rejects non-existent models gemini-3.6-flash and gemini-3.8-flash', async () => {
+    const app = createTestApp();
+    const res = await request(app)
+      .patch('/api/v1/admin/ai/configuration')
+      .send({
+        defaultModel: 'gemini-3.6-flash',
+        expectedVersion: 1,
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain('not supported');
+
+    const res2 = await request(app)
+      .patch('/api/v1/admin/ai/configuration')
+      .send({
+        defaultModel: 'gemini-3.8-flash',
+        expectedVersion: 1,
+      });
+
+    expect(res2.status).toBe(400);
+    expect(res2.body.error.message).toContain('not supported');
+  });
+
+  it('2h. UpdateGeminiConfigUseCase triggers runtime cache refresh on update', async () => {
+    let cacheRefreshed = false;
+    const fakeRuntimeService = {
+      async refreshCache() {
+        cacheRefreshed = true;
+      },
+    } as any;
+
+    const useCase = new UpdateGeminiConfigUseCase({
+      repo,
+      encryptionKey: TEST_ENCRYPTION_KEY,
+      auditLogger: fakeAuditLogger,
+      runtimeService: fakeRuntimeService,
+    });
+
+    const actor = createActor({
+      userId: 'admin-001',
+      sessionId: 'sess-001',
+      role: 'admin',
+    });
+
+    await useCase.execute(actor, {
+      defaultModel: 'gemini-3.5-flash-lite',
+      expectedVersion: repo.geminiConfig.version,
+    });
+
+    expect(cacheRefreshed).toBe(true);
+  });
+
   it('3. POST /api/v1/admin/ai/rollback-key restores previous API key', async () => {
     const app = createTestApp();
 
@@ -426,7 +562,7 @@ describe('FitOnus Admin Gemini AI Management & Security Suite', () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
-    expect(res.body.data.length).toBe(3);
+    expect(res.body.data.length).toBe(5);
 
     const flash = res.body.data.find((m: any) => m.model === 'gemini-2.5-flash');
     expect(flash).toBeDefined();

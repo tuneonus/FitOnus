@@ -65,6 +65,9 @@ Thumbs.db
 coverage/
 *.sqlite
 pgdata/
+backups/
+*.sql
+*.dump
 
 # Firebase client config (supplied to EAS via the GOOGLE_SERVICES_JSON file env var; see mobile/app.config.js)
 /mobile/google-services.json

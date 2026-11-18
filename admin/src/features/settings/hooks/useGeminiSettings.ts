@@ -45,11 +45,12 @@ export function useGeminiSettings() {
 
   // Model Draft Selection
   const [modelDraft, setModelDraft] = useState({
-    defaultModel: 'gemini-2.5-flash',
-    coachModel: 'gemini-2.5-flash',
-    mealPhotoModel: 'gemini-2.5-flash',
-    voiceMealModel: 'gemini-2.5-flash',
-    workoutGeneratorModel: 'gemini-2.5-flash',
+    defaultModel: 'gemini-3.5-flash-lite',
+    fallbackModel: 'gemini-3.1-flash-lite',
+    coachModel: 'gemini-3.5-flash-lite',
+    mealPhotoModel: 'gemini-3.5-flash-lite',
+    voiceMealModel: 'gemini-3.5-flash-lite',
+    workoutGeneratorModel: 'gemini-3.5-flash-lite',
   });
 
   // Modal State for Key Update
@@ -96,6 +97,9 @@ export function useGeminiSettings() {
         estimatedCostInr: (summary as any)?.estimatedCostInr ?? ((summary?.estimatedMonthlyCostUsd ?? (summary as any)?.estimatedCostUsd ?? 0) * 86.5),
         failedRequests: summary?.failedRequests ?? 0,
         avgDurationMs: summary?.avgDurationMs ?? 0,
+        fallbackCount: summary?.fallbackCount ?? 0,
+        rateLimitedCount: summary?.rateLimitedCount ?? 0,
+        cooldownStatus: summary?.cooldownStatus ?? [],
       };
       setUsageSummary(normalizedSummary);
       setFeatureBreakdown(feat || []);
@@ -107,11 +111,12 @@ export function useGeminiSettings() {
       setEventsTotal(evts?.total ?? eventList.length);
 
       setModelDraft({
-        defaultModel: cfg.defaultModel || 'gemini-2.5-flash',
-        coachModel: cfg.featureModels?.aiCoach || cfg.coachModel || cfg.defaultModel || 'gemini-2.5-flash',
-        mealPhotoModel: cfg.featureModels?.mealPhotoScanner || cfg.mealPhotoModel || cfg.defaultModel || 'gemini-2.5-flash',
-        voiceMealModel: cfg.featureModels?.voiceMealEntry || cfg.voiceMealModel || cfg.defaultModel || 'gemini-2.5-flash',
-        workoutGeneratorModel: cfg.featureModels?.workoutGenerator || cfg.workoutGeneratorModel || cfg.defaultModel || 'gemini-2.5-flash',
+        defaultModel: cfg.defaultModel || 'gemini-3.5-flash-lite',
+        fallbackModel: cfg.fallbackModel || 'gemini-3.1-flash-lite',
+        coachModel: cfg.featureModels?.aiCoach || cfg.coachModel || cfg.defaultModel || 'gemini-3.5-flash-lite',
+        mealPhotoModel: cfg.featureModels?.mealPhotoScanner || cfg.mealPhotoModel || cfg.defaultModel || 'gemini-3.5-flash-lite',
+        voiceMealModel: cfg.featureModels?.voiceMealEntry || cfg.voiceMealModel || cfg.defaultModel || 'gemini-3.5-flash-lite',
+        workoutGeneratorModel: cfg.featureModels?.workoutGenerator || cfg.workoutGeneratorModel || cfg.defaultModel || 'gemini-3.5-flash-lite',
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load Gemini AI configuration';
@@ -139,8 +144,7 @@ export function useGeminiSettings() {
       setEventsTotal(res?.total ?? eventList.length);
       setEventsOffset(offset);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to query telemetry events';
-      toast.error(message);
+      toast.fromError(err, 'Failed to query telemetry events');
     } finally {
       setIsRefreshingEvents(false);
     }
@@ -156,6 +160,7 @@ export function useGeminiSettings() {
 
     return (
       modelDraft.defaultModel !== config.defaultModel ||
+      modelDraft.fallbackModel !== (config.fallbackModel || 'gemini-3.1-flash-lite') ||
       modelDraft.coachModel !== currentCoach ||
       modelDraft.mealPhotoModel !== currentMeal ||
       modelDraft.voiceMealModel !== currentVoice ||
@@ -170,30 +175,27 @@ export function useGeminiSettings() {
     try {
       const updated = await geminiAdminApi.updateConfiguration({
         defaultModel: modelDraft.defaultModel,
+        fallbackModel: modelDraft.fallbackModel,
         featureModels: {
           aiCoach: modelDraft.coachModel,
           mealPhotoScanner: modelDraft.mealPhotoModel,
           voiceMealEntry: modelDraft.voiceMealModel,
           workoutGenerator: modelDraft.workoutGeneratorModel,
         },
-        coachModel: modelDraft.coachModel,
-        mealPhotoModel: modelDraft.mealPhotoModel,
-        voiceMealModel: modelDraft.voiceMealModel,
-        workoutGeneratorModel: modelDraft.workoutGeneratorModel,
         expectedVersion: config.version,
       });
       setConfig(updated);
       setModelDraft({
-        defaultModel: updated.defaultModel || 'gemini-2.5-flash',
-        coachModel: updated.featureModels?.aiCoach || updated.coachModel || updated.defaultModel || 'gemini-2.5-flash',
-        mealPhotoModel: updated.featureModels?.mealPhotoScanner || updated.mealPhotoModel || updated.defaultModel || 'gemini-2.5-flash',
-        voiceMealModel: updated.featureModels?.voiceMealEntry || updated.voiceMealModel || updated.defaultModel || 'gemini-2.5-flash',
-        workoutGeneratorModel: updated.featureModels?.workoutGenerator || updated.workoutGeneratorModel || updated.defaultModel || 'gemini-2.5-flash',
+        defaultModel: updated.defaultModel || 'gemini-3.5-flash-lite',
+        fallbackModel: updated.fallbackModel || 'gemini-3.1-flash-lite',
+        coachModel: updated.featureModels?.aiCoach || updated.coachModel || updated.defaultModel || 'gemini-3.5-flash-lite',
+        mealPhotoModel: updated.featureModels?.mealPhotoScanner || updated.mealPhotoModel || updated.defaultModel || 'gemini-3.5-flash-lite',
+        voiceMealModel: updated.featureModels?.voiceMealEntry || updated.voiceMealModel || updated.defaultModel || 'gemini-3.5-flash-lite',
+        workoutGeneratorModel: updated.featureModels?.workoutGenerator || updated.workoutGeneratorModel || updated.defaultModel || 'gemini-3.5-flash-lite',
       });
       toast.success('Gemini model configurations updated successfully.');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to update Gemini models';
-      toast.error(message);
+      toast.fromError(err, 'Failed to update Gemini models');
     } finally {
       setIsSaving(false);
     }
@@ -204,23 +206,34 @@ export function useGeminiSettings() {
     setIsTestingActiveKey(true);
     setActiveTestResult(null);
     try {
-      const res = await geminiAdminApi.testConnection();
-      setActiveTestResult(res);
-      if (res.success) {
-        toast.success(`Gemini API connection verified (${res.latencyMs}ms)`);
+      const res = await geminiAdminApi.testConnection({ model: modelDraft.defaultModel });
+      const normalizedResult: TestGeminiConnectionResponse = {
+        ...res,
+        model: res.model || res.modelUsed || modelDraft.defaultModel,
+        message:
+          res.message ||
+          res.error ||
+          (res.success ? 'Gemini API connection verified' : 'Gemini API connection test failed'),
+        latencyMs: res.latencyMs ?? 0,
+        testedAt: new Date().toISOString(),
+      };
+      setActiveTestResult(normalizedResult);
+      if (normalizedResult.success) {
+        toast.success(`Gemini API connection verified (${normalizedResult.latencyMs}ms)`);
       } else {
-        toast.error(`Gemini API test failed: ${res.message}`);
+        toast.warning(`Gemini API test failed: ${normalizedResult.message}`);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Connection test request failed';
       setActiveTestResult({
         success: false,
         latencyMs: 0,
-        model: 'unknown',
+        model: modelDraft.defaultModel,
+        keySource: 'unavailable',
         message: msg,
         testedAt: new Date().toISOString(),
       });
-      toast.error(msg);
+      toast.fromError(err, 'Connection test request failed');
     } finally {
       setIsTestingActiveKey(false);
     }
@@ -236,12 +249,25 @@ export function useGeminiSettings() {
     setCandidateKeyTestResult(null);
     setCandidateKeyError(null);
     try {
-      const res = await geminiAdminApi.testConnection({ apiKey: candidateKey.trim() });
-      setCandidateKeyTestResult(res);
-      if (res.success) {
-        toast.success(`Candidate API key verified (${res.latencyMs}ms)`);
+      const res = await geminiAdminApi.testConnection({
+        apiKey: candidateKey.trim(),
+        model: modelDraft.defaultModel,
+      });
+      const normalizedResult: TestGeminiConnectionResponse = {
+        ...res,
+        model: res.model || res.modelUsed || modelDraft.defaultModel,
+        message:
+          res.message ||
+          res.error ||
+          (res.success ? 'Candidate API key verified' : 'Candidate API key validation failed'),
+        latencyMs: res.latencyMs ?? 0,
+        testedAt: new Date().toISOString(),
+      };
+      setCandidateKeyTestResult(normalizedResult);
+      if (normalizedResult.success) {
+        toast.success(`Candidate API key verified (${normalizedResult.latencyMs}ms)`);
       } else {
-        setCandidateKeyError(res.message);
+        setCandidateKeyError(normalizedResult.message);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Candidate key validation failed';
@@ -273,7 +299,7 @@ export function useGeminiSettings() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update Gemini API key';
       setCandidateKeyError(msg);
-      toast.error(msg);
+      // Inline error banner in modal handles this; do not show duplicate toast
     } finally {
       setIsSaving(false);
     }
@@ -291,8 +317,7 @@ export function useGeminiSettings() {
       setConfig(updated);
       toast.success(`Rolled back to previous API key (${updated.keyMask})`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to rollback API key';
-      toast.error(msg);
+      toast.fromError(err, 'Failed to rollback API key');
     } finally {
       setIsRollingBack(false);
     }

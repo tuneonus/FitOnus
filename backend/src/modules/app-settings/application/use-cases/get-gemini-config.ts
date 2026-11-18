@@ -28,7 +28,8 @@ export class GetGeminiConfigUseCase {
       ? `${maskApiKey(this.deps.fallbackApiKey)} (from ENV)`
       : 'Not Configured';
 
-    const defaultModel = config.defaultModel || this.deps.fallbackModel || 'gemini-2.5-flash';
+    const defaultModel = config.defaultModel || this.deps.fallbackModel || 'gemini-3.5-flash-lite';
+    const fallbackModel = config.fallbackModel || 'gemini-3.1-flash-lite';
 
     return {
       provider: 'google_gemini',
@@ -36,6 +37,7 @@ export class GetGeminiConfigUseCase {
       isConfigured,
       canRollbackKey: Boolean(config.previousEncryptedApiKey),
       defaultModel,
+      fallbackModel,
       featureModels: {
         aiCoach: config.coachModel || defaultModel,
         mealPhotoScanner: config.mealPhotoModel || defaultModel,

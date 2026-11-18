@@ -384,7 +384,7 @@ describe('Phase 9.6: Settings & Privacy Mobile + Backend Integration Verificatio
       };
 
       const extracted = extractApiErrorMessage(malformedError, 'Unable to process settings request.');
-      assert.equal(extracted, 'Unable to process settings request.');
+      assert.equal(extracted, 'Something went wrong. Please try again.');
     });
   });
 
@@ -395,7 +395,7 @@ describe('Phase 9.6: Settings & Privacy Mobile + Backend Integration Verificatio
       (networkError as any).isAxiosError = true;
 
       const extracted = extractApiErrorMessage(networkError, 'Connection failed. Please check your internet connection.');
-      assert.equal(extracted, 'Network Error');
+      assert.equal(extracted, 'Unable to connect. Check your internet connection.');
 
       // Verify that a network failure does NOT clear or corrupt existing user settings
       await useSettingsStore.getState().hydrateForUser(testUserId);

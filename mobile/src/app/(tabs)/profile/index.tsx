@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Redirect, Stack } from 'expo-router';
 import { ScreenContainer } from '@/components/shared/screen-container';
@@ -7,16 +7,21 @@ import { useTheme } from '@/hooks/use-theme';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { StatCard } from '@/features/profile/components/stat-card';
 import { SettingRow } from '@/features/profile/components/setting-row';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { User, Activity, Target, Settings, Moon, Bell, Shield, LogOut } from 'lucide-react-native';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { AuthService } from '@/features/auth/services/auth-service';
 import { useProfile } from '@/features/profile/hooks/use-profile';
 import { StatusBanner } from '@/shared/components/ui/StatusBanner';
+import { openUrl } from '@/shared/utils/openUrl';
+import { LEGAL_URLS } from '@/shared/constants/legalUrls';
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { data, isPending, isError, refetch } = useProfile();
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   if (!isAuthenticated || !user) return <Redirect href="/" />;
 
@@ -97,15 +102,28 @@ export default function ProfileScreen() {
             ABOUT
           </Text>
           <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
-            <SettingRow label="Privacy Policy" icon={Shield} onPress={() => {}} />
-            <SettingRow label="Terms of Service" icon={Shield} onPress={() => {}} />
-            <SettingRow label="Log Out" icon={LogOut} destructive onPress={() => {}} />
+            <SettingRow label="Privacy Policy" icon={Shield} onPress={() => void openUrl(LEGAL_URLS.privacy)} />
+            <SettingRow label="Terms of Service" icon={Shield} onPress={() => void openUrl(LEGAL_URLS.terms)} />
+            <SettingRow label="Log Out" icon={LogOut} destructive onPress={() => setConfirmLogout(true)} />
           </View>
         </View>
 
         {/* Spacer for bottom tab bar */}
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Log out?"
+        message="You'll need to log in again on this device."
+        confirmLabel="Log out"
+        destructive
+        onCancel={() => setConfirmLogout(false)}
+        onConfirm={async () => {
+          setConfirmLogout(false);
+          await AuthService.logout();
+        }}
+      />
     </ScreenContainer>
   );
 }

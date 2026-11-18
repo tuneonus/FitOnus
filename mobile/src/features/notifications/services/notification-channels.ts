@@ -52,7 +52,9 @@ export const CHANNEL_DEFINITIONS: Readonly<Record<string, AndroidChannelConfig>>
   [NOTIFICATION_CHANNELS.SYSTEM]: {
     name: 'System Notifications',
     importance: EXPO_ANDROID_IMPORTANCE.LOW,
-    sound: null,
+    // sound intentionally omitted — passing sound: null to setNotificationChannelAsync causes a
+    // NullPointerException in the Android native layer (ExpoNotificationsChannelSerializer.toBundle()
+    // calls getClass() on a null AudioAttributes object when sound is explicitly null).
   },
   [PUSH_CHANNELS.GOAL]: {
     name: 'Goal Reminders',

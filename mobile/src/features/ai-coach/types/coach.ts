@@ -81,6 +81,7 @@ export type CoachMessage = {
   status: 'done' | 'thinking' | 'error';
   medicalNote?: boolean | undefined;
   memoryUsed?: string | undefined;
+  feedback?: 'like' | 'dislike' | 'none' | null | undefined;
 };
 
 export type CoachResponse = Omit<CoachMessage, 'id' | 'role' | 'status'> & {
@@ -95,6 +96,7 @@ export type StoredChatMessage = {
   blocks?: Block[] | undefined;
   sources?: string[] | undefined;
   followUps?: string[] | undefined;
+  feedback?: 'like' | 'dislike' | 'none' | null | undefined;
   createdAt: string;
 };
 

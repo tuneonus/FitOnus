@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TextInputProps, ViewStyle } from 'react-native';
+import { View, TextInput, StyleSheet, TextInputProps, ViewStyle, type TextInputInstance } from 'react-native';
 import { Text } from './text';
 import { useTheme } from '@/hooks/use-theme';
 import { BorderRadius, Spacing, Typography } from '@/constants/theme';
@@ -13,7 +13,7 @@ export interface InputProps extends TextInputProps {
   rightIcon?: React.ReactNode;
 }
 
-export const Input = ({
+export const Input = React.forwardRef<TextInputInstance, InputProps>(({
   label,
   error,
   helperText,
@@ -23,9 +23,11 @@ export const Input = ({
   style,
   onFocus,
   onBlur,
+  placeholderTextColor,
+  value,
   ...rest
-}: InputProps) => {
-  const { colors } = useTheme();
+}, ref) => {
+  const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 
   const handleFocus = (e: any) => {
@@ -38,11 +40,15 @@ export const Input = ({
     onBlur?.(e);
   };
 
+  const defaultBorder = isDark ? 'rgba(255, 255, 255, 0.22)' : colors.border;
+
   const borderColor = error
     ? colors.error
     : isFocused
     ? colors.borderFocused
-    : colors.border;
+    : defaultBorder;
+
+  const { lineHeight: _lineHeight, ...inputTypography } = Typography.bodyLarge;
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -58,19 +64,21 @@ export const Input = ({
           {
             backgroundColor: colors.backgroundElement,
             borderColor,
-            borderWidth: isFocused || error ? 2 : 1,
+            borderWidth: isFocused || error ? 2 : 1.5,
           },
         ]}
       >
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         
         <TextInput
+          ref={ref}
           style={[
             styles.input,
-            { color: colors.text, ...Typography.bodyLarge },
+            { color: colors.text, ...inputTypography },
             style,
           ]}
-          placeholderTextColor={colors.textTertiary}
+          placeholderTextColor={placeholderTextColor ?? colors.textSecondary}
+          value={value !== undefined ? String(value) : undefined}
           onFocus={handleFocus}
           onBlur={handleBlur}
           {...rest}
@@ -90,7 +98,9 @@ export const Input = ({
       ) : null}
     </View>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 const styles = StyleSheet.create({
   container: {
@@ -110,6 +120,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     padding: 0,
+    textAlignVertical: 'center',
   },
   leftIcon: {
     marginRight: Spacing.sm,

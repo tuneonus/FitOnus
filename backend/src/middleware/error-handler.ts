@@ -54,6 +54,14 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   // pino-http logs this with the request's completion line (stack included, once).
   if (status >= 500) res.err = error instanceof Error ? error : new Error(String(error));
 
+  if (status === 429) {
+    const existingHeader = res.getHeader('Retry-After');
+    const details = appError.details as { retryAfterSeconds?: number } | undefined;
+    if (details?.retryAfterSeconds && !existingHeader) {
+      res.setHeader('Retry-After', String(details.retryAfterSeconds));
+    }
+  }
+
   res.status(status).json({
     success: false,
     error: {

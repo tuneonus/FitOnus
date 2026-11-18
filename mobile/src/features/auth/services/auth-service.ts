@@ -6,6 +6,7 @@ import { useSettingsStore } from '../../../shared/stores/settingsStore';
 import { logger } from '../../../utils/logger';
 import { queryClient } from '../../../providers/query-provider';
 import { runSessionEndCleanups } from '../../notifications/services/notification-logout-hook';
+import { normalizeMobileApiError } from '../../../services/error-normalizer';
 
 const ACCESS_TOKEN_KEY = 'auth.access_token';
 const REFRESH_TOKEN_KEY = 'auth.refresh_token';
@@ -86,7 +87,10 @@ export function extractApiErrorMessage(error: any, fallback: string): string {
       return message;
     }
   }
-  return errData?.message || error?.message || fallback;
+
+  // Use normalized error for network failures, timeouts, 5xx server errors, etc.
+  const normalized = normalizeMobileApiError(error, fallback);
+  return normalized.userMessage;
 }
 
 export const AuthService = {

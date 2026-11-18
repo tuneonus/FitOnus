@@ -17,10 +17,17 @@ export function CoachConversationScreen() {
   const { id } = useRouteParams<{ id?: string }>();
   const { switchTab } = useNavigation();
   const loadConversation = useCoachStore((s) => s.loadConversation);
+  const stopSpeech = useCoachStore((s) => s.stopSpeech);
 
   const [convo, setConvo] = useState<ConversationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      void stopSpeech();
+    };
+  }, [stopSpeech]);
 
   const fetchConversation = useCallback(async () => {
     if (!id) {
@@ -114,6 +121,7 @@ export function CoachConversationScreen() {
                   blocks: m.blocks,
                   sources: m.sources,
                   followUps: m.followUps,
+                  feedback: m.feedback,
                 }}
               />
             )}
