@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Complete API Endpoint Inventory
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/API_ENDPOINT_INVENTORY.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/API_ENDPOINT_INVENTORY.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  

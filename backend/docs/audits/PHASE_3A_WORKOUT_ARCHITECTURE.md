@@ -886,7 +886,7 @@ When Phase 3B is approved, execution will take place strictly within the **exist
 
 | Subagent | Role | Assigned Shared Directory | Exclusive Ownership Scope | Forbidden Scope |
 |:---|:---|:---|:---|:---|
-| **Architect Agent** | Lead Architect | Monorepo root / docs | Architecture docs (`backend/BACKEND_AUDIT/`), orchestrator design | Application source code |
+| **Architect Agent** | Lead Architect | Monorepo root / docs | Architecture docs (`backend/docs/audits/`), orchestrator design | Application source code |
 | **Backend Agent** | Backend Architect | `backend/` | `backend/migrations/0006*`, `backend/src/modules/workouts/`, `backend/tests/` | `mobile/`, `admin/`, Git operations |
 | **Admin Agent** | Frontend Architect | `admin/` | `admin/src/features/workouts/`, `admin/app/workouts/` | `backend/`, `mobile/`, Git operations |
 | **Mobile Agent** | Mobile Engineer | `mobile/` | `mobile/src/features/workouts/api/`, `mobile/src/features/workouts/services/` | `backend/`, `admin/`, Git operations |

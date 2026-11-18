@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Feature Implementation Status & Product Gap Matrix
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/FEATURE_IMPLEMENTATION_STATUS.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/FEATURE_IMPLEMENTATION_STATUS.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  

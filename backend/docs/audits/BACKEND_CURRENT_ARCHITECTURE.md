@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Current Architecture & Technology Stack
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/BACKEND_CURRENT_ARCHITECTURE.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/BACKEND_CURRENT_ARCHITECTURE.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  

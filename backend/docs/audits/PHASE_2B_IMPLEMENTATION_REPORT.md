@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-Phase 2B delivers the end-to-end backend implementation for the **Fitness Profile & Onboarding** domain of FitOnus. Built in strict accordance with the approved Phase 2A contract (`backend/BACKEND_AUDIT/PHASE_2_ONBOARDING_CONTRACT.md`), this implementation:
+Phase 2B delivers the end-to-end backend implementation for the **Fitness Profile & Onboarding** domain of FitOnus. Built in strict accordance with the approved Phase 2A contract (`backend/docs/audits/PHASE_2_ONBOARDING_CONTRACT.md`), this implementation:
 - Adds database migration `0004_create_user_profiles.sql` defining relational tables `user_profiles` and `user_settings` with strict physical constraints, indexes, and automatic timestamp triggers.
 - Implements a self-contained Clean Architecture module (`src/modules/profile/`) containing pure domain models, metabolic target computation (Mifflin-St Jeor formula), application ports and use cases, raw parameterized SQL repositories with optimistic concurrency control, and declarative Express 5 routes.
 - Wires the module into the root application container under `/api/v1/profile`.

@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Recommended Implementation Roadmap
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/RECOMMENDED_IMPLEMENTATION_ROADMAP.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/RECOMMENDED_IMPLEMENTATION_ROADMAP.md`  
 **Status:** Strategic Implementation Architecture  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  

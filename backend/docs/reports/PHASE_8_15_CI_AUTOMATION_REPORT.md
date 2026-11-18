@@ -143,7 +143,7 @@ All steps and configurations were validated locally:
 ### Modified / Moved Files:
 - **Created:** `.github/workflows/ci.yml` (Repository root CI workflow)
 - **Deleted:** `backend/.github/workflows/ci.yml` (Legacy nested workflow)
-- **Documentation:** `backend/docs/PHASE_8_15_CI_AUTOMATION_REPORT.md`
+- **Documentation:** `backend/docs/reports/PHASE_8_15_CI_AUTOMATION_REPORT.md`
 
 ### Staging Status:
 - **Staged files:** 0 files (`git diff --cached` is empty).
@@ -159,7 +159,7 @@ All steps and configurations were validated locally:
 
 ## 12. Next Steps
 1. User reviews this report and approves the CI workflow relocation.
-2. Stage only `.github/workflows/ci.yml`, `backend/.github/workflows/ci.yml`, and `backend/docs/PHASE_8_15_CI_AUTOMATION_REPORT.md`.
+2. Stage only `.github/workflows/ci.yml`, `backend/.github/workflows/ci.yml`, and `backend/docs/reports/PHASE_8_15_CI_AUTOMATION_REPORT.md`.
 3. Commit with message: `ci: relocate workflow to repository root with monorepo matrix support`.
 4. Push to `origin/main` to activate automated GitHub Actions CI.
 

@@ -4,7 +4,7 @@
 **Phase:** 8.8 Safe Git Review & Development Deployment Preparation  
 **Date:** 2026-11-07  
 **Mode:** READ-ONLY AUDIT & RELEASE PREPARATION  
-**Deliverable Path:** `backend/docs/PHASE_8_8_RELEASE_PREPARATION_REPORT.md`  
+**Deliverable Path:** `backend/docs/reports/PHASE_8_8_RELEASE_PREPARATION_REPORT.md`  
 **Overall Recommendation:** **NO-GO FOR IMMEDIATE GIT PUSH / DEPLOYMENT (AWAITING PHASE 9 SESSION CONCLUSION & STAGING ISOLATION)**
 
 ---
@@ -43,11 +43,11 @@ Every modified and untracked file in the workspace has been audited and classifi
 │ backend/src/modules/analytics/ (all 26 domain, app, infra, interface files)            │ A        │
 │ backend/tests/unit/analytics/ (all 17 unit test suites, 142 tests)                     │ A        │
 │ backend/scripts/verify-phase-8-6-e2e.ts (Live Neon dev E2E verification script)        │ A        │
-│ backend/docs/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md                                │ A        │
-│ backend/docs/PHASE_8_4_IMPLEMENTATION_REPORT.md                                        │ A        │
-│ backend/docs/PHASE_8_6_E2E_PERFORMANCE_REPORT.md                                        │ A        │
-│ backend/docs/PHASE_8_7_BUILD_RELEASE_GATE_REPORT.md                                    │ A        │
-│ mobile/docs/PHASE_8_5_IMPLEMENTATION_REPORT.md                                         │ A        │
+│ backend/docs/reports/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md                                │ A        │
+│ backend/docs/reports/PHASE_8_4_IMPLEMENTATION_REPORT.md                                        │ A        │
+│ backend/docs/reports/PHASE_8_6_E2E_PERFORMANCE_REPORT.md                                        │ A        │
+│ backend/docs/reports/PHASE_8_7_BUILD_RELEASE_GATE_REPORT.md                                    │ A        │
+│ mobile/docs/reports/PHASE_8_5_IMPLEMENTATION_REPORT.md                                         │ A        │
 │ mobile/src/features/analytics/api/analytics-api.ts                                     │ A        │
 │ mobile/src/features/analytics/store/advancedAnalyticsStore.ts                         │ A        │
 │ mobile/src/features/analytics/types/analytics.ts                                       │ A        │
@@ -63,8 +63,8 @@ Every modified and untracked file in the workspace has been audited and classifi
 │ backend/src/modules/profile/ (domain, ports, repo, schemas - Phase 9 Settings)         │ C        │
 │ backend/src/modules/users/ (delete-account use case, controller, routes - Phase 9)     │ C        │
 │ backend/migrations/0012_extend_user_settings_and_preferences.sql (Phase 9)             │ C        │
-│ backend/docs/PHASE_9_SETTINGS_ARCHITECTURE.md (Phase 9)                                │ C        │
-│ backend/docs/PHASE_9_2_IMPLEMENTATION_REPORT.md (Phase 9)                              │ C        │
+│ backend/docs/reports/PHASE_9_SETTINGS_ARCHITECTURE.md (Phase 9)                                │ C        │
+│ backend/docs/reports/PHASE_9_2_IMPLEMENTATION_REPORT.md (Phase 9)                              │ C        │
 │ backend/tests/unit/settings/phase9-settings-http.test.ts (Phase 9)                     │ C        │
 │ backend/tests/unit/users/delete-account-use-case.test.ts (Phase 9)                     │ C        │
 │ mobile/src/features/home/components/DailyBrief.tsx (unrelated UI updates)               │ C        │
@@ -172,14 +172,14 @@ git add backend/tests/unit/analytics/
 git add backend/scripts/verify-phase-8-6-e2e.ts
 
 # Phase 8 Architecture & Audit Documentation
-git add backend/docs/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md
-git add backend/docs/PHASE_8_4_IMPLEMENTATION_REPORT.md
-git add backend/docs/PHASE_8_6_E2E_PERFORMANCE_REPORT.md
-git add backend/docs/PHASE_8_7_BUILD_RELEASE_GATE_REPORT.md
-git add backend/docs/PHASE_8_8_RELEASE_PREPARATION_REPORT.md
+git add backend/docs/reports/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md
+git add backend/docs/reports/PHASE_8_4_IMPLEMENTATION_REPORT.md
+git add backend/docs/reports/PHASE_8_6_E2E_PERFORMANCE_REPORT.md
+git add backend/docs/reports/PHASE_8_7_BUILD_RELEASE_GATE_REPORT.md
+git add backend/docs/reports/PHASE_8_8_RELEASE_PREPARATION_REPORT.md
 
 # Mobile Analytics Integration
-git add mobile/docs/PHASE_8_5_IMPLEMENTATION_REPORT.md
+git add mobile/docs/reports/PHASE_8_5_IMPLEMENTATION_REPORT.md
 git add mobile/src/features/analytics/api/
 git add mobile/src/features/analytics/store/advancedAnalyticsStore.ts
 git add mobile/src/features/analytics/types/

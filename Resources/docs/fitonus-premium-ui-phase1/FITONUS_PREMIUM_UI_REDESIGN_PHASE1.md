@@ -139,14 +139,14 @@ Final source checks completed successfully. No task source file changed during t
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| `cd mobile && npm run typecheck` | Passed, exit 0 | [TypeScript output](Resources/docs/fitonus-premium-ui-phase1/typecheck.txt) |
-| ESLint on all 25 task TypeScript/TSX files, including the new tests, with `--max-warnings 0` | Passed, no errors or warnings | [Lint output](Resources/docs/fitonus-premium-ui-phase1/lint.txt) |
-| `cd mobile && npm test` | **221 tests passed, 89 suites, zero failures** | [Full test output](Resources/docs/fitonus-premium-ui-phase1/mobile-tests.txt) |
+| `cd mobile && npm run typecheck` | Passed, exit 0 | [TypeScript output](typecheck.txt) |
+| ESLint on all 25 task TypeScript/TSX files, including the new tests, with `--max-warnings 0` | Passed, no errors or warnings | [Lint output](lint.txt) |
+| `cd mobile && npm test` | **221 tests passed, 89 suites, zero failures** | [Full test output](mobile-tests.txt) |
 | Existing navigation/gesture tests | Passed within the full suite; includes swipe-back, sheet thresholds, tab-drag mathematics and tab-state contracts | Full test output above |
-| New Home tests | 18 passed: daily data/target fidelity, offline merging, deduplication, date isolation, water updates, over-goal values, safe progress and text contrast | [India-timezone run](Resources/docs/fitonus-premium-ui-phase1/home-tests-asia-kolkata.txt) |
+| New Home tests | 18 passed: daily data/target fidelity, offline merging, deduplication, date isolation, water updates, over-goal values, safe progress and text contrast | [India-timezone run](home-tests-asia-kolkata.txt) |
 | `TZ=Asia/Kolkata … tsx --test tests/home-overview.test.ts` | 18 passed; verifies the early-morning local date boundary in the relevant timezone | India-timezone run above |
 | Task-specific `git diff --check` | Passed | Checked only task files, excluding unrelated in-progress edits |
-| Expo web render | Light and dark, 390 × 844 and 320 × 740; no horizontal document overflow and five accessible tabs | [Browser results](Resources/docs/fitonus-premium-ui-phase1/browser-results.json) |
+| Expo web render | Light and dark, 390 × 844 and 320 × 740; no horizontal document overflow and five accessible tabs | [Browser results](browser-results.json) |
 | Browser interaction smoke checks | Open meal entry and return; start a workout; return to Home and find Resume; enter Coach. Passed in both themes. | Browser results above |
 | Browser empty/error states | Confirmed zero totals with absent targets and HTTP 503/unavailable nutrition with Retry and no invented totals | Browser results above |
 | Android device QA | **Pending**; see section 9 | No emulator/device acceptance or APK build claimed |
@@ -161,10 +161,10 @@ The web SVG rotation warning observed during review was resolved in the shared P
 
 | View | Light | Dark |
 | --- | --- | --- |
-| Home, 390 px | [Light Home](Resources/docs/fitonus-premium-ui-phase1/home-light-390.png) | [Dark Home](Resources/docs/fitonus-premium-ui-phase1/home-dark-390.png) |
-| Home, 320 px | [Compact light Home](Resources/docs/fitonus-premium-ui-phase1/home-light-320.png) | [Compact dark Home](Resources/docs/fitonus-premium-ui-phase1/home-dark-320.png) |
-| Water / Coach / movement | [Light lower sections](Resources/docs/fitonus-premium-ui-phase1/home-light-lower.png) | [Dark lower sections](Resources/docs/fitonus-premium-ui-phase1/home-dark-lower.png) |
-| Zero day, no saved targets | [Empty day](Resources/docs/fitonus-premium-ui-phase1/home-light-empty.png) | — |
+| Home, 390 px | [Light Home](home-light-390.png) | [Dark Home](home-dark-390.png) |
+| Home, 320 px | [Compact light Home](home-light-320.png) | [Compact dark Home](home-dark-320.png) |
+| Water / Coach / movement | [Light lower sections](home-light-lower.png) | [Dark lower sections](home-dark-lower.png) |
+| Zero day, no saved targets | [Empty day](home-light-empty.png) | — |
 
 Reference documentation was consulted as required by the mobile AGENTS.md: [Expo v57 SDK reference](https://docs.expo.dev/versions/v57.0.0/) and the project’s [Expo v58 SDK reference](https://docs.expo.dev/versions/v58.0.0/). The installed SDK and dependencies were retained.
 

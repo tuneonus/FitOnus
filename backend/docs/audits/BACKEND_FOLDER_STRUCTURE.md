@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Folder Structure & Codebase Organization
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/BACKEND_FOLDER_STRUCTURE.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/BACKEND_FOLDER_STRUCTURE.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  

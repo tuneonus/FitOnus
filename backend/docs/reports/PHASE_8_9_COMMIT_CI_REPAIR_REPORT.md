@@ -90,7 +90,7 @@ To guarantee that uncommitted Phase 9 files in the working directory did not ske
 
 ### 4.2 Working Tree Status
 In the local working tree, Phase 9 files remain preserved in their unstaged state:
-- **Phase 9 Untracked Files:** `backend/migrations/0012_...`, `backend/docs/PHASE_9_*.md`, `backend/src/modules/users/application/use-cases/delete-account.ts`, `backend/tests/unit/settings/`, `mobile/tests/settings-integration.test.ts`, etc.
+- **Phase 9 Untracked Files:** `backend/migrations/0012_...`, `backend/docs/reports/PHASE_9_*.md`, `backend/src/modules/users/application/use-cases/delete-account.ts`, `backend/tests/unit/settings/`, `mobile/tests/settings-integration.test.ts`, etc.
 - **Phase 9 Staging State:** 0 files staged (`git diff --cached` is empty).
 - **CI Repair Files State:** The 6 repaired test/script files are currently UNSTAGED in the working tree, awaiting user direction.
 

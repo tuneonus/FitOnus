@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — CareSure Architecture Comparison & Pattern Analysis
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/CARESURE_ARCHITECTURE_COMPARISON.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/CARESURE_ARCHITECTURE_COMPARISON.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  

@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Master Executive Technical Assessment
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/BACKEND_MASTER_AUDIT.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/BACKEND_MASTER_AUDIT.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect (Node.js, Express.js, PostgreSQL, Distributed Systems)  
@@ -26,9 +26,9 @@ However, the repository is currently in an **uninitialized, base-kit state**:
 
 ---
 
-## 2. Audit Documentation Suite (`BACKEND_AUDIT/`)
+## 2. Audit Documentation Suite (`docs/audits/`)
 
-A dedicated audit suite of 10 specialized reports has been compiled inside `FitOnus/backend/BACKEND_AUDIT/`:
+A dedicated audit suite of 10 specialized reports has been compiled inside `FitOnus/backend/docs/audits/`:
 
 | Document | Key Focus & Scope |
 |---|---|

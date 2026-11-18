@@ -86,6 +86,8 @@ docs/                    Architecture, auth, database, development, deployment, 
 
 ## Documentation
 
+See the [documentation index](../Resources/docs/INDEX.md#backend) for guides, audits, and phase reports.
+
 - [Architecture](docs/architecture.md): layers, dependency rules, request lifecycle, trade-offs
 - [Authentication & authorization](docs/authentication.md)
 - [Database](docs/database.md): transactions, migrations, constraints, concurrency, backups

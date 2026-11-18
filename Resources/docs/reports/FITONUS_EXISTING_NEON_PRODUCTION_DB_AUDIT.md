@@ -78,7 +78,7 @@ The production database metadata was audited through repository environment file
 | Parameter | PROD Environment Value | Source of Evidence |
 | :--- | :--- | :--- |
 | **Neon Project ID** | `mute-surf-61144531` (Shared Neon Project) | Project Architecture Metadata |
-| **Protected Branch ID** | `br-icy-term-b3lb70tb` | `backend/docs/PHASE_7_MIGRATION_0011_SAFETY_REPORT.md`<br>`backend/docs/PHASE_8_10_FINAL_PUSH_GATE_REPORT.md`<br>`backend/scripts/verify-ai-final.ts`<br>`backend/scripts/verify-goals-db-integration.ts` |
+| **Protected Branch ID** | `br-icy-term-b3lb70tb` | `backend/docs/reports/PHASE_7_MIGRATION_0011_SAFETY_REPORT.md`<br>`backend/docs/reports/PHASE_8_10_FINAL_PUSH_GATE_REPORT.md`<br>`backend/scripts/verify-ai-final.ts`<br>`backend/scripts/verify-goals-db-integration.ts` |
 | **Candidate Endpoint ID** | `ep-gentle-bar-b3ywek03` | `backend/.env.primary.backup` |
 | **Candidate Host FQDN** | `ep-gentle-bar-b3ywek03-pooler.c-4.ap-southeast-1.aws.neon.tech` | `backend/.env.primary.backup` |
 | **AWS Region** | `ap-southeast-1` (Singapore, cell-4) | Host FQDN |

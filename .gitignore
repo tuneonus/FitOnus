@@ -50,6 +50,16 @@ Thumbs.db
 *.tsbuildinfo
 .turbo/
 .cache/
+.vite/
+.vitest-cache/
+
+# Temporary files and editor recovery files
+*.tmp
+*.swp
+*.swo
+*~
+*.orig
+*.rej
 
 # Local databases & test coverage
 coverage/

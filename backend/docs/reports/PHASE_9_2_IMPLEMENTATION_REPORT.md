@@ -27,7 +27,7 @@ Key outcomes:
 - `backend/src/modules/users/application/use-cases/delete-account.ts`: Clean Architecture use case orchestrating password verification and atomic deletion.
 - `backend/tests/unit/users/delete-account-use-case.test.ts`: Isolated domain/use-case tests for account deletion.
 - `backend/tests/unit/settings/phase9-settings-http.test.ts`: HTTP API integration tests covering all 13 Phase 9.2 scenarios.
-- `backend/docs/PHASE_9_2_IMPLEMENTATION_REPORT.md`: This comprehensive report.
+- `backend/docs/reports/PHASE_9_2_IMPLEMENTATION_REPORT.md`: This comprehensive report.
 
 ### Modified Files (Scoped Exclusively to Settings and Users)
 - `backend/src/modules/profile/domain/user-settings.ts`: Added `Language`, `SUPPORTED_LANGUAGES`, extended `UserSettingsProps`, getters, and defaults.

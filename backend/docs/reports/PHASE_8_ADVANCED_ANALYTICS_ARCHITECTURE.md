@@ -552,7 +552,7 @@ For a brand-new user with zero activity:
 
 | Task | Objective | Key Files to Create / Modify | Dependencies | Test Requirements | Completion Criteria |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **8.1** | **Architecture & Codebase Audit** *(Current)* | `backend/docs/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md` | Existing Phase 1–6 implementations | Read-only inspection; verify existing 477 backend tests pass | Architecture document delivered; user approval received. |
+| **8.1** | **Architecture & Codebase Audit** *(Current)* | `backend/docs/reports/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md` | Existing Phase 1–6 implementations | Read-only inspection; verify existing 477 backend tests pass | Architecture document delivered; user approval received. |
 | **8.2** | **Analytics Domain & Calculation Engine** | `backend/src/modules/analytics/domain/*`, `pg-analytics-*-adapter.ts` | Existing SQL tables (`0001`–`0010`) | Unit tests for all mathematical formulas; 1RM Epley tests; EMA tests | 100% test coverage on calculation edge cases (zero values, DST). |
 | **8.3** | **Analytics Application Use Cases** | `backend/src/modules/analytics/application/use-cases/*` | Task 8.2 Domain & Adapters | Unit tests for all 7 use cases with mock repository ports | All use cases return verified DTO shapes matching API contract. |
 | **8.4** | **REST APIs & Integration Tests** | `backend/src/modules/analytics/interface/*`, `container.ts` | Task 8.3 Use Cases, `defineRoute` | Supertest HTTP integration suite; 401 unauthenticated; 400 validation; user isolation | All 7 REST endpoints operational with automated integration tests. |

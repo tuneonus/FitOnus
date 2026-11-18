@@ -1,5 +1,7 @@
 # FitOnus
 
+See the [documentation index](INDEX.md) for project releases, reports, component guides, audits, and documentation placement rules.
+
 ## Project Introduction
 
 FitOnus is a next-generation, AI-powered health, fitness, nutrition, and wellness platform designed to replace fragmented health applications. Built for iOS and Android using React Native and Expo, and supported by a high-performance Node.js backend, FitOnus acts as a singular hub for tracking physical activity, monitoring diet, optimizing sleep, managing recovery, and gaining actionable insights through our proprietary AI Coach.

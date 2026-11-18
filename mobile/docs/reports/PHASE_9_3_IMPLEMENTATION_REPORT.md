@@ -28,7 +28,7 @@ Key outcomes:
 - `mobile/src/features/settings/screens/LanguageScreen.tsx`: Language selection screen with options for English and Tamil.
 - `mobile/tests/unit-conversion.test.ts`: 10 comprehensive unit tests covering conversions, rounding, formatting, and edge cases.
 - `mobile/tests/settings-integration.test.ts`: 8 integration tests covering user isolation, storage key scoping, contract compatibility, stale response guards, and theme synchronization.
-- `mobile/docs/PHASE_9_3_IMPLEMENTATION_REPORT.md`: This comprehensive implementation report.
+- `mobile/docs/reports/PHASE_9_3_IMPLEMENTATION_REPORT.md`: This comprehensive implementation report.
 
 ### Modified Files
 - `mobile/src/features/profile/types/profile.ts`: Extended `UserSettingsView` and `UpdateSettingsPayload` with `language`, `privacyAnalytics`, `privacyPhotoRetention`, `privacyCoachSharing`, and `notificationSchedule`.

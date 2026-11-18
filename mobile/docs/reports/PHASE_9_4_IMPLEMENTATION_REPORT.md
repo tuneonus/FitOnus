@@ -138,7 +138,7 @@ New test suite: `mobile/tests/account-security.test.ts` (14/14 tests pass)
 ### Created:
 - `mobile/src/features/settings/screens/ChangePasswordScreen.tsx`
 - `mobile/tests/account-security.test.ts`
-- `mobile/docs/PHASE_9_4_IMPLEMENTATION_REPORT.md`
+- `mobile/docs/reports/PHASE_9_4_IMPLEMENTATION_REPORT.md`
 
 ### Modified:
 - `mobile/src/features/auth/api/auth-repository.ts` (added changePassword & deleteAccount API calls)

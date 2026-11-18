@@ -13,10 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Foundational repository structure for mobile and backend.
 
 ### Changed
-- N/A
+- Organized release notes under `Resources/docs/releases/`, project reports under `Resources/docs/reports/`, and component audits and phase reports under each component's `docs/audits/` and `docs/reports/` folders.
+- Added a repository README and documentation index with placement rules; updated moved-document references.
 
 ### Removed
-- N/A
+- Removed an unused duplicate notification image and local generated cache files.
 
 ### Fixed
 - N/A

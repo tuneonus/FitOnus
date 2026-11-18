@@ -106,14 +106,14 @@ Final checks ran against the final source fingerprints. There were no further so
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| `npm run typecheck` | **Passed**, exit 0 | [TypeScript output](Resources/docs/fitonus-premium-ui-phase2/typecheck.log) |
-| Scoped ESLint, `--max-warnings 0` | **Passed**, 33 task-owned TS/TSX files, no warnings | [Lint output](Resources/docs/fitonus-premium-ui-phase2/lint.log) |
-| `npm test` — complete mobile suite | **266 passed**, 103 suites, 0 failed/skipped/cancelled | [Full output](Resources/docs/fitonus-premium-ui-phase2/mobile-tests.log) |
+| `npm run typecheck` | **Passed**, exit 0 | [TypeScript output](typecheck.log) |
+| Scoped ESLint, `--max-warnings 0` | **Passed**, 33 task-owned TS/TSX files, no warnings | [Lint output](lint.log) |
+| `npm test` — complete mobile suite | **266 passed**, 103 suites, 0 failed/skipped/cancelled | [Full output](mobile-tests.log) |
 | New Phase 2 unit tests | **14 passed**: 9 workout / 5 nutrition cases | `mobile/tests/premium-workout.test.ts`, `mobile/tests/premium-nutrition.test.ts` |
 | Existing navigation regression tests | **Passed** within the complete suite: swipe predicates, sheet dismissal, motion physics, five-tab/state contracts | Navigation section of full test output |
-| Browser journeys, light/dark, 320×740 and 390×844 | **Passed**; 68 screen captures and 10 flow evidence entries | [Journey results](Resources/docs/fitonus-premium-ui-phase2/browser-results.json) |
-| Large viewport, light/dark, 430×932 | **Passed**; 8 screen captures and 6 guard/recovery evidence entries | [Large-screen results](Resources/docs/fitonus-premium-ui-phase2/browser-large-results.json) |
-| Source/concurrency check and `git diff --check` on task-owned files | **Passed**; no task-source changes during validation, no whitespace errors | [Final source fingerprints](Resources/docs/fitonus-premium-ui-phase2/source-sha256.json) |
+| Browser journeys, light/dark, 320×740 and 390×844 | **Passed**; 68 screen captures and 10 flow evidence entries | [Journey results](browser-results.json) |
+| Large viewport, light/dark, 430×932 | **Passed**; 8 screen captures and 6 guard/recovery evidence entries | [Large-screen results](browser-large-results.json) |
+| Source/concurrency check and `git diff --check` on task-owned files | **Passed**; no task-source changes during validation, no whitespace errors | [Final source fingerprints](source-sha256.json) |
 | Android hardware, native recording and accessibility acceptance | **Pending**, explicitly deferred | Checklist below |
 
 The browser evidence contains no detected document overflow or uncaught page errors. It verifies combined exercise filters/details, generated-plan review, numeric set logging, rest/Finish separation, back/resume persistence, workout save, water updates, serving selection/logging, diary navigation, typed voice parsing/review, actual picked-file photo analysis, missing-food search and confirmation/save. Additional guard checks verify that a blank reps draft disables set completion, zero completed sets disable Finish, search errors remain distinct from no matches, and Retry recovers the same query.
@@ -122,16 +122,16 @@ Browser APIs were intercepted with isolated **synthetic QA fixtures**, not live 
 
 The initial 221 tests are the earlier baseline. This task added 14 tests; other sessions also added tests, so the full increase to 266 is not attributed solely to this redesign. Expected error-path logs in the successful test output and the intentional browser search 503 are part of recovery testing.
 
-Review the [evidence index](Resources/docs/fitonus-premium-ui-phase2/README.md) and representative captures:
+Review the [evidence index](README.md) and representative captures:
 
 | Experience | Light | Dark |
 | --- | --- | --- |
-| Training, 390 px | [Light](Resources/docs/fitonus-premium-ui-phase2/light-training-390.png) | [Dark](Resources/docs/fitonus-premium-ui-phase2/dark-training-390.png) |
-| Active workout/rest, 320 px | [Light](Resources/docs/fitonus-premium-ui-phase2/light-active-rest-320.png) | [Dark](Resources/docs/fitonus-premium-ui-phase2/dark-active-rest-320.png) |
-| Nutrition, 320 px | [Light](Resources/docs/fitonus-premium-ui-phase2/light-nutrition-320.png) | [Dark](Resources/docs/fitonus-premium-ui-phase2/dark-nutrition-320.png) |
-| Food detail, 320 px | [Light](Resources/docs/fitonus-premium-ui-phase2/light-food-detail-320.png) | [Dark](Resources/docs/fitonus-premium-ui-phase2/dark-food-detail-320.png) |
-| Photo confirmation, 320 px | [Light](Resources/docs/fitonus-premium-ui-phase2/light-photo-confirm-320.png) | [Dark](Resources/docs/fitonus-premium-ui-phase2/dark-photo-confirm-320.png) |
-| Training, 430 px | [Light](Resources/docs/fitonus-premium-ui-phase2/light-training-430.png) | [Dark](Resources/docs/fitonus-premium-ui-phase2/dark-training-430.png) |
+| Training, 390 px | [Light](light-training-390.png) | [Dark](dark-training-390.png) |
+| Active workout/rest, 320 px | [Light](light-active-rest-320.png) | [Dark](dark-active-rest-320.png) |
+| Nutrition, 320 px | [Light](light-nutrition-320.png) | [Dark](dark-nutrition-320.png) |
+| Food detail, 320 px | [Light](light-food-detail-320.png) | [Dark](dark-food-detail-320.png) |
+| Photo confirmation, 320 px | [Light](light-photo-confirm-320.png) | [Dark](dark-photo-confirm-320.png) |
+| Training, 430 px | [Light](light-training-430.png) | [Dark](dark-training-430.png) |
 
 
 ## 8. Remaining issues and deliberate limits

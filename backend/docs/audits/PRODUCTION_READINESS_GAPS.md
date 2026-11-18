@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Production Readiness Gaps & Operational Analysis
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/PRODUCTION_READINESS_GAPS.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/PRODUCTION_READINESS_GAPS.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  

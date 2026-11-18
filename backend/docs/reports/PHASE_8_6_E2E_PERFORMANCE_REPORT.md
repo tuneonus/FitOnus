@@ -4,7 +4,7 @@
 **Phase:** 8.6 Advanced Analytics Verification & Release Readiness  
 **Date:** 2026-11-07  
 **Status:** **READY FOR RELEASE CANDIDATE** (Subject to Render Dev deployment & device smoke-testing)  
-**Deliverable Path:** `backend/docs/PHASE_8_6_E2E_PERFORMANCE_REPORT.md`
+**Deliverable Path:** `backend/docs/reports/PHASE_8_6_E2E_PERFORMANCE_REPORT.md`
 
 ---
 
@@ -255,7 +255,7 @@ During the creation and execution of the automated live verification script, the
 ## 9. Concurrent Workspace Observations (Phase 9)
 
 During this audit, it was detected that Phase 9 files exist in the workspace:
-- `backend/docs/PHASE_9_SETTINGS_ARCHITECTURE.md` (active in editor)
+- `backend/docs/reports/PHASE_9_SETTINGS_ARCHITECTURE.md` (active in editor)
 - `backend/migrations/0012_extend_user_settings_and_preferences.sql` (untracked migration)
 - `backend/src/modules/profile/domain/user-settings.ts` & `ports.ts` (uncommitted work-in-progress on settings preferences)
 

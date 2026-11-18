@@ -151,7 +151,7 @@ BASE_URL=https://fitonus-api-dev.onrender.com \
 |-------|-----------|--------|
 | **Admin UI (Phase 7.6)** | `admin/app/challenges/page.tsx`<br>`admin/src/features/challenges/**`<br>`admin/tests/challenges-admin.test.ts`<br>`admin/src/components/layout/Sidebar.tsx` | 🔶 Untracked — awaiting commit approval |
 | **Mobile (Phase 7.5)** | `mobile/src/features/challenges/**`<br>`mobile/tests/challenges-integration.test.ts`<br>Route + nav wiring files | 🔶 Modified/Untracked — awaiting commit approval |
-| **Phase 8 (DO NOT TOUCH)** | `backend/src/modules/analytics/`<br>`backend/tests/unit/analytics/`<br>`backend/docs/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md` | ⛔ Not to be staged |
+| **Phase 8 (DO NOT TOUCH)** | `backend/src/modules/analytics/`<br>`backend/tests/unit/analytics/`<br>`backend/docs/reports/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md` | ⛔ Not to be staged |
 
 **Suggested commit for Phase 7.5 + 7.6:**
 ```bash

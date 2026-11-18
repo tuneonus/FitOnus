@@ -4,7 +4,7 @@
 **Phase:** 8.7 Backend Build Failure Investigation & Release Gate  
 **Date:** 2026-11-07  
 **Status:** **PHASE 8 RC1 READY (Repository Gate Conditionally Gated by Concurrent Phase 9)**  
-**Deliverable Path:** `backend/docs/PHASE_8_7_BUILD_RELEASE_GATE_REPORT.md`
+**Deliverable Path:** `backend/docs/reports/PHASE_8_7_BUILD_RELEASE_GATE_REPORT.md`
 
 ---
 
@@ -124,7 +124,7 @@ Strictly adhering to Phase 8 scope, minimal non-breaking fixes were applied excl
 ## 6. Concurrent Phase 9 Conflict Assessment
 
 ### Assessment Details:
-- Another Antigravity session is concurrently developing Phase 9 Settings (`backend/docs/PHASE_9_SETTINGS_ARCHITECTURE.md`).
+- Another Antigravity session is concurrently developing Phase 9 Settings (`backend/docs/reports/PHASE_9_SETTINGS_ARCHITECTURE.md`).
 - Current uncommitted Phase 9 files in workspace:
   - `backend/migrations/0012_extend_user_settings_and_preferences.sql`
   - `backend/src/modules/profile/domain/user-settings.ts`

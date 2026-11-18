@@ -40,7 +40,7 @@ The following files constitute the Phase 7 Backend deliverable:
 - `backend/tests/unit/challenges/` (Untracked: 7 test suites, 87 unit tests)
 
 ### 2.3. Phase 8 Concurrent Changes Isolation
-- `backend/docs/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md` is present in the workspace as an untracked file from a parallel planning session.
+- `backend/docs/reports/PHASE_8_ADVANCED_ANALYTICS_ARCHITECTURE.md` is present in the workspace as an untracked file from a parallel planning session.
 - **Strict Isolation:** This file must **NOT** be included in Phase 7 commits or deployments.
 
 ---
@@ -170,9 +170,9 @@ git add backend/src/container.ts \
         backend/migrations/0011_create_challenges_and_gamification.sql \
         backend/src/modules/challenges/ \
         backend/tests/unit/challenges/ \
-        backend/docs/PHASE_7_FINAL_VERIFICATION_REPORT.md \
-        backend/docs/PHASE_7_MIGRATION_0011_SAFETY_REPORT.md \
-        backend/docs/PHASE_7_RENDER_DEPLOYMENT_READINESS.md
+        backend/docs/reports/PHASE_7_FINAL_VERIFICATION_REPORT.md \
+        backend/docs/reports/PHASE_7_MIGRATION_0011_SAFETY_REPORT.md \
+        backend/docs/reports/PHASE_7_RENDER_DEPLOYMENT_READINESS.md
 ```
 
 ### Step 2: Commit

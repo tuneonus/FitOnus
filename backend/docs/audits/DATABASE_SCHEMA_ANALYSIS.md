@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Database Schema, Transactions & Data Access Analysis
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/DATABASE_SCHEMA_ANALYSIS.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/DATABASE_SCHEMA_ANALYSIS.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  

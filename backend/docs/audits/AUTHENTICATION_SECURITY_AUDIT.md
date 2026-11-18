@@ -1,6 +1,6 @@
 # FitOnus Backend Audit — Authentication & Security Architecture Audit
 
-**Document Reference:** `FitOnus/backend/BACKEND_AUDIT/AUTHENTICATION_SECURITY_AUDIT.md`  
+**Document Reference:** `FitOnus/backend/docs/audits/AUTHENTICATION_SECURITY_AUDIT.md`  
 **Status:** Complete & Verified Technical Audit  
 **Date:** 2026-11-04  
 **Auditor:** Senior Backend Architect  
