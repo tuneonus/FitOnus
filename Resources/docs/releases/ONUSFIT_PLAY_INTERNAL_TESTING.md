@@ -4,7 +4,7 @@
 
 Prepared 2026-11-10 (Asia/Kolkata). **Status: BLOCKED for launch; local preparation only.**
 
-Follow-up fixes and current evidence: [Android release readiness](ONUSFIT_RELEASE_READINESS.md). This follow-up replaces the initial dummy-profile/social-button findings; external launch gates remain open.
+Follow-up fixes and current evidence: [Android release readiness](../operations/mobile-release-readiness.md). This follow-up replaces the initial dummy-profile/social-button findings; external launch gates remain open.
 
 No Expo project was created/linked, no project ID was replaced, no credentials were generated/reset/downloaded, no EAS build or upload was started, no database was modified, and no Git files were staged/committed/pushed. Do not publish to production. Each future project, signing, cloud-build, upload and rollout action needs separate explicit approval.
 

@@ -1,6 +1,6 @@
-# generic-backend
+# FitOnus backend
 
-A reusable backend starter for API-based products (SaaS, e-commerce, booking, inventory, admin tools).
+The FitOnus backend builds on a reusable API starter.
 It is a **modular monolith** with **Clean Architecture** boundaries, built on Express 5, PostgreSQL (raw `pg`),
 Zod, `jose` and Argon2id. It ships a complete authentication foundation and a generic Users module that
 demonstrate every pattern a new feature module should follow.
@@ -28,7 +28,7 @@ demonstrate every pattern a new feature module should follow.
 Prerequisites: Node.js 22 LTS (≥ 22.22), Docker Desktop (for local PostgreSQL and integration tests).
 
 ```powershell
-cd E:\Web\generic-backend
+cd backend
 npm ci
 Copy-Item .env.example .env          # then edit .env: set real local passwords/secrets
 docker compose up -d db              # PostgreSQL 17 on 127.0.0.1:5432 with a persistent volume
@@ -86,7 +86,7 @@ docs/                    Architecture, auth, database, development, deployment, 
 
 ## Documentation
 
-See the [documentation index](../Resources/docs/INDEX.md#backend) for guides, audits, and phase reports.
+See the [documentation index](../Resources/docs/INDEX.md#backend) for maintained guides and retained feature designs.
 
 - [Architecture](docs/architecture.md): layers, dependency rules, request lifecycle, trade-offs
 - [Authentication & authorization](docs/authentication.md)

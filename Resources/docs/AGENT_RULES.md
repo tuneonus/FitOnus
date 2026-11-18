@@ -22,7 +22,7 @@ This document outlines the strict, non-negotiable rules that every AI coding age
 ## 4. State Management
 - **Always use React Query**: For all asynchronous server state (fetching, caching, synchronizing, mutating data).
 - **Always use Zustand**: For all synchronous client state (UI toggles, active session data).
-- **Always use MMKV**: For synchronous, high-performance local persistence of non-sensitive data. Use `expo-secure-store` exclusively for sensitive credentials.
+- **Use the existing persistence adapters**: Use AsyncStorage for non-sensitive mobile preferences, as implemented in the current app. Use `expo-secure-store` for sensitive credentials. Do not reintroduce a native storage dependency from an older design document.
 
 ## 5. Code Quality and Integrity
 - **Never generate placeholder code**: Do not write `// TODO: Implement later` or mock data structures unless explicitly requested as part of a prototyping phase. Write complete, production-grade logic.

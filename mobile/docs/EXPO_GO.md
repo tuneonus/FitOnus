@@ -37,8 +37,8 @@ The dashboard API URL uses `EXPO_PUBLIC_API_URL`. A physical phone cannot reach 
 
 ## Limitations
 
-- Authentication, coach responses and workout data remain the existing mocks. This migration does not implement missing backend features or empty action handlers.
-- Remote push notifications on Android and background location are not available in Expo Go. No current screen calls these APIs.
+- Authentication, coach responses, and workout data use backend services. Configure the API URL for the target device and environment.
+- Remote push notifications need a supported native build and Firebase configuration. See [push notifications](push-notifications.md) for setup and platform limitations.
 - App icon, splash screen and native config plugin changes require a native binary to take full effect; Expo Go uses its host configuration.
 - Glass Effect and Symbols depend on platform/OS support. Current screens do not import them.
 - No physical-device QR scan or interactive screen verification has been performed by the agent. Metro startup and bundling are distinct from a successful device run.

@@ -1,5 +1,7 @@
 # Development Workflow
 
+This is the original product implementation plan. Some technology choices and phase descriptions predate the current application. Use the [agent guide](../../AGENTS.md), component package manifests, and component guides for the implemented Express/PostgreSQL/Gemini system; the phases below describe planning intent.
+
 This document dictates the sequential implementation order for the FitOnus project. Teams and AI agents must follow these phases strictly to ensure dependencies are resolved naturally and technical debt is minimized.
 
 ---
