@@ -54,11 +54,25 @@ class LlmResult:
     usage: LlmUsage
 
 
+@dataclass(frozen=True)
+class MediaInput:
+    """An audio/image clip sent to Gemini together with the prompt."""
+
+    mime_type: str
+    data: bytes
+
+
 class TextGenerator(Protocol):
     """What the rest of the app needs from an LLM. Tests provide a fake with this shape."""
 
     async def generate_text(
-        self, prompt: str, *, primary_model: str, fallback_model: str | None, deadline_s: float
+        self,
+        prompt: str,
+        *,
+        primary_model: str,
+        fallback_model: str | None,
+        deadline_s: float,
+        media: MediaInput | None = None,
     ) -> LlmResult: ...
 
 
@@ -90,7 +104,13 @@ class GeminiClient:
         return self._sdk
 
     async def generate_text(
-        self, prompt: str, *, primary_model: str, fallback_model: str | None, deadline_s: float
+        self,
+        prompt: str,
+        *,
+        primary_model: str,
+        fallback_model: str | None,
+        deadline_s: float,
+        media: MediaInput | None = None,
     ) -> LlmResult:
         sdk = (
             self._sdk_client()
@@ -130,7 +150,7 @@ class GeminiClient:
             attempt_started = self._clock()
             try:
                 response = await self._call(
-                    sdk, model, prompt, min(remaining, self._attempt_timeout_s)
+                    sdk, model, prompt, min(remaining, self._attempt_timeout_s), media
                 )
             except Exception as exc:  # noqa: BLE001 - every SDK/network failure is classified below
                 last = classify_gemini_error(exc)
@@ -150,16 +170,24 @@ class GeminiClient:
 
         raise _to_ai_error(last, attempts_made=attempts)
 
-    async def _call(self, sdk: Any, model: str, prompt: str, timeout_s: float) -> Any:
+    async def _call(
+        self, sdk: Any, model: str, prompt: str, timeout_s: float, media: MediaInput | None = None
+    ) -> Any:
         config = types.GenerateContentConfig(
             http_options=types.HttpOptions(
                 timeout=int(timeout_s * 1000),
                 retry_options=types.HttpRetryOptions(attempts=1),  # 1 = no SDK-level retries
             )
         )
+        # Same content order as the former Node client: the clip first, then the prompt.
+        contents: Any = (
+            [types.Part.from_bytes(data=media.data, mime_type=media.mime_type), prompt]
+            if media
+            else prompt
+        )
         async with asyncio.timeout(timeout_s):
             return await sdk.aio.models.generate_content(
-                model=model, contents=prompt, config=config
+                model=model, contents=contents, config=config
             )
 
 

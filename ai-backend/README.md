@@ -3,7 +3,7 @@
 Internal Python / FastAPI service. The Node.js API calls it to do **AI inference**; mobile and admin
 never talk to it.
 
-**What it does today:** generates AI Coach **chat replies** (`POST /internal/v1/ai/coach/chat`):
+**What it does today:** (1) generates AI Coach **chat replies** (`POST /internal/v1/ai/coach/chat`); (2) parses **voice meals** (`POST /internal/v1/ai/meals/parse-voice`, typed text or an audio clip). For each it
 builds the prompt, calls Gemini (primary model, one fallback model, total deadline), parses the reply.
 
 **What it does not do (stays in Node):** authentication, quota/billing, conversation storage, loading
@@ -14,7 +14,7 @@ fallback for chat: if this service is down, `POST /coach/chat` returns a control
 unit is handled by Node's usual refund rules. Node refuses to start without `AI_BACKEND_URL` and
 `AI_BACKEND_SERVICE_SECRET`. Not deployed.
 
-Learning guides: [01 integration](../docs/ai/learning/01-python-chat-integration.md) (historical: describes the fallback that was removed) and [02 Python-only architecture](../docs/ai/learning/02-python-only-ai-architecture.md).
+Learning guides: [01 integration](../docs/ai/learning/01-python-chat-integration.md) (historical: describes the fallback that was removed), [02 Python-only architecture](../docs/ai/learning/02-python-only-ai-architecture.md) and [03 voice meal](../docs/ai/learning/03-voice-meal-python-migration.md).
 Plan and decisions: [docs/ai/PYTHON_MIGRATION_READINESS.md](../docs/ai/PYTHON_MIGRATION_READINESS.md).
 
 ## Layout
@@ -27,12 +27,14 @@ ai-backend/
 │   ├── main.py            # create_app(): mounts routers + error handlers (no public /docs)
 │   ├── api/               # thin HTTP routes
 │   │   ├── health.py      #   GET  /health/live
-│   │   └── coach_chat.py  #   POST /internal/v1/ai/coach/chat
+│   │   ├── coach_chat.py  #   POST /internal/v1/ai/coach/chat
+│   │   └── voice_meal.py  #   POST /internal/v1/ai/meals/parse-voice
 │   ├── contracts/         # Pydantic request/response models (no logic)
 │   ├── coach/             # chat use case (chat.py) + reply parsing (parsing.py)
-│   ├── prompts/           # versioned prompt text (ported 1:1 from Node)
+│   ├── meals/             # voice meal use case (voice.py) + reply parsing (parsing.py)
+│   ├── prompts/           # versioned prompt text (ported 1:1 from Node): coach_chat.py, voice_meal.py
 │   ├── llm/               # the ONLY code that talks to Gemini (+ error classifier, cooldown)
-│   └── core/              # settings, service-token auth, error type
+│   └── core/              # settings, service-token auth, error type, js_compat.py (JavaScript-equivalent number/string rules)
 └── tests/                 # pytest; tests/fixtures/coach_chat/ holds golden files shared with Node
 ```
 
@@ -72,4 +74,4 @@ curl http://127.0.0.1:8000/health/live
 - Provider SDK code lives only in `llm/`.
 - Never log message text, memories, replies, tokens or keys; log metadata only.
 - A new folder is added when its first real file exists, never in advance.
-- Prompt changes: bump `PROMPT_VERSION` and regenerate `tests/fixtures/coach_chat/*.prompt.golden.txt` in the same change.
+- Prompt changes: bump `PROMPT_VERSION` and regenerate the golden fixtures (`tests/fixtures/coach_chat/`, `tests/fixtures/voice_meal/`) in the same change.

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { AiTimeoutError } from '../../../shared/ai/ai-timeout.js';
 import { currentAiRequestContext, markAiRequestDispatched } from '../../../shared/ai/ai-usage.js';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
+import { toPublicAiError } from '../../../shared/ai/python-ai-errors.js';
 import { PythonAiError } from '../../../shared/ai/python-ai-client.js';
 import { AppError } from '../../../shared/errors/app-error.js';
 import type { Logger } from '../../../shared/logging/logger.js';
@@ -98,7 +98,7 @@ export class PythonCoachChatService implements CoachChatService {
         { kind: failure.kind, status: failure.info.status, code: failure.info.code, requestId },
         'Python coach chat failed',
       );
-      throw toAppError(failure);
+      throw toPublicAiError(failure, AI_BACKEND_UNAVAILABLE_MESSAGE);
     }
   }
 
@@ -169,32 +169,5 @@ export class PythonCoachChatService implements CoachChatService {
       ...(typeof result.medicalNote === 'boolean' ? { medicalNote: result.medicalNote } : {}),
       ...(result.blocks ? { blocks: result.blocks as unknown as Block[] } : {}),
     };
-  }
-}
-
-/** Maps any Python failure to a public error. Never exposes URLs, secrets or provider text. */
-function toAppError(error: PythonAiError): AppError {
-  const retryAfterSeconds = error.info.retryAfterSeconds;
-  switch (error.kind) {
-    case 'provider_rate_limited':
-      return new AppError('rate_limited', 'RATE_LIMITED', error.message, { retryAfterSeconds });
-    case 'provider_quota_exhausted':
-      return new AppError('rate_limited', 'AI_QUOTA_EXCEEDED', error.message, {
-        retryAfterSeconds,
-        reason: 'QUOTA_EXHAUSTED_RPD',
-      });
-    case 'provider_unavailable':
-      return new AppError(
-        'unavailable',
-        error.info.code === 'AI_UNAVAILABLE' ? 'AI_UNAVAILABLE' : 'SERVICE_UNAVAILABLE',
-        error.message,
-        retryAfterSeconds !== undefined ? { retryAfterSeconds } : undefined,
-      );
-    case 'provider_timeout':
-    case 'timeout':
-      return new AiTimeoutError();
-    default:
-      // unreachable, auth, misconfigured, invalid_request, invalid_response, server_error, provider_error
-      return new AppError('unavailable', 'SERVICE_UNAVAILABLE', AI_BACKEND_UNAVAILABLE_MESSAGE);
   }
 }

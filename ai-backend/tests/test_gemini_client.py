@@ -9,7 +9,7 @@ from google.genai import errors as genai_errors
 
 from onusfit_ai.core.errors import AiError
 from onusfit_ai.llm.errors import ModelCooldown, classify_gemini_error
-from onusfit_ai.llm.gemini import GeminiClient
+from onusfit_ai.llm.gemini import GeminiClient, MediaInput
 
 
 def make_response(text: str = "hi") -> Any:
@@ -29,10 +29,12 @@ class FakeSdk:
     def __init__(self, plan: dict[str, Any]) -> None:
         self.plan = plan
         self.calls: list[str] = []
+        self.contents: list[Any] = []
         self.aio = SimpleNamespace(models=SimpleNamespace(generate_content=self._generate))
 
     async def _generate(self, *, model: str, contents: str, config: Any) -> Any:
         self.calls.append(model)
+        self.contents.append(contents)
         outcome = self.plan[model]
         if isinstance(outcome, BaseException):
             raise outcome
@@ -239,3 +241,28 @@ def test_classifier_reads_retry_delay_and_model_specific_quota() -> None:
     )
     c = classify_gemini_error(model_daily)
     assert c.kind == "QUOTA_EXHAUSTED_RPD" and c.is_retryable and not c.is_project_wide
+
+
+async def test_text_only_call_sends_just_the_prompt() -> None:
+    sdk = FakeSdk({"primary": make_response()})
+    await run(GeminiClient("k", sdk_client=sdk))
+    assert sdk.contents == ["prompt"]
+
+
+async def test_audio_is_sent_before_the_prompt_like_the_node_client_did() -> None:
+    sdk = FakeSdk({"primary": make_response()})
+    media = MediaInput(mime_type="audio/m4a", data=b"\x00\x01clip")
+
+    await run(GeminiClient("k", sdk_client=sdk), media=media)
+
+    clip, prompt = sdk.contents[0]
+    assert prompt == "prompt"
+    assert clip.inline_data.mime_type == "audio/m4a"
+    assert clip.inline_data.data == b"\x00\x01clip"
+
+
+async def test_audio_is_also_sent_to_the_fallback_model() -> None:
+    sdk = FakeSdk({"primary": rate_limit(), "fallback": make_response()})
+    await run(GeminiClient("k", sdk_client=sdk), media=MediaInput("audio/webm", b"x"))
+    assert sdk.calls == ["primary", "fallback"]
+    assert all(isinstance(c, list) and len(c) == 2 for c in sdk.contents)

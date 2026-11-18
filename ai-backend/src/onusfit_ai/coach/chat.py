@@ -7,7 +7,8 @@ Everything stateful (conversation storage, quota, memory consent) stays in Node.
 import logging
 
 from onusfit_ai.coach.parsing import parse_coach_output
-from onusfit_ai.contracts.coach_chat import CoachChatRequest, CoachChatResponse, Usage
+from onusfit_ai.contracts.coach_chat import CoachChatRequest, CoachChatResponse
+from onusfit_ai.contracts.common import Usage
 from onusfit_ai.llm.gemini import TextGenerator
 from onusfit_ai.prompts.coach_chat import PROMPT_VERSION, build_prompt
 

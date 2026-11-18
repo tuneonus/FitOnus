@@ -15,7 +15,7 @@ import type { UserFitnessContext } from '../../../src/modules/coach/domain/coach
 import { AnalyzeMealPhotoUseCase } from '../../../src/modules/nutrition/application/use-cases/analyze-meal-photo.js';
 import { ParseVoiceMealUseCase } from '../../../src/modules/nutrition/application/use-cases/parse-voice-meal.js';
 import type { GeminiMealPhotoService } from '../../../src/modules/nutrition/infrastructure/gemini-meal-photo-service.js';
-import type { GeminiVoiceMealService } from '../../../src/modules/nutrition/infrastructure/gemini-voice-meal-service.js';
+import type { VoiceMealParser } from '../../../src/modules/nutrition/application/ports.js';
 import { markAiRequestDispatched } from '../../../src/shared/ai/ai-usage.js';
 import { isAppError } from '../../../src/shared/errors/app-error.js';
 import { InMemoryAiUsageStore } from '../../helpers/ai-usage-gate.js';
@@ -142,7 +142,7 @@ describe('voice meal parsing', () => {
 
   beforeEach(() => {
     service = { parseVoiceMeal: vi.fn().mockResolvedValue(result) };
-    useCase = new ParseVoiceMealUseCase(service as unknown as GeminiVoiceMealService, gate);
+    useCase = new ParseVoiceMealUseCase(service as unknown as VoiceMealParser, gate);
   });
 
   const transcript = () => useCase.execute({ userId: USER, transcript: 'two idlis and sambar' });

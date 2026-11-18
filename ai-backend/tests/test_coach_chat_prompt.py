@@ -8,7 +8,8 @@ import pytest
 
 from conftest import FIXTURES, load_request
 from onusfit_ai.contracts.coach_chat import CoachChatRequest
-from onusfit_ai.prompts.coach_chat import build_prompt, js_num
+from onusfit_ai.core.js_compat import js_num
+from onusfit_ai.prompts.coach_chat import build_prompt
 
 
 @pytest.mark.parametrize("name", ["full", "sparse"])

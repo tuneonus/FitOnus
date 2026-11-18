@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ParseVoiceMealUseCase } from '../../../src/modules/nutrition/application/use-cases/parse-voice-meal.js';
-import type { GeminiVoiceMealService } from '../../../src/modules/nutrition/infrastructure/gemini-voice-meal-service.js';
+import type { VoiceMealParser } from '../../../src/modules/nutrition/application/ports.js';
 import type { VoiceMealParseResult } from '../../../src/modules/nutrition/domain/voice-meal.types.js';
 import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
 describe('ParseVoiceMealUseCase', () => {
-  let mockService: GeminiVoiceMealService;
+  let mockService: VoiceMealParser;
   let useCase: ParseVoiceMealUseCase;
 
   const sampleEnglishResult: VoiceMealParseResult = {
@@ -103,7 +103,7 @@ describe('ParseVoiceMealUseCase', () => {
   beforeEach(() => {
     mockService = {
       parseVoiceMeal: vi.fn().mockResolvedValue(sampleEnglishResult),
-    } as unknown as GeminiVoiceMealService;
+    } as unknown as VoiceMealParser;
     useCase = new ParseVoiceMealUseCase(mockService, allowAllAiUsageGate());
   });
 

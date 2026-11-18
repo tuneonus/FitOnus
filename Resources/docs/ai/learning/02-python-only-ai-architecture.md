@@ -136,7 +136,7 @@ Tested guarantees (`coach-chat-python-integration.test.ts`, real use case + real
 - `scripts/verify-ai-final.ts` — removed the one scenario that used the Node chat parser (now covered in Python tests).
 - `tests/helpers/test-app.ts` (test env gets the two Python settings), `backend/.env.example`.
 
-**Still in Node (not migrated yet):** voice meal, meal photo, transcription, coach insights, admin "test key". `GeminiClient`, `GeminiRuntimeService` and the quota gate remain because they need them.
+**Still in Node (not migrated yet; voice meal has since moved, see guide 03):** voice meal, meal photo, transcription, coach insights, admin "test key". `GeminiClient`, `GeminiRuntimeService` and the quota gate remain because they need them.
 
 **Python:** no behavior change. Docstrings for the prompt now say the golden files are regression fixtures; README updated.
 

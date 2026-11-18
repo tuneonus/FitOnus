@@ -10,17 +10,9 @@ change is visible in review.
 """
 
 from onusfit_ai.contracts.coach_chat import ChatTurn, UserFitnessContext
+from onusfit_ai.core.js_compat import js_num
 
 PROMPT_VERSION = "coach_chat_v1_node_parity"
-
-
-def js_num(value: float | int | None) -> str:
-    """Format a number the way JavaScript's template literals do (72.0 -> "72", 72.5 -> "72.5")."""
-    if value is None:
-        return "null"
-    if isinstance(value, float) and value.is_integer():
-        return str(int(value))
-    return str(value)
 
 
 def _or(value: object, default: str) -> str:

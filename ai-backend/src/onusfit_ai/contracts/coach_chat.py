@@ -6,13 +6,12 @@ Node prepares everything here (context, history, memories) from its own database
 never reads a database and never receives a user id in the body (identity is in the service token).
 """
 
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
-from pydantic import Field, StringConstraints
+from pydantic import Field
 
 from onusfit_ai.contracts._base import ContractModel
-
-ModelName = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9._-]{1,64}$")]
+from onusfit_ai.contracts.common import ModelSelection, Usage
 
 
 class UserFitnessProfile(ContractModel):
@@ -79,13 +78,6 @@ class ChatTurn(ContractModel):
     text: str = Field(max_length=8000)
 
 
-class ModelSelection(ContractModel):
-    """Chosen by Node from the admin console's Gemini configuration; Python does not read the DB."""
-
-    primary: ModelName
-    fallback: ModelName | None = None
-
-
 class CoachChatRequest(ContractModel):
     message: str = Field(min_length=1, max_length=1000)
     context: UserFitnessContext
@@ -102,17 +94,6 @@ class CoachChatResult(ContractModel):
     sources: list[str]
     medical_note: bool | None = None
     blocks: list[dict[str, Any]] | None = None
-
-
-class Usage(ContractModel):
-    model: str
-    is_fallback: bool
-    input_tokens: int
-    output_tokens: int
-    cached_tokens: int
-    thinking_tokens: int
-    total_tokens: int
-    duration_ms: int
 
 
 class CoachChatResponse(ContractModel):

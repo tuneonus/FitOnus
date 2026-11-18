@@ -102,7 +102,7 @@ export interface MealPhotoAnalyzer {
   ): Promise<MealPhotoAnalysisResult>;
 }
 
-/** Turns a spoken or typed meal description into food items. Implemented by `GeminiVoiceMealService`. */
+/** Turns a spoken or typed meal description into food items. Implemented by `PythonVoiceMealService` (the Python AI backend). */
 export interface VoiceMealParser {
   parseVoiceMeal(params: {
     transcript?: string;

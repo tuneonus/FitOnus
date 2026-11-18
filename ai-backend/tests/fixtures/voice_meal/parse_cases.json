@@ -1,0 +1,767 @@
+[
+  {
+    "name": "good_tanglish",
+    "raw": "{\"transcript\":\"rendu dosai, sambar, konjam chutney\",\"detectedLanguage\":\"tanglish\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Dosa\",\"portionDescription\":\"2 pieces · 160 g\",\"servingWeightG\":160,\"servingUnit\":\"piece\",\"servingSize\":2,\"calories\":260,\"proteinG\":6,\"carbsG\":44,\"fatG\":7,\"fiberG\":2,\"confidence\":\"high\"},{\"name\":\"Sambar\",\"portionDescription\":\"1 bowl · 200 g\",\"servingWeightG\":200,\"servingUnit\":\"bowl\",\"servingSize\":1,\"calories\":130.4,\"proteinG\":6.55,\"carbsG\":18.25,\"fatG\":3.35,\"fiberG\":4.45,\"confidence\":\"medium\"}]}",
+    "fallbackTranscript": "rendu dosai sambar",
+    "expected": {
+      "transcript": "rendu dosai, sambar, konjam chutney",
+      "detectedLanguage": "tanglish",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "Dosa",
+          "brand": "AI Voice Estimate",
+          "serving": "2 pieces · 160 g",
+          "servingWeightG": 160,
+          "servingUnit": "piece",
+          "servingSize": 2,
+          "kcal": 260,
+          "protein": 6,
+          "carbs": 44,
+          "fat": 7,
+          "fiber": 2,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-1",
+          "name": "Sambar",
+          "brand": "AI Voice Estimate",
+          "serving": "1 bowl · 200 g",
+          "servingWeightG": 200,
+          "servingUnit": "bowl",
+          "servingSize": 1,
+          "kcal": 130,
+          "protein": 6.6,
+          "carbs": 18.3,
+          "fat": 3.4,
+          "fiber": 4.5,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "high",
+      "totalKcal": 390,
+      "totalProteinGrams": 12.6,
+      "totalCarbsGrams": 62.3,
+      "totalFatGrams": 10.4,
+      "totalFiberGrams": 6.5,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "fenced_json",
+    "raw": "```json\n{\"transcript\":\"rendu dosai, sambar, konjam chutney\",\"detectedLanguage\":\"tanglish\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Dosa\",\"portionDescription\":\"2 pieces · 160 g\",\"servingWeightG\":160,\"servingUnit\":\"piece\",\"servingSize\":2,\"calories\":260,\"proteinG\":6,\"carbsG\":44,\"fatG\":7,\"fiberG\":2,\"confidence\":\"high\"},{\"name\":\"Sambar\",\"portionDescription\":\"1 bowl · 200 g\",\"servingWeightG\":200,\"servingUnit\":\"bowl\",\"servingSize\":1,\"calories\":130.4,\"proteinG\":6.55,\"carbsG\":18.25,\"fatG\":3.35,\"fiberG\":4.45,\"confidence\":\"medium\"}]}\n```",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "rendu dosai, sambar, konjam chutney",
+      "detectedLanguage": "tanglish",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "Dosa",
+          "brand": "AI Voice Estimate",
+          "serving": "2 pieces · 160 g",
+          "servingWeightG": 160,
+          "servingUnit": "piece",
+          "servingSize": 2,
+          "kcal": 260,
+          "protein": 6,
+          "carbs": 44,
+          "fat": 7,
+          "fiber": 2,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-1",
+          "name": "Sambar",
+          "brand": "AI Voice Estimate",
+          "serving": "1 bowl · 200 g",
+          "servingWeightG": 200,
+          "servingUnit": "bowl",
+          "servingSize": 1,
+          "kcal": 130,
+          "protein": 6.6,
+          "carbs": 18.3,
+          "fat": 3.4,
+          "fiber": 4.5,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "high",
+      "totalKcal": 390,
+      "totalProteinGrams": 12.6,
+      "totalCarbsGrams": 62.3,
+      "totalFatGrams": 10.4,
+      "totalFiberGrams": 6.5,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "fenced_plain",
+    "raw": "```\n{\"transcript\":\"rendu dosai, sambar, konjam chutney\",\"detectedLanguage\":\"tanglish\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Dosa\",\"portionDescription\":\"2 pieces · 160 g\",\"servingWeightG\":160,\"servingUnit\":\"piece\",\"servingSize\":2,\"calories\":260,\"proteinG\":6,\"carbsG\":44,\"fatG\":7,\"fiberG\":2,\"confidence\":\"high\"},{\"name\":\"Sambar\",\"portionDescription\":\"1 bowl · 200 g\",\"servingWeightG\":200,\"servingUnit\":\"bowl\",\"servingSize\":1,\"calories\":130.4,\"proteinG\":6.55,\"carbsG\":18.25,\"fatG\":3.35,\"fiberG\":4.45,\"confidence\":\"medium\"}]}\n```",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "rendu dosai, sambar, konjam chutney",
+      "detectedLanguage": "tanglish",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "Dosa",
+          "brand": "AI Voice Estimate",
+          "serving": "2 pieces · 160 g",
+          "servingWeightG": 160,
+          "servingUnit": "piece",
+          "servingSize": 2,
+          "kcal": 260,
+          "protein": 6,
+          "carbs": 44,
+          "fat": 7,
+          "fiber": 2,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-1",
+          "name": "Sambar",
+          "brand": "AI Voice Estimate",
+          "serving": "1 bowl · 200 g",
+          "servingWeightG": 200,
+          "servingUnit": "bowl",
+          "servingSize": 1,
+          "kcal": 130,
+          "protein": 6.6,
+          "carbs": 18.3,
+          "fat": 3.4,
+          "fiber": 4.5,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "high",
+      "totalKcal": 390,
+      "totalProteinGrams": 12.6,
+      "totalCarbsGrams": 62.3,
+      "totalFatGrams": 10.4,
+      "totalFiberGrams": 6.5,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "padded_by_whitespace",
+    "raw": "\n  {\"transcript\":\"rendu dosai, sambar, konjam chutney\",\"detectedLanguage\":\"tanglish\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Dosa\",\"portionDescription\":\"2 pieces · 160 g\",\"servingWeightG\":160,\"servingUnit\":\"piece\",\"servingSize\":2,\"calories\":260,\"proteinG\":6,\"carbsG\":44,\"fatG\":7,\"fiberG\":2,\"confidence\":\"high\"},{\"name\":\"Sambar\",\"portionDescription\":\"1 bowl · 200 g\",\"servingWeightG\":200,\"servingUnit\":\"bowl\",\"servingSize\":1,\"calories\":130.4,\"proteinG\":6.55,\"carbsG\":18.25,\"fatG\":3.35,\"fiberG\":4.45,\"confidence\":\"medium\"}]}  \n",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "rendu dosai, sambar, konjam chutney",
+      "detectedLanguage": "tanglish",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "Dosa",
+          "brand": "AI Voice Estimate",
+          "serving": "2 pieces · 160 g",
+          "servingWeightG": 160,
+          "servingUnit": "piece",
+          "servingSize": 2,
+          "kcal": 260,
+          "protein": 6,
+          "carbs": 44,
+          "fat": 7,
+          "fiber": 2,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-1",
+          "name": "Sambar",
+          "brand": "AI Voice Estimate",
+          "serving": "1 bowl · 200 g",
+          "servingWeightG": 200,
+          "servingUnit": "bowl",
+          "servingSize": 1,
+          "kcal": 130,
+          "protein": 6.6,
+          "carbs": 18.3,
+          "fat": 3.4,
+          "fiber": 4.5,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "high",
+      "totalKcal": 390,
+      "totalProteinGrams": 12.6,
+      "totalCarbsGrams": 62.3,
+      "totalFatGrams": 10.4,
+      "totalFiberGrams": 6.5,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "no_items_with_reason",
+    "raw": "{\"transcript\":\"hello there\",\"detectedLanguage\":\"en\",\"items\":[],\"unclearReason\":\"No food mentioned.\"}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "hello there",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No food mentioned.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "no_items_no_reason",
+    "raw": "{\"items\":[]}",
+    "fallbackTranscript": "typed text",
+    "expected": {
+      "transcript": "typed text",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No food recognized from voice entry.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "items_not_an_array",
+    "raw": "{\"items\":\"abc\",\"transcript\":\"t\"}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "t",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No food recognized from voice entry.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "json_array_root",
+    "raw": "[1,2,3]",
+    "fallbackTranscript": "fb",
+    "expected": {
+      "transcript": "fb",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No food recognized from voice entry.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "json_number_root",
+    "raw": "42",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No food recognized from voice entry.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "prose_not_json",
+    "raw": "Sure! Two dosas is about 300 kcal.",
+    "fallbackTranscript": "two dosa",
+    "expected": {
+      "transcript": "two dosa",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "empty_string",
+    "raw": "",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "null_item_throws_typeerror",
+    "raw": "{\"items\":[null]}",
+    "fallbackTranscript": "x",
+    "expected": {
+      "transcript": "x",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "nan_literal_is_invalid_json",
+    "raw": "{\"transcript\":\"x\",\"items\":[{\"calories\":NaN}]}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "string_and_garbage_numbers",
+    "raw": "{\"items\":[{\"name\":\"Rice\",\"calories\":\"260\",\"proteinG\":\"abc\",\"carbsG\":null,\"fatG\":-3,\"fiberG\":true,\"servingWeightG\":\"160\",\"servingSize\":0,\"confidence\":\"HIGH\"}]}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "Rice",
+          "brand": "AI Voice Estimate",
+          "serving": "160g",
+          "servingWeightG": 160,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 260,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 1,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "medium",
+      "totalKcal": 260,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 1,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "empty_object_item_defaults",
+    "raw": "{\"items\":[{},{\"name\":\"\"},{\"name\":5}]}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "Food Item 1",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-1",
+          "name": "Food Item 2",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-2",
+          "name": "5",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "medium",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "half_rounding_js_vs_python",
+    "raw": "{\"items\":[{\"name\":\"a\",\"calories\":2.5,\"proteinG\":1.25,\"carbsG\":0.05,\"fatG\":2.675,\"fiberG\":0.45},{\"name\":\"b\",\"calories\":3.5,\"proteinG\":0.15,\"carbsG\":10.05,\"fatG\":1.005,\"fiberG\":0.25},{\"name\":\"c\",\"calories\":0.5,\"proteinG\":0.35,\"carbsG\":0.95,\"fatG\":4.45,\"fiberG\":1.15}]}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "a",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 3,
+          "protein": 1.3,
+          "carbs": 0.1,
+          "fat": 2.7,
+          "fiber": 0.5,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-1",
+          "name": "b",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 4,
+          "protein": 0.2,
+          "carbs": 10.1,
+          "fat": 1,
+          "fiber": 0.3,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-2",
+          "name": "c",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1,
+          "protein": 0.4,
+          "carbs": 1,
+          "fat": 4.5,
+          "fiber": 1.2,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "medium",
+      "totalKcal": 8,
+      "totalProteinGrams": 1.9,
+      "totalCarbsGrams": 11.2,
+      "totalFatGrams": 8.2,
+      "totalFiberGrams": 2,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "float_sum_rounding",
+    "raw": "{\"items\":[{\"name\":\"a\",\"calories\":1,\"proteinG\":0.1,\"carbsG\":0.1,\"fatG\":0.1,\"fiberG\":0.1},{\"name\":\"b\",\"calories\":1,\"proteinG\":0.2,\"carbsG\":0.2,\"fatG\":0.2,\"fiberG\":0.2},{\"name\":\"c\",\"calories\":1,\"proteinG\":0.3,\"carbsG\":0.3,\"fatG\":0.3,\"fiberG\":0.3}]}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "a",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1,
+          "protein": 0.1,
+          "carbs": 0.1,
+          "fat": 0.1,
+          "fiber": 0.1,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-1",
+          "name": "b",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1,
+          "protein": 0.2,
+          "carbs": 0.2,
+          "fat": 0.2,
+          "fiber": 0.2,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-2",
+          "name": "c",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1,
+          "protein": 0.3,
+          "carbs": 0.3,
+          "fat": 0.3,
+          "fiber": 0.3,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "medium",
+      "totalKcal": 3,
+      "totalProteinGrams": 0.6,
+      "totalCarbsGrams": 0.6,
+      "totalFatGrams": 0.6,
+      "totalFiberGrams": 0.6,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "exponent_and_big_numbers",
+    "raw": "{\"items\":[{\"name\":\"big\",\"calories\":1000,\"proteinG\":15,\"servingWeightG\":12345.678}]}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "big",
+          "brand": "AI Voice Estimate",
+          "serving": "12345.678g",
+          "servingWeightG": 12345.678,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1000,
+          "protein": 15,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "medium",
+      "totalKcal": 1000,
+      "totalProteinGrams": 15,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "confidence_and_reason_variants",
+    "raw": "{\"confidence\":\"certain\",\"unclearReason\":\"maybe\",\"detectedLanguage\":7,\"transcript\":\"  hi  \",\"items\":[{\"name\":\"x\",\"calories\":1,\"confidence\":\"low\"}]}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "hi",
+      "detectedLanguage": "7",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "x",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "low",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "medium",
+      "totalKcal": 1,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "maybe",
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "transcript_empty_uses_fallback",
+    "raw": "{\"transcript\":\"\",\"items\":[{\"name\":\"x\",\"calories\":10}]}",
+    "fallbackTranscript": "  typed  ",
+    "expected": {
+      "transcript": "typed",
+      "detectedLanguage": "en",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "x",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "medium",
+      "totalKcal": 10,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "portion_description_default",
+    "raw": "{\"items\":[{\"name\":\"Idli\",\"servingWeightG\":0},{\"name\":\"Vada\",\"servingWeightG\":80,\"portionDescription\":\"2 pieces\"}]}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [
+        {
+          "id": "voice-food-TS-0",
+          "name": "Idli",
+          "brand": "AI Voice Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "voice-food-TS-1",
+          "name": "Vada",
+          "brand": "AI Voice Estimate",
+          "serving": "2 pieces",
+          "servingWeightG": 80,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "confidence": "medium",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "parsedAt": "PARSED_AT"
+    }
+  },
+  {
+    "name": "unclear_reason_non_string_no_items",
+    "raw": "{\"items\":[],\"unclearReason\":5}",
+    "fallbackTranscript": null,
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en",
+      "items": [],
+      "confidence": "low",
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No food recognized from voice entry.",
+      "parsedAt": "PARSED_AT"
+    }
+  }
+]

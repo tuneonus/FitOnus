@@ -7,24 +7,14 @@ parser strips fences, tries to read JSON, and otherwise falls back to the raw te
 
 import json
 import re
-from typing import Any, Literal
+from typing import Literal
 
 from onusfit_ai.contracts.coach_chat import CoachChatResult
+from onusfit_ai.core.js_compat import js_string
 
 Outcome = Literal["ok", "unstructured"]
 FALLBACK_SOURCE = "OnusFit Coach Engine"
 MEMORY_SOURCE = "AI Memory"
-
-
-def js_string(value: Any) -> str:
-    """JavaScript's `String(value)` for the JSON scalar types Gemini can return."""
-    if value is None:
-        return "null"
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, float) and value.is_integer():
-        return str(int(value))
-    return str(value)
 
 
 def strip_code_fences(raw: str) -> str:

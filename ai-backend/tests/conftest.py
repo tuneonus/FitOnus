@@ -12,11 +12,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from onusfit_ai.core.auth import replay_cache
-from onusfit_ai.llm.gemini import LlmResult, LlmUsage, get_llm
+from onusfit_ai.llm.gemini import LlmResult, LlmUsage, MediaInput, get_llm
 from onusfit_ai.main import create_app
 
 SECRET = "test-secret-test-secret-test-secret-123"
 FIXTURES = Path(__file__).parent / "fixtures" / "coach_chat"
+VOICE_FIXTURES = Path(__file__).parent / "fixtures" / "voice_meal"
 
 
 def load_request(name: str) -> dict[str, Any]:
@@ -62,7 +63,13 @@ class FakeLlm:
         self.calls: list[dict[str, Any]] = []
 
     async def generate_text(
-        self, prompt: str, *, primary_model: str, fallback_model: str | None, deadline_s: float
+        self,
+        prompt: str,
+        *,
+        primary_model: str,
+        fallback_model: str | None,
+        deadline_s: float,
+        media: MediaInput | None = None,
     ) -> LlmResult:
         self.calls.append(
             {
@@ -70,6 +77,7 @@ class FakeLlm:
                 "primary": primary_model,
                 "fallback": fallback_model,
                 "deadline_s": deadline_s,
+                "media": media,
             }
         )
         if self.error:

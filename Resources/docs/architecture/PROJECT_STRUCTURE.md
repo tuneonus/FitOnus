@@ -13,7 +13,7 @@ FitOnus/
 ├── mobile/        Expo / React Native app (Android release channel: Google Play internal testing)
 ├── backend/       Node.js 22 + Express 5 + TypeScript + PostgreSQL — the system of record; owns all AI orchestration; coach chat generation can optionally be delegated to `ai-backend/`
 ├── admin/         Next.js (App Router) admin console
-├── ai-backend/    Python FastAPI AI backend — the ONLY generator of AI Coach chat replies; not deployed
+├── ai-backend/    Python FastAPI AI backend — generates AI Coach chat replies and parses voice meals (the only implementation of both); not deployed
 ├── docs/          Symlink → Resources/docs (handbook, requirements, architecture, operations)
 ├── Resources/     Design source (Figma exports) and the real docs/ folder
 ├── .github/       CI (backend, mobile, admin, secret scan, docker build)
@@ -77,13 +77,13 @@ All current AI runs in the Node backend through Gemini (`@google/genai`). Domain
 | **Coach insights** (+ deterministic fallback) | `modules/coach/application/use-cases/get-coach-insights.ts` → `infrastructure/gemini-coach-insights-service.ts` | `GetCoachInsightsUseCase` |
 | **Memory** (user-controlled facts) | `modules/coach/` `manage-memories.ts`, `pg-memory-repository.ts`, migration `0013` | `ManageMemoriesUseCase` |
 | **Meal photo** (vision) | `modules/nutrition/`: `use-cases/analyze-meal-photo.ts` → `infrastructure/gemini-meal-photo-service.ts` (port: `MealPhotoAnalyzer` in `application/ports.ts`) | `AnalyzeMealPhotoUseCase` |
-| **Voice meal** (audio/text) | `modules/nutrition/`: `use-cases/parse-voice-meal.ts` → `infrastructure/gemini-voice-meal-service.ts` (port: `VoiceMealParser`) | `ParseVoiceMealUseCase` |
+| **Voice meal** (audio/text) | `modules/nutrition/`: `use-cases/parse-voice-meal.ts` → `infrastructure/python-voice-meal-service.ts` (port: `VoiceMealParser`) → `ai-backend/src/onusfit_ai/` (`meals/voice.py`, `prompts/voice_meal.py`) | `ParseVoiceMealUseCase` |
 | **Speech transcription** | `GeminiClient.transcribeAudio` called from `modules/coach/interface/coach.controller.ts` (`POST /coach/transcribe`) | `coach.routes.ts` |
 | **Prompts** | Inline template strings inside each `gemini-*-service.ts` (not yet separated; planned in roadmap Phase 0.8) | the five files above |
 | **AI tests** | `tests/unit/ai/` (gateway, timeout, fallback, rate limit), `tests/unit/coach/`, `tests/unit/nutrition/{meal-photo,voice-meal}.test.ts`, `tests/unit/app-settings/`, `tests/integration/{http,repositories}/ai-*.test.ts` | — |
 | **Mobile AI UI** | `mobile/src/features/ai-coach/` (live coach UI, API clients, blocks), `ai-memory/`, `voice-coach/`; nutrition screens `features/nutrition/screens/{MealAnalysisScreen,VoiceMealEntryScreen}.tsx` | `app/routes/screenRegistry.tsx` |
 
-**Coach chat is Python-only.** Node no longer contains its prompt or parser.
+**Coach chat and voice meal are Python-only.** Node no longer contains their prompts or parsers.
 
 **To find AI code quickly:** `grep -rl "Gemini\|aiUsageGate" backend/src`, or start from `backend/src/container.ts` and follow `appSettings.aiUsageGate` / `geminiClient`.
 
@@ -133,23 +133,24 @@ Tests: `mobile/tests/*.test.ts` (node:test via tsx).
 
 ## 7. Python AI backend (`ai-backend/`)
 
-Current contents (all that exists). It is the **only** implementation of AI Coach chat text generation (no flag, no Node fallback). Walkthroughs: [02 Python-only architecture](../ai/learning/02-python-only-ai-architecture.md) (current) and [01 integration](../ai/learning/01-python-chat-integration.md) (historical).
+Current contents (all that exists). It is the **only** implementation of AI Coach chat generation and voice meal parsing (no flag, no Node fallback). Walkthroughs: [03 voice meal](../ai/learning/03-voice-meal-python-migration.md), [02 Python-only architecture](../ai/learning/02-python-only-ai-architecture.md) and [01 integration](../ai/learning/01-python-chat-integration.md) (historical).
 
 ```text
 ai-backend/
 ├── pyproject.toml, README.md, .env.example, .gitignore
 ├── src/onusfit_ai/
 │   ├── main.py                create_app()
-│   ├── api/                   health.py, coach_chat.py   (thin routes)
-│   ├── contracts/             _base.py, health.py, coach_chat.py   (Pydantic)
+│   ├── api/                   health.py, coach_chat.py, voice_meal.py   (thin routes)
+│   ├── contracts/             _base.py, common.py, health.py, coach_chat.py, voice_meal.py   (Pydantic)
 │   ├── coach/                 chat.py (use case), parsing.py
-│   ├── prompts/               coach_chat.py   (ported 1:1 from Node; golden-file tested)
+│   ├── meals/                 voice.py (use case), parsing.py
+│   ├── prompts/               coach_chat.py, voice_meal.py   (ported 1:1 from Node; golden-file tested)
 │   ├── llm/                   gemini.py (only Gemini caller), errors.py (classifier + cooldown)
-│   └── core/                  config.py, auth.py (service token), errors.py
-└── tests/                     59 tests; fixtures/coach_chat/ shared with the Node parity test
+│   └── core/                  config.py, auth.py (service token), errors.py, js_compat.py
+└── tests/                     golden fixtures: fixtures/coach_chat/, fixtures/voice_meal/ (rendered by the former Node code)
 ```
 
-Node side of the boundary: `backend/src/shared/ai/python-ai-client.ts` (signed HTTP client) and `backend/src/modules/coach/infrastructure/python-coach-chat-service.ts` (adapter; every failure becomes one controlled `AppError`), always wired in `container.ts`. Node refuses to start without `AI_BACKEND_URL` and `AI_BACKEND_SERVICE_SECRET`.
+Node side of the boundary: `backend/src/shared/ai/python-ai-client.ts` (signed HTTP client) and `backend/src/modules/coach/infrastructure/python-coach-chat-service.ts` (adapter; every failure becomes one controlled `AppError`), always wired in `container.ts` (`PythonVoiceMealService` in `modules/nutrition/infrastructure/`; shared error mapping in `shared/ai/python-ai-errors.ts`). Node refuses to start without `AI_BACKEND_URL` and `AI_BACKEND_SERVICE_SECRET`.
 
 **Intended homes for future code that does not exist yet** (create each folder with its first real file, not before):
 
@@ -170,7 +171,7 @@ Rules: routes thin; contracts separate from logic; provider SDK code isolated in
 - Node stays the system of record: authentication, quotas/billing ledger, feature flags, domain data, tool authorization.
 - Python receives a short-lived signed service token carrying the user id; it never accepts a user id from a request body.
 - Python calls back into Node internal endpoints for user data (single authorization implementation).
-- For **coach chat** there is no Node fallback: if Python is down the API returns a controlled 503. The other AI features (voice meal, meal photo, transcription, insights) still call Gemini from Node until they are migrated.
+- For **coach chat and voice meal** there is no Node fallback: if Python is down the API returns a controlled 503. The other AI features (meal photo, transcription, insights) still call Gemini from Node until they are migrated.
 - **Today:** wired for coach chat only. `ai-backend/` calls Gemini with its own `GEMINI_API_KEY` and has no database.
 
 ---

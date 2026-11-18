@@ -29,7 +29,7 @@ export * from './infrastructure/pg-favorite-repository.js';
 export * from './infrastructure/pg-user-profile-target-adapter.js';
 export * from './infrastructure/nutrition-audit-logger.js';
 export * from './infrastructure/gemini-meal-photo-service.js';
-export * from './infrastructure/gemini-voice-meal-service.js';
+export * from './infrastructure/python-voice-meal-service.js';
 export * from './interface/nutrition.schemas.js';
 export * from './interface/nutrition.controller.js';
 export * from './interface/nutrition.routes.js';
@@ -44,8 +44,8 @@ import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { GeminiClient } from '../../shared/ai/gemini-client.js';
+import type { VoiceMealParser } from './application/ports.js';
 import { GeminiMealPhotoService } from './infrastructure/gemini-meal-photo-service.js';
-import { GeminiVoiceMealService } from './infrastructure/gemini-voice-meal-service.js';
 import { AnalyzeMealPhotoUseCase } from './application/use-cases/analyze-meal-photo.js';
 import { ParseVoiceMealUseCase } from './application/use-cases/parse-voice-meal.js';
 import { GetDailyNutritionUseCase } from './application/use-cases/get-daily-nutrition.js';
@@ -89,7 +89,10 @@ export interface CreateNutritionModuleOptions {
   adminBasePath?: string;
   db: SqlExecutor;
   uow: UnitOfWork;
+  /** Meal photo analysis still calls Gemini from Node (not migrated yet). */
   geminiClient?: GeminiClient;
+  /** Voice meal parsing (the Python AI backend: `PythonVoiceMealService`). */
+  voiceMealParser?: VoiceMealParser;
   /** Required: photo and voice analysis must never reach Gemini without the flag / quota gate. */
   aiUsageGate: AiUsageGate;
 }
@@ -104,8 +107,9 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
 
   const mealPhotoService = deps.geminiClient ? new GeminiMealPhotoService(deps.geminiClient) : undefined;
   const analyzeMealPhotoUseCase = mealPhotoService ? new AnalyzeMealPhotoUseCase(mealPhotoService, deps.aiUsageGate) : undefined;
-  const voiceMealService = deps.geminiClient ? new GeminiVoiceMealService(deps.geminiClient) : undefined;
-  const parseVoiceMealUseCase = voiceMealService ? new ParseVoiceMealUseCase(voiceMealService, deps.aiUsageGate) : undefined;
+  const parseVoiceMealUseCase = deps.voiceMealParser
+    ? new ParseVoiceMealUseCase(deps.voiceMealParser, deps.aiUsageGate)
+    : undefined;
 
   const memberController = createNutritionMemberController({
     getDailyNutrition: new GetDailyNutritionUseCase(mealRepo, waterRepo, targetAdapter),

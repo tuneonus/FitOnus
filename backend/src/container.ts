@@ -12,7 +12,7 @@ import {
 } from './modules/auth/index.js';
 import { createHealthRoutes } from './modules/health/health.routes.js';
 import { createProfileModule } from './modules/profile/index.js';
-import { createNutritionModule } from './modules/nutrition/index.js';
+import { createNutritionModule, PythonVoiceMealService } from './modules/nutrition/index.js';
 import { createProgressModule } from './modules/progress/index.js';
 import { createGoalsModule } from './modules/goals/index.js';
 import { createChallengesModule } from './modules/challenges/index.js';
@@ -158,6 +158,22 @@ export function createContainer(
     fallbackModel: config.gemini.fallbackModel,
   });
 
+  // AI Coach chat and voice meal parsing are served only by the Python AI backend (ai-backend/). Its URL
+  // and secret are required: `assertAiBackendConfigured` stops startup with a clear message if missing.
+  const { aiBackend } = assertAiBackendConfigured(config);
+  const pythonAi = new PythonAiClient({ baseUrl: aiBackend.url, serviceSecret: aiBackend.serviceSecret });
+  /** Admin-configured primary/fallback model names for a feature; Python applies the fallback itself. */
+  const resolveModelsFor =
+    (feature: 'coach_chat' | 'voice_meal') => async (): Promise<{ primary: string; fallback: string | null }> => {
+      try {
+        const names = await appSettings.runtimeService.resolveModelNames(feature);
+        return { primary: names.primaryModel, fallback: names.fallbackModel || null };
+      } catch {
+        // Admin config unreadable: use the environment's model names.
+        return { primary: config.gemini.model, fallback: config.gemini.fallbackModel || null };
+      }
+    };
+
   const geminiClient = new GeminiClient({
     ...config.gemini,
     runtimeService: appSettings.runtimeService,
@@ -169,6 +185,13 @@ export function createContainer(
     db: database,
     uow,
     geminiClient,
+    voiceMealParser: new PythonVoiceMealService({
+      client: pythonAi,
+      resolveModels: resolveModelsFor('voice_meal'),
+      usageRecorder: appSettings.runtimeService,
+      pythonTimeoutMs: aiBackend.timeoutMs,
+      ...(logger ? { logger } : {}),
+    }),
     aiUsageGate: appSettings.aiUsageGate,
   });
   const progress = createProgressModule({
@@ -195,20 +218,6 @@ export function createContainer(
     basePath: `${API_PREFIX}/dashboard`,
     db: database,
   });
-  // AI Coach chat is generated only by the Python AI backend (ai-backend/). Its URL and secret are
-  // required: `assertAiBackendConfigured` stops startup with a clear message if either is missing.
-  const { aiBackend } = assertAiBackendConfigured(config);
-  const pythonAi = new PythonAiClient({ baseUrl: aiBackend.url, serviceSecret: aiBackend.serviceSecret });
-  const resolveCoachModels = async (): Promise<{ primary: string; fallback: string | null }> => {
-    try {
-      const names = await appSettings.runtimeService.resolveModelNames('coach_chat');
-      return { primary: names.primaryModel, fallback: names.fallbackModel || null };
-    } catch {
-      // Admin config unreadable: use the environment's model names.
-      return { primary: config.gemini.model, fallback: config.gemini.fallbackModel || null };
-    }
-  };
-
   const coach = createCoachModule({
     basePath: `${API_PREFIX}/coach`,
     db: database,
@@ -218,7 +227,7 @@ export function createContainer(
     },
     chatService: new PythonCoachChatService({
       client: pythonAi,
-      resolveModels: resolveCoachModels,
+      resolveModels: resolveModelsFor('coach_chat'),
       usageRecorder: appSettings.runtimeService,
       pythonTimeoutMs: aiBackend.timeoutMs,
       ...(logger ? { logger } : {}),

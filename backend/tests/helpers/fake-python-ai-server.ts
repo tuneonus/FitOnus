@@ -47,6 +47,53 @@ export const okCoachReply = (overrides: Record<string, unknown> = {}): Record<st
   ...overrides,
 });
 
+/** A successful voice-meal reply in the exact shape of ai-backend/contracts/voice_meal.py. */
+export const okVoiceReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  outcome: 'ok',
+  result: {
+    transcript: 'rendu dosai, sambar',
+    detectedLanguage: 'tanglish',
+    items: [
+      {
+        id: 'voice-food-1700000000000-0',
+        name: 'Dosa',
+        brand: 'AI Voice Estimate',
+        serving: '2 pieces · 160 g',
+        servingWeightG: 160,
+        servingUnit: 'piece',
+        servingSize: 2,
+        kcal: 260,
+        protein: 6,
+        carbs: 44,
+        fat: 7,
+        fiber: 2,
+        confidence: 'high',
+        isAiEstimated: true,
+      },
+    ],
+    confidence: 'high',
+    totalKcal: 260,
+    totalProteinGrams: 6,
+    totalCarbsGrams: 44,
+    totalFatGrams: 7,
+    totalFiberGrams: 2,
+    unclearReason: null,
+    parsedAt: '2026-11-18T10:00:00.000Z',
+  },
+  usage: {
+    model: 'gemini-3.5-flash-lite',
+    isFallback: false,
+    inputTokens: 700,
+    outputTokens: 90,
+    cachedTokens: 0,
+    thinkingTokens: 10,
+    totalTokens: 800,
+    durationMs: 900,
+  },
+  traceId: 'trace-voice-1',
+  ...overrides,
+});
+
 export const pythonError = (code: string, message: string, extra: Record<string, unknown> = {}) => ({
   error: { code, message, dispatched: true, ...extra },
 });
