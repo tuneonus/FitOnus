@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import type { AppConfig } from './config/env.js';
+import { assertAiBackendConfigured, type AppConfig } from './config/env.js';
 import type { Pool } from './database/pool.js';
 import { Database, PgUnitOfWork } from './database/transaction.js';
 import { createAuthenticate } from './middleware/authenticate.js';
@@ -20,7 +20,9 @@ import { createAnalyticsModule } from './modules/analytics/index.js';
 import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
 import { createDashboardModule } from './modules/dashboard/index.js';
-import { createCoachModule, GeminiClient } from './modules/coach/index.js';
+import { GeminiClient } from './shared/ai/gemini-client.js';
+import { PythonAiClient } from './shared/ai/python-ai-client.js';
+import { createCoachModule, PythonCoachChatService } from './modules/coach/index.js';
 import {
   createNotificationsModule,
   FcmHttpV1Sender,
@@ -193,6 +195,20 @@ export function createContainer(
     basePath: `${API_PREFIX}/dashboard`,
     db: database,
   });
+  // AI Coach chat is generated only by the Python AI backend (ai-backend/). Its URL and secret are
+  // required: `assertAiBackendConfigured` stops startup with a clear message if either is missing.
+  const { aiBackend } = assertAiBackendConfigured(config);
+  const pythonAi = new PythonAiClient({ baseUrl: aiBackend.url, serviceSecret: aiBackend.serviceSecret });
+  const resolveCoachModels = async (): Promise<{ primary: string; fallback: string | null }> => {
+    try {
+      const names = await appSettings.runtimeService.resolveModelNames('coach_chat');
+      return { primary: names.primaryModel, fallback: names.fallbackModel || null };
+    } catch {
+      // Admin config unreadable: use the environment's model names.
+      return { primary: config.gemini.model, fallback: config.gemini.fallbackModel || null };
+    }
+  };
+
   const coach = createCoachModule({
     basePath: `${API_PREFIX}/coach`,
     db: database,
@@ -200,6 +216,13 @@ export function createContainer(
       ...config.gemini,
       runtimeService: appSettings.runtimeService,
     },
+    chatService: new PythonCoachChatService({
+      client: pythonAi,
+      resolveModels: resolveCoachModels,
+      usageRecorder: appSettings.runtimeService,
+      pythonTimeoutMs: aiBackend.timeoutMs,
+      ...(logger ? { logger } : {}),
+    }),
     aiUsageGate: appSettings.aiUsageGate,
     rateLimiter: rateLimiters.aiCoach,
   });

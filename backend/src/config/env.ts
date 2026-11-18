@@ -67,6 +67,13 @@ const appSchema = databaseSchema.extend({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-3.5-flash-lite'),
   GEMINI_FALLBACK_MODEL: z.string().default('gemini-3.1-flash-lite'),
+  // Internal Python AI backend (ai-backend/): the only implementation of AI Coach chat generation.
+  // Optional when merely loading config (db scripts); the server and container require both (see
+  // `assertAiBackendConfigured`).
+  AI_BACKEND_URL: z.string().optional(),
+  AI_BACKEND_SERVICE_SECRET: z.string().optional(),
+  // HTTP timeout for one call to Python (mobile gives up at 30 s; Python's Gemini deadline is derived from this).
+  AI_BACKEND_TIMEOUT_MS: integer(25_000, 1_000, 28_000),
   // Transactional e-mail (password reset). Unset/empty/"none" keeps the feature off (the endpoints answer 503).
   EMAIL_PROVIDER: z.preprocess(
     (value) => (typeof value === 'string' ? value.trim().toLowerCase() || undefined : value),
@@ -140,6 +147,12 @@ export type AppConfig = {
   };
   security: { hmacSecret: string };
   gemini: { apiKey?: string; model: string; fallbackModel: string };
+  /** Internal Python AI backend (serves AI Coach chat). url/serviceSecret are required to start the server. */
+  aiBackend: {
+    url?: string;
+    serviceSecret?: string;
+    timeoutMs: number;
+  };
   /** Outbound e-mail. `none` means no delivery channel is configured, so password reset stays disabled. */
   email: EmailConfig;
   notifications: NotificationsConfig;
@@ -199,6 +212,36 @@ function emailIssues(parsed: z.output<typeof appSchema>): string[] {
     issues.push('EMAIL_FROM: must look like "noreply@example.org" or "Name <noreply@example.org>"');
   }
   return issues;
+}
+
+const MIN_AI_BACKEND_SECRET_LENGTH = 32;
+
+/** Format checks for values that are present. Issues name keys and rules only; the secret is never echoed. */
+function aiBackendIssues(parsed: z.output<typeof appSchema>): string[] {
+  const issues: string[] = [];
+  const url = parsed.AI_BACKEND_URL?.trim();
+  if (url && !/^https?:\/\/[^\s/]+/i.test(url)) issues.push('AI_BACKEND_URL: must start with http:// or https://');
+  const secret = parsed.AI_BACKEND_SERVICE_SECRET?.trim();
+  if (secret && secret.length < MIN_AI_BACKEND_SECRET_LENGTH) {
+    issues.push(`AI_BACKEND_SERVICE_SECRET: must be at least ${MIN_AI_BACKEND_SECRET_LENGTH} characters`);
+  }
+  return issues;
+}
+
+/**
+ * The AI Coach is served only by the Python AI backend, so the server cannot start without it.
+ * Returns the config with `url` and `serviceSecret` narrowed to strings, or throws a `ConfigError`
+ * naming the missing keys (never values).
+ */
+export function assertAiBackendConfigured(config: AppConfig): AppConfig & {
+  aiBackend: { url: string; serviceSecret: string; timeoutMs: number };
+} {
+  const { url, serviceSecret, timeoutMs } = config.aiBackend;
+  const issues: string[] = [];
+  if (!url) issues.push('AI_BACKEND_URL: required (AI Coach chat is served by the Python AI backend, see ai-backend/README.md)');
+  if (!serviceSecret) issues.push('AI_BACKEND_SERVICE_SECRET: required (>= 32 characters; must equal AI_SERVICE_JWT_SECRET in ai-backend)');
+  if (issues.length > 0 || !url || !serviceSecret) throw new ConfigError(issues);
+  return { ...config, aiBackend: { url, serviceSecret, timeoutMs } };
 }
 
 function toEmailConfig(parsed: z.output<typeof appSchema>): EmailConfig {
@@ -319,7 +362,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
   if (!result.success) throw new ConfigError(formatIssues(result.error));
   const parsed = result.data;
 
-  const issues = [...corsIssues(parsed.CORS_ORIGINS), ...emailIssues(parsed)];
+  const issues = [...corsIssues(parsed.CORS_ORIGINS), ...emailIssues(parsed), ...aiBackendIssues(parsed)];
   const serviceAccount = parseServiceAccount(parsed, issues);
   const dispatchSecret = parsed.NOTIFICATIONS_DISPATCH_SECRET?.trim();
   if (dispatchSecret && dispatchSecret.length < 32) {
@@ -354,6 +397,13 @@ export function loadConfig(env: Env = process.env): AppConfig {
       apiKey: parsed.GEMINI_API_KEY,
       model: parsed.GEMINI_MODEL,
       fallbackModel: parsed.GEMINI_FALLBACK_MODEL,
+    },
+    aiBackend: {
+      ...(parsed.AI_BACKEND_URL?.trim() ? { url: parsed.AI_BACKEND_URL.trim() } : {}),
+      ...(parsed.AI_BACKEND_SERVICE_SECRET?.trim()
+        ? { serviceSecret: parsed.AI_BACKEND_SERVICE_SECRET.trim() }
+        : {}),
+      timeoutMs: parsed.AI_BACKEND_TIMEOUT_MS,
     },
     email: toEmailConfig(parsed),
     notifications: toNotificationsConfig(parsed, serviceAccount),

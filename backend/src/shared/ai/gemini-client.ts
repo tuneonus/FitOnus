@@ -1,15 +1,29 @@
-import { GoogleGenAI, type ContentListUnion } from '@google/genai';
-import { runWithAiTimeout } from '../../../shared/ai/ai-timeout.js';
-import { markAiRequestDispatched } from '../../../shared/ai/ai-usage.js';
-import { AppError } from '../../../shared/errors/app-error.js';
-import type { GeminiRuntimeService } from '../../app-settings/application/services/gemini-runtime-service.js';
-import type { GeminiFeature } from '../../app-settings/domain/gemini-config.js';
-import { classifyGeminiError } from '../../../shared/ai/ai-error-classifier.js';
+import { GoogleGenAI, type ContentListUnion, type GenerateContentResponse } from '@google/genai';
+import { AppError } from '../errors/app-error.js';
+import { classifyGeminiError } from './ai-error-classifier.js';
+import type { GeminiFeature } from './gemini-feature.js';
+import { runWithAiTimeout } from './ai-timeout.js';
+import { markAiRequestDispatched } from './ai-usage.js';
+
+/**
+ * What `GeminiClient` needs from the runtime that resolves the API key / model, applies the fallback
+ * model and records telemetry. Implemented by `GeminiRuntimeService` (app-settings module); declared
+ * here so this shared client does not import a feature module.
+ */
+export interface GeminiExecutor {
+  executeWithTelemetry(params: {
+    requestId: string;
+    userId?: string;
+    feature: GeminiFeature;
+    modality?: 'text' | 'vision' | 'audio';
+    execute: (client: GoogleGenAI, model: string) => Promise<GenerateContentResponse>;
+  }): Promise<{ text: string }>;
+}
 
 export interface GeminiClientConfig {
   apiKey?: string;
   model?: string;
-  runtimeService?: GeminiRuntimeService;
+  runtimeService?: GeminiExecutor;
 }
 
 /**
@@ -19,7 +33,7 @@ export interface GeminiClientConfig {
 export class GeminiClient {
   private readonly aiClient: GoogleGenAI | null = null;
   public readonly modelName: string;
-  private readonly runtimeService?: GeminiRuntimeService;
+  private readonly runtimeService?: GeminiExecutor;
 
   constructor(config: GeminiClientConfig) {
     this.modelName = config.model || 'gemini-3.5-flash';

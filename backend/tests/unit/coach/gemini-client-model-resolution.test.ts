@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { GeminiClient } from '../../../src/modules/coach/infrastructure/gemini-client.js';
+import { GeminiClient } from '../../../src/shared/ai/gemini-client.js';
 
 describe('GeminiClient Model Resolution & Configuration', () => {
   it('1. correctly retains gemini-3.5-flash-lite without forcing redirection to flash', () => {

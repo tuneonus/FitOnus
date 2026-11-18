@@ -1,9 +1,7 @@
-export type GeminiFeature =
-  | 'coach_chat'
-  | 'coach_insights'
-  | 'meal_photo'
-  | 'voice_meal'
-  | 'workout_generator';
+import type { GeminiFeature } from '../../../shared/ai/gemini-feature.js';
+
+// Defined in shared/ai so the shared Gemini client can use it; re-exported to keep this module's API.
+export type { GeminiFeature };
 
 export interface GeminiConfigRecord {
   provider: string;

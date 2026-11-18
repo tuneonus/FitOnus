@@ -4,11 +4,11 @@ import type {
   MealPhotoAnalysisInput,
   MealPhotoAnalysisResult,
 } from '../../domain/meal-photo.types.js';
-import type { GeminiMealPhotoService } from '../../infrastructure/gemini-meal-photo-service.js';
+import type { MealPhotoAnalyzer } from '../ports.js';
 
 export class AnalyzeMealPhotoUseCase {
   constructor(
-    private readonly mealPhotoService: GeminiMealPhotoService,
+    private readonly mealPhotoService: MealPhotoAnalyzer,
     private readonly aiUsageGate: AiUsageGate,
   ) {}
 

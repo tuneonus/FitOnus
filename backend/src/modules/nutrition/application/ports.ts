@@ -1,6 +1,8 @@
 import type { Food, FoodDataSource, FoodProps, VerificationStatus } from '../domain/food.js';
 import type { Meal } from '../domain/meal.js';
 import type { WaterIntake } from '../domain/water.js';
+import type { MealPhotoAnalysisResult } from '../domain/meal-photo.types.js';
+import type { VoiceMealParseResult } from '../domain/voice-meal.types.js';
 
 export interface FoodSearchFilter {
   query?: string;
@@ -89,4 +91,23 @@ export interface IFoodFavoriteRepository {
   removeFavorite(userId: string, foodId: string): Promise<boolean>;
   isFavorite(userId: string, foodId: string): Promise<boolean>;
   listFavoriteFoodIds(userId: string): Promise<string[]>;
+}
+
+/** Turns a meal photo into detected food items. Implemented by `GeminiMealPhotoService`. */
+export interface MealPhotoAnalyzer {
+  analyzePhoto(
+    image: { mimeType: string; base64: string },
+    mealType?: string,
+    notes?: string,
+  ): Promise<MealPhotoAnalysisResult>;
+}
+
+/** Turns a spoken or typed meal description into food items. Implemented by `GeminiVoiceMealService`. */
+export interface VoiceMealParser {
+  parseVoiceMeal(params: {
+    transcript?: string;
+    audio?: { mimeType: string; base64: string };
+    lang?: string;
+    mealType?: string;
+  }): Promise<VoiceMealParseResult>;
 }

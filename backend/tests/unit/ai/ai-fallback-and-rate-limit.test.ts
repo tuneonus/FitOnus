@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeminiRuntimeService } from '../../../src/modules/app-settings/application/services/gemini-runtime-service.js';
 import { ModelCooldownTracker } from '../../../src/shared/ai/model-cooldown-tracker.js';
-import { GeminiClient } from '../../../src/modules/coach/infrastructure/gemini-client.js';
+import { GeminiClient } from '../../../src/shared/ai/gemini-client.js';
 import { AppError } from '../../../src/shared/errors/app-error.js';
 import type { AppSettingsRepository } from '../../../src/modules/app-settings/application/ports.js';
 import type { GeminiConfigRecord, GeminiModelInfo } from '../../../src/modules/app-settings/domain/gemini-config.js';

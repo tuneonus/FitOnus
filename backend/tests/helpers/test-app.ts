@@ -20,6 +20,9 @@ export const TEST_ENV: Record<string, string> = {
   CORS_ORIGINS: 'http://localhost:5173',
   RATE_LIMIT_MAX: '100000',
   AUTH_RATE_LIMIT_MAX: '10000',
+  // AI Coach chat needs the Python AI backend configured to start; tests never call it unless they stub it.
+  AI_BACKEND_URL: 'http://127.0.0.1:9',
+  AI_BACKEND_SERVICE_SECRET: 'test-only-ai-backend-service-secret-0123456789',
 };
 
 export interface TestContext {

@@ -1,0 +1,214 @@
+# OnusFit project structure
+
+**Last verified:** 2026-11-18 against the working tree. The source code is the source of truth; if this file disagrees with the code, fix this file.
+
+Related: [AI baseline](../../AI_ENGINEERING_BASELINE.md) · [AI architecture proposal](../../AI_ARCHITECTURE_PROPOSAL.md) · [AI roadmap](../../AI_ENGINEERING_ROADMAP.md) · [backend architecture](../../backend/docs/architecture.md) · [AI reliability](../../backend/docs/ai-reliability.md)
+
+---
+
+## 1. Repository layout
+
+```text
+FitOnus/
+├── mobile/        Expo / React Native app (Android release channel: Google Play internal testing)
+├── backend/       Node.js 22 + Express 5 + TypeScript + PostgreSQL — the system of record; owns all AI orchestration; coach chat generation can optionally be delegated to `ai-backend/`
+├── admin/         Next.js (App Router) admin console
+├── ai-backend/    Python FastAPI AI backend — the ONLY generator of AI Coach chat replies; not deployed
+├── docs/          Symlink → Resources/docs (handbook, requirements, architecture, operations)
+├── Resources/     Design source (Figma exports) and the real docs/ folder
+├── .github/       CI (backend, mobile, admin, secret scan, docker build)
+├── AGENTS.md      Entry point for coding agents
+└── AI_*.md        AI engineering baseline / roadmap / architecture proposal (root, linked from the docs index)
+```
+
+Root-level configuration (`.gitignore`, `.gitleaksignore`, `.github/`) stays at the root on purpose.
+
+---
+
+## 2. Backend (`backend/`) — modular monolith, clean architecture
+
+```text
+backend/
+├── src/
+│   ├── server.ts, app.ts, container.ts   # process start, Express wiring, composition root (the ONLY place that wires implementations)
+│   ├── config/        env parsing (zod) — no secrets in code
+│   ├── database/      pg pool, transactions, unit of work
+│   ├── middleware/    auth, rate limit, request context, error handler
+│   ├── shared/        kernel used by several modules (no feature-module imports; enforced by ESLint)
+│   │   ├── ai/        provider-neutral AI infrastructure (see §4)
+│   │   ├── auth, errors, http, idempotency, logging, pagination, security, types, application
+│   └── modules/<feature>/
+│       ├── domain/          entities, value objects, pure rules (framework-free)
+│       ├── application/     use cases + ports (interfaces) — no HTTP, no SQL
+│       ├── infrastructure/  adapters: PostgreSQL repositories, Gemini services, senders
+│       ├── interface/       routes, controllers, Zod schemas
+│       └── index.ts         the module's PUBLIC API + `createXModule()` factory
+├── migrations/        numbered SQL migrations (0001…0020)
+├── scripts/           migrate/seed/cleanup + one-off verification scripts
+├── tests/
+│   ├── unit/<module>/ fast, mocked I/O (vitest)
+│   ├── integration/   Testcontainers PostgreSQL: database/, http/, repositories/
+│   └── helpers/       fakes, test app, test database
+└── docs/              backend guides (architecture, auth, database, ai-reliability, adr/, design/)
+```
+
+Rules (already enforced by `backend/eslint.config.js`, which is the authority):
+
+1. A module imports another module **only through its `index.ts`**.
+2. `domain` depends on nothing outward; `application` depends on ports, not adapters; `interface` reaches infrastructure only via the module factory.
+3. `shared/`, `database/`, `middleware/`, `config/` never import `modules/`.
+4. New implementations are wired in `container.ts`, nowhere else.
+
+Modules: `admin, analytics, app-settings, auth, challenges, coach, dashboard, goals, health, notifications, nutrition, profile, progress, users, workouts`.
+
+---
+
+## 3. Where the existing AI code lives
+
+All current AI runs in the Node backend through Gemini (`@google/genai`). Domain-specific AI stays with its business module; only provider-neutral plumbing is in `shared/ai/`.
+
+| Capability | Where | Entry point to read first |
+|---|---|---|
+| **Gateway** (feature flag, per-user burst limit, atomic daily quota, refund-if-undispatched) | `backend/src/shared/ai/ai-usage.ts`, `ai-rate-limit.ts`; implementation in `modules/app-settings/application/services/ai-usage-gate.ts` and `use-cases/check-and-record-ai-quota.ts` | `AiUsageGate` (`ai-usage.ts`) |
+| **Provider client** (timeout, text/image/audio calls, error mapping) | `backend/src/shared/ai/gemini-client.ts` (+ `ai-timeout.ts`, `ai-error-classifier.ts`, `gemini-feature.ts`) | `GeminiClient.generate()` |
+| **Provider runtime** (decrypt key from DB, per-feature model, fallback model, cooldown, token + cost telemetry) | `backend/src/modules/app-settings/application/services/gemini-runtime-service.ts`, `shared/ai/model-cooldown-tracker.ts` | `GeminiRuntimeService.executeWithTelemetry()` |
+| **Admin config & usage analytics** (key, models, pricing, usage events) | `modules/app-settings/` (`use-cases/*gemini*`), migrations `0014`, `0015`, `0020`; admin UI `admin/src/features/settings/components/Gemini*` | `modules/app-settings/index.ts` |
+| **Coach chat** (context, history, persistence in Node; prompt + Gemini call in Python) | `modules/coach/`: `application/use-cases/chat-with-coach.ts` → `infrastructure/python-coach-chat-service.ts` → `ai-backend/src/onusfit_ai/` (`coach/chat.py`, `prompts/`, `llm/`); context in `pg-user-context-repository.ts` | `ChatWithCoachUseCase` |
+| **Coach insights** (+ deterministic fallback) | `modules/coach/application/use-cases/get-coach-insights.ts` → `infrastructure/gemini-coach-insights-service.ts` | `GetCoachInsightsUseCase` |
+| **Memory** (user-controlled facts) | `modules/coach/` `manage-memories.ts`, `pg-memory-repository.ts`, migration `0013` | `ManageMemoriesUseCase` |
+| **Meal photo** (vision) | `modules/nutrition/`: `use-cases/analyze-meal-photo.ts` → `infrastructure/gemini-meal-photo-service.ts` (port: `MealPhotoAnalyzer` in `application/ports.ts`) | `AnalyzeMealPhotoUseCase` |
+| **Voice meal** (audio/text) | `modules/nutrition/`: `use-cases/parse-voice-meal.ts` → `infrastructure/gemini-voice-meal-service.ts` (port: `VoiceMealParser`) | `ParseVoiceMealUseCase` |
+| **Speech transcription** | `GeminiClient.transcribeAudio` called from `modules/coach/interface/coach.controller.ts` (`POST /coach/transcribe`) | `coach.routes.ts` |
+| **Prompts** | Inline template strings inside each `gemini-*-service.ts` (not yet separated; planned in roadmap Phase 0.8) | the five files above |
+| **AI tests** | `tests/unit/ai/` (gateway, timeout, fallback, rate limit), `tests/unit/coach/`, `tests/unit/nutrition/{meal-photo,voice-meal}.test.ts`, `tests/unit/app-settings/`, `tests/integration/{http,repositories}/ai-*.test.ts` | — |
+| **Mobile AI UI** | `mobile/src/features/ai-coach/` (live coach UI, API clients, blocks), `ai-memory/`, `voice-coach/`; nutrition screens `features/nutrition/screens/{MealAnalysisScreen,VoiceMealEntryScreen}.tsx` | `app/routes/screenRegistry.tsx` |
+
+**Coach chat is Python-only.** Node no longer contains its prompt or parser.
+
+**To find AI code quickly:** `grep -rl "Gemini\|aiUsageGate" backend/src`, or start from `backend/src/container.ts` and follow `appSettings.aiUsageGate` / `geminiClient`.
+
+**Dependency direction (AI):**
+`interface → use case → port ← Gemini*Service → GeminiClient (shared/ai) → GeminiExecutor (port) ← GeminiRuntimeService (app-settings)`
+
+`GeminiExecutor` is declared next to the client so that shared code never imports a feature module.
+
+---
+
+## 4. `backend/src/shared/ai/` — what belongs there
+
+Provider-neutral infrastructure used by more than one module, and nothing feature-specific.
+
+| File | Responsibility |
+|---|---|
+| `ai-usage.ts` | `AiUsageGate` contract, request context (AsyncLocalStorage), `markAiRequestDispatched` |
+| `ai-rate-limit.ts` | per-user burst limiter + `AiRateLimitStore` seam (in-memory default) |
+| `ai-timeout.ts` | `runWithAiTimeout` (AbortSignal, single attempt) |
+| `ai-error-classifier.ts` | maps provider errors to safe kinds |
+| `model-cooldown-tracker.ts` | in-memory circuit breaker per model |
+| `gemini-client.ts` | the one place that calls Gemini; `GeminiExecutor` port |
+| `gemini-feature.ts` | the `GeminiFeature` union |
+
+**Not** in `shared/ai/`: prompts, response parsers, context building, anything that mentions coach, meals or workouts. Those stay in their business module.
+
+---
+
+## 5. Mobile (`mobile/`) — Expo Router shell + feature folders
+
+```text
+mobile/src/
+├── app/            Expo Router entry + AppShell custom navigator, screenRegistry.tsx, (tabs)/(auth)/(modals) route files
+├── features/<x>/   screens, components, hooks, services (API clients), store, types   ← where product code goes
+├── components/     app-wide UI (ui/, shared/, navigation/ — the tab bar)
+├── services/       api-client, secure storage, session, notifications
+├── providers/ hooks/ constants/ stores/ utils/ types/   app-wide helpers
+└── shared/         second helper area (components, constants, stores, theme, types, utils) — see Known inconsistencies
+```
+Tests: `mobile/tests/*.test.ts` (node:test via tsx).
+
+## 6. Admin (`admin/`) — Next.js App Router
+
+`admin/app/<route>/` holds thin route files; `admin/src/features/<x>/` holds `api`, `components`, `hooks`, `types`; `admin/src/lib/` holds the API client and token storage; `admin/src/components/{layout,ui}` is shared UI. Tests: `admin/tests/*.test.ts`. The Gemini management UI is `admin/src/features/settings/components/Gemini*`.
+
+---
+
+## 7. Python AI backend (`ai-backend/`)
+
+Current contents (all that exists). It is the **only** implementation of AI Coach chat text generation (no flag, no Node fallback). Walkthroughs: [02 Python-only architecture](../ai/learning/02-python-only-ai-architecture.md) (current) and [01 integration](../ai/learning/01-python-chat-integration.md) (historical).
+
+```text
+ai-backend/
+├── pyproject.toml, README.md, .env.example, .gitignore
+├── src/onusfit_ai/
+│   ├── main.py                create_app()
+│   ├── api/                   health.py, coach_chat.py   (thin routes)
+│   ├── contracts/             _base.py, health.py, coach_chat.py   (Pydantic)
+│   ├── coach/                 chat.py (use case), parsing.py
+│   ├── prompts/               coach_chat.py   (ported 1:1 from Node; golden-file tested)
+│   ├── llm/                   gemini.py (only Gemini caller), errors.py (classifier + cooldown)
+│   └── core/                  config.py, auth.py (service token), errors.py
+└── tests/                     59 tests; fixtures/coach_chat/ shared with the Node parity test
+```
+
+Node side of the boundary: `backend/src/shared/ai/python-ai-client.ts` (signed HTTP client) and `backend/src/modules/coach/infrastructure/python-coach-chat-service.ts` (adapter; every failure becomes one controlled `AppError`), always wired in `container.ts`. Node refuses to start without `AI_BACKEND_URL` and `AI_BACKEND_SERVICE_SECRET`.
+
+**Intended homes for future code that does not exist yet** (create each folder with its first real file, not before):
+
+| Folder | Responsibility | Roadmap phase | AI concept it teaches |
+|---|---|---|---|
+| `retrieval/` | chunking, embeddings, hybrid search | 3 | RAG, vector search |
+| `tools/` | tool definitions (call Node internal endpoints) | 4 | function calling, tool authorization |
+| `workflows/` | LangGraph graphs | 5 | agents, human-in-the-loop |
+| `memory/` | extraction, dedup, retrieval | 4 | long-term memory |
+| `evals/` (sibling of `src/`) | datasets, judges, runners — **not** unit tests | 1 | evaluation |
+
+Rules: routes thin; contracts separate from logic; provider SDK code isolated in `llm/`; retrieval separate from workflows; tool definitions separate from the code that executes them; shallow modules; add an interface/factory only when a second implementation exists.
+
+**Every AI capability, when built, gets:** a clear owning module · one entry-point function · typed (Pydantic) inputs/outputs · focused tests · a short "execution flow" paragraph in its module docstring or README section · a link to the AI-engineering concept it demonstrates (the table above).
+
+### Node ↔ Python boundary
+
+- Node stays the system of record: authentication, quotas/billing ledger, feature flags, domain data, tool authorization.
+- Python receives a short-lived signed service token carrying the user id; it never accepts a user id from a request body.
+- Python calls back into Node internal endpoints for user data (single authorization implementation).
+- For **coach chat** there is no Node fallback: if Python is down the API returns a controlled 503. The other AI features (voice meal, meal photo, transcription, insights) still call Gemini from Node until they are migrated.
+- **Today:** wired for coach chat only. `ai-backend/` calls Gemini with its own `GEMINI_API_KEY` and has no database.
+
+---
+
+## 8. Naming and organization conventions
+
+- **Backend files:** `kebab-case.ts`; use cases are verbs (`chat-with-coach.ts`, `log-meal.ts`); adapters are prefixed by technology (`pg-…-repository.ts`, `gemini-…-service.ts`); ports are interfaces in `application/ports.ts`.
+- **Backend tests:** `tests/unit/<module>/<subject>.test.ts`; HTTP integration `tests/integration/http/<subject>.http.test.ts`.
+- **Mobile:** feature folders in `kebab-case`; screens `PascalCaseScreen.tsx`; API clients `*-api.ts`; stores `*Store.ts`. New product code goes under `features/<name>/`, not into the top-level helper folders.
+- **Admin:** feature folders under `src/features/<name>/` with `api.ts`, `components/`, `hooks/`, `types.ts`.
+- **Python:** package `onusfit_ai`; `snake_case` modules; one concept per file; tests mirror module names (`tests/test_<module>.py`).
+- **Migrations:** `NNNN_description.sql`, forward-only, never edited after merge.
+- **Docs:** durable guides live with their component (`<component>/docs/`); cross-cutting architecture lives in `docs/architecture/`.
+
+## 9. Extension guidelines
+
+1. **New AI feature in Node:** add the use case + port in the owning module's `application/`, the adapter in its `infrastructure/`, route in `interface/`, wire it in `container.ts`, and run it through `AiUsageGate.run`. Reuse `GeminiClient`; do not call the SDK elsewhere.
+2. **New AI infrastructure used by two or more modules:** `backend/src/shared/ai/`. Used by one module: keep it in that module.
+3. **New Python capability:** follow §7; ship it behind an admin feature flag with the Node path as fallback; write its eval case before changing prompts.
+4. **Never** let `shared/` import `modules/`; never add a second quota system.
+
+---
+
+## 10. Structure findings (2026-11-18 inspection)
+
+| # | Finding | Class | Status |
+|---|---|---|---|
+| 1 | `GeminiClient` was located in `modules/coach/infrastructure/` but used by `nutrition` (cross-module deep import) and imported `app-settings` internals; 8 ESLint boundary violations came from this | MUST FIX | **Fixed:** moved to `shared/ai/gemini-client.ts`; `GeminiExecutor` port + `GeminiFeature` type added in `shared/ai/` |
+| 2 | Nutrition use cases imported concrete infrastructure classes (`GeminiMealPhotoService`, `GeminiVoiceMealService`) | MUST FIX | **Fixed:** use cases now depend on `MealPhotoAnalyzer` / `VoiceMealParser` ports |
+| 3 | `admin-challenges.controller.ts` and `admin-workouts.controller.ts` import `admin/interface/admin.controller.js` directly (2 remaining ESLint boundary errors; not AI) | SHOULD FIX | Deferred: touches the `admin` module's public API; do it as its own small change |
+| 4 | Backend lint has ~300 pre-existing `no-unsafe-*` / `no-explicit-any` errors (concentrated in `pg-app-settings-repository.ts`, the four `gemini-*-service.ts` JSON parsers and `ai-error-classifier.ts`) | SHOULD FIX | Deferred: type-safety work, not structure. The parser errors are exactly the un-validated model output that roadmap Phase 0.2 replaces with schema validation |
+| 5 | Module `app-settings` also owns Gemini config, runtime, usage analytics and the AI quota gate; the name hides that | SHOULD FIX | Deferred: renaming/splitting touches the container, admin routes and many tests. Revisit when Phase 0/1 changes telemetry; likely `ai-management` split |
+| 6 | `pg-app-settings-repository.ts` is 753 lines and mixes generic settings with Gemini config/pricing/usage SQL | SHOULD FIX | Deferred: split together with #5 |
+| 7 | Prompts are inline in five service files | SHOULD FIX | Deferred to roadmap Phase 0.8 (a behavior-adjacent change) |
+| 8 | Mobile has two coach UIs: live `features/ai-coach/` (via `screenRegistry`) and a "compatibility adapter" `features/coach/` + `app/(tabs)/coach/*` route files | SHOULD FIX | Deferred: needs on-device confirmation of which route files are still reachable before consolidating; navigation must not change |
+| 9 | Mobile has parallel helper areas (`src/shared/{components,constants,stores,theme,types,utils}` vs `src/{components,constants,stores,types,utils}`) | SHOULD FIX | Deferred: hundreds of `@/…` imports; high churn, little benefit now. Rule going forward: new code → `features/` |
+| 10 | Mobile `ai-coach/services/mockCoachEngine.ts` has no importers; `mockAiTools.ts`/`conversationsMock.ts` are still referenced | SHOULD FIX | Deferred: dead-code removal is not structural; delete after confirming with tests |
+| 11 | `backend/scripts/` mixes operational scripts (`migrate`, `seed*`, `cleanup`) with ~16 one-off `verify-*` / e2e scripts | SHOULD FIX | Deferred: scripts import `../src/...` and only `migrate`, `seed`, `seed-exercises` and `cleanup` are referenced by `package.json`; move into `scripts/verification/` with import updates in a separate change |
+| 12 | `docs` is a symlink to `Resources/docs`; numbered handbook files describe an older OpenAI/pgvector design | KEEP / note | Left as is; the AI baseline lists which statements are stale |
+| 13 | Backend layering, ESLint boundary enforcement, composition root, module `index.ts` public APIs, tests mirrored by module | KEEP AS IS | Good; this is the structure to imitate |
+| 14 | Admin feature-folder layout; mobile feature folders and navigation shell | KEEP AS IS | Consistent enough; no low-risk change identified |

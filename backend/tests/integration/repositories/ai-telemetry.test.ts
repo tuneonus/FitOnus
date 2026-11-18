@@ -6,7 +6,7 @@ import {
   GeminiRuntimeService,
   PgAppSettingsRepository,
 } from '../../../src/modules/app-settings/index.js';
-import { GeminiClient } from '../../../src/modules/coach/infrastructure/gemini-client.js';
+import { GeminiClient } from '../../../src/shared/ai/gemini-client.js';
 import { createAiRateLimiter } from '../../../src/shared/ai/ai-rate-limit.js';
 import { seedUser } from '../../helpers/test-app.js';
 import { createTestDatabase, type TestDatabase } from '../../helpers/test-database.js';

@@ -43,7 +43,7 @@ import type { SqlExecutor } from '../../database/transaction.js';
 import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
-import type { GeminiClient } from '../coach/infrastructure/gemini-client.js';
+import type { GeminiClient } from '../../shared/ai/gemini-client.js';
 import { GeminiMealPhotoService } from './infrastructure/gemini-meal-photo-service.js';
 import { GeminiVoiceMealService } from './infrastructure/gemini-voice-meal-service.js';
 import { AnalyzeMealPhotoUseCase } from './application/use-cases/analyze-meal-photo.js';

@@ -4,11 +4,11 @@ import type {
   VoiceMealParseInput,
   VoiceMealParseResult,
 } from '../../domain/voice-meal.types.js';
-import type { GeminiVoiceMealService } from '../../infrastructure/gemini-voice-meal-service.js';
+import type { VoiceMealParser } from '../ports.js';
 
 export class ParseVoiceMealUseCase {
   constructor(
-    private readonly voiceMealService: GeminiVoiceMealService,
+    private readonly voiceMealService: VoiceMealParser,
     private readonly aiUsageGate: AiUsageGate,
   ) {}
 

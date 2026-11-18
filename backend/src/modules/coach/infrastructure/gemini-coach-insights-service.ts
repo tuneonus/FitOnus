@@ -4,7 +4,7 @@ import type {
   CoachInsightsResponse,
   UserFitnessContext,
 } from '../domain/coach.types.js';
-import type { GeminiClient } from './gemini-client.js';
+import type { GeminiClient } from '../../../shared/ai/gemini-client.js';
 
 /**
  * Isolated AI Coach Insights Service.

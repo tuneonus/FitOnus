@@ -1,10 +1,11 @@
-import type { GeminiClient } from '../../coach/infrastructure/gemini-client.js';
+import type { MealPhotoAnalyzer } from '../application/ports.js';
+import type { GeminiClient } from '../../../shared/ai/gemini-client.js';
 import type {
   DetectedFoodItem,
   MealPhotoAnalysisResult,
 } from '../domain/meal-photo.types.js';
 
-export class GeminiMealPhotoService {
+export class GeminiMealPhotoService implements MealPhotoAnalyzer {
   constructor(private readonly client: GeminiClient) {}
 
   async analyzePhoto(

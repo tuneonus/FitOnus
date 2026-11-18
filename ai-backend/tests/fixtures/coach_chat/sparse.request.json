@@ -1,0 +1,37 @@
+{
+  "message": "Hi coach",
+  "context": {
+    "profile": {
+      "displayName": "Meena",
+      "sex": null,
+      "age": null,
+      "heightCm": null,
+      "currentWeightKg": null,
+      "targetWeightKg": null,
+      "primaryGoal": null,
+      "experienceLevel": null,
+      "preferredWorkoutPlace": null,
+      "workoutDaysPerWeek": null,
+      "dietType": null,
+      "dailyCalorieTarget": null,
+      "dailyProteinGrams": null
+    },
+    "todayNutrition": {
+      "caloriesConsumed": 0,
+      "proteinGrams": 0,
+      "carbsGrams": 0,
+      "fatGrams": 0,
+      "waterIntakeMl": 0,
+      "calorieTarget": null,
+      "proteinTarget": null
+    },
+    "recentWorkouts": [],
+    "todayPlannedWorkout": null,
+    "activeGoals": [],
+    "latestWeightKg": null
+  },
+  "history": [],
+  "memories": [],
+  "model": { "primary": "gemini-3.5-flash-lite", "fallback": null },
+  "deadlineMs": 20000
+}

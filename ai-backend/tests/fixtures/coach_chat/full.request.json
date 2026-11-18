@@ -1,0 +1,54 @@
+{
+  "message": "Innaiku leg workout panna mudiyuma? Protein enough ah?",
+  "context": {
+    "profile": {
+      "displayName": "Arun",
+      "sex": "male",
+      "age": 29,
+      "heightCm": 175,
+      "currentWeightKg": 72.5,
+      "targetWeightKg": 68,
+      "primaryGoal": "Fat loss",
+      "experienceLevel": "intermediate",
+      "preferredWorkoutPlace": "Gym",
+      "workoutDaysPerWeek": 4,
+      "dietType": "vegetarian",
+      "dailyCalorieTarget": 2100,
+      "dailyProteinGrams": 110
+    },
+    "todayNutrition": {
+      "caloriesConsumed": 1250,
+      "proteinGrams": 62.5,
+      "carbsGrams": 140,
+      "fatGrams": 38.4,
+      "waterIntakeMl": 1750,
+      "calorieTarget": 2100,
+      "proteinTarget": 110
+    },
+    "recentWorkouts": [
+      { "name": "Push Day", "durationMinutes": 55, "volumeKg": 8200, "totalSets": 18, "caloriesBurned": 320, "completedAt": "2026-11-16T10:00:00.000Z" },
+      { "name": "Pull Day", "durationMinutes": 48, "volumeKg": 7400, "totalSets": 16, "caloriesBurned": null, "completedAt": "2026-11-14T10:00:00.000Z" }
+    ],
+    "todayPlannedWorkout": { "name": "Leg Day", "durationMinutes": 60, "exercisesCount": 6 },
+    "activeGoals": [
+      { "title": "Bench 80kg", "category": "strength", "targetValue": 80, "currentValue": 72.5, "unit": "kg" },
+      { "title": "Drink 3L water", "category": "habit", "targetValue": 3, "currentValue": 1.75, "unit": "L" }
+    ],
+    "latestWeightKg": 71.8
+  },
+  "history": [
+    { "role": "user", "text": "turn 1 (dropped: only the last 6 turns are used)" },
+    { "role": "assistant", "text": "turn 2" },
+    { "role": "user", "text": "turn 3" },
+    { "role": "assistant", "text": "turn 4 with தமிழ்" },
+    { "role": "user", "text": "turn 5" },
+    { "role": "assistant", "text": "turn 6" },
+    { "role": "user", "text": "turn 7" }
+  ],
+  "memories": [
+    "[INJURIES]: Mild left knee pain when lunging",
+    "[FOOD]: Vegetarian, no eggs"
+  ],
+  "model": { "primary": "gemini-3.5-flash-lite", "fallback": "gemini-3.1-flash-lite" },
+  "deadlineMs": 20000
+}

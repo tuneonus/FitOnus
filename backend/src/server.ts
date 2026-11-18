@@ -3,7 +3,7 @@ process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE || '64';
 
 import http from 'node:http';
 import { createApp } from './app.js';
-import { ConfigError, loadConfig, type AppConfig } from './config/env.js';
+import { assertAiBackendConfigured, ConfigError, loadConfig, type AppConfig } from './config/env.js';
 import { createContainer } from './container.js';
 import { createPool } from './database/pool.js';
 import { setupDnsFallback } from './database/dns-fallback.js';
@@ -13,7 +13,9 @@ setupDnsFallback();
 
 function loadConfigOrExit(): AppConfig {
   try {
-    return loadConfig();
+    const config = loadConfig();
+    assertAiBackendConfigured(config); // AI Coach needs the Python AI backend: fail at startup, not at the first chat
+    return config;
   } catch (error) {
     // The logger needs config, so report on stderr as JSON. Issues name keys only, never values.
     const issues =

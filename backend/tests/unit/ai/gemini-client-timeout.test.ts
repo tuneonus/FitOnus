@@ -6,7 +6,7 @@ import {
   type AppSettingsRepository,
   type GeminiConfigRecord,
 } from '../../../src/modules/app-settings/index.js';
-import { GeminiClient } from '../../../src/modules/coach/infrastructure/gemini-client.js';
+import { GeminiClient } from '../../../src/shared/ai/gemini-client.js';
 import { STATUS_BY_KIND } from '../../../src/middleware/error-handler.js';
 import { isAppError } from '../../../src/shared/errors/app-error.js';
 import { InMemoryAiUsageStore } from '../../helpers/ai-usage-gate.js';

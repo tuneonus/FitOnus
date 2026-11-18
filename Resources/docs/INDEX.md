@@ -22,6 +22,10 @@ Keep the context needed to maintain the application: agent instructions, product
 - Application source, tests, assets, configuration, migrations, and local backups are outside documentation cleanup.
 - Removed historical reports and review exports can be recovered from Git history at commit `1d41c37`.
 
+## Architecture
+
+- [Project structure](architecture/PROJECT_STRUCTURE.md): repository layout, module rules, where AI code lives, Node ↔ Python boundary
+
 ## AI engineering context
 
 - [Baseline findings](../../AI_ENGINEERING_BASELINE.md)

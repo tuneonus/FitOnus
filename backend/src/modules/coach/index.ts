@@ -2,7 +2,8 @@ import type { RequestHandler } from 'express';
 import type { Database } from '../../database/transaction.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { RouteGroup } from '../../shared/http/route.js';
-import { GeminiClient } from './infrastructure/gemini-client.js';
+import { GeminiClient } from '../../shared/ai/gemini-client.js';
+import type { CoachChatService } from './application/ports.js';
 import { ChatWithCoachUseCase } from './application/use-cases/chat-with-coach.js';
 import { GetCoachInsightsUseCase } from './application/use-cases/get-coach-insights.js';
 import { ManageConversationsUseCase } from './application/use-cases/manage-conversations.js';
@@ -22,10 +23,9 @@ export * from './application/use-cases/chat-with-coach.js';
 export * from './application/use-cases/get-coach-insights.js';
 export * from './application/use-cases/manage-conversations.js';
 export * from './application/use-cases/manage-memories.js';
-export * from './infrastructure/gemini-client.js';
-export * from './infrastructure/gemini-coach-chat-service.js';
 export * from './infrastructure/gemini-coach-insights-service.js';
 export * from './infrastructure/gemini-ai-service.js';
+export * from './infrastructure/python-coach-chat-service.js';
 export * from './infrastructure/pg-user-context-repository.js';
 export * from './infrastructure/pg-conversation-repository.js';
 export * from './infrastructure/pg-memory-repository.js';
@@ -51,6 +51,8 @@ export interface CreateCoachModuleOptions {
   basePath: string;
   db: Database;
   geminiConfig: GeminiAiConfig;
+  /** Coach chat text generation (the Python AI backend, `PythonCoachChatService`). */
+  chatService: CoachChatService;
   /** Required: chat and insights must never reach Gemini without the feature flag / quota gate. */
   aiUsageGate: AiUsageGate;
   rateLimiter?: RequestHandler;
@@ -60,7 +62,7 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
   const userContextRepo = new PgUserContextRepository(options.db);
   const conversationRepo = new PgConversationRepository(options.db);
   const memoryRepo = new PgMemoryRepository(options.db);
-  const geminiService = new GeminiAiService(options.geminiConfig);
+  const geminiService = new GeminiAiService(options.geminiConfig, { chatService: options.chatService });
 
   const useCase = new ChatWithCoachUseCase(
     userContextRepo,

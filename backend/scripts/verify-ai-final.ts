@@ -653,17 +653,8 @@ async function main() {
       console.log('  ✓ Quota error mapped to rate_limited/429 (Zero sensitive API keys leaked)');
     }
 
-    // Scenario 4: Malformed / Unparseable Non-JSON Output
-    console.log('\n4. Testing Malformed / Garbled Gemini Output:');
-    const { GeminiCoachChatService } = await import('../src/modules/coach/infrastructure/gemini-coach-chat-service.js');
-    const mockGeminiClient: any = {
-      generateText: async () => 'Sure! Here is a great tip for your workouts: remember to stay hydrated and focus on progressive overload!',
-    };
-    const coachChatService = new GeminiCoachChatService(mockGeminiClient);
-    const parsedFallback = await coachChatService.generateCoachResponse('Workout tips?', mockContext);
-    assert.ok(parsedFallback.text.includes('progressive overload'));
-    assert.equal(parsedFallback.sources?.[0], 'FitOnus Coach Engine');
-    console.log('  ✓ Unstructured non-JSON output safely handled via graceful fallback without crash');
+    // Scenario 4 (malformed / non-JSON model output) moved to Python with the coach chat prompt and
+    // parser: see ai-backend/tests/test_coach_chat_parsing.py.
 
     // Scenario 5: Gemini Service Unavailable (HTTP 503)
     console.log('\n5. Testing Gemini Service Unavailable (HTTP 503):');

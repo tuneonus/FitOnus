@@ -1,15 +1,23 @@
-import type { GeminiService, CoachChatService, CoachInsightsService } from '../application/ports.js';
+import type {
+  CoachChatService,
+  CoachInsightsService,
+  GeminiService,
+} from '../application/ports.js';
 import type {
   ChatMessageTurn,
   CoachResponse,
   CoachInsightsResponse,
   UserFitnessContext,
 } from '../domain/coach.types.js';
-import { GeminiClient, type GeminiClientConfig } from './gemini-client.js';
-import { GeminiCoachChatService } from './gemini-coach-chat-service.js';
+import { GeminiClient, type GeminiClientConfig } from '../../../shared/ai/gemini-client.js';
 import { GeminiCoachInsightsService } from './gemini-coach-insights-service.js';
 
 export type GeminiAiConfig = GeminiClientConfig;
+
+export interface GeminiAiServiceOptions {
+  /** Who generates coach chat replies: the Python AI backend (`PythonCoachChatService`). */
+  chatService: CoachChatService;
+}
 
 /**
  * Composite AI Service implementing the full GeminiService port.
@@ -20,9 +28,9 @@ export class GeminiAiService implements GeminiService {
   public readonly chatService: CoachChatService;
   public readonly insightsService: CoachInsightsService;
 
-  constructor(config: GeminiAiConfig) {
+  constructor(config: GeminiAiConfig, options: GeminiAiServiceOptions) {
     this.client = new GeminiClient(config);
-    this.chatService = new GeminiCoachChatService(this.client);
+    this.chatService = options.chatService;
     this.insightsService = new GeminiCoachInsightsService(this.client);
   }
 

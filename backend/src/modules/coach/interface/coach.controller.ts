@@ -7,7 +7,7 @@ import type { ChatWithCoachUseCase } from '../application/use-cases/chat-with-co
 import type { GetCoachInsightsUseCase } from '../application/use-cases/get-coach-insights.js';
 import type { ManageConversationsUseCase } from '../application/use-cases/manage-conversations.js';
 import type { ManageMemoriesUseCase } from '../application/use-cases/manage-memories.js';
-import type { GeminiClient } from '../infrastructure/gemini-client.js';
+import type { GeminiClient } from '../../../shared/ai/gemini-client.js';
 import {
   chatRequestSchema,
   createConversationSchema,

@@ -1,8 +1,9 @@
-import type { GeminiClient } from '../../coach/infrastructure/gemini-client.js';
+import type { VoiceMealParser } from '../application/ports.js';
+import type { GeminiClient } from '../../../shared/ai/gemini-client.js';
 import type { DetectedFoodItem } from '../domain/meal-photo.types.js';
 import type { VoiceMealParseResult } from '../domain/voice-meal.types.js';
 
-export class GeminiVoiceMealService {
+export class GeminiVoiceMealService implements VoiceMealParser {
   constructor(private readonly client: GeminiClient) {}
 
   async parseVoiceMeal(params: {

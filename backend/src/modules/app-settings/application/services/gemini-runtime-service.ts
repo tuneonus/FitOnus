@@ -96,6 +96,23 @@ export class GeminiRuntimeService {
       );
     }
 
+    const { primaryModel, fallbackModel } = this.selectModels(config, feature);
+    return { apiKey, model: primaryModel, primaryModel, fallbackModel };
+  }
+
+  /**
+   * The configured primary/fallback model names for a feature. Unlike `resolveExecutionTarget` this
+   * needs no API key, so callers that only forward model names (the Python AI backend holds its own
+   * key) still follow the admin console's model settings.
+   */
+  async resolveModelNames(feature: GeminiFeature): Promise<{ primaryModel: string; fallbackModel: string }> {
+    return this.selectModels(await this.ensureFreshConfig(), feature);
+  }
+
+  private selectModels(
+    config: GeminiConfigRecord,
+    feature: GeminiFeature,
+  ): { primaryModel: string; fallbackModel: string } {
     let primaryModel = config.defaultModel || this.config.fallbackModel || 'gemini-3.5-flash-lite';
     if (feature === 'coach_chat' || feature === 'coach_insights') {
       primaryModel = config.coachModel || primaryModel;
@@ -111,7 +128,7 @@ export class GeminiRuntimeService {
       config.fallbackModel ||
       (primaryModel === 'gemini-3.5-flash-lite' ? 'gemini-3.1-flash-lite' : 'gemini-3.5-flash-lite');
 
-    return { apiKey, model: primaryModel, primaryModel, fallbackModel };
+    return { primaryModel, fallbackModel };
   }
 
   /**
@@ -286,6 +303,46 @@ export class GeminiRuntimeService {
       // Re-throw primary error to let client/usage-gate/timeout handler process it safely
       throw primaryErr;
     }
+  }
+
+  /**
+   * Records a call that was served outside this process (the Python AI backend). The provider call
+   * and its timing happened elsewhere; this only writes the same ledger row `attemptExecution`
+   * writes, with cost computed from the same pricing table.
+   */
+  async recordExternalUsage(event: {
+    requestId: string;
+    userId: string | null;
+    feature: GeminiFeature;
+    model: string;
+    isFallback: boolean;
+    inputTokens: number;
+    outputTokens: number;
+    cachedTokens: number;
+    totalTokens: number;
+    durationMs: number;
+  }): Promise<void> {
+    await this.ensureFreshConfig().catch(() => undefined); // pricing is optional; defaults apply
+    await this.config.repo.recordGeminiUsage({
+      requestId: event.requestId,
+      userId: event.userId,
+      feature: event.feature,
+      model: event.model,
+      status: 'success',
+      inputTokens: event.inputTokens,
+      outputTokens: event.outputTokens,
+      cachedTokens: event.cachedTokens,
+      totalTokens: event.totalTokens,
+      estimatedCostUsd: this.calculateCostUsd(
+        event.model,
+        event.inputTokens,
+        event.outputTokens,
+        event.cachedTokens,
+      ),
+      durationMs: event.durationMs,
+      errorCategory: event.isFallback ? 'FALLBACK_SUCCESS' : null,
+      providerRequestId: null,
+    });
   }
 
   private async attemptExecution(params: {
