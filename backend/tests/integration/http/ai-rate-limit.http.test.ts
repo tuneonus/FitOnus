@@ -199,7 +199,13 @@ describe('AI rate limiting over HTTP (per user, not per token or IP)', () => {
     expect(Object.keys(ai.body).sort()).toEqual(Object.keys(legacy.body).sort());
     expect(ai.body.error.code).toBe(legacy.body.error.code);
     expect(ai.body.error.message).toBe(legacy.body.error.message);
-    expect(Object.keys(ai.body.error).filter((k) => !(k in legacy.body.error))).toEqual(['details']);
+    // Both limiters report when to retry (the legacy one since commit 1d41c37), so the envelopes have the
+    // same keys, and each body agrees with its own Retry-After header.
+    expect(Object.keys(ai.body.error).sort()).toEqual(Object.keys(legacy.body.error).sort());
+    for (const response of [legacy, ai]) {
+      expect(response.body.error.details.retryAfterSeconds).toBeGreaterThan(0);
+      expect(Number(response.headers['retry-after'])).toBe(response.body.error.details.retryAfterSeconds);
+    }
   });
 
   it('Step 1 quotas are untouched: a limited request reserves nothing and refunded requests leave zero usage', async () => {

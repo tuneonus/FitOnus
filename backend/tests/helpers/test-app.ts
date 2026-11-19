@@ -21,7 +21,10 @@ export const TEST_ENV: Record<string, string> = {
   RATE_LIMIT_MAX: '100000',
   AUTH_RATE_LIMIT_MAX: '10000',
   // AI Coach chat needs the Python AI backend configured to start; tests never call it unless they stub it.
-  AI_BACKEND_URL: 'http://127.0.0.1:9',
+  // Where nothing listens, so a call fails with ECONNREFUSED ("never reached Python": the quota unit is
+  // refunded). Port 3 is unassigned and privileged. NOT port 9 (or 1, 7, 25, ...): fetch refuses those
+  // "bad ports" before connecting, with no error code, so the client cannot tell the request never left.
+  AI_BACKEND_URL: 'http://127.0.0.1:3',
   AI_BACKEND_SERVICE_SECRET: 'test-only-ai-backend-service-secret-0123456789',
 };
 
