@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 
 from onusfit_ai import __version__
-from onusfit_ai.api import coach_chat, health, meal_photo, transcribe, voice_meal
+from onusfit_ai.api import coach_chat, coach_insights, health, meal_photo, transcribe, voice_meal
 from onusfit_ai.core.errors import register_error_handlers
 
 
@@ -19,6 +19,7 @@ def create_app() -> FastAPI:
     register_error_handlers(app)
     app.include_router(health.router)
     app.include_router(coach_chat.router)
+    app.include_router(coach_insights.router)
     app.include_router(voice_meal.router)
     app.include_router(meal_photo.router)
     app.include_router(transcribe.router)

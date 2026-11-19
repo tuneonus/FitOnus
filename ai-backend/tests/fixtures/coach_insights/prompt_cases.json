@@ -1,0 +1,1302 @@
+[
+  {
+    "name": "A_full__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": "en",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 74.6 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1400 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: Leg Day (~50 min)\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 4200kg volume, 350 kcal\n- Pull Day: 52m, 16 sets, 5100kg volume, 410 kcal\n\nACTIVE GOALS:\n- Bench 100 kg: 80/100 kg\n- Lose 3 kg: 75/72 kg\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "A_full__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": "ta",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tamil (தமிழ் script). Keep terms like calories, protein, workout easy to understand.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 74.6 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1400 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: Leg Day (~50 min)\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 4200kg volume, 350 kcal\n- Pull Day: 52m, 16 sets, 5100kg volume, 410 kcal\n\nACTIVE GOALS:\n- Bench 100 kg: 80/100 kg\n- Lose 3 kg: 75/72 kg\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "A_full__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": "tanglish",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tanglish (Tamil words written in English letters, e.g. \"Kcal intake reach pannunga\", \"Rest day romba mukkiyam\").\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 74.6 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1400 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: Leg Day (~50 min)\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 4200kg volume, 350 kcal\n- Pull Day: 52m, 16 sets, 5100kg volume, 410 kcal\n\nACTIVE GOALS:\n- Bench 100 kg: 80/100 kg\n- Lose 3 kg: 75/72 kg\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "B_minimal_nulls__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": null,
+        "age": null,
+        "heightCm": null,
+        "currentWeightKg": null,
+        "targetWeightKg": null,
+        "primaryGoal": null,
+        "experienceLevel": null,
+        "preferredWorkoutPlace": null,
+        "workoutDaysPerWeek": null,
+        "dietType": null,
+        "dailyCalorieTarget": null,
+        "dailyProteinGrams": null
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 500,
+        "proteinGrams": 20,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "en",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Fitness & Health\n- Experience: Intermediate\n- Current Weight: Not set kg\n- Daily Targets: Calories Not set kcal | Protein Not set g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 500 kcal (Target: Not set)\n- Protein: 20 g (Target: Not set)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "B_minimal_nulls__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": null,
+        "age": null,
+        "heightCm": null,
+        "currentWeightKg": null,
+        "targetWeightKg": null,
+        "primaryGoal": null,
+        "experienceLevel": null,
+        "preferredWorkoutPlace": null,
+        "workoutDaysPerWeek": null,
+        "dietType": null,
+        "dailyCalorieTarget": null,
+        "dailyProteinGrams": null
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 500,
+        "proteinGrams": 20,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "ta",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tamil (தமிழ் script). Keep terms like calories, protein, workout easy to understand.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Fitness & Health\n- Experience: Intermediate\n- Current Weight: Not set kg\n- Daily Targets: Calories Not set kcal | Protein Not set g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 500 kcal (Target: Not set)\n- Protein: 20 g (Target: Not set)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "B_minimal_nulls__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": null,
+        "age": null,
+        "heightCm": null,
+        "currentWeightKg": null,
+        "targetWeightKg": null,
+        "primaryGoal": null,
+        "experienceLevel": null,
+        "preferredWorkoutPlace": null,
+        "workoutDaysPerWeek": null,
+        "dietType": null,
+        "dailyCalorieTarget": null,
+        "dailyProteinGrams": null
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 500,
+        "proteinGrams": 20,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "tanglish",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tanglish (Tamil words written in English letters, e.g. \"Kcal intake reach pannunga\", \"Rest day romba mukkiyam\").\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Fitness & Health\n- Experience: Intermediate\n- Current Weight: Not set kg\n- Daily Targets: Calories Not set kcal | Protein Not set g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 500 kcal (Target: Not set)\n- Protein: 20 g (Target: Not set)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "C_floats__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 72.5,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2150.5,
+        "dailyProteinGrams": 120.25
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1234.5,
+        "proteinGrams": 99.9,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 1500.5,
+        "calorieTarget": 2150.5,
+        "proteinTarget": 120.25
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 1234.5,
+          "totalSets": 14,
+          "caloriesBurned": null,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Zero burn",
+          "durationMinutes": 45,
+          "volumeKg": 0.1,
+          "totalSets": 3,
+          "caloriesBurned": 0,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 2.25,
+          "currentValue": 0.5,
+          "unit": "L"
+        },
+        {
+          "title": "Tiny",
+          "category": "strength",
+          "targetValue": 1e+21,
+          "currentValue": 0.00001,
+          "unit": "x"
+        }
+      ],
+      "latestWeightKg": 73.2
+    },
+    "lang": "en",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 73.2 kg\n- Daily Targets: Calories 2150.5 kcal | Protein 120.25 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1234.5 kcal (Target: 2150.5)\n- Protein: 99.9 g (Target: 120.25)\n- Water Logged Today: 1500.5 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 1234.5kg volume, 0 kcal\n- Zero burn: 45m, 3 sets, 0.1kg volume, 0 kcal\n\nACTIVE GOALS:\n- Bench 100 kg: 0.5/2.25 L\n- Tiny: 0.00001/1e+21 x\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "C_floats__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 72.5,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2150.5,
+        "dailyProteinGrams": 120.25
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1234.5,
+        "proteinGrams": 99.9,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 1500.5,
+        "calorieTarget": 2150.5,
+        "proteinTarget": 120.25
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 1234.5,
+          "totalSets": 14,
+          "caloriesBurned": null,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Zero burn",
+          "durationMinutes": 45,
+          "volumeKg": 0.1,
+          "totalSets": 3,
+          "caloriesBurned": 0,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 2.25,
+          "currentValue": 0.5,
+          "unit": "L"
+        },
+        {
+          "title": "Tiny",
+          "category": "strength",
+          "targetValue": 1e+21,
+          "currentValue": 0.00001,
+          "unit": "x"
+        }
+      ],
+      "latestWeightKg": 73.2
+    },
+    "lang": "ta",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tamil (தமிழ் script). Keep terms like calories, protein, workout easy to understand.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 73.2 kg\n- Daily Targets: Calories 2150.5 kcal | Protein 120.25 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1234.5 kcal (Target: 2150.5)\n- Protein: 99.9 g (Target: 120.25)\n- Water Logged Today: 1500.5 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 1234.5kg volume, 0 kcal\n- Zero burn: 45m, 3 sets, 0.1kg volume, 0 kcal\n\nACTIVE GOALS:\n- Bench 100 kg: 0.5/2.25 L\n- Tiny: 0.00001/1e+21 x\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "C_floats__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 72.5,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2150.5,
+        "dailyProteinGrams": 120.25
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1234.5,
+        "proteinGrams": 99.9,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 1500.5,
+        "calorieTarget": 2150.5,
+        "proteinTarget": 120.25
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 1234.5,
+          "totalSets": 14,
+          "caloriesBurned": null,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Zero burn",
+          "durationMinutes": 45,
+          "volumeKg": 0.1,
+          "totalSets": 3,
+          "caloriesBurned": 0,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 2.25,
+          "currentValue": 0.5,
+          "unit": "L"
+        },
+        {
+          "title": "Tiny",
+          "category": "strength",
+          "targetValue": 1e+21,
+          "currentValue": 0.00001,
+          "unit": "x"
+        }
+      ],
+      "latestWeightKg": 73.2
+    },
+    "lang": "tanglish",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tanglish (Tamil words written in English letters, e.g. \"Kcal intake reach pannunga\", \"Rest day romba mukkiyam\").\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 73.2 kg\n- Daily Targets: Calories 2150.5 kcal | Protein 120.25 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1234.5 kcal (Target: 2150.5)\n- Protein: 99.9 g (Target: 120.25)\n- Water Logged Today: 1500.5 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 1234.5kg volume, 0 kcal\n- Zero burn: 45m, 3 sets, 0.1kg volume, 0 kcal\n\nACTIVE GOALS:\n- Bench 100 kg: 0.5/2.25 L\n- Tiny: 0.00001/1e+21 x\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "D_zero_targets__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 0,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 0,
+        "dailyProteinGrams": 0
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 0,
+        "proteinTarget": 0
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 0
+    },
+    "lang": "en",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 0 kg\n- Daily Targets: Calories 0 kcal | Protein 0 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: 0)\n- Protein: 0 g (Target: 0)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 4200kg volume, 350 kcal\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "D_zero_targets__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 0,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 0,
+        "dailyProteinGrams": 0
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 0,
+        "proteinTarget": 0
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 0
+    },
+    "lang": "ta",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tamil (தமிழ் script). Keep terms like calories, protein, workout easy to understand.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 0 kg\n- Daily Targets: Calories 0 kcal | Protein 0 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: 0)\n- Protein: 0 g (Target: 0)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 4200kg volume, 350 kcal\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "D_zero_targets__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 0,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 0,
+        "dailyProteinGrams": 0
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 0,
+        "proteinTarget": 0
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 0
+    },
+    "lang": "tanglish",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tanglish (Tamil words written in English letters, e.g. \"Kcal intake reach pannunga\", \"Rest day romba mukkiyam\").\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 0 kg\n- Daily Targets: Calories 0 kcal | Protein 0 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: 0)\n- Protein: 0 g (Target: 0)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 4200kg volume, 350 kcal\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "E_unicode_quotes__en",
+    "context": {
+      "profile": {
+        "displayName": "கார்த்திக் \"KK\" O'Neil",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "தசை வளர்ச்சி & strength 💪",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "மார்பு \"Chest\" day",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "கால் பயிற்சி",
+        "durationMinutes": 40,
+        "exercisesCount": 4
+      },
+      "activeGoals": [
+        {
+          "title": "ஓட்டம் 5k",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "கி.மீ"
+        }
+      ],
+      "latestWeightKg": 75
+    },
+    "lang": "en",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: கார்த்திக் \"KK\" O'Neil\n- Goal: தசை வளர்ச்சி & strength 💪\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1400 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: கால் பயிற்சி (~40 min)\n\nRECENT WORKOUTS:\n- மார்பு \"Chest\" day: 45m, 14 sets, 4200kg volume, 350 kcal\n\nACTIVE GOALS:\n- ஓட்டம் 5k: 80/100 கி.மீ\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "E_unicode_quotes__ta",
+    "context": {
+      "profile": {
+        "displayName": "கார்த்திக் \"KK\" O'Neil",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "தசை வளர்ச்சி & strength 💪",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "மார்பு \"Chest\" day",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "கால் பயிற்சி",
+        "durationMinutes": 40,
+        "exercisesCount": 4
+      },
+      "activeGoals": [
+        {
+          "title": "ஓட்டம் 5k",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "கி.மீ"
+        }
+      ],
+      "latestWeightKg": 75
+    },
+    "lang": "ta",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tamil (தமிழ் script). Keep terms like calories, protein, workout easy to understand.\n\nUSER PROFILE:\n- Name: கார்த்திக் \"KK\" O'Neil\n- Goal: தசை வளர்ச்சி & strength 💪\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1400 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: கால் பயிற்சி (~40 min)\n\nRECENT WORKOUTS:\n- மார்பு \"Chest\" day: 45m, 14 sets, 4200kg volume, 350 kcal\n\nACTIVE GOALS:\n- ஓட்டம் 5k: 80/100 கி.மீ\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "E_unicode_quotes__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "கார்த்திக் \"KK\" O'Neil",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "தசை வளர்ச்சி & strength 💪",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "மார்பு \"Chest\" day",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "கால் பயிற்சி",
+        "durationMinutes": 40,
+        "exercisesCount": 4
+      },
+      "activeGoals": [
+        {
+          "title": "ஓட்டம் 5k",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "கி.மீ"
+        }
+      ],
+      "latestWeightKg": 75
+    },
+    "lang": "tanglish",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tanglish (Tamil words written in English letters, e.g. \"Kcal intake reach pannunga\", \"Rest day romba mukkiyam\").\n\nUSER PROFILE:\n- Name: கார்த்திக் \"KK\" O'Neil\n- Goal: தசை வளர்ச்சி & strength 💪\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1400 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: கால் பயிற்சி (~40 min)\n\nRECENT WORKOUTS:\n- மார்பு \"Chest\" day: 45m, 14 sets, 4200kg volume, 350 kcal\n\nACTIVE GOALS:\n- ஓட்டம் 5k: 80/100 கி.மீ\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "F_over_target__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 2600,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 75
+    },
+    "lang": "en",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 2600 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "F_over_target__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 2600,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 75
+    },
+    "lang": "ta",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tamil (தமிழ் script). Keep terms like calories, protein, workout easy to understand.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 2600 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "F_over_target__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 2600,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 75
+    },
+    "lang": "tanglish",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tanglish (Tamil words written in English letters, e.g. \"Kcal intake reach pannunga\", \"Rest day romba mukkiyam\").\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 2600 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "G_water_only__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 750,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "en",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: Not set)\n- Protein: 0 g (Target: Not set)\n- Water Logged Today: 750 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "G_water_only__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 750,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "ta",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tamil (தமிழ் script). Keep terms like calories, protein, workout easy to understand.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: Not set)\n- Protein: 0 g (Target: Not set)\n- Water Logged Today: 750 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "G_water_only__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 750,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "tanglish",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tanglish (Tamil words written in English letters, e.g. \"Kcal intake reach pannunga\", \"Rest day romba mukkiyam\").\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: Not set)\n- Protein: 0 g (Target: Not set)\n- Water Logged Today: 750 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\nNone\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "H_goals_only__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": null
+    },
+    "lang": "en",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: 2000)\n- Protein: 0 g (Target: 100)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\n- Bench 100 kg: 80/100 kg\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "H_goals_only__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": null
+    },
+    "lang": "ta",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tamil (தமிழ் script). Keep terms like calories, protein, workout easy to understand.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: 2000)\n- Protein: 0 g (Target: 100)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\n- Bench 100 kg: 80/100 kg\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "H_goals_only__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": null
+    },
+    "lang": "tanglish",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nCRITICAL: Respond STRICTLY in Tanglish (Tamil words written in English letters, e.g. \"Kcal intake reach pannunga\", \"Rest day romba mukkiyam\").\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 75 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 0 kcal (Target: 2000)\n- Protein: 0 g (Target: 100)\n- Water Logged Today: 0 ml\n- Planned Workout Today: None scheduled\n\nRECENT WORKOUTS:\nNone logged yet\n\nACTIVE GOALS:\n- Bench 100 kg: 80/100 kg\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "A_full__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": null,
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 74.6 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1400 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: Leg Day (~50 min)\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 4200kg volume, 350 kcal\n- Pull Day: 52m, 16 sets, 5100kg volume, 410 kcal\n\nACTIVE GOALS:\n- Bench 100 kg: 80/100 kg\n- Lose 3 kg: 75/72 kg\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  },
+  {
+    "name": "A_full__fr",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": "fr",
+    "prompt": "You are OnusFit AI Insights Engine — an elite sports scientist and strength coach.\nGenerate 2 to 3 concise, highly personalized actionable insights based on the user's REAL fitness data.\n\nRespond in clean, encouraging English.\n\nUSER PROFILE:\n- Name: Karthik\n- Goal: Muscle Gain\n- Experience: Intermediate\n- Current Weight: 74.6 kg\n- Daily Targets: Calories 2400 kcal | Protein 150 g\n\nTODAY'S ACTIVITY & NUTRITION:\n- Calories: 1400 kcal (Target: 2400)\n- Protein: 90 g (Target: 150)\n- Water Logged Today: 2000 ml\n- Planned Workout Today: Leg Day (~50 min)\n\nRECENT WORKOUTS:\n- Upper Body Push: 45m, 14 sets, 4200kg volume, 350 kcal\n- Pull Day: 52m, 16 sets, 5100kg volume, 410 kcal\n\nACTIVE GOALS:\n- Bench 100 kg: 80/100 kg\n- Lose 3 kg: 75/72 kg\n\nSTRICT INSTRUCTIONS:\n1. Generate exactly 2 or 3 insights covering:\n   - Workout consistency or progression\n   - Nutrition / protein progress\n   - Hydration or recovery suggestion (ONLY if backed by actual data above)\n2. NEVER invent missing wearable metrics (no fake sleep stages, fake HRV, fake steps).\n3. Do not give medical diagnoses or medication advice.\n4. Output STRICTLY VALID JSON without markdown fences matching this schema:\n{\n  \"greeting\": \"Personalized greeting like 'Good morning, Alex!'\",\n  \"recommendation\": \"Short 1-sentence action recommendation for today\",\n  \"insights\": [\n    {\n      \"id\": \"ins-1\",\n      \"title\": \"Short punchy headline (max 50 chars)\",\n      \"description\": \"1-2 sentence evidence-based guidance (max 160 chars)\",\n      \"category\": \"workout\",\n      \"priority\": \"high\",\n      \"severity\": \"positive\",\n      \"action\": \"View Workout\",\n      \"question\": \"What should I focus on for today's workout?\",\n      \"evidence\": [\"Chest + Triceps scheduled\"],\n      \"confidence\": \"high\",\n      \"requiresDevice\": false\n    }\n  ]\n}"
+  }
+]

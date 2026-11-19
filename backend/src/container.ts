@@ -21,7 +21,12 @@ import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
 import { createDashboardModule } from './modules/dashboard/index.js';
 import { PythonAiClient } from './shared/ai/python-ai-client.js';
-import { createCoachModule, PythonCoachChatService, PythonSpeechTranscriber } from './modules/coach/index.js';
+import {
+  createCoachModule,
+  PythonCoachChatService,
+  PythonCoachInsightsService,
+  PythonSpeechTranscriber,
+} from './modules/coach/index.js';
 import {
   createNotificationsModule,
   FcmHttpV1Sender,
@@ -157,13 +162,13 @@ export function createContainer(
     fallbackModel: config.gemini.fallbackModel,
   });
 
-  // AI Coach chat, voice meal, meal photo and speech transcription are served only by the Python AI backend (ai-backend/). Its URL
+  // AI Coach chat and insights, voice meal, meal photo and speech transcription are served only by the Python AI backend (ai-backend/). Its URL
   // and secret are required: `assertAiBackendConfigured` stops startup with a clear message if missing.
   const { aiBackend } = assertAiBackendConfigured(config);
   const pythonAi = new PythonAiClient({ baseUrl: aiBackend.url, serviceSecret: aiBackend.serviceSecret });
   /** Admin-configured primary/fallback model names for a feature; Python applies the fallback itself. */
   const resolveModelsFor =
-    (feature: 'coach_chat' | 'voice_meal' | 'meal_photo') => async (): Promise<{ primary: string; fallback: string | null }> => {
+    (feature: 'coach_chat' | 'voice_meal' | 'meal_photo' | 'coach_insights') => async (): Promise<{ primary: string; fallback: string | null }> => {
       try {
         const names = await appSettings.runtimeService.resolveModelNames(feature);
         return { primary: names.primaryModel, fallback: names.fallbackModel || null };
@@ -221,13 +226,16 @@ export function createContainer(
   const coach = createCoachModule({
     basePath: `${API_PREFIX}/coach`,
     db: database,
-    geminiConfig: {
-      ...config.gemini,
-      runtimeService: appSettings.runtimeService,
-    },
     chatService: new PythonCoachChatService({
       client: pythonAi,
       resolveModels: resolveModelsFor('coach_chat'),
+      usageRecorder: appSettings.runtimeService,
+      pythonTimeoutMs: aiBackend.timeoutMs,
+      ...(logger ? { logger } : {}),
+    }),
+    insightsService: new PythonCoachInsightsService({
+      client: pythonAi,
+      resolveModels: resolveModelsFor('coach_insights'),
       usageRecorder: appSettings.runtimeService,
       pythonTimeoutMs: aiBackend.timeoutMs,
       ...(logger ? { logger } : {}),

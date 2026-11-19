@@ -10,16 +10,9 @@ change is visible in review.
 """
 
 from onusfit_ai.contracts.coach_chat import ChatTurn, UserFitnessContext
-from onusfit_ai.core.js_compat import js_num
+from onusfit_ai.core.js_compat import js_nullish, js_num
 
 PROMPT_VERSION = "coach_chat_v1_node_parity"
-
-
-def _or(value: object, default: str) -> str:
-    """JavaScript `value ?? default` (only None falls back; 0 and "" are kept)."""
-    if value is None:
-        return default
-    return js_num(value) if isinstance(value, (int, float)) else str(value)
 
 
 def build_system_prompt(context: UserFitnessContext) -> str:
@@ -74,21 +67,21 @@ def build_system_prompt(context: UserFitnessContext) -> str:
 
 USER FITNESS PROFILE:
 - Name: {profile.display_name}
-- Gender: {_or(profile.sex, "Not specified")}
+- Gender: {js_nullish(profile.sex, "Not specified")}
 - Age: {age}
 - Height: {height}
 - Current Weight: {weight} kg
 - Target Weight: {target_weight}
-- Primary Goal: {_or(profile.primary_goal, "General fitness & health")}
-- Fitness Level: {_or(profile.experience_level, "Intermediate")}
-- Workout Place: {_or(profile.preferred_workout_place, "Gym/Home")}
+- Primary Goal: {js_nullish(profile.primary_goal, "General fitness & health")}
+- Fitness Level: {js_nullish(profile.experience_level, "Intermediate")}
+- Workout Place: {js_nullish(profile.preferred_workout_place, "Gym/Home")}
 - Target Workout Days: {workout_days}
-- Diet Type: {_or(profile.diet_type, "Standard")}
-- Daily Targets: Calories {_or(profile.daily_calorie_target, "Unset")} kcal | Protein {_or(profile.daily_protein_grams, "Unset")} g
+- Diet Type: {js_nullish(profile.diet_type, "Standard")}
+- Daily Targets: Calories {js_nullish(profile.daily_calorie_target, "Unset")} kcal | Protein {js_nullish(profile.daily_protein_grams, "Unset")} g
 
 TODAY'S ACTIVITY & NUTRITION (LOCAL DATA):
-- Calories Consumed: {js_num(today.calories_consumed)} kcal (Target: {_or(today.calorie_target, "Not set")})
-- Protein: {js_num(today.protein_grams)} g (Target: {_or(today.protein_target, "Not set")})
+- Calories Consumed: {js_num(today.calories_consumed)} kcal (Target: {js_nullish(today.calorie_target, "Not set")})
+- Protein: {js_num(today.protein_grams)} g (Target: {js_nullish(today.protein_target, "Not set")})
 - Carbs: {js_num(today.carbs_grams)} g | Fat: {js_num(today.fat_grams)} g
 - Water: {js_num(today.water_intake_ml)} ml ({water_liters} L)
 - Next/Planned Workout: {planned_text}

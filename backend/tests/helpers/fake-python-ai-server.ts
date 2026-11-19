@@ -141,6 +141,44 @@ export const okMealPhotoReply = (overrides: Record<string, unknown> = {}): Recor
   ...overrides,
 });
 
+/** A successful coach insights reply in the shape of ai-backend/contracts/coach_insights.py. */
+export const okInsightsReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  outcome: 'ok',
+  result: {
+    greeting: 'Good morning Karthik!',
+    recommendation: 'Target Leg Day today.',
+    insights: [
+      {
+        id: 'ins-1',
+        title: 'Workout Consistency',
+        description: 'You trained twice recently. Ready for Leg Day?',
+        category: 'workout',
+        priority: 'high',
+        severity: 'positive',
+        action: 'View Workout',
+        question: 'What is scheduled for Leg Day?',
+        evidence: ['Upper Body Push logged'],
+        confidence: 'high',
+        requiresDevice: false,
+      },
+    ],
+    generatedAt: '2026-11-19T10:00:00.000Z',
+    hasSufficientData: true,
+  },
+  usage: {
+    model: 'gemini-3.5-flash-lite',
+    isFallback: false,
+    inputTokens: 800,
+    outputTokens: 200,
+    cachedTokens: 0,
+    thinkingTokens: 15,
+    totalTokens: 1015,
+    durationMs: 1800,
+  },
+  traceId: 'trace-insights-1',
+  ...overrides,
+});
+
 /** A successful transcription reply in the shape of ai-backend/contracts/transcribe.py. */
 export const okTranscribeReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   outcome: 'ok',

@@ -1,0 +1,4862 @@
+[
+  {
+    "name": "A_full__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: Leg Day",
+          "description": "You have Leg Day (~50 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: Leg Day",
+          "description": "You have Leg Day (~50 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "A_full__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "திட்டமிடப்பட்ட உடற்பயிற்சி: Leg Day",
+          "description": "இன்று 50 நிமிட உடற்பயிற்சி திட்டமிடப்பட்டுள்ளது.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "பயிற்சியைக் காண்க",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 கலோரிகள் மீதமுள்ளன",
+          "description": "இன்று 1400 / 2400 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 2.0 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "திட்டமிடப்பட்ட உடற்பயிற்சி: Leg Day",
+          "description": "இன்று 50 நிமிட உடற்பயிற்சி திட்டமிடப்பட்டுள்ளது.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "பயிற்சியைக் காண்க",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 கலோரிகள் மீதமுள்ளன",
+          "description": "இன்று 1400 / 2400 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 2.0 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "A_full__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today's Workout: Leg Day",
+          "description": "Leg Day (~50 min) ready. Warm up nalla pannunga!",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining irukku",
+          "description": "Consumed 1400 of 2400 kcal. Protein: 90g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water: 2.0L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today's Workout: Leg Day",
+          "description": "Leg Day (~50 min) ready. Warm up nalla pannunga!",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining irukku",
+          "description": "Consumed 1400 of 2400 kcal. Protein: 90g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water: 2.0L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "A_full__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: Leg Day",
+          "description": "You have Leg Day (~50 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: Leg Day",
+          "description": "You have Leg Day (~50 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "A_full__fr",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Pull Day",
+          "durationMinutes": 52,
+          "volumeKg": 5100,
+          "totalSets": 16,
+          "caloriesBurned": 410,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "Leg Day",
+        "durationMinutes": 50,
+        "exercisesCount": 5
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        },
+        {
+          "title": "Lose 3 kg",
+          "category": "weight",
+          "targetValue": 72,
+          "currentValue": 75,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": 74.6
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: Leg Day",
+          "description": "You have Leg Day (~50 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Today's recommendation: Leg Day.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: Leg Day",
+          "description": "You have Leg Day (~50 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for Leg Day?",
+          "evidence": [
+            "Leg Day scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "B_minimal_nulls__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": null,
+        "age": null,
+        "heightCm": null,
+        "currentWeightKg": null,
+        "targetWeightKg": null,
+        "primaryGoal": null,
+        "experienceLevel": null,
+        "preferredWorkoutPlace": null,
+        "workoutDaysPerWeek": null,
+        "dietType": null,
+        "dailyCalorieTarget": null,
+        "dailyProteinGrams": null
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 500,
+        "proteinGrams": 20,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "B_minimal_nulls__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": null,
+        "age": null,
+        "heightCm": null,
+        "currentWeightKg": null,
+        "targetWeightKg": null,
+        "primaryGoal": null,
+        "experienceLevel": null,
+        "preferredWorkoutPlace": null,
+        "workoutDaysPerWeek": null,
+        "dietType": null,
+        "dailyCalorieTarget": null,
+        "dailyProteinGrams": null
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 500,
+        "proteinGrams": 20,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "B_minimal_nulls__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": null,
+        "age": null,
+        "heightCm": null,
+        "currentWeightKg": null,
+        "targetWeightKg": null,
+        "primaryGoal": null,
+        "experienceLevel": null,
+        "preferredWorkoutPlace": null,
+        "workoutDaysPerWeek": null,
+        "dietType": null,
+        "dailyCalorieTarget": null,
+        "dailyProteinGrams": null
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 500,
+        "proteinGrams": 20,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "B_minimal_nulls__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": null,
+        "age": null,
+        "heightCm": null,
+        "currentWeightKg": null,
+        "targetWeightKg": null,
+        "primaryGoal": null,
+        "experienceLevel": null,
+        "preferredWorkoutPlace": null,
+        "workoutDaysPerWeek": null,
+        "dietType": null,
+        "dailyCalorieTarget": null,
+        "dailyProteinGrams": null
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 500,
+        "proteinGrams": 20,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "B_minimal_nulls__fr",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": null,
+        "age": null,
+        "heightCm": null,
+        "currentWeightKg": null,
+        "targetWeightKg": null,
+        "primaryGoal": null,
+        "experienceLevel": null,
+        "preferredWorkoutPlace": null,
+        "workoutDaysPerWeek": null,
+        "dietType": null,
+        "dailyCalorieTarget": null,
+        "dailyProteinGrams": null
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 500,
+        "proteinGrams": 20,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "C_floats__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 72.5,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2150.5,
+        "dailyProteinGrams": 120.25
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1234.5,
+        "proteinGrams": 99.9,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 1500.5,
+        "calorieTarget": 2150.5,
+        "proteinTarget": 120.25
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 1234.5,
+          "totalSets": 14,
+          "caloriesBurned": null,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Zero burn",
+          "durationMinutes": 45,
+          "volumeKg": 0.1,
+          "totalSets": 3,
+          "caloriesBurned": 0,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 2.25,
+          "currentValue": 0.5,
+          "unit": "L"
+        },
+        {
+          "title": "Tiny",
+          "category": "strength",
+          "targetValue": 1e+21,
+          "currentValue": 0.00001,
+          "unit": "x"
+        }
+      ],
+      "latestWeightKg": 73.2
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 kcal remaining today",
+          "description": "You have consumed 1234.5 of 2150.5 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 1.5L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 kcal remaining today",
+          "description": "You have consumed 1234.5 of 2150.5 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 1.5L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "C_floats__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 72.5,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2150.5,
+        "dailyProteinGrams": 120.25
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1234.5,
+        "proteinGrams": 99.9,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 1500.5,
+        "calorieTarget": 2150.5,
+        "proteinTarget": 120.25
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 1234.5,
+          "totalSets": 14,
+          "caloriesBurned": null,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Zero burn",
+          "durationMinutes": 45,
+          "volumeKg": 0.1,
+          "totalSets": 3,
+          "caloriesBurned": 0,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 2.25,
+          "currentValue": 0.5,
+          "unit": "L"
+        },
+        {
+          "title": "Tiny",
+          "category": "strength",
+          "targetValue": 1e+21,
+          "currentValue": 0.00001,
+          "unit": "x"
+        }
+      ],
+      "latestWeightKg": 73.2
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "உடற்பயிற்சி நிலைத்தன்மை",
+          "description": "Upper Body Push முடித்ததற்கு பாராட்டுக்கள்!",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 கலோரிகள் மீதமுள்ளன",
+          "description": "இன்று 1234.5 / 2150.5 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 1.5 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "உடற்பயிற்சி நிலைத்தன்மை",
+          "description": "Upper Body Push முடித்ததற்கு பாராட்டுக்கள்!",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 கலோரிகள் மீதமுள்ளன",
+          "description": "இன்று 1234.5 / 2150.5 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 1.5 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "C_floats__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 72.5,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2150.5,
+        "dailyProteinGrams": 120.25
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1234.5,
+        "proteinGrams": 99.9,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 1500.5,
+        "calorieTarget": 2150.5,
+        "proteinTarget": 120.25
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 1234.5,
+          "totalSets": 14,
+          "caloriesBurned": null,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Zero burn",
+          "durationMinutes": 45,
+          "volumeKg": 0.1,
+          "totalSets": 3,
+          "caloriesBurned": 0,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 2.25,
+          "currentValue": 0.5,
+          "unit": "L"
+        },
+        {
+          "title": "Tiny",
+          "category": "strength",
+          "targetValue": 1e+21,
+          "currentValue": 0.00001,
+          "unit": "x"
+        }
+      ],
+      "latestWeightKg": 73.2
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Streak On Track",
+          "description": "Upper Body Push successfully mudichuteenga! Recovery and hydration mukkiyam.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 kcal remaining irukku",
+          "description": "Consumed 1234.5 of 2150.5 kcal. Protein: 99.9g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water: 1.5L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Streak On Track",
+          "description": "Upper Body Push successfully mudichuteenga! Recovery and hydration mukkiyam.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 kcal remaining irukku",
+          "description": "Consumed 1234.5 of 2150.5 kcal. Protein: 99.9g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water: 1.5L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "C_floats__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 72.5,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2150.5,
+        "dailyProteinGrams": 120.25
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1234.5,
+        "proteinGrams": 99.9,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 1500.5,
+        "calorieTarget": 2150.5,
+        "proteinTarget": 120.25
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 1234.5,
+          "totalSets": 14,
+          "caloriesBurned": null,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Zero burn",
+          "durationMinutes": 45,
+          "volumeKg": 0.1,
+          "totalSets": 3,
+          "caloriesBurned": 0,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 2.25,
+          "currentValue": 0.5,
+          "unit": "L"
+        },
+        {
+          "title": "Tiny",
+          "category": "strength",
+          "targetValue": 1e+21,
+          "currentValue": 0.00001,
+          "unit": "x"
+        }
+      ],
+      "latestWeightKg": 73.2
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 kcal remaining today",
+          "description": "You have consumed 1234.5 of 2150.5 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 1.5L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 kcal remaining today",
+          "description": "You have consumed 1234.5 of 2150.5 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 1.5L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "C_floats__fr",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 72.5,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2150.5,
+        "dailyProteinGrams": 120.25
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1234.5,
+        "proteinGrams": 99.9,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 1500.5,
+        "calorieTarget": 2150.5,
+        "proteinTarget": 120.25
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 1234.5,
+          "totalSets": 14,
+          "caloriesBurned": null,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        },
+        {
+          "name": "Zero burn",
+          "durationMinutes": 45,
+          "volumeKg": 0.1,
+          "totalSets": 3,
+          "caloriesBurned": 0,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 2.25,
+          "currentValue": 0.5,
+          "unit": "L"
+        },
+        {
+          "title": "Tiny",
+          "category": "strength",
+          "targetValue": 1e+21,
+          "currentValue": 0.00001,
+          "unit": "x"
+        }
+      ],
+      "latestWeightKg": 73.2
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 kcal remaining today",
+          "description": "You have consumed 1234.5 of 2150.5 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 1.5L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "916 kcal remaining today",
+          "description": "You have consumed 1234.5 of 2150.5 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1234.5 / 2150.5 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 1.5L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "1500.5 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "D_zero_targets__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 0,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 0,
+        "dailyProteinGrams": 0
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 0,
+        "proteinTarget": 0
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 0
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "D_zero_targets__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 0,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 0,
+        "dailyProteinGrams": 0
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 0,
+        "proteinTarget": 0
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 0
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "உடற்பயிற்சி நிலைத்தன்மை",
+          "description": "Upper Body Push முடித்ததற்கு பாராட்டுக்கள்!",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "உடற்பயிற்சி நிலைத்தன்மை",
+          "description": "Upper Body Push முடித்ததற்கு பாராட்டுக்கள்!",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "D_zero_targets__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 0,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 0,
+        "dailyProteinGrams": 0
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 0,
+        "proteinTarget": 0
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 0
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Streak On Track",
+          "description": "Upper Body Push successfully mudichuteenga! Recovery and hydration mukkiyam.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Streak On Track",
+          "description": "Upper Body Push successfully mudichuteenga! Recovery and hydration mukkiyam.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "D_zero_targets__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 0,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 0,
+        "dailyProteinGrams": 0
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 0,
+        "proteinTarget": 0
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 0
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "D_zero_targets__fr",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 0,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 0,
+        "dailyProteinGrams": 0
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 0,
+        "proteinTarget": 0
+      },
+      "recentWorkouts": [
+        {
+          "name": "Upper Body Push",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 0
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-last-workout",
+          "title": "Workout Consistency",
+          "description": "Great job completing Upper Body Push (45 min). Prioritize protein intake for muscle recovery.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Progress",
+          "question": "What workout should I do next for balanced recovery?",
+          "evidence": [
+            "Upper Body Push completed"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "E_unicode_quotes__en",
+    "context": {
+      "profile": {
+        "displayName": "கார்த்திக் \"KK\" O'Neil",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "தசை வளர்ச்சி & strength 💪",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "மார்பு \"Chest\" day",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "கால் பயிற்சி",
+        "durationMinutes": 40,
+        "exercisesCount": 4
+      },
+      "activeGoals": [
+        {
+          "title": "ஓட்டம் 5k",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "கி.மீ"
+        }
+      ],
+      "latestWeightKg": 75
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: கால் பயிற்சி",
+          "description": "You have கால் பயிற்சி (~40 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: கால் பயிற்சி",
+          "description": "You have கால் பயிற்சி (~40 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "E_unicode_quotes__ta",
+    "context": {
+      "profile": {
+        "displayName": "கார்த்திக் \"KK\" O'Neil",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "தசை வளர்ச்சி & strength 💪",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "மார்பு \"Chest\" day",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "கால் பயிற்சி",
+        "durationMinutes": 40,
+        "exercisesCount": 4
+      },
+      "activeGoals": [
+        {
+          "title": "ஓட்டம் 5k",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "கி.மீ"
+        }
+      ],
+      "latestWeightKg": 75
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "திட்டமிடப்பட்ட உடற்பயிற்சி: கால் பயிற்சி",
+          "description": "இன்று 40 நிமிட உடற்பயிற்சி திட்டமிடப்பட்டுள்ளது.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "பயிற்சியைக் காண்க",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 கலோரிகள் மீதமுள்ளன",
+          "description": "இன்று 1400 / 2400 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 2.0 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "திட்டமிடப்பட்ட உடற்பயிற்சி: கால் பயிற்சி",
+          "description": "இன்று 40 நிமிட உடற்பயிற்சி திட்டமிடப்பட்டுள்ளது.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "பயிற்சியைக் காண்க",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 கலோரிகள் மீதமுள்ளன",
+          "description": "இன்று 1400 / 2400 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 2.0 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "E_unicode_quotes__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "கார்த்திக் \"KK\" O'Neil",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "தசை வளர்ச்சி & strength 💪",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "மார்பு \"Chest\" day",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "கால் பயிற்சி",
+        "durationMinutes": 40,
+        "exercisesCount": 4
+      },
+      "activeGoals": [
+        {
+          "title": "ஓட்டம் 5k",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "கி.மீ"
+        }
+      ],
+      "latestWeightKg": 75
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today's Workout: கால் பயிற்சி",
+          "description": "கால் பயிற்சி (~40 min) ready. Warm up nalla pannunga!",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining irukku",
+          "description": "Consumed 1400 of 2400 kcal. Protein: 90g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water: 2.0L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today's Workout: கால் பயிற்சி",
+          "description": "கால் பயிற்சி (~40 min) ready. Warm up nalla pannunga!",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining irukku",
+          "description": "Consumed 1400 of 2400 kcal. Protein: 90g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water: 2.0L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "E_unicode_quotes__undefined",
+    "context": {
+      "profile": {
+        "displayName": "கார்த்திக் \"KK\" O'Neil",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "தசை வளர்ச்சி & strength 💪",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "மார்பு \"Chest\" day",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "கால் பயிற்சி",
+        "durationMinutes": 40,
+        "exercisesCount": 4
+      },
+      "activeGoals": [
+        {
+          "title": "ஓட்டம் 5k",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "கி.மீ"
+        }
+      ],
+      "latestWeightKg": 75
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: கால் பயிற்சி",
+          "description": "You have கால் பயிற்சி (~40 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: கால் பயிற்சி",
+          "description": "You have கால் பயிற்சி (~40 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "E_unicode_quotes__fr",
+    "context": {
+      "profile": {
+        "displayName": "கார்த்திக் \"KK\" O'Neil",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "தசை வளர்ச்சி & strength 💪",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 1400,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [
+        {
+          "name": "மார்பு \"Chest\" day",
+          "durationMinutes": 45,
+          "volumeKg": 4200,
+          "totalSets": 14,
+          "caloriesBurned": 350,
+          "completedAt": "2026-11-18T07:30:00.000Z"
+        }
+      ],
+      "todayPlannedWorkout": {
+        "name": "கால் பயிற்சி",
+        "durationMinutes": 40,
+        "exercisesCount": 4
+      },
+      "activeGoals": [
+        {
+          "title": "ஓட்டம் 5k",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "கி.மீ"
+        }
+      ],
+      "latestWeightKg": 75
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: கால் பயிற்சி",
+          "description": "You have கால் பயிற்சி (~40 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, கார்த்திக் \"KK\" O'Neil!",
+      "recommendation": "Today's recommendation: கால் பயிற்சி.",
+      "insights": [
+        {
+          "id": "ins-det-workout",
+          "title": "Today: கால் பயிற்சி",
+          "description": "You have கால் பயிற்சி (~40 min) scheduled. Focus on clean form and steady pacing.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "Start Workout",
+          "question": "How should I warm up for கால் பயிற்சி?",
+          "evidence": [
+            "கால் பயிற்சி scheduled"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-nutrition",
+          "title": "1000 kcal remaining today",
+          "description": "You have consumed 1400 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "1400 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "F_over_target__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 2600,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 75
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "Calorie target achieved today",
+          "description": "You have consumed 2600 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "Calorie target achieved today",
+          "description": "You have consumed 2600 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "F_over_target__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 2600,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 75
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "இன்றைய கலோரி இலக்கை அடைந்துவிட்டீர்கள்",
+          "description": "இன்று 2600 / 2400 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 2.0 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "இன்றைய கலோரி இலக்கை அடைந்துவிட்டீர்கள்",
+          "description": "இன்று 2600 / 2400 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 2.0 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "F_over_target__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 2600,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 75
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "Calorie target reached!",
+          "description": "Consumed 2600 of 2400 kcal. Protein: 90g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water: 2.0L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "Calorie target reached!",
+          "description": "Consumed 2600 of 2400 kcal. Protein: 90g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water: 2.0L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "F_over_target__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 2600,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 75
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "Calorie target achieved today",
+          "description": "You have consumed 2600 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "Calorie target achieved today",
+          "description": "You have consumed 2600 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "F_over_target__fr",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 2600,
+        "proteinGrams": 90,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 2000,
+        "calorieTarget": 2400,
+        "proteinTarget": 150
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": 75
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "Calorie target achieved today",
+          "description": "You have consumed 2600 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "Calorie target achieved today",
+          "description": "You have consumed 2600 of 2400 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "watch",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "2600 / 2400 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 2.0L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "G_water_only__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 750,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 0.8L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 0.8L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "G_water_only__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 750,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 0.8 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "நீர் அளவு: 0.8 லிட்டர்",
+          "description": "போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "G_water_only__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 750,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "Water: 0.8L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "Water: 0.8L logged today",
+          "description": "Water intake nalla irukku bro, hydration recovery-ku romba mukkiyam!",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "G_water_only__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 750,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 0.8L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 0.8L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "G_water_only__fr",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 750,
+        "calorieTarget": null,
+        "proteinTarget": null
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 0.8L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-water",
+          "title": "Water Logged: 0.8L",
+          "description": "Good hydration supports recovery and muscle repair during daily training.",
+          "category": "hydration",
+          "priority": "low",
+          "severity": "positive",
+          "action": "Log Water",
+          "question": "Am I drinking enough water for my workout level?",
+          "evidence": [
+            "750 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "H_goals_only__en",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": null
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 kcal remaining today",
+          "description": "You have consumed 0 of 2000 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 kcal remaining today",
+          "description": "You have consumed 0 of 2000 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "H_goals_only__ta",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": null
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 கலோரிகள் மீதமுள்ளன",
+          "description": "இன்று 0 / 2000 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 கலோரிகள் மீதமுள்ளன",
+          "description": "இன்று 0 / 2000 கலோரிகள் உட்கொள்ளப்பட்டுள்ளன.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "உணவு திட்டம்",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "H_goals_only__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": null
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 kcal remaining irukku",
+          "description": "Consumed 0 of 2000 kcal. Protein: 0g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 kcal remaining irukku",
+          "description": "Consumed 0 of 2000 kcal. Protein: 0g.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "H_goals_only__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": null
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 kcal remaining today",
+          "description": "You have consumed 0 of 2000 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 kcal remaining today",
+          "description": "You have consumed 0 of 2000 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "H_goals_only__fr",
+    "context": {
+      "profile": {
+        "displayName": "Karthik",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [
+        {
+          "title": "Bench 100 kg",
+          "category": "strength",
+          "targetValue": 100,
+          "currentValue": 80,
+          "unit": "kg"
+        }
+      ],
+      "latestWeightKg": null
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 kcal remaining today",
+          "description": "You have consumed 0 of 2000 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": "Stay active, keep hydrated, and hit your nutrition targets today.",
+      "insights": [
+        {
+          "id": "ins-det-nutrition",
+          "title": "2000 kcal remaining today",
+          "description": "You have consumed 0 of 2000 kcal so far today.",
+          "category": "nutrition",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Plan Meals",
+          "question": "How should I hit my remaining nutrition targets today?",
+          "evidence": [
+            "0 / 2000 kcal"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "I_insufficient__en",
+    "context": {
+      "profile": {
+        "displayName": "Anu",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "en",
+    "expectedOnModelError": {
+      "greeting": "Welcome, Anu!",
+      "recommendation": "Log your first workout, meal, or hydration to unlock personalized AI insights.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Welcome, Anu!",
+      "recommendation": "Log your first workout, meal, or hydration to unlock personalized AI insights.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    }
+  },
+  {
+    "name": "I_insufficient__ta",
+    "context": {
+      "profile": {
+        "displayName": "Anu",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "ta",
+    "expectedOnModelError": {
+      "greeting": "வணக்கம், Anu!",
+      "recommendation": "உங்கள் முதல் உடற்பயிற்சி அல்லது உணவை பதிவு செய்யவும்.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "வணக்கம், Anu!",
+      "recommendation": "உங்கள் முதல் உடற்பயிற்சி அல்லது உணவை பதிவு செய்யவும்.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    }
+  },
+  {
+    "name": "I_insufficient__tanglish",
+    "context": {
+      "profile": {
+        "displayName": "Anu",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "tanglish",
+    "expectedOnModelError": {
+      "greeting": "Vanakkam, Anu!",
+      "recommendation": "First workout or food log pannunga, personalized insights generate aagum.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Vanakkam, Anu!",
+      "recommendation": "First workout or food log pannunga, personalized insights generate aagum.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    }
+  },
+  {
+    "name": "I_insufficient__undefined",
+    "context": {
+      "profile": {
+        "displayName": "Anu",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": null,
+    "expectedOnModelError": {
+      "greeting": "Welcome, Anu!",
+      "recommendation": "Log your first workout, meal, or hydration to unlock personalized AI insights.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Welcome, Anu!",
+      "recommendation": "Log your first workout, meal, or hydration to unlock personalized AI insights.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    }
+  },
+  {
+    "name": "I_insufficient__fr",
+    "context": {
+      "profile": {
+        "displayName": "Anu",
+        "sex": "male",
+        "age": 28,
+        "heightCm": 178,
+        "currentWeightKg": 75,
+        "targetWeightKg": 72,
+        "primaryGoal": "Muscle Gain",
+        "experienceLevel": "Intermediate",
+        "preferredWorkoutPlace": "Gym",
+        "workoutDaysPerWeek": 5,
+        "dietType": "High Protein",
+        "dailyCalorieTarget": 2400,
+        "dailyProteinGrams": 150
+      },
+      "todayNutrition": {
+        "caloriesConsumed": 0,
+        "proteinGrams": 0,
+        "carbsGrams": 160,
+        "fatGrams": 45,
+        "waterIntakeMl": 0,
+        "calorieTarget": 2000,
+        "proteinTarget": 100
+      },
+      "recentWorkouts": [],
+      "todayPlannedWorkout": null,
+      "activeGoals": [],
+      "latestWeightKg": null
+    },
+    "lang": "fr",
+    "expectedOnModelError": {
+      "greeting": "Welcome, Anu!",
+      "recommendation": "Log your first workout, meal, or hydration to unlock personalized AI insights.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    },
+    "expectedOnUnusableReply": {
+      "greeting": "Welcome, Anu!",
+      "recommendation": "Log your first workout, meal, or hydration to unlock personalized AI insights.",
+      "insights": [],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": false
+    }
+  }
+]

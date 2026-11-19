@@ -1,0 +1,1057 @@
+[
+  {
+    "name": "good_two_insights",
+    "raw": "{\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-2\",\"title\":\"Hydration\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"hydration\",\"priority\":\"medium\",\"severity\":\"info\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"2000 ml logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Good morning Karthik!",
+      "recommendation": "Target Leg Day today.",
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-2",
+          "title": "Hydration",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "hydration",
+          "priority": "medium",
+          "severity": "info",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "fenced_json",
+    "raw": "```json\n{\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-2\",\"title\":\"Hydration\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"hydration\",\"priority\":\"medium\",\"severity\":\"info\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"2000 ml logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}\n```",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Good morning Karthik!",
+      "recommendation": "Target Leg Day today.",
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-2",
+          "title": "Hydration",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "hydration",
+          "priority": "medium",
+          "severity": "info",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "fenced_plain",
+    "raw": "```\n{\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-2\",\"title\":\"Hydration\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"hydration\",\"priority\":\"medium\",\"severity\":\"info\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"2000 ml logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}\n```",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Good morning Karthik!",
+      "recommendation": "Target Leg Day today.",
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-2",
+          "title": "Hydration",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "hydration",
+          "priority": "medium",
+          "severity": "info",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "fenced_no_closing",
+    "raw": "```json\n{\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-2\",\"title\":\"Hydration\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"hydration\",\"priority\":\"medium\",\"severity\":\"info\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"2000 ml logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Good morning Karthik!",
+      "recommendation": "Target Leg Day today.",
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-2",
+          "title": "Hydration",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "hydration",
+          "priority": "medium",
+          "severity": "info",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "2000 ml logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "leading_whitespace_before_fence",
+    "raw": "\n```json\n{\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-2\",\"title\":\"Hydration\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"hydration\",\"priority\":\"medium\",\"severity\":\"info\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"2000 ml logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}\n```",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "trailing_text_after_fence",
+    "raw": "```json\n{\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-2\",\"title\":\"Hydration\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"hydration\",\"priority\":\"medium\",\"severity\":\"info\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"2000 ml logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}\n```\nbye",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "single_insight",
+    "raw": "{\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Good morning Karthik!",
+      "recommendation": "Target Leg Day today.",
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "greeting_missing",
+    "raw": "{\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "greeting_not_string",
+    "raw": "{\"greeting\":5,\"recommendation\":7,\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "recommendation_null",
+    "raw": "{\"greeting\":\"Hi\",\"recommendation\":null,\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hi",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "recommendation_empty_string",
+    "raw": "{\"greeting\":\"\",\"recommendation\":\"\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "",
+      "recommendation": "",
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "item_all_missing",
+    "raw": "{\"insights\":[{}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-TS-0",
+          "title": "Fitness Insight",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "item_ids_missing_or_bad",
+    "raw": "{\"insights\":[{\"title\":\"a\"},{\"id\":\"\",\"title\":\"b\"},{\"id\":7,\"title\":\"c\"},{\"id\":\"keep-me\",\"title\":\"d\"}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-TS-0",
+          "title": "a",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-TS-1",
+          "title": "b",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-TS-2",
+          "title": "c",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "keep-me",
+          "title": "d",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "item_bad_enums",
+    "raw": "{\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"sleep\",\"priority\":\"urgent\",\"severity\":\"bad\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"certain\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "item_uppercase_enums",
+    "raw": "{\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"WORKOUT\",\"priority\":\"HIGH\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "item_all_valid_enums",
+    "raw": "{\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"goal\",\"priority\":\"low\",\"severity\":\"watch\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"low\",\"requiresDevice\":false},{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"recovery\",\"priority\":\"medium\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"medium\",\"requiresDevice\":false},{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"nutrition\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "goal",
+          "priority": "low",
+          "severity": "watch",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "low",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "recovery",
+          "priority": "medium",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "medium",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "nutrition",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "item_types_coerced",
+    "raw": "{\"insights\":[{\"id\":\"x\",\"title\":123,\"description\":[\"a\",\"b\"],\"action\":false,\"question\":{\"q\":1},\"evidence\":[1,true,null,\"x\",[1,2],{\"a\":1}],\"requiresDevice\":\"false\"}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "x",
+          "title": "123",
+          "description": "a,b",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "[object Object]",
+          "evidence": [
+            "1",
+            "true",
+            "null",
+            "x",
+            "1,2",
+            "[object Object]"
+          ],
+          "confidence": "high",
+          "requiresDevice": true
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "item_empty_strings_use_defaults",
+    "raw": "{\"insights\":[{\"title\":\"\",\"description\":\"\",\"action\":\"\",\"question\":\"\"}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-TS-0",
+          "title": "Fitness Insight",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "evidence_not_array",
+    "raw": "{\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":\"just a string\",\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "requires_device_truthy_values",
+    "raw": "{\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":1},{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":0},{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":\"yes\"},{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":[]},{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":null}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": true
+        },
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": true
+        },
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": true
+        },
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "unicode_values",
+    "raw": "{\"greeting\":\"வணக்கம், கார்த்திக்! 💪\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"தசை வளர்ச்சி\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"மார்பு பயிற்சி\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "வணக்கம், கார்த்திக்! 💪",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-1",
+          "title": "தசை வளர்ச்சி",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "மார்பு பயிற்சி"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "many_insights_kept",
+    "raw": "{\"insights\":[{\"id\":\"ins-0\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-2\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-3\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-4\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-5\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-6\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-0",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-1",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-2",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-3",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-4",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-5",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-6",
+          "title": "Workout Consistency",
+          "description": "You completed Upper Body Push yesterday.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workout",
+          "question": "What is scheduled for Leg Day?",
+          "evidence": [
+            "Upper Body Push logged"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "null_item_throws",
+    "raw": "{\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},null]}",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "string_and_number_items",
+    "raw": "{\"insights\":[\"a\",5,[1]]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-TS-0",
+          "title": "Fitness Insight",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-TS-1",
+          "title": "Fitness Insight",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        },
+        {
+          "id": "ins-TS-2",
+          "title": "Fitness Insight",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  },
+  {
+    "name": "empty_insights_array",
+    "raw": "{\"greeting\":\"Hi\",\"insights\":[]}",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "insights_not_array",
+    "raw": "{\"greeting\":\"Hi\",\"insights\":\"none\"}",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "insights_object",
+    "raw": "{\"insights\":{\"a\":1}}",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "empty_object",
+    "raw": "{}",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "json_array_root",
+    "raw": "[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "json_null_root",
+    "raw": "null",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "json_string_root",
+    "raw": "\"hello\"",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "json_number_root",
+    "raw": "42",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "empty_string",
+    "raw": "",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "prose_not_json",
+    "raw": "Here are your insights: keep going!",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "prose_before_json",
+    "raw": "Sure! {\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"workout\",\"priority\":\"high\",\"severity\":\"positive\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"Upper Body Push logged\"],\"confidence\":\"high\",\"requiresDevice\":false},{\"id\":\"ins-2\",\"title\":\"Hydration\",\"description\":\"You completed Upper Body Push yesterday.\",\"category\":\"hydration\",\"priority\":\"medium\",\"severity\":\"info\",\"action\":\"View Workout\",\"question\":\"What is scheduled for Leg Day?\",\"evidence\":[\"2000 ml logged\"],\"confidence\":\"high\",\"requiresDevice\":false}]}",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "truncated_json",
+    "raw": "{\"greeting\":\"Good morning Karthik!\",\"recommendation\":\"Target Leg Day today.\",\"insights\":[{\"id\":\"ins-1\",\"title\":\"Workout Consistency\",\"description\":\"Yo",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "nan_literal",
+    "raw": "{\"insights\":[{\"title\":NaN}]}",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "trailing_comma",
+    "raw": "{\"insights\":[{\"title\":\"a\"},]}",
+    "displayName": "Karthik",
+    "usable": false,
+    "expected": null
+  },
+  {
+    "name": "duplicate_keys_last_wins",
+    "raw": "{\"insights\":[],\"insights\":[{\"title\":\"later\"}]}",
+    "displayName": "Karthik",
+    "usable": true,
+    "expected": {
+      "greeting": "Hello, Karthik!",
+      "recommendation": null,
+      "insights": [
+        {
+          "id": "ins-TS-0",
+          "title": "later",
+          "description": "",
+          "category": "workout",
+          "priority": "medium",
+          "severity": "info",
+          "action": "Ask Coach",
+          "question": "How can I improve my progress?",
+          "evidence": [],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ],
+      "generatedAt": "GENERATED_AT",
+      "hasSufficientData": true
+    }
+  }
+]

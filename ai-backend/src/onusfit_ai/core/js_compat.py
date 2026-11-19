@@ -49,6 +49,13 @@ def js_string(value: Any) -> str:
     return str(value)
 
 
+def js_nullish(value: Any, default: str) -> str:
+    """A template-literal `${value ?? default}`: only null falls back; 0 and "" are kept."""
+    if value is None:
+        return default
+    return js_num(value) if isinstance(value, (int, float)) else str(value)
+
+
 def js_truthy(value: Any) -> bool:
     """JavaScript truthiness: unlike Python, empty lists and objects are truthy; NaN is falsy."""
     if isinstance(value, (list, dict)):

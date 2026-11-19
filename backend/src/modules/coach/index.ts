@@ -2,13 +2,11 @@ import type { RequestHandler } from 'express';
 import type { Database } from '../../database/transaction.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { RouteGroup } from '../../shared/http/route.js';
-import { GeminiClient } from '../../shared/ai/gemini-client.js';
-import type { CoachChatService, SpeechTranscriber } from './application/ports.js';
+import type { CoachChatService, CoachInsightsService, GeminiService, SpeechTranscriber } from './application/ports.js';
 import { ChatWithCoachUseCase } from './application/use-cases/chat-with-coach.js';
 import { GetCoachInsightsUseCase } from './application/use-cases/get-coach-insights.js';
 import { ManageConversationsUseCase } from './application/use-cases/manage-conversations.js';
 import { ManageMemoriesUseCase } from './application/use-cases/manage-memories.js';
-import { GeminiAiService, type GeminiAiConfig } from './infrastructure/gemini-ai-service.js';
 import { PgUserContextRepository } from './infrastructure/pg-user-context-repository.js';
 import { PgConversationRepository } from './infrastructure/pg-conversation-repository.js';
 import { PgMemoryRepository } from './infrastructure/pg-memory-repository.js';
@@ -23,8 +21,8 @@ export * from './application/use-cases/chat-with-coach.js';
 export * from './application/use-cases/get-coach-insights.js';
 export * from './application/use-cases/manage-conversations.js';
 export * from './application/use-cases/manage-memories.js';
-export * from './infrastructure/gemini-coach-insights-service.js';
-export * from './infrastructure/gemini-ai-service.js';
+export * from './domain/coach-insights.js';
+export * from './infrastructure/python-coach-insights-service.js';
 export * from './infrastructure/python-coach-chat-service.js';
 export * from './infrastructure/python-speech-transcriber.js';
 export * from './infrastructure/pg-user-context-repository.js';
@@ -39,8 +37,8 @@ export interface CoachModule {
   userContextRepo: PgUserContextRepository;
   conversationRepo: PgConversationRepository;
   memoryRepo: PgMemoryRepository;
-  geminiClient: GeminiClient;
-  geminiService: GeminiAiService;
+  /** Chat and insights generation behind one port (both served by the Python AI backend). */
+  aiService: GeminiService;
   useCase: ChatWithCoachUseCase;
   insightsUseCase: GetCoachInsightsUseCase;
   manageConversations: ManageConversationsUseCase;
@@ -51,9 +49,10 @@ export interface CoachModule {
 export interface CreateCoachModuleOptions {
   basePath: string;
   db: Database;
-  geminiConfig: GeminiAiConfig;
   /** Coach chat text generation (the Python AI backend, `PythonCoachChatService`). */
   chatService: CoachChatService;
+  /** Coach insights generation (the Python AI backend, `PythonCoachInsightsService`). */
+  insightsService: CoachInsightsService;
   /** Speech transcription for `POST /coach/transcribe` (the Python AI backend). */
   speechTranscriber: SpeechTranscriber;
   /** Required: chat and insights must never reach Gemini without the feature flag / quota gate. */
@@ -65,16 +64,20 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
   const userContextRepo = new PgUserContextRepository(options.db);
   const conversationRepo = new PgConversationRepository(options.db);
   const memoryRepo = new PgMemoryRepository(options.db);
-  const geminiService = new GeminiAiService(options.geminiConfig, { chatService: options.chatService });
+  const aiService: GeminiService = {
+    generateCoachResponse: (message, context, history, memories) =>
+      options.chatService.generateCoachResponse(message, context, history, memories),
+    generateInsights: (context, lang) => options.insightsService.generateInsights(context, lang),
+  };
 
   const useCase = new ChatWithCoachUseCase(
     userContextRepo,
-    geminiService,
+    aiService,
     options.aiUsageGate,
     conversationRepo,
     memoryRepo,
   );
-  const insightsUseCase = new GetCoachInsightsUseCase(userContextRepo, geminiService, options.aiUsageGate);
+  const insightsUseCase = new GetCoachInsightsUseCase(userContextRepo, aiService, options.aiUsageGate);
   const manageConversations = new ManageConversationsUseCase(conversationRepo);
   const manageMemories = new ManageMemoriesUseCase(memoryRepo);
 
@@ -92,8 +95,7 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
     userContextRepo,
     conversationRepo,
     memoryRepo,
-    geminiClient: geminiService.client,
-    geminiService,
+    aiService,
     useCase,
     insightsUseCase,
     manageConversations,
