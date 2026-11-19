@@ -21,5 +21,9 @@ Thumbs.db
 *.sqlite
 pgdata/
 backups/
-*.sql
 *.dump
+# SQL dumps and ad-hoc scripts stay out of git, but numbered migrations are source code: a migration that
+# is not committed breaks every fresh database, CI run and deploy (0019 and 0020 were once lost this way).
+# This file is deeper than the root .gitignore, so this exception also overrides the root `*.sql`.
+*.sql
+!migrations/*.sql

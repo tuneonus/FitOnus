@@ -62,6 +62,13 @@ Idempotency prevents double execution of the _same request_. It does not replace
   `CREATE INDEX CONCURRENTLY`); such files must be safe to re-run (`IF NOT EXISTS`).
 - Run with `npm run db:migrate` (dev) or `node dist/scripts/migrate.js` (release step). The HTTP server never migrates.
 - Write migrations to be backward compatible with the currently deployed code (expand → deploy → contract).
+- **Commit every migration.** `backend/.gitignore` ignores `*.sql` (database dumps), with one exception for
+  `migrations/*.sql`. A migration that is not in git breaks fresh databases, CI and the Docker image, and the runner
+  refuses to run against a database that already applied a file the checkout lacks. `tests/unit/database/migrations-reproducible.test.ts`
+  fails on a version gap or if git would ignore a migration. Check `git status` shows `A`/`??` (not nothing) for a new file.
+- Never edit an applied file. To compare a checkout with a database, run (read-only):
+  `SELECT version, name, checksum FROM schema_migrations ORDER BY version;` and compare with the SHA-256 of each file
+  (line endings normalised to LF), which `loadMigrations` computes.
 
 ## Schema
 
