@@ -22,7 +22,7 @@ import { createWorkoutsModule } from './modules/workouts/index.js';
 import { createDashboardModule } from './modules/dashboard/index.js';
 import { GeminiClient } from './shared/ai/gemini-client.js';
 import { PythonAiClient } from './shared/ai/python-ai-client.js';
-import { createCoachModule, PythonCoachChatService } from './modules/coach/index.js';
+import { createCoachModule, PythonCoachChatService, PythonSpeechTranscriber } from './modules/coach/index.js';
 import {
   createNotificationsModule,
   FcmHttpV1Sender,
@@ -226,6 +226,14 @@ export function createContainer(
       runtimeService: appSettings.runtimeService,
     },
     chatService: new PythonCoachChatService({
+      client: pythonAi,
+      resolveModels: resolveModelsFor('coach_chat'),
+      usageRecorder: appSettings.runtimeService,
+      pythonTimeoutMs: aiBackend.timeoutMs,
+      ...(logger ? { logger } : {}),
+    }),
+    // Transcription has no AI quota gate (unchanged): only the aiCoach rate limiter and authentication.
+    speechTranscriber: new PythonSpeechTranscriber({
       client: pythonAi,
       resolveModels: resolveModelsFor('coach_chat'),
       usageRecorder: appSettings.runtimeService,

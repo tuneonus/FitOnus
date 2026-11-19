@@ -36,6 +36,15 @@ export interface CoachInsightsService {
   ): Promise<CoachInsightsResponse>;
 }
 
+/** Turns a spoken audio clip into text. Implemented by `PythonSpeechTranscriber` (the Python AI backend). */
+export interface SpeechTranscriber {
+  /** `userId` is the authenticated caller (from the server-side session, never from the request body). */
+  transcribe(
+    userId: string,
+    audio: { mimeType: string; base64: string },
+  ): Promise<{ transcript: string; detectedLanguage: string }>;
+}
+
 export interface GeminiService extends CoachChatService, CoachInsightsService {}
 
 export interface ConversationRepository {

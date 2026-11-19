@@ -1,9 +1,7 @@
 import { z } from 'zod';
-import { currentAiRequestContext, markAiRequestDispatched } from '../../../shared/ai/ai-usage.js';
-import { toPublicAiError } from '../../../shared/ai/python-ai-errors.js';
+import { currentAiRequestContext } from '../../../shared/ai/ai-usage.js';
+import { callPythonAi, pythonUsageSchema, requireGateUserId } from '../../../shared/ai/python-ai-call.js';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
-import { PythonAiError } from '../../../shared/ai/python-ai-client.js';
-import { AppError } from '../../../shared/errors/app-error.js';
 import type { Logger } from '../../../shared/logging/logger.js';
 import type { VoiceMealParser } from '../application/ports.js';
 import type { DetectedFoodItem } from '../domain/meal-photo.types.js';
@@ -22,8 +20,6 @@ const MIN_DEADLINE_MS = 1_000;
 export const VOICE_MEAL_UNAVAILABLE_MESSAGE = 'Voice meal parsing is temporarily unavailable. Please try again shortly.';
 
 const confidence = z.enum(['high', 'medium', 'low']);
-const intNumber = z.number().int().nonnegative();
-
 /** Python's reply, validated before anything is trusted. Mirrors ai-backend/contracts/voice_meal.py. */
 const pythonVoiceResponseSchema = z.object({
   outcome: z.enum(['ok', 'no_food', 'parse_failed']),
@@ -57,16 +53,7 @@ const pythonVoiceResponseSchema = z.object({
     unclearReason: z.string().nullish(),
     parsedAt: z.string(),
   }),
-  usage: z.object({
-    model: z.string(),
-    isFallback: z.boolean(),
-    inputTokens: intNumber,
-    outputTokens: intNumber,
-    cachedTokens: intNumber,
-    thinkingTokens: intNumber,
-    totalTokens: intNumber,
-    durationMs: intNumber,
-  }),
+  usage: pythonUsageSchema,
   traceId: z.string(),
 });
 
@@ -95,47 +82,16 @@ export class PythonVoiceMealService implements VoiceMealParser {
     mealType?: string;
   }): Promise<VoiceMealParseResult> {
     // Identity comes from the server-side request context set by the AI usage gate, never from input.
-    const aiContext = currentAiRequestContext();
-    if (!aiContext) throw new AppError('internal', 'INTERNAL_ERROR', 'AI request context is missing.');
+    const userId = requireGateUserId(currentAiRequestContext()?.userId);
 
-    const requestId = `voice-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    try {
-      return await this.callPython(params, aiContext.userId, requestId);
-    } catch (error) {
-      const failure =
-        error instanceof PythonAiError
-          ? error
-          : new PythonAiError('server_error', 'Unexpected error preparing the AI backend call.', {
-              dispatched: false,
-            });
-      // If Gemini may have been called, the quota unit stays consumed; otherwise the gate refunds it.
-      if (failure.dispatched) markAiRequestDispatched();
-      this.deps.logger?.error(
-        { kind: failure.kind, status: failure.info.status, code: failure.info.code, requestId },
-        'Python voice meal failed',
-      );
-      throw toPublicAiError(failure, VOICE_MEAL_UNAVAILABLE_MESSAGE);
-    }
-  }
-
-  private async callPython(
-    params: {
-      transcript?: string;
-      audio?: { mimeType: string; base64: string };
-      lang?: string;
-      mealType?: string;
-    },
-    userId: string,
-    requestId: string,
-  ): Promise<VoiceMealParseResult> {
     const models = await this.deps.resolveModels();
     const timeoutMs = Math.min(this.deps.pythonTimeoutMs, VOICE_MEAL_MAX_TIMEOUT_MS);
-
-    const raw = await this.deps.client.postJson({
+    const { result } = await callPythonAi({
+      client: this.deps.client,
       path: VOICE_MEAL_PATH,
       scope: VOICE_MEAL_SCOPE,
       userId,
-      requestId,
+      requestId: `voice-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       timeoutMs,
       body: {
         // Optional fields that are undefined are dropped by JSON.stringify.
@@ -146,37 +102,13 @@ export class PythonVoiceMealService implements VoiceMealParser {
         model: { primary: models.primary, fallback: models.fallback },
         deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
       },
+      schema: pythonVoiceResponseSchema,
+      feature: 'voice_meal',
+      usageRecorder: this.deps.usageRecorder,
+      logger: this.deps.logger,
+      label: 'Python voice meal',
+      unavailableMessage: VOICE_MEAL_UNAVAILABLE_MESSAGE,
     });
-
-    // The request definitely reached Python, so Gemini may have been billed.
-    markAiRequestDispatched();
-
-    const parsed = pythonVoiceResponseSchema.safeParse(raw);
-    if (!parsed.success) {
-      throw new PythonAiError('invalid_response', 'AI backend response did not match the contract.', {
-        dispatched: true,
-      });
-    }
-    const { result, usage, outcome } = parsed.data;
-
-    this.deps.usageRecorder
-      ?.recordExternalUsage({
-        requestId,
-        userId,
-        feature: 'voice_meal',
-        model: usage.model,
-        isFallback: usage.isFallback,
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
-        cachedTokens: usage.cachedTokens,
-        totalTokens: usage.totalTokens,
-        durationMs: usage.durationMs,
-      })
-      .catch(() => undefined);
-    this.deps.logger?.info(
-      { requestId, outcome, model: usage.model, fallbackModel: usage.isFallback, items: result.items.length },
-      'Python voice meal served',
-    );
 
     // The exact shape the mobile app has always received (optional keys are absent, never null).
     const items: DetectedFoodItem[] = result.items.map((item) => ({

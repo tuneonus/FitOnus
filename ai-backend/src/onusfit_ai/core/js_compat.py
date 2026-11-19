@@ -6,6 +6,7 @@ coming from an LLM's JSON. Python differs in subtle ways (banker's rounding, com
 Each helper is covered by tests/test_js_compat.py and by golden files rendered by the Node code.
 """
 
+import json
 import math
 from typing import Any
 
@@ -85,3 +86,32 @@ def js_round(value: float) -> int:
     if not math.isfinite(value):
         raise ValueError("cannot round a non-finite number")
     return math.floor(value + 0.5)
+
+
+def _reject_constant(name: str) -> Any:
+    raise ValueError(f"invalid JSON constant {name}")
+
+
+def strict_json_loads(text: str) -> Any:
+    """`JSON.parse`: raises ValueError for invalid JSON, including NaN / Infinity literals
+    (Python's json module would accept them)."""
+    return json.loads(text, parse_constant=_reject_constant)
+
+
+def js_prop(value: Any, key: str) -> Any:
+    """`value.key` in JavaScript: undefined for primitives and arrays, a TypeError for null."""
+    if value is None:
+        raise TypeError(f"cannot read '{key}' of null")
+    return value.get(key) if isinstance(value, dict) else None
+
+
+def strip_code_fences(raw: str) -> str:
+    """Removes a leading ```json (or ```) fence and the trailing ``` that models often add."""
+    cleaned = raw.strip()
+    for opener in ("```json", "```"):
+        if cleaned.startswith(opener):
+            cleaned = cleaned[len(opener) :].lstrip()
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3].rstrip()
+            break
+    return cleaned

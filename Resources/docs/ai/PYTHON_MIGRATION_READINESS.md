@@ -3,7 +3,7 @@
 **Date:** 2026-11-18 · **Type:** read-only assessment; no application code, schema, config or dependency was changed.
 **Background (not overwritten):** [AI baseline](../../AI_ENGINEERING_BASELINE.md) · [AI roadmap](../../AI_ENGINEERING_ROADMAP.md) · [AI architecture proposal](../../AI_ARCHITECTURE_PROPOSAL.md) · [project structure](../architecture/PROJECT_STRUCTURE.md)
 
-> **Status update (2026-11-18):** coach chat has since been migrated and made Python-only on branch `development` (no Node fallback, no flag); see `docs/ai/learning/02-python-only-ai-architecture.md`. Sections below describe the state *before* that work and remain as the assessment of record.
+> **Status update (2026-11-19):** coach chat, voice meal and speech transcription have since been migrated and made Python-only on branch `development` (no Node fallback, no flag); see `docs/ai/learning/02-python-only-ai-architecture.md`, `03-voice-meal-python-migration.md` and `04-python-speech-transcription.md`. Meal photo and coach insights still use Node Gemini. Sections below describe the state *before* that work and remain as the assessment of record.
 
 **How to read this document.** Statements tagged **[VERIFIED]** were checked against source in this session (file paths given). Statements tagged **[PROPOSED]** are design proposals: no such endpoint, field, table, flag or file exists. **[UNVERIFIED]** marks things I could not check (production configuration, live data, hosting capabilities, Python runtime behavior).
 

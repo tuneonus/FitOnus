@@ -20,7 +20,7 @@ The user types or speaks what they ate ("rendu dosai sambar konjam chutney"). Th
 | **Prompt, Gemini call (text or audio), model fallback, parsing into food items, number rounding** | **Python** |
 | Token/cost ledger | Python reports, Node writes (`feature = voice_meal`) |
 
-Removed from Node: `gemini-voice-meal-service.ts` (prompt + parser). Still in Node Gemini: meal photo, transcription, coach insights, admin "test key".
+Removed from Node: `gemini-voice-meal-service.ts` (prompt + parser). Still in Node Gemini at that time: meal photo, transcription (since moved, see guide 04), coach insights, admin "test key".
 
 ## 3. Request flow
 

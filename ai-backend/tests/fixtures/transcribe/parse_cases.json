@@ -1,0 +1,170 @@
+[
+  {
+    "name": "plain_json_english",
+    "raw": "{\"transcript\":\"I did chest workout today\",\"detectedLanguage\":\"en\"}",
+    "expected": {
+      "transcript": "I did chest workout today",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "tanglish",
+    "raw": "{\"transcript\":\"inniku leg workout mudichiten\",\"detectedLanguage\":\"tanglish\"}",
+    "expected": {
+      "transcript": "inniku leg workout mudichiten",
+      "detectedLanguage": "tanglish"
+    }
+  },
+  {
+    "name": "tamil_script",
+    "raw": "{\"transcript\":\"இன்று நான் ஓடினேன்\",\"detectedLanguage\":\"ta\"}",
+    "expected": {
+      "transcript": "இன்று நான் ஓடினேன்",
+      "detectedLanguage": "ta"
+    }
+  },
+  {
+    "name": "fenced_json",
+    "raw": "```json\n{\"transcript\":\"two dosai and sambar\",\"detectedLanguage\":\"tanglish\"}\n```",
+    "expected": {
+      "transcript": "two dosai and sambar",
+      "detectedLanguage": "tanglish"
+    }
+  },
+  {
+    "name": "fenced_plain",
+    "raw": "```\n{\"transcript\":\"hello\",\"detectedLanguage\":\"en\"}\n```",
+    "expected": {
+      "transcript": "hello",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "padded_whitespace",
+    "raw": "\n  {\"transcript\":\"  hi there  \",\"detectedLanguage\":\"en\"}  \n",
+    "expected": {
+      "transcript": "hi there",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "missing_transcript",
+    "raw": "{\"detectedLanguage\":\"ta\"}",
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "ta"
+    }
+  },
+  {
+    "name": "missing_language",
+    "raw": "{\"transcript\":\"hello\"}",
+    "expected": {
+      "transcript": "hello",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "empty_object",
+    "raw": "{}",
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "transcript_null",
+    "raw": "{\"transcript\":null,\"detectedLanguage\":null}",
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "transcript_number",
+    "raw": "{\"transcript\":123,\"detectedLanguage\":5}",
+    "expected": {
+      "transcript": "123",
+      "detectedLanguage": "5"
+    }
+  },
+  {
+    "name": "transcript_boolean",
+    "raw": "{\"transcript\":true}",
+    "expected": {
+      "transcript": "true",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "transcript_array",
+    "raw": "{\"transcript\":[\"a\",\"b\"]}",
+    "expected": {
+      "transcript": "a,b",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "transcript_object",
+    "raw": "{\"transcript\":{\"a\":1}}",
+    "expected": {
+      "transcript": "[object Object]",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "prose_not_json",
+    "raw": "inniku leg day pannen, romba tired",
+    "expected": {
+      "transcript": "inniku leg day pannen, romba tired",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "empty_string",
+    "raw": "",
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "json_null_root",
+    "raw": "null",
+    "expected": {
+      "transcript": "null",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "json_array_root",
+    "raw": "[1,2]",
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "json_number_root",
+    "raw": "42",
+    "expected": {
+      "transcript": "",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "nan_literal",
+    "raw": "{\"transcript\":\"x\",\"detectedLanguage\":NaN}",
+    "expected": {
+      "transcript": "{\"transcript\":\"x\",\"detectedLanguage\":NaN}",
+      "detectedLanguage": "en"
+    }
+  },
+  {
+    "name": "truncated_json",
+    "raw": "{\"transcript\":\"hel",
+    "expected": {
+      "transcript": "{\"transcript\":\"hel",
+      "detectedLanguage": "en"
+    }
+  }
+]

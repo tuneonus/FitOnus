@@ -1,3 +1,4 @@
+import { isSupportedAudioMime, MAX_AUDIO_BASE64_CHARS } from '../../../../shared/ai/audio-input.js';
 import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type {
@@ -29,23 +30,12 @@ export class ParseVoiceMealUseCase {
     }
 
     if (hasAudio) {
-      if ((input.audioBase64?.length ?? 0) > 15 * 1024 * 1024) {
+      if ((input.audioBase64?.length ?? 0) > MAX_AUDIO_BASE64_CHARS) {
         throw new AppError('payload_too_large', 'PAYLOAD_TOO_LARGE', 'Audio size exceeds the 15MB limit.');
       }
 
       const mimeType = input.mimeType || 'audio/m4a';
-      const supportedMimes = [
-        'audio/m4a',
-        'audio/mp4',
-        'audio/aac',
-        'audio/wav',
-        'audio/webm',
-        'audio/ogg',
-        'audio/mpeg',
-        'audio/3gpp',
-      ];
-
-      if (!supportedMimes.some((m) => mimeType.includes(m.replace('audio/', '')))) {
+      if (!isSupportedAudioMime(mimeType)) {
         throw new AppError(
           'bad_request',
           'BAD_REQUEST',

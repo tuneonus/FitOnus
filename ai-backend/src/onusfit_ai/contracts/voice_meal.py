@@ -10,16 +10,9 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from onusfit_ai.contracts._base import ContractModel
-from onusfit_ai.contracts.common import ModelSelection, Usage
+from onusfit_ai.contracts.common import AudioInput, ModelSelection, Usage
 
 Confidence = Literal["high", "medium", "low"]
-
-
-class AudioInput(ContractModel):
-    mime_type: str = Field(min_length=1, max_length=100)
-    # Raw base64, or a `data:<mime>;base64,<payload>` URL (the Node code accepted both). Node caps
-    # audio at 15 MB of base64; allow a little headroom for a data-URL prefix.
-    base64: str = Field(min_length=1, max_length=16_000_000)
 
 
 class ParseVoiceMealRequest(ContractModel):

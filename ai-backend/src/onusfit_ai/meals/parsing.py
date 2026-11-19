@@ -6,41 +6,26 @@ helpers in core/js_compat.py reproduce the JavaScript semantics; tests/fixtures/
 parse_cases.json holds 22 cases rendered by the Node code.
 """
 
-import json
 from datetime import UTC, datetime
 from typing import Any, Literal
 
 from onusfit_ai.contracts.voice_meal import DetectedFoodItem, VoiceMealResult
-from onusfit_ai.core.js_compat import js_or, js_round, js_string, js_truthy, number_or
+from onusfit_ai.core.js_compat import (
+    js_or,
+    js_prop,
+    js_round,
+    js_string,
+    js_truthy,
+    number_or,
+    strict_json_loads,
+    strip_code_fences,
+)
 
 VoiceMealOutcome = Literal["ok", "no_food", "parse_failed"]
 
 _CONFIDENCES = ("high", "medium", "low")
 NO_FOOD_REASON = "No food recognized from voice entry."
 NOT_FORMATTED_REASON = "AI response was not formatted correctly. Please try again."
-
-
-def _reject_constant(name: str) -> Any:
-    # JavaScript's JSON.parse rejects NaN / Infinity literals, Python's json accepts them.
-    raise ValueError(f"invalid JSON constant {name}")
-
-
-def _strip_fences(raw: str) -> str:
-    cleaned = raw.strip()
-    for opener in ("```json", "```"):
-        if cleaned.startswith(opener):
-            cleaned = cleaned[len(opener) :].lstrip()
-            if cleaned.endswith("```"):
-                cleaned = cleaned[:-3].rstrip()
-            break
-    return cleaned
-
-
-def _prop(value: Any, key: str) -> Any:
-    """`value.key` in JavaScript: undefined for primitives and arrays, a TypeError for null."""
-    if value is None:
-        raise TypeError(f"cannot read '{key}' of null")
-    return value.get(key) if isinstance(value, dict) else None
 
 
 def _now_iso() -> str:
@@ -70,24 +55,24 @@ def _empty_result(
 
 
 def _parse_item(item: Any, index: int, now_ms: int) -> DetectedFoodItem:
-    calories = number_or(_prop(item, "calories"), 0)
+    calories = number_or(js_prop(item, "calories"), 0)
     kcal = max(0, js_round(calories))
-    protein = max(0.0, _one_decimal(number_or(_prop(item, "proteinG"), 0)))
-    carbs = max(0.0, _one_decimal(number_or(_prop(item, "carbsG"), 0)))
-    fat = max(0.0, _one_decimal(number_or(_prop(item, "fatG"), 0)))
-    fiber = max(0.0, _one_decimal(number_or(_prop(item, "fiberG"), 0)))
-    confidence = _prop(item, "confidence")
-    weight_raw = _prop(item, "servingWeightG")
+    protein = max(0.0, _one_decimal(number_or(js_prop(item, "proteinG"), 0)))
+    carbs = max(0.0, _one_decimal(number_or(js_prop(item, "carbsG"), 0)))
+    fat = max(0.0, _one_decimal(number_or(js_prop(item, "fatG"), 0)))
+    fiber = max(0.0, _one_decimal(number_or(js_prop(item, "fiberG"), 0)))
+    confidence = js_prop(item, "confidence")
+    weight_raw = js_prop(item, "servingWeightG")
     return DetectedFoodItem(
         id=f"voice-food-{now_ms}-{index}",
-        name=js_string(js_or(_prop(item, "name"), f"Food Item {index + 1}")),
+        name=js_string(js_or(js_prop(item, "name"), f"Food Item {index + 1}")),
         brand="AI Voice Estimate",
         serving=js_string(
-            js_or(_prop(item, "portionDescription"), f"{js_string(js_or(weight_raw, 100))}g")
+            js_or(js_prop(item, "portionDescription"), f"{js_string(js_or(weight_raw, 100))}g")
         ),
         serving_weight_g=number_or(weight_raw, 100),
-        serving_unit=js_string(js_or(_prop(item, "servingUnit"), "serving")),
-        serving_size=number_or(_prop(item, "servingSize"), 1),
+        serving_unit=js_string(js_or(js_prop(item, "servingUnit"), "serving")),
+        serving_size=number_or(js_prop(item, "servingSize"), 1),
         kcal=kcal,
         protein=protein,
         carbs=carbs,
@@ -102,14 +87,16 @@ def parse_voice_meal_output(
     raw_text: str, fallback_transcript: str | None
 ) -> tuple[VoiceMealResult, VoiceMealOutcome]:
     try:
-        parsed = json.loads(_strip_fences(raw_text), parse_constant=_reject_constant)
+        parsed = strict_json_loads(strip_code_fences(raw_text))
 
-        transcript = js_string(js_or(_prop(parsed, "transcript"), fallback_transcript, "")).strip()
-        language = js_string(js_or(_prop(parsed, "detectedLanguage"), "en"))
-        raw_items = _prop(parsed, "items")
+        transcript = js_string(
+            js_or(js_prop(parsed, "transcript"), fallback_transcript, "")
+        ).strip()
+        language = js_string(js_or(js_prop(parsed, "detectedLanguage"), "en"))
+        raw_items = js_prop(parsed, "items")
 
         if not (isinstance(raw_items, list) and len(raw_items) > 0):
-            reason = _prop(parsed, "unclearReason")
+            reason = js_prop(parsed, "unclearReason")
             return (
                 _empty_result(
                     transcript, language, reason if isinstance(reason, str) else NO_FOOD_REASON
@@ -130,8 +117,8 @@ def parse_voice_meal_output(
             fat += item.fat
             fiber += item.fiber or 0
 
-        top_confidence = _prop(parsed, "confidence")
-        reason = _prop(parsed, "unclearReason")
+        top_confidence = js_prop(parsed, "confidence")
+        reason = js_prop(parsed, "unclearReason")
         result = VoiceMealResult(
             transcript=transcript,
             detected_language=language,

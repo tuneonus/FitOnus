@@ -266,38 +266,6 @@ describe('Smart AI Rate Limit & Fallback System', () => {
     expect(executeSpy).toHaveBeenCalledWith(expect.anything(), 'gemini-3.5-flash-lite');
   });
 
-  // 9. Voice transcription fallback
-  it('9. Executes fallback successfully for voice transcription audio requests', async () => {
-    const geminiClient = new GeminiClient({
-      runtimeService,
-    });
-
-    vi.spyOn(runtimeService, 'executeWithTelemetry').mockImplementation(async (params) => {
-      expect(params.modality).toBe('audio');
-      return {
-        text: '{"transcript": "Inniku chest workout mudichiten", "detectedLanguage": "tanglish"}',
-        usage: {
-          inputTokens: 20,
-          outputTokens: 10,
-          cachedTokens: 0,
-          totalTokens: 30,
-          estimatedCostUsd: 0.00001,
-          durationMs: 300,
-          model: 'gemini-3.1-flash-lite',
-          isFallback: true,
-        },
-      };
-    });
-
-    const result = await geminiClient.transcribeAudio({
-      mimeType: 'audio/m4a',
-      base64: 'AAAA',
-    });
-
-    expect(result.transcript).toBe('Inniku chest workout mudichiten');
-    expect(result.detectedLanguage).toBe('tanglish');
-  });
-
   // 10. Meal photo fallback
   it('10. Executes fallback successfully for meal photo vision requests', async () => {
     const geminiClient = new GeminiClient({

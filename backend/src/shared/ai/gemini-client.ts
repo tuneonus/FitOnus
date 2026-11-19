@@ -98,54 +98,6 @@ export class GeminiClient {
   }
 
   /**
-   * Transcribes spoken audio (Tamil, Tanglish, English) to text using Gemini multimodal input.
-   */
-  async transcribeAudio(
-    audio: { mimeType: string; base64: string },
-    timeoutMs = 25_000,
-  ): Promise<{ transcript: string; detectedLanguage: string }> {
-    const prompt = `You are an accurate multilingual speech-to-text transcriber for the FitOnus health app.
-Transcribe the speech in this audio clip into text.
-RULES:
-1. Accurately support English, Tamil (தமிழ் script), and Tanglish (Tamil written phonetically in English script, e.g. "inniku leg workout mudichiten", "two dosai and sambar sapten").
-2. Output your response STRICTLY as a VALID JSON object matching:
-{
-  "transcript": "Exact transcription of the spoken words",
-  "detectedLanguage": "en | ta | tanglish"
-}
-Do not include any explanation or extra text outside the JSON object.`;
-
-    const raw = await this.generate({
-      feature: 'coach_chat',
-      contents: [{ inlineData: { mimeType: audio.mimeType, data: stripDataUrlPrefix(audio.base64) } }, prompt],
-      timeoutMs,
-      modality: 'audio',
-      failureMessage: 'Unable to transcribe spoken audio right now. Please try again.',
-      notConfiguredMessage: 'AI coaching service is not configured. Please ensure GEMINI_API_KEY is set.',
-    });
-
-    let cleaned = raw.trim();
-    if (cleaned.startsWith('```json')) {
-      cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-    } else if (cleaned.startsWith('```')) {
-      cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
-    }
-
-    try {
-      const parsed = JSON.parse(cleaned);
-      return {
-        transcript: String(parsed.transcript || '').trim(),
-        detectedLanguage: String(parsed.detectedLanguage || 'en'),
-      };
-    } catch {
-      return {
-        transcript: raw.trim(),
-        detectedLanguage: 'en',
-      };
-    }
-  }
-
-  /**
    * The single place that talks to the provider. Every call:
    * - runs under `runWithAiTimeout`, whose AbortSignal is forwarded to the SDK request, so a timeout
    *   cancels the HTTP call instead of leaving it running (the signal used to be created and dropped);

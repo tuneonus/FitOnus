@@ -4,13 +4,11 @@ Pure orchestration (no HTTP, no database), so it is testable with a fake LLM. Qu
 and the decision "may this user do this now" stay in Node.
 """
 
-import base64
-import binascii
 import logging
 
 from onusfit_ai.contracts.common import Usage
 from onusfit_ai.contracts.voice_meal import ParseVoiceMealRequest, ParseVoiceMealResponse
-from onusfit_ai.core.errors import AiError
+from onusfit_ai.core.audio import decode_audio_base64
 from onusfit_ai.llm.gemini import MediaInput, TextGenerator
 from onusfit_ai.meals.parsing import parse_voice_meal_output
 from onusfit_ai.prompts.voice_meal import PROMPT_VERSION, build_prompt
@@ -18,26 +16,14 @@ from onusfit_ai.prompts.voice_meal import PROMPT_VERSION, build_prompt
 logger = logging.getLogger("onusfit_ai.voice_meal")
 
 
-def _decode_audio(base64_text: str) -> bytes:
-    """Accepts raw base64 or a `data:<mime>;base64,<payload>` URL, like the former Node client."""
-    payload = base64_text.split(",", 1)[1] if "," in base64_text else base64_text
-    try:
-        return base64.b64decode(payload, validate=False)
-    except (binascii.Error, ValueError):
-        raise AiError(
-            status_code=422,
-            code="INVALID_REQUEST",
-            message="Audio data is not valid base64.",
-            dispatched=False,
-        ) from None
-
-
 async def parse_voice_meal(
     request: ParseVoiceMealRequest, llm: TextGenerator, *, trace_id: str
 ) -> ParseVoiceMealResponse:
     prompt = build_prompt(request.transcript, request.lang, request.meal_type)
     media = (
-        MediaInput(mime_type=request.audio.mime_type, data=_decode_audio(request.audio.base64))
+        MediaInput(
+            mime_type=request.audio.mime_type, data=decode_audio_base64(request.audio.base64)
+        )
         if request.audio
         else None
     )

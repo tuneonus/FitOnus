@@ -1,0 +1,52 @@
+"""Speech transcription use case: audio clip -> Gemini -> {transcript, detectedLanguage}.
+
+No HTTP and no database. Authentication and rate limiting stay in Node.
+"""
+
+import logging
+
+from onusfit_ai.contracts.common import Usage
+from onusfit_ai.contracts.transcribe import TranscribeRequest, TranscribeResponse
+from onusfit_ai.core.audio import decode_audio_base64
+from onusfit_ai.llm.gemini import MediaInput, TextGenerator
+from onusfit_ai.prompts.transcribe import PROMPT_VERSION, build_prompt
+from onusfit_ai.speech.parsing import parse_transcription
+
+logger = logging.getLogger("onusfit_ai.transcribe")
+
+
+async def transcribe_audio(
+    request: TranscribeRequest, llm: TextGenerator, *, trace_id: str
+) -> TranscribeResponse:
+    media = MediaInput(
+        mime_type=request.audio.mime_type, data=decode_audio_base64(request.audio.base64)
+    )
+    llm_result = await llm.generate_text(
+        build_prompt(),
+        primary_model=request.model.primary,
+        fallback_model=request.model.fallback,
+        deadline_s=request.deadline_ms / 1000,
+        media=media,
+    )
+    result, outcome = parse_transcription(llm_result.text)
+
+    usage = llm_result.usage
+    # Metadata only: the audio and the transcript are never logged.
+    logger.info(
+        "transcribe trace=%s prompt=%s model=%s fallback=%s outcome=%s audio_bytes=%s tokens=%s "
+        "duration_ms=%s",
+        trace_id,
+        PROMPT_VERSION,
+        usage.model,
+        usage.is_fallback,
+        outcome,
+        len(media.data),
+        usage.total_tokens,
+        usage.duration_ms,
+    )
+    return TranscribeResponse(
+        outcome=outcome,
+        result=result,
+        usage=Usage(**{k: getattr(usage, k) for k in Usage.model_fields}),
+        trace_id=trace_id,
+    )

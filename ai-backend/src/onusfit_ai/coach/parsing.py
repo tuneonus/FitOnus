@@ -5,27 +5,14 @@ Gemini is asked for JSON, but models sometimes add ```json fences or return plai
 parser strips fences, tries to read JSON, and otherwise falls back to the raw text.
 """
 
-import json
-import re
 from typing import Literal
 
 from onusfit_ai.contracts.coach_chat import CoachChatResult
-from onusfit_ai.core.js_compat import js_string
+from onusfit_ai.core.js_compat import js_string, strict_json_loads, strip_code_fences
 
 Outcome = Literal["ok", "unstructured"]
 FALLBACK_SOURCE = "OnusFit Coach Engine"
 MEMORY_SOURCE = "AI Memory"
-
-
-def strip_code_fences(raw: str) -> str:
-    cleaned = raw
-    if cleaned.startswith("```json"):
-        cleaned = re.sub(r"^```json\s*", "", cleaned)
-        cleaned = re.sub(r"\s*```$", "", cleaned)
-    elif cleaned.startswith("```"):
-        cleaned = re.sub(r"^```\s*", "", cleaned)
-        cleaned = re.sub(r"\s*```$", "", cleaned)
-    return cleaned
 
 
 def parse_coach_output(raw_text: str, *, has_memories: bool) -> tuple[CoachChatResult, Outcome]:
@@ -33,7 +20,7 @@ def parse_coach_output(raw_text: str, *, has_memories: bool) -> tuple[CoachChatR
     result = CoachChatResult(text=raw_text, follow_ups=[], sources=[FALLBACK_SOURCE])
 
     try:
-        parsed = json.loads(strip_code_fences(raw_text))
+        parsed = strict_json_loads(strip_code_fences(raw_text))
     except ValueError:
         parsed = None
 

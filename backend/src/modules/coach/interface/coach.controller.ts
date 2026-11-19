@@ -3,11 +3,11 @@ import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
 import { AppError } from '../../../shared/errors/app-error.js';
+import type { SpeechTranscriber } from '../application/ports.js';
 import type { ChatWithCoachUseCase } from '../application/use-cases/chat-with-coach.js';
 import type { GetCoachInsightsUseCase } from '../application/use-cases/get-coach-insights.js';
 import type { ManageConversationsUseCase } from '../application/use-cases/manage-conversations.js';
 import type { ManageMemoriesUseCase } from '../application/use-cases/manage-memories.js';
-import type { GeminiClient } from '../../../shared/ai/gemini-client.js';
 import {
   chatRequestSchema,
   createConversationSchema,
@@ -57,7 +57,7 @@ export function createCoachController(deps: {
   getCoachInsights: GetCoachInsightsUseCase;
   manageConversations?: ManageConversationsUseCase;
   manageMemories?: ManageMemoriesUseCase;
-  geminiClient?: GeminiClient;
+  speechTranscriber?: SpeechTranscriber;
 }): CoachController {
   const getConvoUseCase = () => {
     if (!deps.manageConversations) {
@@ -179,12 +179,12 @@ export function createCoachController(deps: {
     },
 
     async transcribeAudio(req: Request) {
-      requireActor(req);
-      if (!deps.geminiClient) {
+      const actor = requireActor(req);
+      if (!deps.speechTranscriber) {
         throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'AI audio transcription is not configured.');
       }
       const { body } = getValidated(req, { body: transcribeAudioSchema });
-      const data = await deps.geminiClient.transcribeAudio(body.audio);
+      const data = await deps.speechTranscriber.transcribe(actor.userId, body.audio);
       return {
         status: 200,
         message: 'Audio transcribed successfully',

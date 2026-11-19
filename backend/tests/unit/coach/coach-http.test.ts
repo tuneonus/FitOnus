@@ -10,6 +10,7 @@ import { createLogger } from '../../../src/shared/logging/logger.js';
 import type { CoachResponse } from '../../../src/modules/coach/domain/coach.types.js';
 import { createCoachController } from '../../../src/modules/coach/interface/coach.controller.js';
 import { createCoachRoutes } from '../../../src/modules/coach/interface/coach.routes.js';
+import { transcribeAudioSchema } from '../../../src/modules/coach/interface/coach.schemas.js';
 import type { ChatWithCoachUseCase } from '../../../src/modules/coach/application/use-cases/chat-with-coach.js';
 
 describe('Coach REST API HTTP Integration', () => {
@@ -55,8 +56,8 @@ describe('Coach REST API HTTP Integration', () => {
       setFeedback: vi.fn().mockResolvedValue(undefined),
     };
 
-    const mockGeminiClient = {
-      transcribeAudio: vi.fn().mockResolvedValue({
+    const mockTranscriber = {
+      transcribe: vi.fn().mockResolvedValue({
         transcript: 'Today I ran 5 kilometers',
         detectedLanguage: 'en',
       }),
@@ -66,7 +67,7 @@ describe('Coach REST API HTTP Integration', () => {
       chatWithCoach: mockUseCase,
       getCoachInsights: mockGetInsightsUseCase as any,
       manageConversations: mockManageConversations as any,
-      geminiClient: mockGeminiClient as any,
+      speechTranscriber: mockTranscriber as any,
     });
 
     const rateLimiter: express.RequestHandler = (_req, _res, next) => {
@@ -94,7 +95,7 @@ describe('Coach REST API HTTP Integration', () => {
     app.use(notFoundHandler);
     app.use(errorHandler);
 
-    return { app, mockUseCase, mockGetInsightsUseCase };
+    return { app, mockUseCase, mockGetInsightsUseCase, mockTranscriber };
   }
 
   it('rejects unauthenticated requests with 401', async () => {
@@ -251,15 +252,60 @@ describe('Coach REST API HTTP Integration', () => {
       expect(res.status).toBe(401);
     });
 
-    it('transcribes audio payload successfully', async () => {
-      const { app } = createTestApp({ authenticated: true });
+    it('transcribes audio payload successfully (same response shape the app always received)', async () => {
+      const { app, mockTranscriber } = createTestApp({ authenticated: true });
       const res = await request(app)
         .post('/api/v1/coach/transcribe')
         .send({ audio: { mimeType: 'audio/m4a', base64: 'AAAA' } });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.transcript).toBe('Today I ran 5 kilometers');
-      expect(res.body.data.detectedLanguage).toBe('en');
+      expect(res.body.data).toEqual({ transcript: 'Today I ran 5 kilometers', detectedLanguage: 'en' });
+      // The user comes from the authenticated session, not from anything the client sent.
+      expect(mockTranscriber.transcribe).toHaveBeenCalledWith(userId, { mimeType: 'audio/m4a', base64: 'AAAA' });
+    });
+
+    it.each(['audio/m4a', 'audio/x-m4a', 'audio/mp4', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/aac', 'audio/3gpp'])(
+      'accepts the supported format %s',
+      async (mimeType) => {
+        const { app } = createTestApp({ authenticated: true });
+        const res = await request(app).post('/api/v1/coach/transcribe').send({ audio: { mimeType, base64: 'AAAA' } });
+        expect(res.status).toBe(200);
+      },
+    );
+
+    it.each(['audio/flac', 'image/png', 'text/plain', 'video/quicktime'])(
+      'rejects the unsupported format %s with 400 before any AI call',
+      async (mimeType) => {
+        const { app, mockTranscriber } = createTestApp({ authenticated: true });
+        const res = await request(app).post('/api/v1/coach/transcribe').send({ audio: { mimeType, base64: 'AAAA' } });
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('VALIDATION_FAILED');
+        expect(mockTranscriber.transcribe).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a 15 MB+ request before any AI call (body limit 413; the schema cap is a second line of defense)', async () => {
+      const { app, mockTranscriber } = createTestApp({ authenticated: true });
+      const res = await request(app)
+        .post('/api/v1/coach/transcribe')
+        .send({ audio: { mimeType: 'audio/m4a', base64: 'A'.repeat(15 * 1024 * 1024 + 1) } });
+      expect([400, 413]).toContain(res.status);
+      expect(mockTranscriber.transcribe).not.toHaveBeenCalled();
+    });
+
+    it('the request schema itself caps audio at 15 MB of base64 and requires a supported format', () => {
+      const ok = { audio: { mimeType: 'audio/m4a', base64: 'A'.repeat(15 * 1024 * 1024) } };
+      expect(transcribeAudioSchema.safeParse(ok).success).toBe(true);
+      expect(
+        transcribeAudioSchema.safeParse({ audio: { ...ok.audio, base64: ok.audio.base64 + 'A' } }).success,
+      ).toBe(false);
+      expect(transcribeAudioSchema.safeParse({ audio: { mimeType: 'audio/flac', base64: 'AAAA' } }).success).toBe(false);
+    });
+
+    it('rejects an empty clip with 400', async () => {
+      const { app } = createTestApp({ authenticated: true });
+      const res = await request(app).post('/api/v1/coach/transcribe').send({ audio: { mimeType: 'audio/m4a', base64: '' } });
+      expect(res.status).toBe(400);
     });
 
     it('rejects missing audio payload with 400', async () => {

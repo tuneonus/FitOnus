@@ -1,6 +1,7 @@
 import pytest
 
-from onusfit_ai.coach.parsing import parse_coach_output, strip_code_fences
+from onusfit_ai.coach.parsing import parse_coach_output
+from onusfit_ai.core.js_compat import strip_code_fences
 
 GOOD = '{"text":"Eat more protein","followUps":["Why?"],"sources":["Profile"],"medicalNote":true}'
 

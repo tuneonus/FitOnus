@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isSupportedAudioMime, MAX_AUDIO_BASE64_CHARS, SUPPORTED_AUDIO_FORMATS } from '../../../shared/ai/audio-input.js';
 
 export const chatRequestSchema = z.object({
   message: z
@@ -165,8 +166,15 @@ export const setMessageFeedbackSchema = z.object({
 
 export const transcribeAudioSchema = z.object({
   audio: z.object({
-    mimeType: z.string().min(1, 'Audio mimeType is required'),
-    base64: z.string().min(1, 'Audio base64 data is required'),
+    mimeType: z
+      .string()
+      .min(1, 'Audio mimeType is required')
+      .max(100)
+      .refine(isSupportedAudioMime, `Unsupported audio format. Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(', ')}`),
+    base64: z
+      .string()
+      .min(1, 'Audio base64 data is required')
+      .max(MAX_AUDIO_BASE64_CHARS, 'Audio size exceeds the 15MB limit.'),
   }),
 });
 

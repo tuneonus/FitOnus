@@ -94,6 +94,24 @@ export const okVoiceReply = (overrides: Record<string, unknown> = {}): Record<st
   ...overrides,
 });
 
+/** A successful transcription reply in the shape of ai-backend/contracts/transcribe.py. */
+export const okTranscribeReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  outcome: 'ok',
+  result: { transcript: 'inniku leg workout mudichiten', detectedLanguage: 'tanglish' },
+  usage: {
+    model: 'gemini-3.5-flash-lite',
+    isFallback: false,
+    inputTokens: 300,
+    outputTokens: 30,
+    cachedTokens: 0,
+    thinkingTokens: 0,
+    totalTokens: 330,
+    durationMs: 800,
+  },
+  traceId: 'trace-stt-1',
+  ...overrides,
+});
+
 export const pythonError = (code: string, message: string, extra: Record<string, unknown> = {}) => ({
   error: { code, message, dispatched: true, ...extra },
 });
