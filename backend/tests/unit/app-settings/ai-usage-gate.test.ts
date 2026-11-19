@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { z } from 'zod';
 import {
   AiUsageGateService,
   CheckAndRecordAiQuotaUseCase,
@@ -14,6 +15,9 @@ import {
   markAiRequestDispatched,
   type AiUsageAction,
 } from '../../../src/shared/ai/ai-usage.js';
+import { callPythonAi, pythonUsageSchema } from '../../../src/shared/ai/python-ai-call.js';
+import { PythonAiError, type PythonAiClient } from '../../../src/shared/ai/python-ai-client.js';
+import type { GeminiFeature } from '../../../src/shared/ai/gemini-feature.js';
 import { AppError, isAppError } from '../../../src/shared/errors/app-error.js';
 import { InMemoryAiUsageStore } from '../../helpers/ai-usage-gate.js';
 
@@ -392,7 +396,7 @@ describe('AI usage gate: feature flags, per-user quota and total quota', () => {
   });
 });
 
-describe('Gemini usage telemetry records the authenticated user', () => {
+describe('Python-served AI usage is recorded for the authenticated user', () => {
   const geminiConfig = (): GeminiConfigRecord => ({
     provider: 'google_gemini',
     encryptedApiKey: null,
@@ -410,7 +414,21 @@ describe('Gemini usage telemetry records the authenticated user', () => {
     updatedAt: new Date().toISOString(),
   });
 
-  const build = (apiKey: string | undefined) => {
+  const pythonReply = {
+    outcome: 'ok',
+    usage: {
+      model: 'gemini-2.5-flash',
+      isFallback: false,
+      inputTokens: 10,
+      outputTokens: 5,
+      cachedTokens: 0,
+      thinkingTokens: 0,
+      totalTokens: 15,
+      durationMs: 42,
+    },
+  };
+
+  const build = (postJson: Mock) => {
     const settings = new FakeSettingsRepo();
     const recorded: { userId: string | null; feature: string; status: string }[] = [];
     const repo = Object.assign(settings, {
@@ -423,77 +441,80 @@ describe('Gemini usage telemetry records the authenticated user', () => {
     const runtime = new GeminiRuntimeService({
       repo: repo as unknown as AppSettingsRepository,
       encryptionKey: 'unit-test-encryption-key-unit-test-key',
-      fallbackApiKey: apiKey,
     });
     const gate = new AiUsageGateService(
       new CheckAndRecordAiQuotaUseCase(repo as unknown as AppSettingsRepository),
     );
-    return { settings, runtime, gate, recorded };
+    const call = (feature: GeminiFeature, requestId: string) =>
+      callPythonAi({
+        client: { postJson } as unknown as PythonAiClient,
+        path: '/internal/v1/ai/test',
+        scope: 'ai:test',
+        userId: currentAiRequestContext()?.userId ?? '',
+        requestId,
+        timeoutMs: 1_000,
+        body: {},
+        schema: z.object({ outcome: z.string(), usage: pythonUsageSchema }),
+        feature,
+        usageRecorder: runtime,
+        label: 'Python test call',
+        unavailableMessage: 'AI is unavailable.',
+      });
+    return { settings, gate, recorded, call };
   };
 
-  it('stores the user id of the admitted request on a successful provider call', async () => {
-    const { runtime, gate, recorded } = build('AIzaSyUnitTestKeyUnitTestKeyUnitTest');
+  it('stores the user id of the admitted request on a successful Python call', async () => {
+    const { gate, recorded, call } = build(vi.fn().mockResolvedValue(pythonReply));
 
-    await gate.run({ userId: USER, action: 'meal_photo' }, () =>
-      runtime.executeWithTelemetry({
-        requestId: 'req-1',
-        feature: 'meal_photo',
-        execute: async () => ({
-          text: ' ok ',
-          usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
-        }),
-      }),
+    await gate.run({ userId: USER, action: 'meal_photo' }, () => call('meal_photo', 'req-1'));
+
+    await vi.waitFor(() =>
+      expect(recorded).toEqual([{ userId: USER, feature: 'meal_photo', status: 'success' }]),
     );
-
-    expect(recorded).toEqual([{ userId: USER, feature: 'meal_photo', status: 'success' }]);
   });
 
-  it('stores the user id on a failed provider call too, and that failure keeps the quota unit', async () => {
-    const { settings, runtime, gate, recorded } = build('AIzaSyUnitTestKeyUnitTestKeyUnitTest');
+  it('records no event for a failed Python call, and a dispatched failure keeps the quota unit', async () => {
+    const postJson = vi.fn().mockRejectedValue(
+      new PythonAiError('provider_unavailable', 'Gemini overloaded', { dispatched: true }),
+    );
+    const { settings, gate, recorded, call } = build(postJson);
 
-    await expect(
-      gate.run({ userId: USER, action: 'coach_chat' }, () =>
-        runtime.executeWithTelemetry({
-          requestId: 'req-2',
-          feature: 'coach_chat',
-          execute: async () => {
-            throw new Error('provider network failure');
-          },
-        }),
-      ),
-    ).rejects.toThrow('provider network failure');
+    await expect(gate.run({ userId: USER, action: 'coach_chat' }, () => call('coach_chat', 'req-2'))).rejects.toBeInstanceOf(
+      AppError,
+    );
 
-    expect(recorded).toEqual([{ userId: USER, feature: 'coach_chat', status: 'failed' }]);
+    expect(recorded).toEqual([]);
     expect(settings.store.actionCount(USER, 'coach_chat')).toBe(1);
   });
 
-  it('refunds the unit when no API key is configured, because the provider was never called', async () => {
-    const { settings, runtime, gate, recorded } = build(undefined);
-    const execute = vi.fn();
+  it('refunds the unit when Python was never reached, because Gemini was never called', async () => {
+    const postJson = vi.fn().mockRejectedValue(
+      new PythonAiError('unreachable', 'connection refused', { dispatched: false }),
+    );
+    const { settings, gate, recorded, call } = build(postJson);
 
-    await expect(
-      gate.run({ userId: USER, action: 'meal_photo' }, () =>
-        runtime.executeWithTelemetry({ requestId: 'req-3', feature: 'meal_photo', execute }),
-      ),
-    ).rejects.toMatchObject({ code: 'SERVICE_UNAVAILABLE' });
+    await expect(gate.run({ userId: USER, action: 'meal_photo' }, () => call('meal_photo', 'req-3'))).rejects.toBeInstanceOf(
+      AppError,
+    );
 
-    expect(execute).not.toHaveBeenCalled();
     expect(recorded).toEqual([]);
     expect(settings.store.actionCount(USER, 'meal_photo')).toBe(0);
   });
 
-  it('an explicit userId parameter wins; outside the gate the user stays null', async () => {
-    const { runtime, recorded } = build('AIzaSyUnitTestKeyUnitTestKeyUnitTest');
-    const execute = async () => ({ text: 'ok' });
+  it('attributes concurrent calls of different users to the right user', async () => {
+    const { gate, recorded, call } = build(vi.fn().mockResolvedValue(pythonReply));
 
-    await runtime.executeWithTelemetry({
-      requestId: 'r-a',
-      userId: OTHER_USER,
-      feature: 'coach_chat',
-      execute,
-    });
-    await runtime.executeWithTelemetry({ requestId: 'r-b', feature: 'coach_chat', execute });
+    await Promise.all(
+      [USER, OTHER_USER, USER, OTHER_USER].map((userId, index) =>
+        gate.run({ userId, action: 'coach_chat' }, async () => {
+          await new Promise((resolve) => setImmediate(resolve));
+          return call('coach_chat', `req-c-${index}`);
+        }),
+      ),
+    );
 
-    expect(recorded.map((r) => r.userId)).toEqual([OTHER_USER, null]);
+    await vi.waitFor(() => expect(recorded).toHaveLength(4));
+    expect(recorded.filter((r) => r.userId === USER)).toHaveLength(2);
+    expect(recorded.filter((r) => r.userId === OTHER_USER)).toHaveLength(2);
   });
 });

@@ -121,7 +121,7 @@ To try it for real you need an `.m4a` of your own voice (the app records the sam
 
 ## 12. Known gaps
 
-- `GeminiClient.generateFromAudio` is now unused by production code (kept because older tests exercise the client's audio path). Meal photo has since migrated too (guide 05), so `generateFromImage` is unused as well; both can be removed together with the tests that still exercise them.
+- `GeminiClient.generateFromAudio` is now unused by production code (kept because older tests exercise the client's audio path). Meal photo has since migrated too (guide 05), so `generateFromImage` is unused as well; both were removed together with the tests that still exercised them in Phase 8 (2026-11-19).
 - Python's Gemini attempt limit is 20 s (Node used 25 s), bounded further by the HTTP timeout.
 - The usage ledger label is still `coach_chat` (the existing analytics grouping); a dedicated label needs a code change in the shared feature list.
 - Usage is attributed to the user now; before, it was recorded with no user.
