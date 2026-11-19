@@ -38,7 +38,7 @@ The architecture proposal and roadmap describe planned work. They do not indicat
 
 - [README](../../ai-backend/README.md): what it does, environment variables, how to run and check it
 - [Render deployment guide](../../ai-backend/docs/render-deployment.md): service type, build and start settings, environment variables, Node-to-Python connection, service-token authentication, free versus paid limits (preparation only: nothing is deployed)
-- [Migration readiness assessment](ai/PYTHON_MIGRATION_READINESS.md) and the walkthroughs in `ai/learning/` (01 chat integration, 02 Python-only architecture, 03 voice meal, 04 speech transcription, 05 meal photo, 06 coach insights)
+- [Migration readiness assessment](ai/PYTHON_MIGRATION_READINESS.md) and the walkthroughs in `ai/learning/` (01 chat integration, 02 Python-only architecture, 03 voice meal, 04 speech transcription, 05 meal photo, 06 coach insights, 07 AI observability: structured logs, correlation ids and error categories)
 
 ## Product requirements
 

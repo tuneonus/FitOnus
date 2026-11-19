@@ -103,6 +103,7 @@ Provider-neutral infrastructure used by more than one module, and nothing featur
 |---|---|
 | `ai-usage.ts` | `AiUsageGate` contract, request context (AsyncLocalStorage), `markAiRequestDispatched` |
 | `ai-rate-limit.ts` | per-user burst limiter + `AiRateLimitStore` seam (in-memory default) |
+| `ai-observability.ts` | privacy-safe AI log vocabulary: error categories + classifier, typed event builders (`ai.call.completed/failed`, `ai.cache`, `ai.deterministic_fallback`), out-of-band tags for an answer's origin and an error's category. No user content can be expressed in it |
 | `ai-timeout.ts` | `AiTimeoutError` (the one safe 503 for a provider timeout; used by `python-ai-errors.ts`) |
 | `model-cooldown-tracker.ts` | in-memory per-model cooldown snapshot, kept only because the admin Gemini usage summary returns it as `cooldownStatus` (nothing in Node records failures into it now, so it is empty) |
 | `gemini-feature.ts` | the `GeminiFeature` union |
@@ -146,8 +147,8 @@ ai-backend/
 │   ├── meals/                 voice.py + photo.py (use cases), parsing.py (voice) + photo_parsing.py
 │   ├── speech/                transcribe.py (use case), parsing.py
 │   ├── prompts/               coach_chat.py, coach_insights.py, voice_meal.py, meal_photo.py, transcribe.py   (ported 1:1 from Node; golden-file tested)
-│   ├── llm/                   gemini.py (only Gemini caller), errors.py (classifier + cooldown)
-│   └── core/                  config.py, auth.py (service token), errors.py, js_compat.py, audio.py, image.py, logging.py (stdout, secrets masked); startup checks live in main.py
+│   ├── llm/                   gemini.py (only Gemini caller), errors.py (classifier + cooldown), telemetry.py (the one `ai.call.completed` event every use case logs)
+│   └── core/                  config.py, auth.py (service token), errors.py, js_compat.py, audio.py, image.py, logging.py (structured JSON on stdout, field masking, secrets masked), observability.py (error categories, per-request ids middleware, failure events); startup checks live in main.py
 └── tests/                     golden fixtures: fixtures/{coach_chat,coach_insights,voice_meal,meal_photo,transcribe}/ (rendered by the former Node code)
 ```
 

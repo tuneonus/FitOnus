@@ -10,6 +10,7 @@ from onusfit_ai.contracts.common import Usage
 from onusfit_ai.contracts.voice_meal import ParseVoiceMealRequest, ParseVoiceMealResponse
 from onusfit_ai.core.audio import decode_audio_base64
 from onusfit_ai.llm.gemini import MediaInput, TextGenerator
+from onusfit_ai.llm.telemetry import log_ai_call
 from onusfit_ai.meals.parsing import parse_voice_meal_output
 from onusfit_ai.prompts.voice_meal import PROMPT_VERSION, build_prompt
 
@@ -39,18 +40,15 @@ async def parse_voice_meal(
 
     usage = llm_result.usage
     # Metadata only: transcripts, audio and the reply are never logged.
-    logger.info(
-        "voice_meal trace=%s prompt=%s audio=%s model=%s fallback=%s outcome=%s items=%s "
-        "tokens=%s duration_ms=%s",
-        trace_id,
-        PROMPT_VERSION,
-        media is not None,
-        usage.model,
-        usage.is_fallback,
-        outcome,
-        len(result.items),
-        usage.total_tokens,
-        usage.duration_ms,
+    log_ai_call(
+        logger,
+        feature="voice_meal",
+        trace_id=trace_id,
+        prompt_version=PROMPT_VERSION,
+        outcome=outcome,
+        usage=usage,
+        has_audio=media is not None,
+        items=len(result.items),
     )
     return ParseVoiceMealResponse(
         outcome=outcome,

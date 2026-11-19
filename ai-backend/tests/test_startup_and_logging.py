@@ -76,6 +76,7 @@ def test_a_short_secret_is_refused_and_never_echoed(production: pytest.MonkeyPat
         ("AI_SERVICE_JWT_ISSUER", "  "),
         ("AI_SERVICE_JWT_AUDIENCE", " "),
         ("LOG_LEVEL", "LOUD"),
+        ("LOG_FORMAT", "xml"),
     ],
 )
 def test_production_refuses_other_bad_settings(
@@ -109,8 +110,10 @@ def test_the_startup_line_reports_presence_only_never_values(
 ) -> None:
     with caplog.at_level("INFO", logger="onusfit_ai"):
         start()
-    logged = "\n".join(r.getMessage() for r in caplog.records)
-    assert "gemini_key_configured=True" in logged and "service_secret_configured=True" in logged
+    starting = next(r for r in caplog.records if getattr(r, "event", "") == "service.starting")
+    assert starting.fields["geminiKeyConfigured"] is True  # type: ignore[attr-defined]
+    assert starting.fields["serviceSecretConfigured"] is True  # type: ignore[attr-defined]
+    logged = "\n".join(f"{r.getMessage()} {getattr(r, 'fields', '')}" for r in caplog.records)
     assert KEY_VALUE not in logged and SECRET not in logged
 
 
@@ -134,8 +137,8 @@ def test_redaction_masks_keys_bearer_tokens_and_jwts() -> None:
 def test_configure_logging_is_idempotent_and_writes_redacted_lines_to_stdout(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    configure_logging("INFO")
-    configure_logging("INFO")
+    configure_logging("INFO", "text")
+    configure_logging("INFO", "text")
     logger = logging.getLogger("onusfit_ai")
     assert sum(getattr(h, "_onusfit_stdout", False) for h in logger.handlers) == 1
 

@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 import type { RequestHandler } from 'express';
 import { pinoHttp } from 'pino-http';
 import type { Logger } from '../shared/logging/logger.js';
+import { isSafeCorrelationId, runWithCorrelationId } from '../shared/logging/request-correlation.js';
 
 const REQUEST_ID_HEADER = 'x-request-id';
-const SAFE_REQUEST_ID = /^[A-Za-z0-9._-]{8,128}$/;
 
 /**
  * Assigns a request id (reusing a well-formed incoming X-Request-Id), echoes it back,
@@ -15,7 +15,7 @@ export function requestContext(logger: Logger): RequestHandler {
     logger,
     genReqId: (req, res) => {
       const incoming = req.headers[REQUEST_ID_HEADER];
-      const id = typeof incoming === 'string' && SAFE_REQUEST_ID.test(incoming) ? incoming : randomUUID();
+      const id = isSafeCorrelationId(incoming) ? incoming : randomUUID();
       res.setHeader('X-Request-Id', id);
       return id;
     },
@@ -36,3 +36,21 @@ export function requestContext(logger: Logger): RequestHandler {
     autoLogging: { ignore: (req) => req.url?.startsWith('/health') ?? false },
   });
 }
+
+/**
+ * Makes the request id available to deep code (the Python AI client) through AsyncLocalStorage.
+ *
+ * Registered AFTER `express.json()` as a precaution: body parsers resume the request from stream
+ * callbacks, and AsyncLocalStorage context does not always survive that on every Node/body-parser
+ * combination. (Measured on this stack - Node 22, Express 5 - either order works; binding after body
+ * parsing is the order that cannot depend on that detail.) Covered through the real middleware stack by
+ * tests/unit/ai/request-correlation.test.ts.
+ */
+export const bindRequestCorrelation: RequestHandler = (req, _res, next) => {
+  const id: unknown = req.id;
+  if (typeof id === 'string' || typeof id === 'number') {
+    runWithCorrelationId(String(id), next);
+    return;
+  }
+  next();
+};

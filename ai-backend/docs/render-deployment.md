@@ -56,6 +56,7 @@ Keep **one instance**. The replay-protection cache for tokens and the Gemini mod
 | `GEMINI_API_KEY` | **yes** | your Gemini API key | A key of its own for this service is cleaner (own quota, own cost, easy to revoke). It is **not** the key stored in the admin console: Node's admin key no longer reaches Python (readiness decision O1 is still open). |
 | `ONUSFIT_AI_ENV` | no | `production` | Already set inside the image. With it the service **refuses to start** if the two required values are missing or too short, so a bad deploy fails visibly. |
 | `LOG_LEVEL` | no | `INFO` (default) | Logs contain metadata only, at any level. |
+| `LOG_FORMAT` | no | `json` (default) | One JSON object per line: what you want on Render. `text` is for local development. An unknown value stops a production start. |
 | `GEMINI_ATTEMPT_TIMEOUT_S` | no | `20` (default) | Longest single Gemini attempt. Leave unless you have measured a reason. |
 | `AI_SERVICE_JWT_ISSUER`, `AI_SERVICE_JWT_AUDIENCE` | no | leave unset | Must match the Node code's constants. |
 | `PORT` | **do not set** | – | Render sets it (default `10000`, verified). The container listens on `0.0.0.0:$PORT`. |
@@ -80,7 +81,7 @@ Nothing else changes on the Node side.
 - **Start:** `sh -c "exec uvicorn onusfit_ai.main:app --host 0.0.0.0 --port ${PORT:-10000} --timeout-keep-alive 65 --no-server-header"`. Render requires binding to `0.0.0.0` and recommends using `PORT` (default 10000) (verified).
 - **User:** non-root (`uid 10001`, no shell, no home).
 - **Startup validation:** in production the process exits with code 3 and a message naming the wrong variable (never its value) when the secret or key is missing or invalid; Render then shows a failed deploy and keeps the previous version serving (verified: a deploy that never becomes healthy is cancelled and existing instances keep serving traffic).
-- **Logs:** one line per event on stdout (Render collects it): startup facts as booleans, one metadata line per AI call (`coach_chat trace=… model=… outcome=… tokens=…`), warnings. Prompts, user data, images, audio, replies, tokens and keys are never logged, and anything that looks like a Google key, a bearer token or a JWT is masked as a second line of defence. Uvicorn's access log lines show method, path and status only.
+- **Logs:** one JSON object per line on stdout (Render collects it), the same field names as the Node API. Events: `service.starting` (startup facts as booleans), `ai.call.completed` (one per answered call: `feature`, `model`, `modelFallbackUsed`, `outcome`, token counts, `geminiDurationMs`), `ai.request.failed` (auth, validation and Gemini failures, with an `errorCategory`), `ai.gemini.attempt_failed` / `ai.gemini.model_skipped` (a model attempt failed, or a cooling-down model was skipped), `http.request` (method, path, status, duration; `/health` is not logged). Every line of a request carries `correlationId` (the Node request id, from `X-Correlation-Id`), `aiRequestId` and `feature`. Prompts, user data, images, audio, replies, tokens, keys and user ids are never logged; fields with sensitive names are masked and anything that looks like a Google key, a bearer token or a JWT is masked as a last defence. Uvicorn's own access and traceback lines are separate and not structured. Field list and search recipes: `docs/ai/learning/07-ai-observability.md`.
 - **Docs pages:** `/docs`, `/redoc` and `/openapi.json` do not exist.
 
 ## 6. How Node authenticates to Python (service JWT)
@@ -95,11 +96,11 @@ Nothing else changes on the Node side.
 
 ## 7. Verifying after you deploy (manual)
 
-1. In the AI service **Logs**, look for `starting onusfit-ai-backend version=… environment=production gemini_key_configured=True service_secret_configured=True` and `Uvicorn running on http://0.0.0.0:<port>`.
+1. In the AI service **Logs**, look for the `service.starting` line (`"environment":"production"`, `"geminiKeyConfigured":true`, `"serviceSecretConfigured":true`) and `Uvicorn running on http://0.0.0.0:<port>`.
 2. Web Service: `curl https://<name>.onrender.com/health/live` → `{"status":"ok",…,"environment":"production"}`. Private Service: it cannot be reached from your laptop; rely on Render's health state plus step 4.
 3. Set the two variables on the Node service and deploy it.
-4. Use the app (or the admin tools) to trigger **coach insights** first (with `refresh=true`), then chat: the AI service logs should show `coach_insights trace=… outcome=ok` / `coach_chat … outcome=ok`, and the answers should not be the plain "deterministic" insights (ids starting `ins-det-`).
-5. Check the Node logs for `Python … served` lines and no `Python … failed` lines (their `kind` tells you: `unreachable` = wrong URL/port/region or a sleeping free service; `auth` = secret mismatch; `timeout` = slow Gemini or a cold start).
+4. Use the app (or the admin tools) to trigger **coach insights** first (with `refresh=true`), then chat: the AI service logs should show `ai.call.completed` lines with `"feature":"coach_insights"` / `"coach_chat"` and `"outcome":"ok"`, and the answers should not be the plain "deterministic" insights (ids starting `ins-det-`).
+5. Check the Node logs for `ai.call.completed` events and no `ai.call.failed` events. A failure's `errorCategory` tells you: `python_unavailable` = wrong URL/port/region or a sleeping free service; `auth_failure` = secret mismatch; `python_timeout` = slow Gemini or a cold start. To follow one request across both services, search for its `correlationId` (the `X-Request-Id` the app received).
 
 ## 8. Rollback
 
@@ -109,7 +110,7 @@ Nothing else changes on the Node side.
 ## 9. Known limits and risks (read before going live)
 
 - **Cold starts on Free** (§2) break the first request after idle. Use a paid instance.
-- **Latency:** coach insights took 15 to 16 s per generation in the live test, against a 20 s Gemini attempt limit and the app's 25 s wait. A slow Gemini moment turns into the simple deterministic insights, with no error, so quality can degrade unnoticed: watch the `outcome=unusable` log lines and Node's `Python coach insights failed` lines.
+- **Latency:** coach insights took 15 to 16 s per generation in the live test, against a 20 s Gemini attempt limit and the app's 25 s wait. A slow Gemini moment turns into the simple deterministic insights, with no error, so quality can degrade unnoticed: watch for `ai.deterministic_fallback` and `"errorCategory":"invalid_ai_response"` events in the Node logs (`ai.call.failed` shows failures).
 - **Single instance, in-memory state** (§3).
 - **Memory:** large audio and image requests (up to 15 MB and 10 MB of base64) are decoded in memory; a handful of concurrent large uploads on a small instance could exhaust memory (estimate, not measured: watch Render's metrics during a test).
 - **One shared secret, no overlap** (§6).
@@ -124,11 +125,11 @@ Nothing else changes on the Node side.
 |---|---|
 | Deploy fails, logs say `invalid configuration: …` | The named variable is missing or invalid (see §4). The message never shows the value. |
 | Deploy fails at `pip install` | A pinned package has no wheel for the build platform: regenerate `requirements.txt` (its header explains how) and run the checks. |
-| Node logs `Python … failed kind=unreachable` | Wrong `AI_BACKEND_URL` or port, different region/workspace, or the free service is asleep. |
-| Node logs `kind=auth` | `AI_BACKEND_SERVICE_SECRET` ≠ `AI_SERVICE_JWT_SECRET`, or the service has the old secret loaded (redeploy after changing it). |
-| AI service logs `AUTH_NOT_CONFIGURED` / Node `kind=misconfigured` | The service is running without a valid secret (only possible outside production). |
-| Node logs `kind=timeout` on first use | Cold start (free) or Gemini slowness. |
-| Everything works but insights look generic | They are the deterministic fallback: check the AI service logs for `outcome=unusable`, the Gemini key, and the model names in the admin console. |
+| Node logs `ai.call.failed` with `errorCategory` `python_unavailable` (`errorKind` `unreachable`) | Wrong `AI_BACKEND_URL` or port, different region/workspace, or the free service is asleep. |
+| Node logs `errorCategory` `auth_failure` (`errorKind` `auth`) | `AI_BACKEND_SERVICE_SECRET` ≠ `AI_SERVICE_JWT_SECRET`, or the service has the old secret loaded (redeploy after changing it). |
+| AI service logs `AUTH_NOT_CONFIGURED` / Node `errorCategory` `auth_failure` or `gemini_auth` (`errorKind` `misconfigured`) | The service is running without a valid secret (only possible outside production). |
+| Node logs `errorCategory` `python_timeout` on first use | Cold start (free) or Gemini slowness. |
+| Everything works but insights look generic | They are the deterministic fallback: check the Node logs for `ai.deterministic_fallback` (its `reason` and `errorCategory` say why) and the AI service logs for `"outcome":"unusable"`, the Gemini key, and the model names in the admin console. |
 
 ## 11. Your checklist (manual actions)
 

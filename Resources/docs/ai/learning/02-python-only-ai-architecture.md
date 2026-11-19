@@ -215,7 +215,7 @@ cd ai-backend && .venv/bin/python -m pytest -q && .venv/bin/ruff check . && .ven
 cd backend    && npm run typecheck && npm test && npm run build
 ```
 
-**Try the failures yourself:** stop Python and send a coach message (clean 503, quota refunded); start Python with a different `AI_SERVICE_JWT_SECRET` (Python logs a 401, Node logs `Python coach chat failed … kind: auth`, the app gets the same clean 503).
+**Try the failures yourself:** stop Python and send a coach message (clean 503, quota refunded); start Python with a different `AI_SERVICE_JWT_SECRET` (Python logs a 401, Node logs an `ai.call.failed` event with `errorCategory: auth_failure`, the app gets the same clean 503; see [07 AI observability](07-ai-observability.md)).
 
 **Deployment note:** the Node server now cannot start without a reachable-configured Python backend. Deploying this branch needs the Python service hosted and both settings added to the environment first (not done; deployment configuration was out of scope).
 

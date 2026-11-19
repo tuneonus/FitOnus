@@ -10,7 +10,8 @@ from onusfit_ai import __version__
 from onusfit_ai.api import coach_chat, coach_insights, health, meal_photo, transcribe, voice_meal
 from onusfit_ai.core.config import Settings, configuration_problems, get_settings, is_production
 from onusfit_ai.core.errors import register_error_handlers
-from onusfit_ai.core.logging import configure_logging
+from onusfit_ai.core.logging import configure_logging, log_event
+from onusfit_ai.core.observability import RequestObservabilityMiddleware
 
 logger = logging.getLogger("onusfit_ai.main")
 
@@ -27,24 +28,35 @@ def run_startup_checks() -> None:
         settings: Settings | None = get_settings()
     except ValueError:
         settings = None
-    configure_logging(settings.log_level if settings else "INFO")
+    configure_logging(
+        settings.log_level if settings else "INFO", settings.log_format if settings else "json"
+    )
 
     problems = configuration_problems()
     fatal = settings is None or is_production(settings)
     if problems and fatal:
         for problem in problems:
-            logger.error("invalid configuration: %s", problem)
+            log_event(
+                logger,
+                "config.invalid",
+                level=logging.ERROR,
+                message=f"invalid configuration: {problem}",
+            )
         raise RuntimeError("Invalid configuration: " + "; ".join(problems))
     for problem in problems:  # development: keep going, but say what will not work
-        logger.warning("configuration: %s", problem)
+        log_event(
+            logger, "config.warning", level=logging.WARNING, message=f"configuration: {problem}"
+        )
     if settings:
-        logger.info(
-            "starting onusfit-ai-backend version=%s environment=%s gemini_key_configured=%s "
-            "service_secret_configured=%s",
-            __version__,
-            settings.environment,
-            bool(settings.gemini_api_key),
-            bool(settings.service_jwt_secret),
+        log_event(
+            logger,
+            "service.starting",
+            message="starting onusfit-ai-backend",
+            version=__version__,
+            environment=settings.environment,
+            logFormat=settings.log_format,
+            geminiKeyConfigured=bool(settings.gemini_api_key),  # presence only, never the value
+            serviceSecretConfigured=bool(settings.service_jwt_secret),
         )
 
 
@@ -66,6 +78,8 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     register_error_handlers(app)
+    # Ids bound here reach auth, the handlers and the Gemini client: every line carries them.
+    app.add_middleware(RequestObservabilityMiddleware)
     app.include_router(health.router)
     app.include_router(coach_chat.router)
     app.include_router(coach_insights.router)

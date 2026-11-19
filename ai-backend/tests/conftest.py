@@ -1,6 +1,8 @@
 """Shared test helpers: signed service tokens, a fake LLM, and an app wired with the fake."""
 
+import io
 import json
+import logging
 import time
 import uuid
 from collections.abc import Iterator
@@ -12,6 +14,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from onusfit_ai.core.auth import replay_cache
+from onusfit_ai.core.logging import configure_logging
 from onusfit_ai.llm.gemini import LlmResult, LlmUsage, MediaInput, get_llm
 from onusfit_ai.main import create_app
 
@@ -119,3 +122,47 @@ def client(fake_llm: FakeLlm) -> TestClient:
     app = create_app()
     app.dependency_overrides[get_llm] = lambda: fake_llm
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _remove_stdout_log_handler() -> Iterator[None]:
+    """`configure_logging` installs a handler bound to whatever stdout was at the time; drop it per test."""
+    yield
+    logger = logging.getLogger("onusfit_ai")
+    for handler in [h for h in logger.handlers if getattr(h, "_onusfit_stdout", False)]:
+        logger.removeHandler(handler)
+
+
+class JsonLogs:
+    """The JSON lines the service writes, parsed. The handler writes into an in-memory buffer owned by
+    this object, so it works in any pytest phase (a handler bound to `sys.stdout` would be bound to
+    pytest's per-phase capture, which is swapped between fixture setup and the test body)."""
+
+    def __init__(self) -> None:
+        self.buffer = io.StringIO()
+
+    @property
+    def text(self) -> str:
+        return self.buffer.getvalue()
+
+    def clear(self) -> None:
+        self.buffer.seek(0)
+        self.buffer.truncate()
+
+    def entries(self) -> list[dict[str, Any]]:
+        return [json.loads(line) for line in self.text.splitlines() if line.strip()]
+
+    def events(self, name: str) -> list[dict[str, Any]]:
+        return [e for e in self.entries() if e.get("event") == name]
+
+
+@pytest.fixture
+def json_logs() -> JsonLogs:
+    configure_logging("INFO", "json")
+    logs = JsonLogs()
+    for handler in logging.getLogger("onusfit_ai").handlers:
+        if getattr(handler, "_onusfit_stdout", False) and isinstance(
+            handler, logging.StreamHandler
+        ):
+            handler.setStream(logs.buffer)
+    return logs

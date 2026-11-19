@@ -5,6 +5,8 @@
 
 > **Update 2026-11-19 (Phase 8):** every AI feature now runs in the Python AI backend, and the Node `GeminiClient`, `GeminiExecutor`, `GeminiRuntimeService.executeWithTelemetry` and `ai-error-classifier.ts` described below were removed. This audit stays as the record of the state at audit time; see `docs/architecture/PROJECT_STRUCTURE.md` §10 #15.
 >
+> **Update 2026-11-19 (Phase 9):** two gaps in §3.13/§3.15 were closed **in logs only**: one user request can now be joined to its AI call (`correlationId`, sent to Python as `X-Correlation-Id`) and coach insights served from the deterministic fallback, from the cache, or from a fresh model answer are distinguishable (`ai.cache`, `ai.deterministic_fallback`). Still open: metrics, alerts, tracing, evals and a database column for failures. See `docs/ai/learning/07-ai-observability.md`.
+>
 > **Update 2026-11-18:** after this audit, `GeminiClient` moved from `backend/src/modules/coach/infrastructure/gemini-client.ts` to `backend/src/shared/ai/gemini-client.ts` (structure standardization; no behavior change). File paths below that mention the old location are as audited. See `docs/architecture/PROJECT_STRUCTURE.md`.
 
 > **Honesty notes**

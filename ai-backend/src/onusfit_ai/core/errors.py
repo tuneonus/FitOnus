@@ -13,6 +13,11 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from onusfit_ai.core.observability import log_ai_failure
+
+_MAX_LOGGED_FIELDS = 5
+_MAX_FIELD_NAME_LENGTH = 60
+
 
 class AiError(Exception):
     def __init__(
@@ -45,6 +50,12 @@ class AiError(Exception):
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AiError)
     async def handle_ai_error(_request: Request, exc: AiError) -> JSONResponse:
+        log_ai_failure(
+            code=exc.code,
+            status=exc.status_code,
+            dispatched=exc.dispatched,
+            retry_after_seconds=exc.retry_after_seconds,
+        )
         return JSONResponse(status_code=exc.status_code, content=exc.to_body())
 
     @app.exception_handler(RequestValidationError)
@@ -61,4 +72,13 @@ def register_error_handlers(app: FastAPI) -> None:
             status_code=422, code="INVALID_REQUEST", message="Request validation failed."
         ).to_body()
         body["error"]["fields"] = fields  # type: ignore[index]
+        log_ai_failure(
+            code="INVALID_REQUEST",
+            status=422,
+            dispatched=False,
+            # Field NAMES only (never values); few and short so a hostile body cannot flood the log.
+            invalid_fields=[
+                str(f["field"])[:_MAX_FIELD_NAME_LENGTH] for f in fields[:_MAX_LOGGED_FIELDS]
+            ],
+        )
         return JSONResponse(status_code=422, content=body)

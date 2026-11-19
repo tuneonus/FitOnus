@@ -23,6 +23,8 @@ from google.genai import types
 
 from onusfit_ai.core.config import Settings, get_settings
 from onusfit_ai.core.errors import AiError
+from onusfit_ai.core.logging import log_event
+from onusfit_ai.core.observability import category_for_gemini_kind
 from onusfit_ai.llm.errors import ClassifiedError, ModelCooldown, classify_gemini_error
 
 logger = logging.getLogger("onusfit_ai.llm")
@@ -127,6 +129,16 @@ class GeminiClient:
                 plan.append((fallback, True))
         elif fallback is not None and fallback_ok:
             plan = [(fallback, True)]
+            # The primary failed recently, so it is skipped without a call: logged as a fallback.
+            log_event(
+                logger,
+                "ai.gemini.model_skipped",
+                level=logging.WARNING,
+                message="primary model is cooling down; using the fallback model",
+                model=primary_model,
+                reason="cooldown",
+                cooldownRemainingSeconds=self._cooldown.remaining_seconds(primary_model),
+            )
         else:
             wait = max(
                 self._cooldown.remaining_seconds(primary_model),
@@ -155,10 +167,22 @@ class GeminiClient:
             except Exception as exc:  # noqa: BLE001 - every SDK/network failure is classified below
                 last = classify_gemini_error(exc)
                 self._cooldown.record_failure(model, last.retry_after_seconds)
-                # Log the category only: provider error text can contain request fragments.
-                logger.warning("gemini attempt failed model=%s kind=%s", model, last.kind)
                 can_try_next = last.is_retryable and not last.is_project_wide
-                if index == len(plan) - 1 or not can_try_next:
+                will_fallback = index < len(plan) - 1 and can_try_next
+                # Log the category only: provider error text can contain request fragments.
+                log_event(
+                    logger,
+                    "ai.gemini.attempt_failed",
+                    level=logging.WARNING,
+                    message="gemini attempt failed",
+                    model=model,
+                    modelFallbackUsed=is_fallback,
+                    errorCategory=category_for_gemini_kind(last.kind),
+                    geminiKind=last.kind,
+                    durationMs=round((self._clock() - attempt_started) * 1000),
+                    willTryFallbackModel=will_fallback,
+                )
+                if not will_fallback:
                     break
                 continue
 

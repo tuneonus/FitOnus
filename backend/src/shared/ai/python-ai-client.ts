@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { SignJWT } from 'jose';
 import { AppError } from '../errors/app-error.js';
+import { isSafeCorrelationId } from '../logging/request-correlation.js';
 import type { GeminiFeature } from './gemini-feature.js';
 
 /**
@@ -96,7 +97,13 @@ export interface PythonAiRequest {
   scope: string;
   /** The authenticated user, taken from the server-side request context. Goes into `sub` only. */
   userId: string;
+  /** Id of this one AI call (usage ledger `request_id`, the token's `rid`, Python's `traceId`). */
   requestId: string;
+  /**
+   * The originating HTTP request's id, sent as `X-Correlation-Id` so Python's log lines can be joined to
+   * ours. Observability only: it carries no meaning for authentication, quota or the usage ledger.
+   */
+  correlationId?: string | undefined;
   body: unknown;
   timeoutMs: number;
 }
@@ -213,6 +220,8 @@ export class PythonAiClient {
           accept: 'application/json',
           authorization: `Bearer ${token}`,
           'x-request-id': request.requestId,
+          // Re-validated here: this value ends up in an HTTP header, so it must never be attacker-shaped.
+          ...(isSafeCorrelationId(request.correlationId) ? { 'x-correlation-id': request.correlationId } : {}),
         },
         body: JSON.stringify(request.body),
         signal: AbortSignal.timeout(request.timeoutMs),

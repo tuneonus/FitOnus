@@ -10,6 +10,7 @@ from onusfit_ai.coach.parsing import parse_coach_output
 from onusfit_ai.contracts.coach_chat import CoachChatRequest, CoachChatResponse
 from onusfit_ai.contracts.common import Usage
 from onusfit_ai.llm.gemini import TextGenerator
+from onusfit_ai.llm.telemetry import log_ai_call
 from onusfit_ai.prompts.coach_chat import PROMPT_VERSION, build_prompt
 
 logger = logging.getLogger("onusfit_ai.coach_chat")
@@ -30,15 +31,13 @@ async def generate_coach_reply(
 
     usage = llm_result.usage
     # Metadata only: the message, memories and reply text are never logged.
-    logger.info(
-        "coach_chat trace=%s prompt=%s model=%s fallback=%s outcome=%s tokens=%s duration_ms=%s",
-        trace_id,
-        PROMPT_VERSION,
-        usage.model,
-        usage.is_fallback,
-        outcome,
-        usage.total_tokens,
-        usage.duration_ms,
+    log_ai_call(
+        logger,
+        feature="coach_chat",
+        trace_id=trace_id,
+        prompt_version=PROMPT_VERSION,
+        outcome=outcome,
+        usage=usage,
     )
     return CoachChatResponse(
         outcome=outcome,

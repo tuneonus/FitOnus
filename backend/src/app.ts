@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import type { AppConfig } from './config/env.js';
 import { API_PREFIX, type Container } from './container.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
-import { requestContext } from './middleware/request-context.js';
+import { bindRequestCorrelation, requestContext } from './middleware/request-context.js';
 import { buildOpenApiDocument } from './shared/http/openapi.js';
 import { buildRouter } from './shared/http/route.js';
 import type { Logger } from './shared/logging/logger.js';
@@ -39,7 +39,7 @@ export function corsMiddleware(origins: readonly string[]) {
 /**
  * Builds the Express application without listening, so tests can drive it with supertest.
  * Middleware order matters: request id/logging → security headers → CORS → body parsing →
- * rate limiting → routes → 404 → error envelope.
+ * correlation binding → rate limiting → routes → 404 → error envelope.
  */
 export function createApp(deps: { config: AppConfig; logger: Logger; container: Container }): Express {
   const { config, logger, container } = deps;
@@ -52,6 +52,8 @@ export function createApp(deps: { config: AppConfig; logger: Logger; container: 
   app.use(helmet());
   app.use(corsMiddleware(config.http.corsOrigins));
   app.use(express.json({ limit: config.http.bodyLimit, strict: true }));
+  // After body parsing as a precaution (see bindRequestCorrelation): lets the AI client forward the request id.
+  app.use(bindRequestCorrelation);
   app.use(container.rateLimiters.global);
 
   for (const group of container.routeGroups) {

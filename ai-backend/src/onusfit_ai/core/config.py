@@ -19,6 +19,8 @@ MAX_ATTEMPT_TIMEOUT_S = 60.0
 class Settings:
     environment: str
     log_level: str
+    # "json": one JSON object per line (what Render and log tools want). "text": readable locally.
+    log_format: str
     # Gemini
     gemini_api_key: str | None
     gemini_attempt_timeout_s: float
@@ -38,6 +40,7 @@ def get_settings() -> Settings:
     return Settings(
         environment=os.environ.get("ONUSFIT_AI_ENV", "development"),
         log_level=(os.environ.get("LOG_LEVEL") or "INFO").strip().upper(),
+        log_format=(os.environ.get("LOG_FORMAT") or "json").strip().lower(),
         gemini_api_key=_clean(os.environ.get("GEMINI_API_KEY")),
         gemini_attempt_timeout_s=float(os.environ.get("GEMINI_ATTEMPT_TIMEOUT_S", "20")),
         service_jwt_secret=_clean(os.environ.get("AI_SERVICE_JWT_SECRET")),
@@ -79,4 +82,6 @@ def configuration_problems() -> list[str]:
         problems.append("AI_SERVICE_JWT_AUDIENCE must not be empty")
     if settings.log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
         problems.append("LOG_LEVEL must be one of DEBUG, INFO, WARNING, ERROR, CRITICAL")
+    if settings.log_format not in {"json", "text"}:
+        problems.append("LOG_FORMAT must be json or text")
     return problems

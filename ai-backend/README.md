@@ -39,8 +39,8 @@ ai-backend/
 │   ├── meals/             # voice meal (voice.py, parsing.py) and meal photo (photo.py, photo_parsing.py) use cases
 │   ├── speech/            # transcription use case (transcribe.py) + reply parsing (parsing.py)
 │   ├── prompts/           # versioned prompt text (ported 1:1 from Node): coach_chat.py, coach_insights.py, voice_meal.py, meal_photo.py, transcribe.py
-│   ├── llm/               # the ONLY code that talks to Gemini (+ error classifier, cooldown)
-│   └── core/              # settings, service-token auth, error type, js_compat.py (JavaScript-equivalent number/string rules)
+│   ├── llm/               # the ONLY code that talks to Gemini (+ error classifier, cooldown, telemetry.py = the per-call log event)
+│   └── core/              # settings, service-token auth, error type, js_compat.py (JavaScript-equivalent number/string rules), logging.py + observability.py (structured logs, request ids, error categories)
 └── tests/                 # pytest; tests/fixtures/coach_chat/ holds golden files shared with Node
 ```
 
@@ -53,6 +53,7 @@ ai-backend/
 | `ONUSFIT_AI_ENV` | no (default `development`) | `production` turns startup validation into a hard failure (the Docker image sets it). Also shown by `/health/live`. |
 | `PORT` | no | Set by Render (default 10000); the container binds `0.0.0.0:$PORT`. |
 | `LOG_LEVEL` | no (default `INFO`) | `DEBUG`..`CRITICAL`. Logs are metadata only whatever the level. |
+| `LOG_FORMAT` | no (default `json`) | `json`: one JSON object per line (what Render and log tools want; same field names as the Node API). `text`: readable lines for local development. |
 | `GEMINI_ATTEMPT_TIMEOUT_S` | no (default `20`) | Max seconds for one Gemini attempt (0 < value <= 60). |
 | `AI_SERVICE_JWT_ISSUER` / `AI_SERVICE_JWT_AUDIENCE` | no | Defaults match the Node side (`onusfit-node-api` / `onusfit-ai-backend`). |
 
@@ -93,7 +94,7 @@ curl http://127.0.0.1:10000/health/live          # needs no secrets and never ca
 - Routes stay thin: validate -> call one function -> return a contract.
 - Pydantic models for everything that crosses HTTP; `extra="forbid"` so contract drift is loud.
 - Provider SDK code lives only in `llm/`.
-- Never log message text, memories, replies, tokens or keys; log metadata only (`core/logging.py` also masks anything that looks like a key or token).
+- Never log message text, memories, replies, tokens or keys; log metadata only. Write events with `log_event` (numbers, booleans, closed lists); `core/logging.py` masks fields with sensitive names and anything that looks like a key, bearer token or JWT. `tests/test_observability.py` plants sentinel user content on all five endpoints and fails if any reaches the logs.
 - Runtime dependencies are pinned in `requirements.txt` (what the image installs); change them in `pyproject.toml`, then regenerate it (see its header).
 - A new folder is added when its first real file exists, never in advance.
 - Prompt changes: bump `PROMPT_VERSION` and regenerate the golden fixtures (`tests/fixtures/coach_chat/`, `voice_meal/`, `transcribe/`) in the same change.

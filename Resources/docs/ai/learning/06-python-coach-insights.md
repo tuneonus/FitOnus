@@ -125,7 +125,7 @@ Verified by `grep` that nothing in `src/` referenced them, then deleted:
 
 ## 11. Known gaps and notes
 
-- **Latency is close to the limit.** 15–16 s per generation against a 20 s Gemini attempt and 25 s on the phone: on a slow Gemini minute, users will get the deterministic insights instead (HTTP 200, no error). That is the designed behavior and is also logged, but it means AI quality quietly degrades; watch the share of `Python coach insights failed` log lines and `outcome: unusable` once deployed. The old Node path had the same 20 s limit.
+- **Latency is close to the limit.** 15–16 s per generation against a 20 s Gemini attempt and 25 s on the phone: on a slow Gemini minute, users will get the deterministic insights instead (HTTP 200, no error). That is the designed behavior and is also logged, but it means AI quality quietly degrades; watch the share of `ai.deterministic_fallback` log events (and `outcome: unusable`) once deployed; the event names and fields are described in [07 AI observability](07-ai-observability.md). The old Node path had the same 20 s limit.
 - Only successful Python calls are written to the usage table (failures that never answered cost nothing visible).
 - The welcome answer and failed generations still consume a `coach_chat` unit (see §4). Charging only for AI-generated answers would be a separate behavior change.
 - The prompt interpolates the user's display name, goal and workout names verbatim (parity first, readiness decision O7); hardening against prompt injection is a separate, evaluated change.

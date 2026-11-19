@@ -9,6 +9,7 @@ from onusfit_ai.contracts.common import Usage
 from onusfit_ai.contracts.transcribe import TranscribeRequest, TranscribeResponse
 from onusfit_ai.core.audio import decode_audio_base64
 from onusfit_ai.llm.gemini import MediaInput, TextGenerator
+from onusfit_ai.llm.telemetry import log_ai_call
 from onusfit_ai.prompts.transcribe import PROMPT_VERSION, build_prompt
 from onusfit_ai.speech.parsing import parse_transcription
 
@@ -32,17 +33,14 @@ async def transcribe_audio(
 
     usage = llm_result.usage
     # Metadata only: the audio and the transcript are never logged.
-    logger.info(
-        "transcribe trace=%s prompt=%s model=%s fallback=%s outcome=%s audio_bytes=%s tokens=%s "
-        "duration_ms=%s",
-        trace_id,
-        PROMPT_VERSION,
-        usage.model,
-        usage.is_fallback,
-        outcome,
-        len(media.data),
-        usage.total_tokens,
-        usage.duration_ms,
+    log_ai_call(
+        logger,
+        feature="transcribe",
+        trace_id=trace_id,
+        prompt_version=PROMPT_VERSION,
+        outcome=outcome,
+        usage=usage,
+        audio_bytes=len(media.data),
     )
     return TranscribeResponse(
         outcome=outcome,

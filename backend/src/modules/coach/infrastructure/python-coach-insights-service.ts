@@ -1,8 +1,14 @@
 import { z } from 'zod';
+import {
+  aiErrorCategoryOf,
+  deterministicFallbackFields,
+  tagResponseSource,
+} from '../../../shared/ai/ai-observability.js';
 import { currentAiRequestContext } from '../../../shared/ai/ai-usage.js';
 import { callPythonAi, pythonUsageSchema, requireGateUserId } from '../../../shared/ai/python-ai-call.js';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
 import type { Logger } from '../../../shared/logging/logger.js';
+import { currentCorrelationId } from '../../../shared/logging/request-correlation.js';
 import type { CoachInsightsService } from '../application/ports.js';
 import {
   buildDeterministicInsights,
@@ -80,17 +86,35 @@ export class PythonCoachInsightsService implements CoachInsightsService {
   constructor(private readonly deps: PythonCoachInsightsDeps) {}
 
   async generateInsights(context: UserFitnessContext, lang?: string): Promise<CoachInsightsResponse> {
-    if (!hasSufficientInsightsData(context)) return buildWelcomeInsights(context, lang);
+    if (!hasSufficientInsightsData(context)) {
+      this.logFallback({ reason: 'insufficient_data' });
+      return tagResponseSource(buildWelcomeInsights(context, lang), 'welcome');
+    }
 
+    // Generated here so a failure can be tied to the `ai.call.failed` event callPythonAi already logged.
+    const aiRequestId = `insights-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     try {
-      return await this.generateWithPython(context, lang);
-    } catch {
-      // callPythonAi has already logged the cause (kind, status, code) without any user data.
-      return buildDeterministicInsights(context, lang);
+      return await this.generateWithPython(context, aiRequestId, lang);
+    } catch (error) {
+      // callPythonAi has already logged the cause (category, status, code) without any user data.
+      this.logFallback({ reason: 'ai_call_failed', aiRequestId, errorCategory: aiErrorCategoryOf(error) });
+      return tagResponseSource(buildDeterministicInsights(context, lang), 'deterministic_fallback');
     }
   }
 
-  private async generateWithPython(context: UserFitnessContext, lang?: string): Promise<CoachInsightsResponse> {
+  /** One `ai.deterministic_fallback` event: insights that did not come from a usable model answer. */
+  private logFallback(input: Omit<Parameters<typeof deterministicFallbackFields>[0], 'correlationId'>): void {
+    this.deps.logger?.info(
+      deterministicFallbackFields({ ...input, correlationId: currentCorrelationId() }),
+      'Coach insights served by deterministic fallback',
+    );
+  }
+
+  private async generateWithPython(
+    context: UserFitnessContext,
+    aiRequestId: string,
+    lang?: string,
+  ): Promise<CoachInsightsResponse> {
     // Identity comes from the server-side request context set by the AI usage gate, never from input.
     const userId = requireGateUserId(currentAiRequestContext()?.userId);
 
@@ -101,7 +125,7 @@ export class PythonCoachInsightsService implements CoachInsightsService {
       path: COACH_INSIGHTS_PATH,
       scope: COACH_INSIGHTS_SCOPE,
       userId,
-      requestId: `insights-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      requestId: aiRequestId,
       timeoutMs,
       body: {
         // The complete context Node loaded, unchanged (same payload coach chat receives).
@@ -120,14 +144,18 @@ export class PythonCoachInsightsService implements CoachInsightsService {
 
     // The model answered but not with usable insights: Node's deterministic ones replace them.
     if (outcome !== 'ok' || !result || result.insights.length === 0) {
-      return buildDeterministicInsights(context, lang);
+      this.logFallback({ reason: 'unusable_ai_output', aiRequestId, errorCategory: 'invalid_ai_response' });
+      return tagResponseSource(buildDeterministicInsights(context, lang), 'deterministic_fallback');
     }
-    return {
-      greeting: result.greeting,
-      recommendation: result.recommendation ?? null,
-      insights: result.insights,
-      generatedAt: result.generatedAt,
-      hasSufficientData: result.hasSufficientData,
-    };
+    return tagResponseSource(
+      {
+        greeting: result.greeting,
+        recommendation: result.recommendation ?? null,
+        insights: result.insights,
+        generatedAt: result.generatedAt,
+        hasSufficientData: result.hasSufficientData,
+      },
+      'ai',
+    );
   }
 }

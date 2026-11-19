@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { AppError } from '../errors/app-error.js';
 import type { Logger } from '../logging/logger.js';
+import { currentCorrelationId } from '../logging/request-correlation.js';
 import type { GeminiFeature } from './gemini-feature.js';
+import { aiCallCompletedFields, aiCallFailedFields, classifyPythonAiError, tagAiErrorCategory } from './ai-observability.js';
 import { markAiRequestDispatched } from './ai-usage.js';
 import { toPublicAiError } from './python-ai-errors.js';
 import type { AiUsageRecorder, PythonAiClient } from './python-ai-client.js';
@@ -57,14 +59,24 @@ export interface PythonAiCall<S extends z.ZodType<PythonReply>> {
  *
  * `markAiRequestDispatched` is a no-op outside the AI usage gate (for example transcription, which
  * has no quota gate), so callers need no special case.
+ *
+ * Observability (changes nothing above): the HTTP request's correlation id travels to Python in
+ * `X-Correlation-Id`, and exactly one structured event is logged per call - `ai.call.completed` or
+ * `ai.call.failed` - holding ids, feature, model, durations, tokens and an error category, never content.
  */
 export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: PythonAiCall<S>): Promise<z.output<S>> {
+  const correlationId = currentCorrelationId();
+  const ids = { correlationId, aiRequestId: call.requestId };
+  const startedAt = performance.now();
+  const elapsedMs = () => Math.round(performance.now() - startedAt);
+
   try {
     const raw = await call.client.postJson({
       path: call.path,
       scope: call.scope,
       userId: call.userId,
       requestId: call.requestId,
+      correlationId,
       timeoutMs: call.timeoutMs,
       body: call.body,
     });
@@ -95,7 +107,7 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
       })
       .catch(() => undefined);
     call.logger?.info(
-      { requestId: call.requestId, outcome, model: usage.model, fallbackModel: usage.isFallback, tokens: usage.totalTokens },
+      aiCallCompletedFields({ ids, feature: call.feature, endpoint: call.path, outcome, usage, durationMs: elapsedMs() }),
       `${call.label} served`,
     );
     return parsed.data;
@@ -109,10 +121,11 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
     // If Gemini may have been called, the quota unit stays consumed; otherwise the gate refunds it.
     if (failure.dispatched) markAiRequestDispatched();
     call.logger?.error(
-      { kind: failure.kind, status: failure.info.status, code: failure.info.code, requestId: call.requestId },
+      aiCallFailedFields({ ids, feature: call.feature, endpoint: call.path, error: failure, durationMs: elapsedMs() }),
       `${call.label} failed`,
     );
-    throw toPublicAiError(failure, call.unavailableMessage);
+    // The public error keeps its shape; the category rides along out of band for callers that degrade (insights).
+    throw tagAiErrorCategory(toPublicAiError(failure, call.unavailableMessage), classifyPythonAiError(failure));
   }
 }
 

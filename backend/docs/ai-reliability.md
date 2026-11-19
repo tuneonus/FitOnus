@@ -67,3 +67,16 @@ carries the model Python used, token counts and the cost computed from the admin
 Python served with its backup model is flagged `FALLBACK_SUCCESS`. Failed calls and requests rejected before
 the provider (rate limit, quota, kill switch, Python unreachable) record no row. Tested against real
 PostgreSQL in `tests/integration/repositories/ai-telemetry.test.ts`.
+
+## Logs (observability)
+
+Telemetry rows record successful calls only. What happened to *every* call, including failures, cache hits and
+deterministic fallbacks, is in the structured logs (pino JSON on stdout, one event per line, `service:"onusfit-api"`).
+Each AI event carries `correlationId` (the HTTP request id, also sent to Python as `X-Correlation-Id`) and, for a
+call, `aiRequestId` (the ledger `request_id`). Events: `ai.call.completed`, `ai.call.failed` (with an
+`errorCategory`: `gemini_timeout`, `gemini_rate_limited`, `gemini_quota_exhausted`, `gemini_unavailable`,
+`gemini_auth`, `gemini_error`, `python_unavailable`, `python_timeout`, `auth_failure`, `invalid_ai_response`,
+`invalid_request`, `internal_error`), `ai.cache` and `ai.deterministic_fallback` (coach insights). Logs hold ids,
+feature, model, durations, token counts and categories only: never messages, fitness context, images, audio, error
+text, keys, tokens or user ids. None of this changes quota, refund, cache or response behavior. Field list, search
+recipes and the privacy design: `docs/ai/learning/07-ai-observability.md`.

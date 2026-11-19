@@ -250,6 +250,7 @@ export function createContainer(
     }),
     aiUsageGate: appSettings.aiUsageGate,
     rateLimiter: rateLimiters.aiCoach,
+    ...(logger ? { logger } : {}),
   });
 
   const fcm = config.notifications.fcm;

@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 import type { Database } from '../../database/transaction.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { RouteGroup } from '../../shared/http/route.js';
+import type { Logger } from '../../shared/logging/logger.js';
 import type { CoachChatService, CoachInsightsService, GeminiService, SpeechTranscriber } from './application/ports.js';
 import { ChatWithCoachUseCase } from './application/use-cases/chat-with-coach.js';
 import { GetCoachInsightsUseCase } from './application/use-cases/get-coach-insights.js';
@@ -58,6 +59,8 @@ export interface CreateCoachModuleOptions {
   /** Required: chat and insights must never reach Gemini without the feature flag / quota gate. */
   aiUsageGate: AiUsageGate;
   rateLimiter?: RequestHandler;
+  /** Observability only (cache events for coach insights). */
+  logger?: Pick<Logger, 'info'>;
 }
 
 export function createCoachModule(options: CreateCoachModuleOptions): CoachModule {
@@ -77,7 +80,7 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
     conversationRepo,
     memoryRepo,
   );
-  const insightsUseCase = new GetCoachInsightsUseCase(userContextRepo, aiService, options.aiUsageGate);
+  const insightsUseCase = new GetCoachInsightsUseCase(userContextRepo, aiService, options.aiUsageGate, options.logger);
   const manageConversations = new ManageConversationsUseCase(conversationRepo);
   const manageMemories = new ManageMemoriesUseCase(memoryRepo);
 

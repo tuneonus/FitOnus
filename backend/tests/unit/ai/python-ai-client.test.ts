@@ -74,6 +74,25 @@ describe('PythonAiClient', () => {
     expect((payload.exp ?? 0) - (payload.iat ?? 0)).toBeLessThanOrEqual(60);
   });
 
+  it('forwards the HTTP request id as X-Correlation-Id without touching X-Request-Id or the token', async () => {
+    await client.postJson(request({ correlationId: 'mobile-request-1234' }));
+
+    const sent = server.requests[0]!;
+    expect(sent.headers['x-correlation-id']).toBe('mobile-request-1234');
+    expect(sent.headers['x-request-id']).toBe('req-1');
+    const token = String(sent.headers.authorization).replace('Bearer ', '');
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(SECRET));
+    expect(payload.rid).toBe('req-1');
+  });
+
+  it.each([undefined, '', 'short', 'has spaces in it!', 'line\r\nx-injected: 1', 'x'.repeat(200)])(
+    'omits X-Correlation-Id when the id is absent or not header-safe (%j)',
+    async (correlationId) => {
+      await client.postJson(request({ correlationId }));
+      expect(server.requests[0]!.headers).not.toHaveProperty('x-correlation-id');
+    },
+  );
+
   it('uses a fresh token id for every call (so replay protection works)', async () => {
     await client.postJson(request());
     await client.postJson(request());
