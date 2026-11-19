@@ -29,6 +29,11 @@ export interface ProgressReportResult {
   nextGoals: string[];
 }
 
+/** A goal counts as configured only when it is a positive number; null/0/negative means "not set". */
+function configuredGoal(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
 export class GetProgressReportsUseCase {
   constructor(
     private readonly weightRepo: IWeightRepository,
@@ -82,7 +87,8 @@ export class GetProgressReportsUseCase {
       limit: 100,
     });
 
-    let weightDelta = 0;
+    // A weight change needs at least two weigh-ins in the period; with fewer it stays null (shown as "—").
+    let weightDelta: number | null = null;
     let weightNote = '';
     let weightGood = true;
 
@@ -99,6 +105,11 @@ export class GetProgressReportsUseCase {
     const endStr = periodEnd.toISOString().slice(0, 10);
     const nutrition = await this.telemetryPort.getNutritionAggregates(input.userId, startStr, endStr);
 
+    // Goals come only from the user's own profile. A missing goal stays null: nothing below invents a
+    // default target, and every goal-dependent line is left out when its goal is not configured.
+    const targetWorkouts = configuredGoal(goals?.workoutDaysPerWeek);
+    const targetProtein = configuredGoal(goals?.dailyProteinGrams);
+
     let avgCalories = 0;
     let avgProtein = 0;
     let daysHitProtein = 0;
@@ -109,8 +120,9 @@ export class GetProgressReportsUseCase {
       avgCalories = Math.round(totalCal / nutrition.length);
       avgProtein = Math.round(totalProt / nutrition.length);
 
-      const targetProt = goals?.dailyProteinGrams ?? 150;
-      daysHitProtein = nutrition.filter((n) => n.totalProteinG >= targetProt).length;
+      if (targetProtein !== null) {
+        daysHitProtein = nutrition.filter((n) => n.totalProteinG >= targetProtein).length;
+      }
     }
 
     // 4. PRs achieved in period
@@ -118,46 +130,59 @@ export class GetProgressReportsUseCase {
     const periodPrs = prs.filter((p) => p.achievedAt >= periodStart && p.achievedAt <= periodEnd);
 
     // 5. Formulate Deterministic Headline & Improvements
-    const targetWorkouts = goals?.workoutDaysPerWeek ?? 5;
-    const workoutsGood = workoutCount >= targetWorkouts;
-    const proteinGood = avgProtein >= (goals?.dailyProteinGrams ?? 140);
+    // null = "no target configured", so we cannot say whether it was met.
+    const workoutsGood = targetWorkouts !== null ? workoutCount >= targetWorkouts : null;
+    const proteinGood = targetProtein !== null ? avgProtein >= targetProtein : null;
 
-    let headline = 'Consistent progress this week';
-    if (workoutCount >= targetWorkouts && proteinGood) {
+    let headline: string;
+    if (workoutsGood === true && proteinGood === true) {
       headline = 'Outstanding training and nutrition week!';
-    } else if (workoutCount >= targetWorkouts && !proteinGood) {
+    } else if (workoutsGood === true && proteinGood === false) {
       headline = `Strong training week (${workoutCount} sessions), protein still the gap`;
-    } else if (workoutCount < targetWorkouts) {
+    } else if (workoutsGood === true) {
+      headline = `Strong training week (${workoutCount} sessions)`;
+    } else if (workoutsGood === false) {
       headline = `Completed ${workoutCount} workouts, let’s aim for ${targetWorkouts} next period`;
+    } else if (workoutCount > 0) {
+      // No workout target configured: state what was logged rather than judge it.
+      headline = `Logged ${workoutCount} ${workoutCount === 1 ? 'workout' : 'workouts'} this period`;
+    } else {
+      headline = 'No workouts logged this period';
     }
 
     const achievements: string[] = [];
     for (const pr of periodPrs.slice(0, 3)) {
       achievements.push(`${pr.exerciseName} ${pr.weightKg} kg × ${pr.reps} (PR)`);
     }
-    if (workoutCount >= targetWorkouts) {
+    if (targetWorkouts !== null && workoutCount >= targetWorkouts) {
       achievements.push(`${workoutCount}/${targetWorkouts} planned workouts completed`);
     }
 
     const improvements: string[] = [];
-    if (!proteinGood && nutrition.length > 0) {
+    if (proteinGood === false && nutrition.length > 0) {
       improvements.push(
         `Protein hit target on only ${daysHitProtein} of ${nutrition.length} logged days. Add a post-workout protein source (+25 g).`,
       );
     }
-    if (!workoutsGood) {
+    if (targetWorkouts !== null && workoutsGood === false) {
       improvements.push(
         `Missed ${targetWorkouts - workoutCount} planned workout session(s) — schedule make-up slots.`,
       );
     }
+    // Praise only what was actually measured against a configured target.
     if (improvements.length === 0) {
-      improvements.push('Solid consistency across workouts and nutrition. Keep the momentum going!');
+      if (workoutsGood === true && proteinGood === true) {
+        improvements.push('Solid consistency across workouts and nutrition. Keep the momentum going!');
+      } else if (workoutsGood === true && proteinGood === null) {
+        improvements.push('Solid workout consistency. Keep the momentum going!');
+      } else if (proteinGood === true && workoutsGood === null) {
+        improvements.push('Protein target met. Keep the momentum going!');
+      }
     }
 
-    const nextGoals: string[] = [
-      `Hit ${goals?.dailyProteinGrams ?? 150} g protein on 4+ days`,
-      `Complete ${targetWorkouts} workouts`,
-    ];
+    const nextGoals: string[] = [];
+    if (targetProtein !== null) nextGoals.push(`Hit ${targetProtein} g protein on 4+ days`);
+    if (targetWorkouts !== null) nextGoals.push(`Complete ${targetWorkouts} workouts`);
     if (goals?.targetWeightKg) {
       nextGoals.push(`Progress toward ${goals.targetWeightKg} kg goal weight`);
     }
@@ -176,12 +201,15 @@ export class GetProgressReportsUseCase {
     const stats: ProgressReportStat[] = [
       {
         label: 'Weight',
+        // "—" (not "0.0") when there are too few weigh-ins to measure a change.
         value:
-          weightDelta !== 0
-            ? weightDelta > 0
-              ? `+${weightDelta.toFixed(1)}`
-              : `−${Math.abs(weightDelta).toFixed(1)}`
-            : '0.0',
+          weightDelta === null
+            ? '—'
+            : weightDelta === 0
+              ? '0.0'
+              : weightDelta > 0
+                ? `+${weightDelta.toFixed(1)}`
+                : `−${Math.abs(weightDelta).toFixed(1)}`,
         unit: 'kg',
         note: weightNote || undefined,
         good: weightGood,
@@ -189,9 +217,10 @@ export class GetProgressReportsUseCase {
       {
         label: 'Workouts',
         value: `${workoutCount}`,
-        unit: `/${targetWorkouts}`,
+        // Show "/N" only against a target the user actually has.
+        unit: targetWorkouts !== null ? `/${targetWorkouts}` : '',
         note: durationNote,
-        good: workoutsGood,
+        ...(workoutsGood !== null ? { good: workoutsGood } : {}),
       },
       {
         label: 'Avg calories',
@@ -204,8 +233,8 @@ export class GetProgressReportsUseCase {
         label: 'Avg protein',
         value: avgProtein > 0 ? `${avgProtein}` : '—',
         unit: 'g',
-        note: goals?.dailyProteinGrams ? `Goal ${goals.dailyProteinGrams}` : undefined,
-        good: proteinGood,
+        note: targetProtein !== null ? `Goal ${targetProtein}` : undefined,
+        ...(proteinGood !== null ? { good: proteinGood } : {}),
       },
     ];
 

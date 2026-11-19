@@ -150,52 +150,56 @@ export function WeeklyReportScreen() {
         </View>
       </View>
 
-      {/* Areas to improve */}
-      <View style={styles.sectionBlock}>
-        <Text style={[styles.sectionHeading, { color: colors.ink }]}>Areas to improve</Text>
-        <View style={styles.bulletList}>
-          {r.improvements.map((a) => (
-            <View key={a} style={styles.bulletRow}>
-              <TrendingUp size={16} color={colors.warn} style={{ marginTop: 2 }} />
-              <Text style={[styles.bulletText, { color: colors.ink }]}>{a}</Text>
-            </View>
-          ))}
+      {/* Areas to improve (omitted when there is nothing measured against a goal to show) */}
+      {r.improvements.length > 0 && (
+        <View style={styles.sectionBlock}>
+          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Areas to improve</Text>
+          <View style={styles.bulletList}>
+            {r.improvements.map((a) => (
+              <View key={a} style={styles.bulletRow}>
+                <TrendingUp size={16} color={colors.warn} style={{ marginTop: 2 }} />
+                <Text style={[styles.bulletText, { color: colors.ink }]}>{a}</Text>
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
+      )}
 
-      {/* Goals for next week */}
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-        <Text style={[styles.cardTitle, { color: colors.ink }]}>Goals for next week</Text>
-        <View style={styles.nextGoalsList}>
-          {r.nextGoals.map((g) => {
-            const on = accepted.includes(g);
-            return (
-              <TouchableOpacity
-                key={g}
-                activeOpacity={0.7}
-                onPress={() => {
-                  setAccepted(on ? accepted.filter((x) => x !== g) : [...accepted, g]);
-                  if (!on) showToast({ message: 'Added to this week’s focus' });
-                }}
-                style={styles.checkboxRow}
-              >
-                <View
-                  style={[
-                    styles.checkboxBox,
-                    {
-                      borderColor: on ? colors.ink : colors.line,
-                      backgroundColor: on ? colors.ink : 'transparent',
-                    },
-                  ]}
+      {/* Goals for next week (only the goals the user has configured) */}
+      {r.nextGoals.length > 0 && (
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <Text style={[styles.cardTitle, { color: colors.ink }]}>Goals for next week</Text>
+          <View style={styles.nextGoalsList}>
+            {r.nextGoals.map((g) => {
+              const on = accepted.includes(g);
+              return (
+                <TouchableOpacity
+                  key={g}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setAccepted(on ? accepted.filter((x) => x !== g) : [...accepted, g]);
+                    if (!on) showToast({ message: 'Added to this week’s focus' });
+                  }}
+                  style={styles.checkboxRow}
                 >
-                  {on && <Check size={14} color={colors.bg} strokeWidth={3} />}
-                </View>
-                <Text style={[styles.checkboxLabel, { color: colors.ink }]}>{g}</Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <View
+                    style={[
+                      styles.checkboxBox,
+                      {
+                        borderColor: on ? colors.ink : colors.line,
+                        backgroundColor: on ? colors.ink : 'transparent',
+                      },
+                    ]}
+                  >
+                    {on && <Check size={14} color={colors.bg} strokeWidth={3} />}
+                  </View>
+                  <Text style={[styles.checkboxLabel, { color: colors.ink }]}>{g}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
-      </View>
+      )}
 
       <Text style={[styles.disclaimer, { color: colors.muted }]}>
         Generated from your logged workouts, nutrition and weight data.

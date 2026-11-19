@@ -1,3 +1,5 @@
+import type { NutritionTargetsSource } from './nutrition-targets.js';
+
 export interface DailySummary {
   recoveryScore: number | null;
   sleepScore: number | null;
@@ -36,6 +38,8 @@ export interface NutritionSummary {
   carbsGoal: number;
   fat: number;
   fatGoal: number;
+  /** Where the goals came from; 'default' means generic placeholders, not the user's own targets. */
+  targetsSource?: NutritionTargetsSource;
 }
 
 export interface ActivityProgress {

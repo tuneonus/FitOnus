@@ -8,6 +8,7 @@ import { LogMeasurementUseCase } from '../../../src/modules/progress/application
 import { GetMeasurementsUseCase } from '../../../src/modules/progress/application/use-cases/get-measurements.js';
 import { DeleteMeasurementUseCase } from '../../../src/modules/progress/application/use-cases/delete-measurement.js';
 import { GetProgressAnalyticsUseCase } from '../../../src/modules/progress/application/use-cases/get-progress-analytics.js';
+import { getTimeRangeBuckets } from '../../../src/modules/progress/domain/calendar-bounds.js';
 import { GetPeriodComparisonUseCase } from '../../../src/modules/progress/application/use-cases/get-period-comparison.js';
 import { GetAchievementsUseCase } from '../../../src/modules/progress/application/use-cases/get-achievements.js';
 import { GetProgressReportsUseCase } from '../../../src/modules/progress/application/use-cases/get-progress-reports.js';
@@ -132,7 +133,9 @@ describe('Progress Application Use Cases', () => {
       const res = await useCase.execute({ userId, range: 'D', timezone: 'UTC' });
 
       expect(res.summary.currentWeightKg).toBe(78.4);
-      expect(res.points.length).toBe(7);
+      // The only weigh-in is today's, so the chart starts today instead of back-filling the six days before it.
+      expect(res.points.length).toBe(1);
+      expect(res.points[0]?.value).toBe(78.4);
       expect(res.entries.length).toBe(1);
     });
 
@@ -381,6 +384,289 @@ describe('Progress Application Use Cases', () => {
       expect(report.stats.length).toBe(4);
       expect(report.improvements.length).toBeGreaterThan(0);
       expect(report.nextGoals.length).toBeGreaterThan(0);
+    });
+  });
+
+  /** Makes `listForUser` behave like the real repository: inclusive date filter, newest first, capped by limit. */
+  function mockWeighIns(weightRepo: IWeightRepository, logs: WeightLog[]) {
+    vi.mocked(weightRepo.listForUser).mockImplementation(async (_userId, filter) => {
+      const matching = logs
+        .filter((l) => !filter?.startDate || l.loggedAt >= filter.startDate)
+        .filter((l) => !filter?.endDate || l.loggedAt <= filter.endDate)
+        .sort((a, b) => b.loggedAt.getTime() - a.loggedAt.getTime());
+      return { logs: matching.slice(0, filter?.limit ?? 50), total: matching.length };
+    });
+  }
+  const weighIn = (id: string, weightKg: number, loggedAt: Date) =>
+    new WeightLog({ id, userId, weightKg, loggedAt });
+  const midpointOf = (bucket: { startDate: Date; endDate: Date }) =>
+    new Date((bucket.startDate.getTime() + bucket.endDate.getTime()) / 2);
+
+  describe('Real weight data only (no fabricated chart points)', () => {
+    it('history: a new user with no weigh-ins gets no points, even though the profile has a weight', async () => {
+      // The default stub's profile summary says current 80 kg / starting 85 kg, but nothing was ever logged.
+      const weightRepo = createMockWeightRepo();
+
+      const res = await new GetWeightHistoryUseCase(weightRepo).execute({ userId, range: 'W', timezone: 'UTC' });
+
+      expect(res.points).toEqual([]);
+      expect(res.entries).toEqual([]);
+      expect(res.total).toBe(0);
+      expect(res.summary.startingWeightKg).toBe(85);
+    });
+
+    it('history: smooths real weigh-ins and starts at the first one', async () => {
+      const weightRepo = createMockWeightRepo();
+      const days = getTimeRangeBuckets('D', new Date(), 'UTC');
+      mockWeighIns(weightRepo, [
+        weighIn('w1', 80, midpointOf(days[2]!)),
+        weighIn('w2', 79, midpointOf(days[4]!)),
+        weighIn('w3', 78, midpointOf(days[6]!)),
+      ]);
+
+      const res = await new GetWeightHistoryUseCase(weightRepo).execute({ userId, range: 'D', timezone: 'UTC' });
+
+      expect(res.points.map((p) => p.label)).toEqual(days.slice(2).map((d) => d.label));
+      expect(res.points.map((p) => p.value)).toEqual([80, 80, 79.9, 79.8, 79.6]);
+      expect(res.entries.map((e) => e.value)).toEqual([78, 79, 80]);
+      expect(res.total).toBe(3);
+    });
+
+    it('history: carries the last weigh-in from before the range into the days that precede the first in-range one', async () => {
+      const weightRepo = createMockWeightRepo();
+      const days = getTimeRangeBuckets('D', new Date(), 'UTC');
+      mockWeighIns(weightRepo, [
+        weighIn('old', 82, new Date(days[0]!.startDate.getTime() - 30 * 24 * 60 * 60 * 1000)),
+        weighIn('new', 79, midpointOf(days[5]!)),
+      ]);
+
+      const res = await new GetWeightHistoryUseCase(weightRepo).execute({ userId, range: 'D', timezone: 'UTC' });
+
+      expect(res.points).toHaveLength(7);
+      expect(res.points[0]?.value).toBe(82);
+      expect(res.points[6]?.value).toBe(81.4);
+    });
+
+    it('analytics: a new user gets an empty weight series and zeroed values, with the goal weight kept', async () => {
+      const weightRepo = createMockWeightRepo();
+      const telemetryPort = createMockTelemetryPort();
+
+      const res = await new GetProgressAnalyticsUseCase(weightRepo, telemetryPort).execute({
+        userId,
+        metric: 'weight',
+        range: 'W',
+        timezone: 'UTC',
+      });
+
+      expect(res.points).toEqual([]);
+      expect(res.firstValue).toBe(0);
+      expect(res.latestValue).toBe(0);
+      expect(res.delta).toBe(0);
+      expect(res.goal).toBe(75);
+    });
+
+    it('analytics: real weigh-ins produce the smoothed series and the change over it', async () => {
+      const weightRepo = createMockWeightRepo();
+      const telemetryPort = createMockTelemetryPort();
+      const days = getTimeRangeBuckets('D', new Date(), 'UTC');
+      mockWeighIns(weightRepo, [
+        weighIn('w1', 80, midpointOf(days[2]!)),
+        weighIn('w2', 79, midpointOf(days[4]!)),
+        weighIn('w3', 78, midpointOf(days[6]!)),
+      ]);
+
+      const res = await new GetProgressAnalyticsUseCase(weightRepo, telemetryPort).execute({
+        userId,
+        metric: 'weight',
+        range: 'D',
+        timezone: 'UTC',
+      });
+
+      expect(res.points.map((p) => p.value)).toEqual([80, 80, 79.9, 79.8, 79.6]);
+      expect(res.firstValue).toBe(80);
+      expect(res.latestValue).toBe(79.6);
+      expect(res.delta).toBe(-0.4);
+      expect(res.lowerIsBetter).toBe(true);
+    });
+  });
+
+  describe('Progress report goals', () => {
+    const completedSession = (id: string) => ({
+      id,
+      name: `Session ${id}`,
+      startedAt: new Date(),
+      completedAt: new Date(),
+      durationSeconds: 3600,
+      totalVolumeKg: 5000,
+      isCompleted: true,
+    });
+    const noGoals = {
+      primaryGoal: null,
+      targetWeightKg: null,
+      startingWeightKg: null,
+      currentWeightKg: null,
+      dailyCalorieTarget: null,
+      dailyProteinGrams: null,
+      workoutDaysPerWeek: null,
+    };
+    const statOf = (report: { stats: { label: string }[] }, label: string) =>
+      report.stats.find((s) => s.label === label) as
+        | { label: string; value: string; unit: string; note?: string; good?: boolean }
+        | undefined;
+
+    it('a user with no goals and no activity gets no invented targets, advice or praise', async () => {
+      const telemetryPort = createMockTelemetryPort();
+      vi.mocked(telemetryPort.getProfileGoals).mockResolvedValueOnce(null);
+
+      const report = await new GetProgressReportsUseCase(createMockWeightRepo(), telemetryPort).execute({
+        userId,
+        type: 'weekly',
+        timezone: 'UTC',
+      });
+
+      expect(report.headline).toBe('No workouts logged this period');
+      expect(report.nextGoals).toEqual([]);
+      expect(report.improvements).toEqual([]);
+      expect(report.achievements).toEqual([]);
+      expect(statOf(report, 'Workouts')).toMatchObject({ value: '0', unit: '' });
+      expect(statOf(report, 'Workouts')?.good).toBeUndefined();
+      expect(statOf(report, 'Avg protein')?.note).toBeUndefined();
+      expect(statOf(report, 'Avg protein')?.good).toBeUndefined();
+      expect(JSON.stringify(report)).not.toMatch(/150|140|planned/);
+    });
+
+    it('a user with no goals still gets an honest summary of what they logged', async () => {
+      const telemetryPort = createMockTelemetryPort();
+      vi.mocked(telemetryPort.getProfileGoals).mockResolvedValueOnce(noGoals);
+      vi.mocked(telemetryPort.getWorkoutSessions).mockResolvedValueOnce([
+        completedSession('a'),
+        completedSession('b'),
+        completedSession('c'),
+      ]);
+      vi.mocked(telemetryPort.getNutritionAggregates).mockResolvedValueOnce([
+        { date: '2026-10-01', totalCalories: 2100, totalProteinG: 120, mealCount: 3 },
+      ]);
+
+      const report = await new GetProgressReportsUseCase(createMockWeightRepo(), telemetryPort).execute({
+        userId,
+        type: 'weekly',
+        timezone: 'UTC',
+      });
+
+      expect(report.headline).toBe('Logged 3 workouts this period');
+      expect(report.improvements).toEqual([]);
+      expect(report.nextGoals).toEqual([]);
+      expect(statOf(report, 'Avg protein')).toMatchObject({ value: '120', unit: 'g' });
+    });
+
+    it('a user with configured goals is measured against them', async () => {
+      const telemetryPort = createMockTelemetryPort(); // goals: 5 workouts/week, 150 g protein, 75 kg target
+      vi.mocked(telemetryPort.getWorkoutSessions).mockResolvedValueOnce([
+        completedSession('a'),
+        completedSession('b'),
+      ]);
+      vi.mocked(telemetryPort.getNutritionAggregates).mockResolvedValueOnce([
+        { date: '2026-10-01', totalCalories: 2200, totalProteinG: 120, mealCount: 3 },
+      ]);
+
+      const report = await new GetProgressReportsUseCase(createMockWeightRepo(), telemetryPort).execute({
+        userId,
+        type: 'weekly',
+        timezone: 'UTC',
+      });
+
+      expect(report.headline).toBe('Completed 2 workouts, let’s aim for 5 next period');
+      expect(report.improvements).toEqual([
+        'Protein hit target on only 0 of 1 logged days. Add a post-workout protein source (+25 g).',
+        'Missed 3 planned workout session(s) — schedule make-up slots.',
+      ]);
+      expect(report.nextGoals).toEqual([
+        'Hit 150 g protein on 4+ days',
+        'Complete 5 workouts',
+        'Progress toward 75 kg goal weight',
+      ]);
+      expect(statOf(report, 'Workouts')).toMatchObject({ value: '2', unit: '/5', good: false });
+      expect(statOf(report, 'Avg protein')).toMatchObject({ note: 'Goal 150', good: false });
+    });
+
+    it('a user who met their configured goals is told so', async () => {
+      const telemetryPort = createMockTelemetryPort();
+      vi.mocked(telemetryPort.getWorkoutSessions).mockResolvedValueOnce(
+        ['a', 'b', 'c', 'd', 'e'].map(completedSession),
+      );
+      vi.mocked(telemetryPort.getNutritionAggregates).mockResolvedValueOnce([
+        { date: '2026-10-01', totalCalories: 2300, totalProteinG: 160, mealCount: 4 },
+      ]);
+
+      const report = await new GetProgressReportsUseCase(createMockWeightRepo(), telemetryPort).execute({
+        userId,
+        type: 'weekly',
+        timezone: 'UTC',
+      });
+
+      expect(report.headline).toBe('Outstanding training and nutrition week!');
+      expect(report.achievements).toContain('5/5 planned workouts completed');
+      expect(report.improvements).toEqual([
+        'Solid consistency across workouts and nutrition. Keep the momentum going!',
+      ]);
+    });
+
+    it('only the goals that are configured appear: no protein goal means no protein lines', async () => {
+      const telemetryPort = createMockTelemetryPort();
+      vi.mocked(telemetryPort.getProfileGoals).mockResolvedValueOnce({
+        ...noGoals,
+        workoutDaysPerWeek: 3,
+      });
+      vi.mocked(telemetryPort.getWorkoutSessions).mockResolvedValueOnce(
+        ['a', 'b', 'c'].map(completedSession),
+      );
+      vi.mocked(telemetryPort.getNutritionAggregates).mockResolvedValueOnce([
+        { date: '2026-10-01', totalCalories: 2000, totalProteinG: 50, mealCount: 3 },
+      ]);
+
+      const report = await new GetProgressReportsUseCase(createMockWeightRepo(), telemetryPort).execute({
+        userId,
+        type: 'weekly',
+        timezone: 'UTC',
+      });
+
+      expect(report.headline).toBe('Strong training week (3 sessions)');
+      expect(report.nextGoals).toEqual(['Complete 3 workouts']);
+      expect(report.improvements).toEqual(['Solid workout consistency. Keep the momentum going!']);
+      expect(statOf(report, 'Avg protein')?.note).toBeUndefined();
+    });
+
+    it('the weight stat shows a dash, not "0.0", until there are two weigh-ins to compare', async () => {
+      const noWeighIns = await new GetProgressReportsUseCase(
+        createMockWeightRepo(),
+        createMockTelemetryPort(),
+      ).execute({ userId, type: 'weekly', timezone: 'UTC' });
+      expect(statOf(noWeighIns, 'Weight')).toMatchObject({ value: '—', unit: 'kg' });
+      expect(statOf(noWeighIns, 'Weight')?.note).toBeUndefined();
+
+      const oneWeighIn = createMockWeightRepo();
+      vi.mocked(oneWeighIn.listForUser).mockResolvedValueOnce({
+        logs: [weighIn('only', 80, new Date())],
+        total: 1,
+      });
+      const single = await new GetProgressReportsUseCase(oneWeighIn, createMockTelemetryPort()).execute({
+        userId,
+        type: 'weekly',
+        timezone: 'UTC',
+      });
+      expect(statOf(single, 'Weight')?.value).toBe('—');
+
+      const twoWeighIns = createMockWeightRepo();
+      vi.mocked(twoWeighIns.listForUser).mockResolvedValueOnce({
+        logs: [weighIn('latest', 80.0, new Date()), weighIn('earliest', 81.2, new Date(Date.now() - 86_400_000))],
+        total: 2,
+      });
+      const pair = await new GetProgressReportsUseCase(twoWeighIns, createMockTelemetryPort()).execute({
+        userId,
+        type: 'weekly',
+        timezone: 'UTC',
+      });
+      expect(statOf(pair, 'Weight')).toMatchObject({ value: '−1.2', unit: 'kg', note: '81.2 → 80.0', good: true });
     });
   });
 });

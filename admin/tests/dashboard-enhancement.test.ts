@@ -9,6 +9,7 @@ import type {
 import type { WorkoutStats } from '../src/features/workouts/types';
 import type { NutritionCatalogStats } from '../src/features/nutrition/types';
 import type { Challenge } from '../src/features/challenges/types';
+import { summarizeTimeframe } from '../src/features/dashboard/utils/timeframe';
 
 describe('Admin Dashboard Enhancement — Phase 10.3 Tests', () => {
   const mockUserStats: DashboardStats = {
@@ -108,48 +109,56 @@ describe('Admin Dashboard Enhancement — Phase 10.3 Tests', () => {
     },
   ];
 
-  // 1. Timeframe filtering logic
-  it('1. Timeframe: slices last 7 points for 7D and returns full trend for 30D/90D', () => {
-    const filterTrend = (
-      trend: RegistrationTrendPoint[],
-      tf: DashboardTimeframe,
-    ): RegistrationTrendPoint[] => {
-      if (tf === '7d') return trend.slice(-7);
-      return trend;
-    };
+  // 1. Timeframe trend: rendered exactly as the backend returned it for the requested timeframe
+  it('1. Timeframe: the trend is used as returned for each timeframe, with no client-side slicing', () => {
+    const daily = (days: number): RegistrationTrendPoint[] =>
+      Array.from({ length: days }, (_, i) => ({
+        date: `2026-08-${String((i % 28) + 1).padStart(2, '0')}`,
+        count: i % 5,
+      }));
 
-    const trend7d = filterTrend(mockUserStats.registrationTrend, '7d');
-    assert.equal(trend7d.length, 7);
-    assert.equal(trend7d[0].date, '2026-11-01');
-    assert.equal(trend7d[6].date, '2026-11-07');
+    for (const [timeframe, days] of [
+      ['7d', 7],
+      ['14d', 14],
+      ['30d', 30],
+      ['90d', 90],
+    ] as const satisfies readonly (readonly [DashboardTimeframe, number])[]) {
+      const stats: DashboardStats = { ...mockUserStats, registrationTrend: daily(days) };
+      const summary = summarizeTimeframe(stats, timeframe);
 
-    const trend30d = filterTrend(mockUserStats.registrationTrend, '30d');
-    assert.equal(trend30d.length, 14);
-
-    const trend90d = filterTrend(mockUserStats.registrationTrend, '90d');
-    assert.equal(trend90d.length, 14);
+      assert.equal(summary.trend.length, days, `${timeframe} should keep all ${days} returned points`);
+      assert.deepEqual(summary.trend, stats.registrationTrend);
+    }
   });
 
   // 2. Active users calculation based on timeframe
-  it('2. Active Users KPI: selects activeUsers7d for 7D and activeUsers30d for 30D/90D', () => {
-    const getActiveCount = (stats: DashboardStats, tf: DashboardTimeframe) => {
-      return tf === '7d' ? stats.activeUsers7d : stats.activeUsers30d;
-    };
+  it('2. Active Users KPI: 7D uses the 7-day count; longer timeframes use the 30-day count and say so', () => {
+    const seven = summarizeTimeframe(mockUserStats, '7d');
+    assert.equal(seven.activeUsers, 42);
+    assert.equal(seven.activeWindowLabel, '7D');
+    assert.equal(seven.activeWindowIsShorter, false);
 
-    assert.equal(getActiveCount(mockUserStats, '7d'), 42);
-    assert.equal(getActiveCount(mockUserStats, '30d'), 88);
-    assert.equal(getActiveCount(mockUserStats, '90d'), 88);
+    const thirty = summarizeTimeframe(mockUserStats, '30d');
+    assert.equal(thirty.activeUsers, 88);
+    assert.equal(thirty.activeWindowLabel, '30D');
+    assert.equal(thirty.activeWindowIsShorter, false);
+
+    // The backend has no 90-day activity count, so 90D reports the last 30 days and flags it.
+    const ninety = summarizeTimeframe(mockUserStats, '90d');
+    assert.equal(ninety.activeUsers, 88);
+    assert.equal(ninety.activeWindowLabel, '30D');
+    assert.equal(ninety.activeWindowIsShorter, true);
   });
 
   // 3. New registrations calculation based on timeframe
-  it('3. New Signups KPI: selects newRegistrations7d for 7D and newRegistrations30d for 30D/90D', () => {
-    const getNewSignups = (stats: DashboardStats, tf: DashboardTimeframe) => {
-      return tf === '7d' ? stats.newRegistrations7d : stats.newRegistrations30d;
-    };
+  it('3. New Signups KPI: 7D/30D use the backend counters; 14D/90D sum the returned daily trend', () => {
+    assert.equal(summarizeTimeframe(mockUserStats, '7d').newRegistrations, 14);
+    assert.equal(summarizeTimeframe(mockUserStats, '30d').newRegistrations, 38);
 
-    assert.equal(getNewSignups(mockUserStats, '7d'), 14);
-    assert.equal(getNewSignups(mockUserStats, '30d'), 38);
-    assert.equal(getNewSignups(mockUserStats, '90d'), 38);
+    const trendTotal = mockUserStats.registrationTrend.reduce((total, point) => total + point.count, 0);
+    assert.equal(trendTotal, 43);
+    assert.equal(summarizeTimeframe(mockUserStats, '14d').newRegistrations, trendTotal);
+    assert.equal(summarizeTimeframe(mockUserStats, '90d').newRegistrations, trendTotal);
   });
 
   // 4. Onboarding completion percentage calculation

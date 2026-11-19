@@ -11,21 +11,33 @@ import { useDashboard } from '@/features/dashboard/hooks/use-dashboard';
 import { useTheme } from '@/hooks/use-theme';
 import { useProfile, useUpdateProfile } from '../hooks/use-profile';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { resolveDailyTargets, type DailyTargetsSource } from '../utils/resolve-daily-targets';
+
+const TARGETS_FOOTNOTE: Record<DailyTargetsSource, string> = {
+  calculated: 'Calculated from your goal, weight and activity. Ask your coach to adjust them.',
+  saved: 'Saved on your profile. Ask your coach to adjust them.',
+  missing: 'Add your goal, height and weight to see daily targets.',
+};
 
 export function NutritionPreferencesScreen() {
   const { colors } = useTheme();
-  const { data: dashboard } = useDashboard();
-  const targets = dashboard?.nutrition;
+  const { data: dashboard, isLoading: dashboardLoading } = useDashboard();
   const { goBack } = useNavigation();
   const store = useProfileSetupStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { data: serverProfile, refetch } = useProfile();
-  // Prefer today's dashboard targets; fall back to the targets saved on the profile.
-  const saved = serverProfile?.calculatedTargets;
-  const kcalTarget = targets?.caloriesGoal ?? saved?.dailyCalorieTarget ?? null;
-  const proteinTarget = targets?.proteinGoal ?? saved?.dailyProteinGrams ?? null;
-  const carbsTarget = targets?.carbsGoal ?? saved?.dailyCarbGrams ?? null;
-  const fatTarget = targets?.fatGoal ?? saved?.dailyFatGrams ?? null;
+  const { data: serverProfile, isLoading: profileLoading, refetch } = useProfile();
+  // The profile's own calculated targets come first. The dashboard's goals only count when the backend says
+  // they are the user's saved targets; its placeholders must never read as personalised numbers.
+  const resolved = resolveDailyTargets(serverProfile?.calculatedTargets, dashboard?.nutrition);
+  const kcalTarget = resolved.calories;
+  const proteinTarget = resolved.protein;
+  const carbsTarget = resolved.carbs;
+  const fatTarget = resolved.fat;
+  // Don't announce "missing" while the numbers that could fill the card are still on their way.
+  const targetsLoading =
+    (!serverProfile && profileLoading) ||
+    (!serverProfile?.calculatedTargets && !dashboard && dashboardLoading);
+  const targetsFootnote = targetsLoading ? '' : TARGETS_FOOTNOTE[resolved.source];
   const { mutateAsync: updateProfile, isPending: isSaving } = useUpdateProfile();
 
   const [d, setD] = useState({
@@ -158,9 +170,11 @@ export function NutritionPreferencesScreen() {
             </View>
           ))}
         </View>
-        <Text style={[styles.footnote, { color: colors.muted, marginTop: 12 }]}>
-          Calculated from your goal, weight and activity. Ask your coach to adjust them.
-        </Text>
+        {targetsFootnote ? (
+          <Text style={[styles.footnote, { color: colors.muted, marginTop: 12 }]}>
+            {targetsFootnote}
+          </Text>
+        ) : null}
       </View>
     </Screen>
   );

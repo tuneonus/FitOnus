@@ -13,6 +13,7 @@ import type {
   RecentActivity,
   TodayWorkout,
 } from '../domain/dashboard-summary.js';
+import { deriveNutritionTargets } from '../domain/nutrition-targets.js';
 
 interface UserProfileRow {
   id: string;
@@ -281,46 +282,17 @@ export class PgDashboardRepository implements DashboardRepository {
       };
     });
 
-    // 9. Derive Goals & Targets
-    let caloriesGoal = 2200;
-    let proteinGoal = 150;
-    let carbsGoal = 250;
-    let fatGoal = 70;
-
-    if (userRow?.daily_calorie_target && userRow.daily_calorie_target > 500) {
-      caloriesGoal = userRow.daily_calorie_target;
-      proteinGoal = userRow.daily_protein_grams || Math.round((caloriesGoal * 0.25) / 4);
-      carbsGoal = Math.round((caloriesGoal * 0.5) / 4);
-      fatGoal = Math.round((caloriesGoal * 0.25) / 9);
-    } else if (
-      userRow?.current_weight_kg &&
-      userRow?.height_cm &&
-      userRow?.date_of_birth
-    ) {
-      const age = calculateAge(userRow.date_of_birth);
-      if (age) {
-        const weightKg = Number(userRow.current_weight_kg);
-        const heightCm = Number(userRow.height_cm);
-        const sex = userRow.sex || 'unspecified';
-        const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-        const bmr = sex === 'male' ? Math.round(base + 5) : sex === 'female' ? Math.round(base - 161) : Math.round(base - 78);
-        const mult = !userRow.workout_days_per_week || userRow.workout_days_per_week <= 0
-          ? 1.2
-          : userRow.workout_days_per_week <= 2
-            ? 1.375
-            : userRow.workout_days_per_week <= 4
-              ? 1.55
-              : userRow.workout_days_per_week <= 6
-                ? 1.725
-                : 1.9;
-        const tdee = Math.round(bmr * mult);
-        const goal = userRow.primary_goal;
-        caloriesGoal = goal === 'fat_loss' ? Math.max(1200, Math.round(tdee - 500)) : goal === 'muscle_gain' ? Math.round(tdee + 300) : tdee;
-        proteinGoal = Math.round((caloriesGoal * 0.25) / 4);
-        carbsGoal = Math.round((caloriesGoal * 0.5) / 4);
-        fatGoal = Math.round((caloriesGoal * 0.25) / 9);
-      }
-    }
+    // 9. Derive Goals & Targets (saved profile targets, else an estimate from real inputs, else labelled defaults)
+    const targets = deriveNutritionTargets({
+      savedCalorieTarget: userRow?.daily_calorie_target ?? null,
+      savedProteinGrams: userRow?.daily_protein_grams ?? null,
+      weightKg: userRow?.current_weight_kg ? Number(userRow.current_weight_kg) : null,
+      heightCm: userRow?.height_cm ? Number(userRow.height_cm) : null,
+      age: calculateAge(userRow?.date_of_birth ?? null),
+      sex: userRow?.sex ?? null,
+      primaryGoal: userRow?.primary_goal ?? null,
+      workoutDaysPerWeek: userRow?.workout_days_per_week ?? null,
+    });
 
     const weeklyTargetDays = userRow?.workout_days_per_week || 4;
     const weeklyGoalProgress = Math.min(1, Math.round((workoutsCompletedThisWeek / weeklyTargetDays) * 100) / 100);
@@ -363,13 +335,14 @@ export class PgDashboardRepository implements DashboardRepository {
 
     const nutrition: NutritionSummary = {
       calories: caloriesConsumed,
-      caloriesGoal,
+      caloriesGoal: targets.caloriesGoal,
       protein: proteinConsumed,
-      proteinGoal,
+      proteinGoal: targets.proteinGoal,
       carbs: carbsConsumed,
-      carbsGoal,
+      carbsGoal: targets.carbsGoal,
       fat: fatConsumed,
-      fatGoal,
+      fatGoal: targets.fatGoal,
+      targetsSource: targets.source,
     };
 
     const progress: ActivityProgress = {

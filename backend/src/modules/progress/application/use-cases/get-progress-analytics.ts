@@ -2,6 +2,7 @@ import { AppError } from '../../../../shared/errors/app-error.js';
 import { calculateEma } from '../../domain/ema-calculator.js';
 import { getTimeRangeBuckets, type TimeRange } from '../../domain/calendar-bounds.js';
 import type { IProgressTelemetryPort, IWeightRepository } from '../ports.js';
+import { loadRawWeightSeries } from '../load-weight-series.js';
 
 export type MetricKey =
   'weight' | 'calories' | 'sleep' | 'protein' | 'workouts' | 'recovery' | 'steps' | 'water';
@@ -68,25 +69,12 @@ export class GetProgressAnalyticsUseCase {
 
     // 3. Compute metric-specific series
     if (input.metric === 'weight') {
-      const summary = await this.weightRepo.getUserWeightSummary(input.userId);
-      const rangeLogs = await this.weightRepo.listForUser(input.userId, {
-        startDate: rangeStart,
-        endDate: rangeEnd,
-        limit: 500,
-      });
-
-      const rawPoints: { label: string; value: number }[] = [];
-      let lastKnown = summary.currentWeightKg ?? summary.startingWeightKg ?? 70.0;
-
-      for (const b of buckets) {
-        const inBucket = rangeLogs.logs.filter((l) => l.loggedAt >= b.startDate && l.loggedAt <= b.endDate);
-        if (inBucket.length > 0) {
-          lastKnown = inBucket[0]!.weightKg;
-        }
-        rawPoints.push({ label: b.label, value: lastKnown });
-      }
+      // Only real weigh-ins feed the chart: no weigh-ins means no points (never a default or profile weight).
+      const rawPoints = await loadRawWeightSeries(this.weightRepo, input.userId, buckets);
 
       const points = calculateEma(rawPoints, { alpha: 0.1, decimals: 1 });
+      // No weigh-ins: 0 / 0 / 0 with an empty series is the contract's "nothing to show"
+      // (the same shape sleep, recovery and steps use), which the mobile screens render as an empty state.
       const first = points[0]?.value ?? 0;
       const latest = points[points.length - 1]?.value ?? 0;
       const delta = Math.round((latest - first) * 10) / 10;

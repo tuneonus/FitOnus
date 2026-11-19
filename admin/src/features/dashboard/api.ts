@@ -2,19 +2,24 @@ import { apiClient } from '@/lib/api-client';
 import { workoutsApi } from '@/features/workouts';
 import { nutritionApi } from '@/features/nutrition';
 import { challengesApi } from '@/features/challenges';
-import type { DashboardStats, EnhancedDashboardData } from './types';
+import type { DashboardStats, DashboardTimeframe, EnhancedDashboardData } from './types';
 
 export const dashboardApi = {
-  async getStats(): Promise<DashboardStats> {
-    const res = await apiClient<DashboardStats>('/dashboard/stats', {
+  /**
+   * Member statistics. `timeframe` is sent to the backend, which sizes the registration trend to it
+   * (7d, 14d, 30d or 90d daily points); without it the backend returns its 14-day default.
+   */
+  async getStats(timeframe?: DashboardTimeframe): Promise<DashboardStats> {
+    const query = timeframe ? `?timeframe=${encodeURIComponent(timeframe)}` : '';
+    const res = await apiClient<DashboardStats>(`/dashboard/stats${query}`, {
       method: 'GET',
     });
     return res.data;
   },
 
-  async getEnhancedDashboard(): Promise<EnhancedDashboardData> {
+  async getEnhancedDashboard(timeframe?: DashboardTimeframe): Promise<EnhancedDashboardData> {
     const [userRes, workoutRes, nutritionRes, challengesRes] = await Promise.allSettled([
-      dashboardApi.getStats(),
+      dashboardApi.getStats(timeframe),
       workoutsApi.getWorkoutStats(),
       nutritionApi.getStats(),
       challengesApi.listChallenges(),

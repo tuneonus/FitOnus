@@ -160,36 +160,40 @@ export function MonthlyReportScreen() {
         )}
       </View>
 
-      {/* Long-term trends */}
-      <View style={styles.sectionBlock}>
-        <Text style={[styles.sectionHeading, { color: colors.ink }]}>Long-term trends</Text>
-        <View style={styles.trendsList}>
-          {r.trends.map((t) => (
-            <View key={t} style={[styles.trendItem, { borderLeftColor: colors.line }]}>
-              <Text style={[styles.trendText, { color: colors.ink }]}>{t}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* AI recommendations */}
-      <View style={[styles.recsCard, { backgroundColor: colors.surface2 }]}>
-        <View style={styles.recsHeader}>
-          <Sparkles size={14} color={colors.accentStrong} />
-          <Text style={[styles.recsTitle, { color: colors.muted }]}>Report recommendations</Text>
-        </View>
-        <View style={styles.recsList}>
-          {r.recommendations.map((rec, i) => (
-            <View key={rec.title} style={styles.recRow}>
-              <Text style={[styles.recNum, { color: colors.accentStrong }]}>{i + 1}</Text>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={[styles.recHeading, { color: colors.ink }]}>{rec.title}</Text>
-                <Text style={[styles.recDetail, { color: colors.muted }]}>{rec.detail}</Text>
+      {/* Long-term trends (omitted when there is nothing measured against a goal to show) */}
+      {r.trends.length > 0 && (
+        <View style={styles.sectionBlock}>
+          <Text style={[styles.sectionHeading, { color: colors.ink }]}>Long-term trends</Text>
+          <View style={styles.trendsList}>
+            {r.trends.map((t) => (
+              <View key={t} style={[styles.trendItem, { borderLeftColor: colors.line }]}>
+                <Text style={[styles.trendText, { color: colors.ink }]}>{t}</Text>
               </View>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
-      </View>
+      )}
+
+      {/* Report recommendations (only the goals the user has configured) */}
+      {r.recommendations.length > 0 && (
+        <View style={[styles.recsCard, { backgroundColor: colors.surface2 }]}>
+          <View style={styles.recsHeader}>
+            <Sparkles size={14} color={colors.accentStrong} />
+            <Text style={[styles.recsTitle, { color: colors.muted }]}>Report recommendations</Text>
+          </View>
+          <View style={styles.recsList}>
+            {r.recommendations.map((rec, i) => (
+              <View key={rec.title} style={styles.recRow}>
+                <Text style={[styles.recNum, { color: colors.accentStrong }]}>{i + 1}</Text>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={[styles.recHeading, { color: colors.ink }]}>{rec.title}</Text>
+                  <Text style={[styles.recDetail, { color: colors.muted }]}>{rec.detail}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
     </Screen>
   );
 }

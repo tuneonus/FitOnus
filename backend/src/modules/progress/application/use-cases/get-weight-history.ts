@@ -2,6 +2,7 @@ import { AppError } from '../../../../shared/errors/app-error.js';
 import { calculateEma, type DataPoint } from '../../domain/ema-calculator.js';
 import { getTimeRangeBuckets, type TimeRange } from '../../domain/calendar-bounds.js';
 import type { IWeightRepository, UserWeightSummary } from '../ports.js';
+import { loadRawWeightSeries } from '../load-weight-series.js';
 
 export interface GetWeightHistoryInput {
   userId: string;
@@ -46,32 +47,9 @@ export class GetWeightHistoryUseCase {
 
     // 3. Compute time-series points with EMA smoothing
     const buckets = getTimeRangeBuckets(range, new Date(), timezone);
-    const rangeStart = buckets[0]?.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const rangeEnd = buckets[buckets.length - 1]?.endDate ?? new Date();
 
-    const rangeLogsRes = await this.weightRepo.listForUser(input.userId, {
-      startDate: rangeStart,
-      endDate: rangeEnd,
-      limit: 500,
-    });
-
-    const rawPoints: DataPoint[] = [];
-    let lastKnownWeight = summary.currentWeightKg ?? summary.startingWeightKg ?? 70.0;
-
-    for (const b of buckets) {
-      // Find logs falling within this bucket (chronologically)
-      const inBucket = rangeLogsRes.logs.filter((l) => l.loggedAt >= b.startDate && l.loggedAt <= b.endDate);
-
-      if (inBucket.length > 0) {
-        // Latest log in bucket
-        lastKnownWeight = inBucket[0]!.weightKg;
-      }
-
-      rawPoints.push({
-        label: b.label,
-        value: lastKnownWeight,
-      });
-    }
+    // Only real weigh-ins feed the chart: no weigh-ins means no points (never a default or profile weight).
+    const rawPoints = await loadRawWeightSeries(this.weightRepo, input.userId, buckets);
 
     // Apply EMA smoothing
     const smoothedPoints = calculateEma(rawPoints, { alpha: 0.1, decimals: 1 });

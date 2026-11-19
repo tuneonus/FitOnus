@@ -31,7 +31,8 @@ export interface DashboardStats {
   registrationTrend: RegistrationTrendPoint[];
 }
 
-export type DashboardTimeframe = '7d' | '30d' | '90d';
+/** Timeframes the stats endpoint accepts (`?timeframe=`). The selector offers 7d, 30d and 90d. */
+export type DashboardTimeframe = '7d' | '14d' | '30d' | '90d';
 
 export interface EnhancedDashboardData {
   userStats: DashboardStats;

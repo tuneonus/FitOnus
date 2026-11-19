@@ -4,14 +4,17 @@ import React, { useState } from 'react';
 import { TrendingUp, Activity, BarChart3 } from 'lucide-react';
 import { Panel } from '@/components/ui/Panel';
 import type { RegistrationTrendPoint, DashboardTimeframe } from '../types';
+import { timeframeLabel } from '../utils/timeframe';
 
 interface UserGrowthChartProps {
+  /** Daily registrations exactly as the backend returned them for `timeframe`. */
   trend: RegistrationTrendPoint[];
-  new7d: number;
-  new30d: number;
-  active7d: number;
-  active30d: number;
+  /** The timeframe `trend` and `newRegistrations` were requested for. */
   timeframe: DashboardTimeframe;
+  newRegistrations: number;
+  activeUsers: number;
+  /** The window the backend counted active users over (7D or 30D), which can be shorter than `timeframe`. */
+  activeWindowLabel: string;
 }
 
 function niceMax(value: number) {
@@ -26,24 +29,21 @@ function niceMax(value: number) {
 
 export function UserGrowthChart({
   trend,
-  new7d,
-  new30d,
-  active7d,
-  active30d,
   timeframe,
+  newRegistrations,
+  activeUsers,
+  activeWindowLabel,
 }: UserGrowthChartProps) {
   const [hovered, setHovered] = useState<number | null>(null);
 
-  // Filter data points based on selected timeframe
-  const displayPoints = timeframe === '7d' ? trend.slice(-7) : trend;
+  // The backend sizes the trend to the requested timeframe, so it is drawn as returned.
+  const displayPoints = trend;
 
   const dataMax = displayPoints.length > 0 ? Math.max(...displayPoints.map((p) => p.count)) : 0;
   const axisMax = niceMax(dataMax);
   const gridLines = [axisMax, axisMax / 2, 0];
 
-  const totalPeriodRegistrations = timeframe === '7d' ? new7d : new30d;
-  const activeInPeriod = timeframe === '7d' ? active7d : active30d;
-  const windowLabel = timeframe === '90d' ? '30D' : timeframe.toUpperCase();
+  const windowLabel = timeframeLabel(timeframe);
 
   // Thin x-axis labels so they never collide on narrow screens.
   const labelEvery = displayPoints.length > 16 ? 5 : displayPoints.length > 10 ? 2 : 1;
@@ -63,13 +63,13 @@ export function UserGrowthChart({
         <div>
           <p className="eyebrow">New in {windowLabel}</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-white">
-            {totalPeriodRegistrations.toLocaleString()}
+            {newRegistrations.toLocaleString()}
           </p>
         </div>
         <div>
-          <p className="eyebrow">Active in {windowLabel}</p>
+          <p className="eyebrow">Active in {activeWindowLabel}</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-white">
-            {activeInPeriod.toLocaleString()}
+            {activeUsers.toLocaleString()}
           </p>
         </div>
       </div>
@@ -104,7 +104,7 @@ export function UserGrowthChart({
               {/* Bars */}
               <div
                 role="img"
-                aria-label={`Daily registrations, ${displayPoints.length} days, ${totalPeriodRegistrations} total in ${windowLabel}.`}
+                aria-label={`Daily registrations, ${displayPoints.length} days, ${newRegistrations} total in ${windowLabel}.`}
                 className="absolute inset-x-0 top-0 bottom-6 flex items-end gap-[2px]"
                 onMouseLeave={() => setHovered(null)}
               >
@@ -181,11 +181,11 @@ export function UserGrowthChart({
       <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-ink-800 pt-4 text-xs text-ink-400">
         <span className="inline-flex items-center gap-1.5">
           <TrendingUp className="h-3.5 w-3.5 text-ink-500" />
-          {totalPeriodRegistrations.toLocaleString()} registered in {windowLabel}
+          {newRegistrations.toLocaleString()} registered in {windowLabel}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Activity className="h-3.5 w-3.5 text-ink-500" />
-          {activeInPeriod.toLocaleString()} active users in {windowLabel}
+          {activeUsers.toLocaleString()} active users in {activeWindowLabel}
         </span>
       </div>
     </Panel>

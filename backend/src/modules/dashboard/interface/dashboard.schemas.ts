@@ -65,6 +65,8 @@ export const nutritionSummarySchema = z.object({
   carbsGoal: z.number().int().positive(),
   fat: z.number().int().nonnegative(),
   fatGoal: z.number().int().positive(),
+  // Additive and optional, so existing clients are unaffected.
+  targetsSource: z.enum(['saved', 'estimated', 'default']).optional(),
 });
 
 export const activityProgressSchema = z.object({

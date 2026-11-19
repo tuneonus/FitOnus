@@ -38,6 +38,8 @@ export interface NutritionSummary {
   carbsGoal: number;
   fat: number;
   fatGoal: number;
+  /** Where the goals came from. 'default' means generic placeholders, not the user's own targets. */
+  targetsSource?: 'saved' | 'estimated' | 'default';
 }
 
 export interface ActivityProgress {
