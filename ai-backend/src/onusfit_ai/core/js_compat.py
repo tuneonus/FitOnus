@@ -8,15 +8,29 @@ Each helper is covered by tests/test_js_compat.py and by golden files rendered b
 
 import json
 import math
+from decimal import Decimal
 from typing import Any
 
 
 def js_num(value: float | int | None) -> str:
-    """Format a number the way a JavaScript template literal does (72.0 -> "72", 72.5 -> "72.5")."""
+    """Format a number the way JavaScript's `String(n)` does (72.0 -> "72", 1e21 -> "1e+21").
+
+    JavaScript switches to exponent notation only at 1e21 and below 1e-6, and writes the exponent
+    without padding ("1e-7"); Python's `str` switches much earlier ("1e-05") and pads.
+    """
     if value is None:
         return "null"
-    if isinstance(value, float) and value.is_integer():
-        return str(int(value))
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            return "NaN" if math.isnan(value) else ("Infinity" if value > 0 else "-Infinity")
+        magnitude = abs(value)
+        if magnitude >= 1e21 or 0 < magnitude < 1e-6:
+            mantissa, _, exponent = repr(value).partition("e")
+            sign = "-" if exponent.startswith("-") else "+"
+            return f"{mantissa}e{sign}{exponent.lstrip('+-').lstrip('0')}"
+        # Shortest round-trip digits like JavaScript, written as a plain decimal (no exponent).
+        text = format(Decimal(repr(value)), "f")
+        return text.rstrip("0").rstrip(".") if "." in text else text
     return str(value)
 
 

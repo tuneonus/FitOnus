@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AnalyzeMealPhotoUseCase } from '../../../src/modules/nutrition/application/use-cases/analyze-meal-photo.js';
-import type { GeminiMealPhotoService } from '../../../src/modules/nutrition/infrastructure/gemini-meal-photo-service.js';
+import type { MealPhotoAnalyzer } from '../../../src/modules/nutrition/application/ports.js';
 import type { MealPhotoAnalysisResult } from '../../../src/modules/nutrition/domain/meal-photo.types.js';
 import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
 describe('AnalyzeMealPhotoUseCase', () => {
-  let mockService: GeminiMealPhotoService;
+  let mockService: MealPhotoAnalyzer;
   let useCase: AnalyzeMealPhotoUseCase;
 
   const samplePhotoResult: MealPhotoAnalysisResult = {
@@ -57,7 +57,7 @@ describe('AnalyzeMealPhotoUseCase', () => {
   beforeEach(() => {
     mockService = {
       analyzePhoto: vi.fn().mockResolvedValue(samplePhotoResult),
-    } as unknown as GeminiMealPhotoService;
+    } as unknown as MealPhotoAnalyzer;
     useCase = new AnalyzeMealPhotoUseCase(mockService, allowAllAiUsageGate());
   });
 

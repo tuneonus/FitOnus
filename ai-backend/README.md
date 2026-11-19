@@ -3,20 +3,20 @@
 Internal Python / FastAPI service. The Node.js API calls it to do **AI inference**; mobile and admin
 never talk to it.
 
-**What it does today:** (1) generates AI Coach **chat replies** (`POST /internal/v1/ai/coach/chat`); (2) parses **voice meals** (`POST /internal/v1/ai/meals/parse-voice`, typed text or an audio clip); (3) **transcribes speech** (`POST /internal/v1/ai/speech/transcribe`). For each it
+**What it does today:** (1) generates AI Coach **chat replies** (`POST /internal/v1/ai/coach/chat`); (2) parses **voice meals** (`POST /internal/v1/ai/meals/parse-voice`, typed text or an audio clip); (3) analyzes **meal photos** (`POST /internal/v1/ai/meals/analyze-photo`); (4) **transcribes speech** (`POST /internal/v1/ai/speech/transcribe`). For each it
 builds the prompt, calls Gemini (primary model, one fallback model, total deadline), parses the reply.
 
 **What it does not do (stays in Node):** authentication, quota/billing, conversation storage, loading
 user data, memory consent. It never reads a database and never accepts a user id in a request body.
 
-**Status:** the **only** implementation of AI Coach chat generation, voice meal parsing and speech
-transcription. The Node API has no Gemini fallback for them: if this service is down, `POST /coach/chat`,
-the voice-meal endpoint and `POST /coach/transcribe` return a controlled 503 and the quota unit is handled
-by Node's usual refund rules (transcription has no quota gate, as before). Meal photo analysis and coach
-insights still call Gemini from Node. Node refuses to start without `AI_BACKEND_URL` and
+**Status:** the **only** implementation of AI Coach chat generation, voice meal parsing, meal photo analysis and
+speech transcription. The Node API has no Gemini fallback for them: if this service is down, `POST /coach/chat`,
+the voice-meal and meal-photo endpoints and `POST /coach/transcribe` return a controlled 503 and the quota unit is handled
+by Node's usual refund rules (transcription has no quota gate, as before). Only coach insights still calls
+Gemini from Node. Node refuses to start without `AI_BACKEND_URL` and
 `AI_BACKEND_SERVICE_SECRET`. Not deployed.
 
-Learning guides: [01 integration](../docs/ai/learning/01-python-chat-integration.md) (historical: describes the fallback that was removed), [02 Python-only architecture](../docs/ai/learning/02-python-only-ai-architecture.md) and [03 voice meal](../docs/ai/learning/03-voice-meal-python-migration.md) and [04 speech transcription](../docs/ai/learning/04-python-speech-transcription.md).
+Learning guides: [01 integration](../docs/ai/learning/01-python-chat-integration.md) (historical: describes the fallback that was removed), [02 Python-only architecture](../docs/ai/learning/02-python-only-ai-architecture.md) and [03 voice meal](../docs/ai/learning/03-voice-meal-python-migration.md) [04 speech transcription](../docs/ai/learning/04-python-speech-transcription.md) and [05 meal photo](../docs/ai/learning/05-python-meal-photo-analysis.md).
 Plan and decisions: [docs/ai/PYTHON_MIGRATION_READINESS.md](../docs/ai/PYTHON_MIGRATION_READINESS.md).
 
 ## Layout
@@ -31,12 +31,13 @@ ai-backend/
 │   │   ├── health.py      #   GET  /health/live
 │   │   ├── coach_chat.py  #   POST /internal/v1/ai/coach/chat
 │   │   ├── voice_meal.py  #   POST /internal/v1/ai/meals/parse-voice
+│   │   ├── meal_photo.py  #   POST /internal/v1/ai/meals/analyze-photo
 │   │   └── transcribe.py  #   POST /internal/v1/ai/speech/transcribe
 │   ├── contracts/         # Pydantic request/response models (no logic)
 │   ├── coach/             # chat use case (chat.py) + reply parsing (parsing.py)
-│   ├── meals/             # voice meal use case (voice.py) + reply parsing (parsing.py)
+│   ├── meals/             # voice meal (voice.py, parsing.py) and meal photo (photo.py, photo_parsing.py) use cases
 │   ├── speech/            # transcription use case (transcribe.py) + reply parsing (parsing.py)
-│   ├── prompts/           # versioned prompt text (ported 1:1 from Node): coach_chat.py, voice_meal.py, transcribe.py
+│   ├── prompts/           # versioned prompt text (ported 1:1 from Node): coach_chat.py, voice_meal.py, meal_photo.py, transcribe.py
 │   ├── llm/               # the ONLY code that talks to Gemini (+ error classifier, cooldown)
 │   └── core/              # settings, service-token auth, error type, js_compat.py (JavaScript-equivalent number/string rules)
 └── tests/                 # pytest; tests/fixtures/coach_chat/ holds golden files shared with Node

@@ -94,6 +94,53 @@ export const okVoiceReply = (overrides: Record<string, unknown> = {}): Record<st
   ...overrides,
 });
 
+/** A successful meal photo reply in the shape of ai-backend/contracts/meal_photo.py. */
+export const okMealPhotoReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  outcome: 'ok',
+  result: {
+    isFood: true,
+    summary: 'Dosa with sambar',
+    items: [
+      {
+        id: 'ai-food-1700000000000-0',
+        name: 'Dosa',
+        brand: 'AI Estimate',
+        serving: '2 pieces',
+        servingWeightG: 160,
+        servingUnit: 'piece',
+        servingSize: 2,
+        kcal: 260,
+        protein: 6,
+        carbs: 44,
+        fat: 7,
+        fiber: 2,
+        confidence: 'high',
+        isAiEstimated: true,
+      },
+    ],
+    overallConfidence: 0.9,
+    totalKcal: 260,
+    totalProteinGrams: 6,
+    totalCarbsGrams: 44,
+    totalFatGrams: 7,
+    totalFiberGrams: 2,
+    unclearReason: null,
+    analyzedAt: '2026-11-19T10:00:00.000Z',
+  },
+  usage: {
+    model: 'gemini-3.5-flash-lite',
+    isFallback: false,
+    inputTokens: 1200,
+    outputTokens: 150,
+    cachedTokens: 0,
+    thinkingTokens: 20,
+    totalTokens: 1370,
+    durationMs: 2100,
+  },
+  traceId: 'trace-photo-1',
+  ...overrides,
+});
+
 /** A successful transcription reply in the shape of ai-backend/contracts/transcribe.py. */
 export const okTranscribeReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   outcome: 'ok',

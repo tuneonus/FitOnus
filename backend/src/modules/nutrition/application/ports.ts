@@ -93,7 +93,7 @@ export interface IFoodFavoriteRepository {
   listFavoriteFoodIds(userId: string): Promise<string[]>;
 }
 
-/** Turns a meal photo into detected food items. Implemented by `GeminiMealPhotoService`. */
+/** Turns a meal photo into detected food items. Implemented by `PythonMealPhotoService` (the Python AI backend). */
 export interface MealPhotoAnalyzer {
   analyzePhoto(
     image: { mimeType: string; base64: string },

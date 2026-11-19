@@ -85,3 +85,24 @@ def test_string_matches_javascript(value: object, expected: str) -> None:
 
 def test_num_formatting() -> None:
     assert (js_num(72.0), js_num(72.5), js_num(None), js_num(3)) == ("72", "72.5", "null", "3")
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (72.0, "72"),
+        (72.5, "72.5"),
+        (0.00001, "0.00001"),  # Python's str() would give 1e-05
+        (0.000001, "0.000001"),
+        (1e-7, "1e-7"),  # Python's repr() gives 1e-07
+        (1.5e-7, "1.5e-7"),
+        (123456789012345680000.0, "123456789012345680000"),
+        (1e21, "1e+21"),
+        (1.5e21, "1.5e+21"),
+        (-1e21, "-1e+21"),
+        (float("inf"), "Infinity"),
+        (7, "7"),
+    ],
+)
+def test_number_to_string_matches_javascript(value: float, expected: str) -> None:
+    assert js_num(value) == expected

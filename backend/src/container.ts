@@ -12,7 +12,7 @@ import {
 } from './modules/auth/index.js';
 import { createHealthRoutes } from './modules/health/health.routes.js';
 import { createProfileModule } from './modules/profile/index.js';
-import { createNutritionModule, PythonVoiceMealService } from './modules/nutrition/index.js';
+import { createNutritionModule, PythonMealPhotoService, PythonVoiceMealService } from './modules/nutrition/index.js';
 import { createProgressModule } from './modules/progress/index.js';
 import { createGoalsModule } from './modules/goals/index.js';
 import { createChallengesModule } from './modules/challenges/index.js';
@@ -20,7 +20,6 @@ import { createAnalyticsModule } from './modules/analytics/index.js';
 import { createUsersModule } from './modules/users/index.js';
 import { createWorkoutsModule } from './modules/workouts/index.js';
 import { createDashboardModule } from './modules/dashboard/index.js';
-import { GeminiClient } from './shared/ai/gemini-client.js';
 import { PythonAiClient } from './shared/ai/python-ai-client.js';
 import { createCoachModule, PythonCoachChatService, PythonSpeechTranscriber } from './modules/coach/index.js';
 import {
@@ -158,13 +157,13 @@ export function createContainer(
     fallbackModel: config.gemini.fallbackModel,
   });
 
-  // AI Coach chat and voice meal parsing are served only by the Python AI backend (ai-backend/). Its URL
+  // AI Coach chat, voice meal, meal photo and speech transcription are served only by the Python AI backend (ai-backend/). Its URL
   // and secret are required: `assertAiBackendConfigured` stops startup with a clear message if missing.
   const { aiBackend } = assertAiBackendConfigured(config);
   const pythonAi = new PythonAiClient({ baseUrl: aiBackend.url, serviceSecret: aiBackend.serviceSecret });
   /** Admin-configured primary/fallback model names for a feature; Python applies the fallback itself. */
   const resolveModelsFor =
-    (feature: 'coach_chat' | 'voice_meal') => async (): Promise<{ primary: string; fallback: string | null }> => {
+    (feature: 'coach_chat' | 'voice_meal' | 'meal_photo') => async (): Promise<{ primary: string; fallback: string | null }> => {
       try {
         const names = await appSettings.runtimeService.resolveModelNames(feature);
         return { primary: names.primaryModel, fallback: names.fallbackModel || null };
@@ -174,17 +173,18 @@ export function createContainer(
       }
     };
 
-  const geminiClient = new GeminiClient({
-    ...config.gemini,
-    runtimeService: appSettings.runtimeService,
-  });
-
   const nutrition = createNutritionModule({
     memberBasePath: `${API_PREFIX}/nutrition`,
     adminBasePath: `${API_PREFIX}/admin/nutrition`,
     db: database,
     uow,
-    geminiClient,
+    mealPhotoAnalyzer: new PythonMealPhotoService({
+      client: pythonAi,
+      resolveModels: resolveModelsFor('meal_photo'),
+      usageRecorder: appSettings.runtimeService,
+      pythonTimeoutMs: aiBackend.timeoutMs,
+      ...(logger ? { logger } : {}),
+    }),
     voiceMealParser: new PythonVoiceMealService({
       client: pythonAi,
       resolveModels: resolveModelsFor('voice_meal'),

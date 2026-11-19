@@ -1,0 +1,1810 @@
+[
+  {
+    "name": "good_two_items",
+    "raw": "{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Grilled chicken with rice and broccoli",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Basmati Rice",
+          "brand": "AI Estimate",
+          "serving": "1 cup (195g)",
+          "servingWeightG": 195,
+          "servingUnit": "cup",
+          "servingSize": 1,
+          "kcal": 219,
+          "protein": 4.6,
+          "carbs": 45.9,
+          "fat": 1.7,
+          "fiber": 3.6,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.9,
+      "totalKcal": 467,
+      "totalProteinGrams": 51.1,
+      "totalCarbsGrams": 45.9,
+      "totalFatGrams": 7.1,
+      "totalFiberGrams": 3.6,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "fenced_json",
+    "raw": "```json\n{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}\n```",
+    "expected": {
+      "isFood": true,
+      "summary": "Grilled chicken with rice and broccoli",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Basmati Rice",
+          "brand": "AI Estimate",
+          "serving": "1 cup (195g)",
+          "servingWeightG": 195,
+          "servingUnit": "cup",
+          "servingSize": 1,
+          "kcal": 219,
+          "protein": 4.6,
+          "carbs": 45.9,
+          "fat": 1.7,
+          "fiber": 3.6,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.9,
+      "totalKcal": 467,
+      "totalProteinGrams": 51.1,
+      "totalCarbsGrams": 45.9,
+      "totalFatGrams": 7.1,
+      "totalFiberGrams": 3.6,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "fenced_plain",
+    "raw": "```\n{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}\n```",
+    "expected": {
+      "isFood": true,
+      "summary": "Grilled chicken with rice and broccoli",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Basmati Rice",
+          "brand": "AI Estimate",
+          "serving": "1 cup (195g)",
+          "servingWeightG": 195,
+          "servingUnit": "cup",
+          "servingSize": 1,
+          "kcal": 219,
+          "protein": 4.6,
+          "carbs": 45.9,
+          "fat": 1.7,
+          "fiber": 3.6,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.9,
+      "totalKcal": 467,
+      "totalProteinGrams": 51.1,
+      "totalCarbsGrams": 45.9,
+      "totalFatGrams": 7.1,
+      "totalFiberGrams": 3.6,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "fence_without_closing",
+    "raw": "```json\n{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Grilled chicken with rice and broccoli",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Basmati Rice",
+          "brand": "AI Estimate",
+          "serving": "1 cup (195g)",
+          "servingWeightG": 195,
+          "servingUnit": "cup",
+          "servingSize": 1,
+          "kcal": 219,
+          "protein": 4.6,
+          "carbs": 45.9,
+          "fat": 1.7,
+          "fiber": 3.6,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.9,
+      "totalKcal": 467,
+      "totalProteinGrams": 51.1,
+      "totalCarbsGrams": 45.9,
+      "totalFatGrams": 7.1,
+      "totalFiberGrams": 3.6,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "surrounding_whitespace",
+    "raw": "\n  {\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}  \n",
+    "expected": {
+      "isFood": true,
+      "summary": "Grilled chicken with rice and broccoli",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Basmati Rice",
+          "brand": "AI Estimate",
+          "serving": "1 cup (195g)",
+          "servingWeightG": 195,
+          "servingUnit": "cup",
+          "servingSize": 1,
+          "kcal": 219,
+          "protein": 4.6,
+          "carbs": 45.9,
+          "fat": 1.7,
+          "fiber": 3.6,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.9,
+      "totalKcal": 467,
+      "totalProteinGrams": 51.1,
+      "totalCarbsGrams": 45.9,
+      "totalFatGrams": 7.1,
+      "totalFiberGrams": 3.6,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "confidence_low",
+    "raw": "{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"low\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Grilled chicken with rice and broccoli",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Basmati Rice",
+          "brand": "AI Estimate",
+          "serving": "1 cup (195g)",
+          "servingWeightG": 195,
+          "servingUnit": "cup",
+          "servingSize": 1,
+          "kcal": 219,
+          "protein": 4.6,
+          "carbs": 45.9,
+          "fat": 1.7,
+          "fiber": 3.6,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.5,
+      "totalKcal": 467,
+      "totalProteinGrams": 51.1,
+      "totalCarbsGrams": 45.9,
+      "totalFatGrams": 7.1,
+      "totalFiberGrams": 3.6,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "confidence_missing",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 248,
+      "totalProteinGrams": 46.5,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 5.4,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "confidence_unknown_value",
+    "raw": "{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"certain\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Grilled chicken with rice and broccoli",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Basmati Rice",
+          "brand": "AI Estimate",
+          "serving": "1 cup (195g)",
+          "servingWeightG": 195,
+          "servingUnit": "cup",
+          "servingSize": 1,
+          "kcal": 219,
+          "protein": 4.6,
+          "carbs": 45.9,
+          "fat": 1.7,
+          "fiber": 3.6,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 467,
+      "totalProteinGrams": 51.1,
+      "totalCarbsGrams": 45.9,
+      "totalFatGrams": 7.1,
+      "totalFiberGrams": 3.6,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "summary_missing",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 248,
+      "totalProteinGrams": 46.5,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 5.4,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "summary_not_string",
+    "raw": "{\"isFood\":true,\"summary\":42,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 248,
+      "totalProteinGrams": 46.5,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 5.4,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "model_unclear_reason_ignored_when_food",
+    "raw": "{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":\"blurry\",\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Grilled chicken with rice and broccoli",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Basmati Rice",
+          "brand": "AI Estimate",
+          "serving": "1 cup (195g)",
+          "servingWeightG": 195,
+          "servingUnit": "cup",
+          "servingSize": 1,
+          "kcal": 219,
+          "protein": 4.6,
+          "carbs": 45.9,
+          "fat": 1.7,
+          "fiber": 3.6,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.9,
+      "totalKcal": 467,
+      "totalProteinGrams": 51.1,
+      "totalCarbsGrams": 45.9,
+      "totalFatGrams": 7.1,
+      "totalFiberGrams": 3.6,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "isfood_missing_with_items",
+    "raw": "{\"summary\":\"s\",\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "s",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 248,
+      "totalProteinGrams": 46.5,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 5.4,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "isfood_false_with_items",
+    "raw": "{\"isFood\":false,\"summary\":\"No food detected\",\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]}",
+    "expected": {
+      "isFood": false,
+      "summary": "No food detected",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "isfood_string_false_is_food",
+    "raw": "{\"isFood\":\"false\",\"summary\":\"s\",\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "s",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Grilled Chicken Breast",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 248,
+      "totalProteinGrams": 46.5,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 5.4,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "no_food_standard",
+    "raw": "{\"isFood\":false,\"summary\":\"No food detected\",\"confidence\":\"low\",\"unclearReason\":\"The image does not appear to contain recognizable food or beverage items.\",\"items\":[]}",
+    "expected": {
+      "isFood": false,
+      "summary": "No food detected",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "The image does not appear to contain recognizable food or beverage items.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "no_food_without_reason",
+    "raw": "{\"isFood\":false,\"items\":[]}",
+    "expected": {
+      "isFood": false,
+      "summary": "No food recognized",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "no_food_reason_not_string",
+    "raw": "{\"isFood\":false,\"summary\":7,\"unclearReason\":5,\"items\":[]}",
+    "expected": {
+      "isFood": false,
+      "summary": "No food recognized",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "empty_items_with_isfood_true",
+    "raw": "{\"isFood\":true,\"summary\":\"plate\",\"items\":[]}",
+    "expected": {
+      "isFood": false,
+      "summary": "plate",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "items_not_array",
+    "raw": "{\"isFood\":true,\"summary\":\"x\",\"items\":\"rice\"}",
+    "expected": {
+      "isFood": false,
+      "summary": "x",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "items_object_not_array",
+    "raw": "{\"isFood\":true,\"items\":{\"a\":1}}",
+    "expected": {
+      "isFood": false,
+      "summary": "No food recognized",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "json_array_root",
+    "raw": "[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]",
+    "expected": {
+      "isFood": false,
+      "summary": "No food recognized",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "json_string_root",
+    "raw": "\"hello\"",
+    "expected": {
+      "isFood": false,
+      "summary": "No food recognized",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "json_number_root",
+    "raw": "12",
+    "expected": {
+      "isFood": false,
+      "summary": "No food recognized",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "json_true_root",
+    "raw": "true",
+    "expected": {
+      "isFood": false,
+      "summary": "No food recognized",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "json_null_root_throws",
+    "raw": "null",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "empty_object",
+    "raw": "{}",
+    "expected": {
+      "isFood": false,
+      "summary": "No food recognized",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "No clear food detected in image.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "empty_string",
+    "raw": "",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "prose_not_json",
+    "raw": "This looks like chicken and rice, about 500 kcal.",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "prose_before_json",
+    "raw": "Here you go: {\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "truncated_json",
+    "raw": "{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"na",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "nan_literal",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"x\",\"calories\":NaN}]}",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "trailing_comma",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"x\"},]}",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "single_quotes",
+    "raw": "{'isFood': true}",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "item_missing_everything",
+    "raw": "{\"isFood\":true,\"items\":[{},{}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Food Item 1",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Food Item 2",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "item_defaults_name_serving",
+    "raw": "{\"isFood\":true,\"items\":[{\"calories\":100},{\"name\":\"\",\"servingWeightG\":0},{\"name\":\"Soup\",\"servingWeightG\":250}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Food Item 1",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 100,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Food Item 2",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-2",
+          "name": "Soup",
+          "brand": "AI Estimate",
+          "serving": "250g",
+          "servingWeightG": 250,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 100,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "item_null_throws_typeerror",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},null]}",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "item_string_and_number_and_array",
+    "raw": "{\"isFood\":true,\"items\":[\"rice\",5,[1,2]]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Food Item 1",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Food Item 2",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-2",
+          "name": "Food Item 3",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "item_bad_types",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":123,\"portionDescription\":[\"a\",\"b\"],\"servingWeightG\":\"200\",\"servingUnit\":false,\"servingSize\":\"2\",\"calories\":\"300.6\",\"proteinG\":\"12.34\",\"carbsG\":true,\"fatG\":[],\"fiberG\":{},\"confidence\":\"HIGH\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "123",
+          "brand": "AI Estimate",
+          "serving": "a,b",
+          "servingWeightG": 200,
+          "servingUnit": "serving",
+          "servingSize": 2,
+          "kcal": 301,
+          "protein": 12.3,
+          "carbs": 1,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 301,
+      "totalProteinGrams": 12.3,
+      "totalCarbsGrams": 1,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "item_numbers_as_strings_garbage",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"x\",\"calories\":\"abc\",\"proteinG\":\"n/a\",\"carbsG\":\"\",\"fatG\":null,\"servingWeightG\":\"big\",\"servingSize\":\"many\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "x",
+          "brand": "AI Estimate",
+          "serving": "bigg",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "item_negative_values",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"neg\",\"calories\":-50,\"proteinG\":-3.3,\"carbsG\":-0.04,\"fatG\":-1,\"fiberG\":-2,\"servingWeightG\":-10,\"servingSize\":-1}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "neg",
+          "brand": "AI Estimate",
+          "serving": "-10g",
+          "servingWeightG": -10,
+          "servingUnit": "serving",
+          "servingSize": -1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "rounding_halves",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"r1\",\"calories\":2.5,\"proteinG\":0.05,\"carbsG\":0.15,\"fatG\":0.25,\"fiberG\":1.005},{\"name\":\"r2\",\"calories\":3.5,\"proteinG\":0.35,\"carbsG\":2.675,\"fatG\":1.45,\"fiberG\":0.95},{\"name\":\"r3\",\"calories\":0.5,\"proteinG\":10.05,\"carbsG\":7.25,\"fatG\":0.1,\"fiberG\":0.2}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "r1",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 3,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 1,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "r2",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 4,
+          "protein": 0.4,
+          "carbs": 2.7,
+          "fat": 1.5,
+          "fiber": 1,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-2",
+          "name": "r3",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1,
+          "protein": 10.1,
+          "carbs": 7.3,
+          "fat": 0.1,
+          "fiber": 0.2,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 8,
+      "totalProteinGrams": 10.6,
+      "totalCarbsGrams": 10.2,
+      "totalFatGrams": 1.9,
+      "totalFiberGrams": 2.2,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "totals_float_accumulation",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"i0\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i1\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i2\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i3\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i4\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i5\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i6\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i7\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i8\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7},{\"name\":\"i9\",\"calories\":10.4,\"proteinG\":0.1,\"carbsG\":0.2,\"fatG\":0.3,\"fiberG\":0.7}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "i0",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "i1",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-2",
+          "name": "i2",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-3",
+          "name": "i3",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-4",
+          "name": "i4",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-5",
+          "name": "i5",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-6",
+          "name": "i6",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-7",
+          "name": "i7",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-8",
+          "name": "i8",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-9",
+          "name": "i9",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 10,
+          "protein": 0.1,
+          "carbs": 0.2,
+          "fat": 0.3,
+          "fiber": 0.7,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 100,
+      "totalProteinGrams": 1,
+      "totalCarbsGrams": 2,
+      "totalFatGrams": 3,
+      "totalFiberGrams": 7,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "huge_numbers",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"big\",\"calories\":1000000000000,\"proteinG\":123456789.987,\"servingWeightG\":1e+21}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "big",
+          "brand": "AI Estimate",
+          "serving": "1e+21g",
+          "servingWeightG": 1e+21,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1000000000000,
+          "protein": 123456790,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 1000000000000,
+      "totalProteinGrams": 123456790,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "many_items",
+    "raw": "{\"isFood\":true,\"summary\":\"buffet\",\"confidence\":\"high\",\"items\":[{\"name\":\"Food 0\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":100,\"proteinG\":0,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 1\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":101,\"proteinG\":1.1,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 2\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":102,\"proteinG\":2.2,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 3\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":103,\"proteinG\":3.3000000000000003,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 4\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":104,\"proteinG\":4.4,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 5\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":105,\"proteinG\":5.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 6\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":106,\"proteinG\":6.6000000000000005,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 7\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":107,\"proteinG\":7.700000000000001,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 8\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":108,\"proteinG\":8.8,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 9\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":109,\"proteinG\":9.9,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 10\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":110,\"proteinG\":11,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Food 11\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":111,\"proteinG\":12.100000000000001,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "buffet",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "Food 0",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 100,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Food 1",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 101,
+          "protein": 1.1,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-2",
+          "name": "Food 2",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 102,
+          "protein": 2.2,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-3",
+          "name": "Food 3",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 103,
+          "protein": 3.3,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-4",
+          "name": "Food 4",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 104,
+          "protein": 4.4,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-5",
+          "name": "Food 5",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 105,
+          "protein": 5.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-6",
+          "name": "Food 6",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 106,
+          "protein": 6.6,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-7",
+          "name": "Food 7",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 107,
+          "protein": 7.7,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-8",
+          "name": "Food 8",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 108,
+          "protein": 8.8,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-9",
+          "name": "Food 9",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 109,
+          "protein": 9.9,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-10",
+          "name": "Food 10",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 110,
+          "protein": 11,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-11",
+          "name": "Food 11",
+          "brand": "AI Estimate",
+          "serving": "150g fillet",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 111,
+          "protein": 12.1,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.9,
+      "totalKcal": 1266,
+      "totalProteinGrams": 72.6,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 64.8,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "unicode_names",
+    "raw": "{\"isFood\":true,\"summary\":\"தோசை & சாம்பார் 🍛\",\"items\":[{\"name\":\"தோசை\",\"portionDescription\":\"2 பீஸ்\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Crème brûlée\",\"portionDescription\":\"1 ramekin\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "தோசை & சாம்பார் 🍛",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "தோசை",
+          "brand": "AI Estimate",
+          "serving": "2 பீஸ்",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        },
+        {
+          "id": "ai-food-TS-1",
+          "name": "Crème brûlée",
+          "brand": "AI Estimate",
+          "serving": "1 ramekin",
+          "servingWeightG": 150,
+          "servingUnit": "fillet",
+          "servingSize": 1,
+          "kcal": 248,
+          "protein": 46.5,
+          "carbs": 0,
+          "fat": 5.4,
+          "fiber": 0,
+          "confidence": "high",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 496,
+      "totalProteinGrams": 93,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 10.8,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "fenced_with_trailing_text",
+    "raw": "```json\n{\"isFood\":true,\"summary\":\"Grilled chicken with rice and broccoli\",\"confidence\":\"high\",\"unclearReason\":null,\"items\":[{\"name\":\"Grilled Chicken Breast\",\"portionDescription\":\"150g fillet\",\"servingWeightG\":150,\"servingUnit\":\"fillet\",\"servingSize\":1,\"calories\":248,\"proteinG\":46.5,\"carbsG\":0,\"fatG\":5.4,\"fiberG\":0,\"confidence\":\"high\"},{\"name\":\"Basmati Rice\",\"portionDescription\":\"1 cup (195g)\",\"servingWeightG\":195,\"servingUnit\":\"cup\",\"servingSize\":1,\"calories\":218.5,\"proteinG\":4.55,\"carbsG\":45.85,\"fatG\":1.65,\"fiberG\":3.55,\"confidence\":\"medium\"}]}\n```\nHope this helps!",
+    "expected": {
+      "isFood": false,
+      "summary": "Unable to parse food analysis",
+      "items": [],
+      "overallConfidence": 0,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "unclearReason": "AI response was not formatted correctly. Please try again.",
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "duplicate_keys_last_wins",
+    "raw": "{\"isFood\":false,\"isFood\":true,\"items\":[{\"name\":\"a\",\"calories\":1}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "a",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 1,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 1,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  },
+  {
+    "name": "nested_depth_items",
+    "raw": "{\"isFood\":true,\"items\":[{\"name\":\"a\",\"calories\":{\"v\":1}}]}",
+    "expected": {
+      "isFood": true,
+      "summary": "Analyzed meal photo",
+      "items": [
+        {
+          "id": "ai-food-TS-0",
+          "name": "a",
+          "brand": "AI Estimate",
+          "serving": "100g",
+          "servingWeightG": 100,
+          "servingUnit": "serving",
+          "servingSize": 1,
+          "kcal": 0,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 0,
+          "fiber": 0,
+          "confidence": "medium",
+          "isAiEstimated": true
+        }
+      ],
+      "overallConfidence": 0.75,
+      "totalKcal": 0,
+      "totalProteinGrams": 0,
+      "totalCarbsGrams": 0,
+      "totalFatGrams": 0,
+      "totalFiberGrams": 0,
+      "analyzedAt": "ANALYZED_AT"
+    }
+  }
+]

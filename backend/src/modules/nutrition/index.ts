@@ -28,7 +28,7 @@ export * from './infrastructure/pg-water-repository.js';
 export * from './infrastructure/pg-favorite-repository.js';
 export * from './infrastructure/pg-user-profile-target-adapter.js';
 export * from './infrastructure/nutrition-audit-logger.js';
-export * from './infrastructure/gemini-meal-photo-service.js';
+export * from './infrastructure/python-meal-photo-service.js';
 export * from './infrastructure/python-voice-meal-service.js';
 export * from './interface/nutrition.schemas.js';
 export * from './interface/nutrition.controller.js';
@@ -43,9 +43,7 @@ import type { SqlExecutor } from '../../database/transaction.js';
 import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
-import type { GeminiClient } from '../../shared/ai/gemini-client.js';
-import type { VoiceMealParser } from './application/ports.js';
-import { GeminiMealPhotoService } from './infrastructure/gemini-meal-photo-service.js';
+import type { MealPhotoAnalyzer, VoiceMealParser } from './application/ports.js';
 import { AnalyzeMealPhotoUseCase } from './application/use-cases/analyze-meal-photo.js';
 import { ParseVoiceMealUseCase } from './application/use-cases/parse-voice-meal.js';
 import { GetDailyNutritionUseCase } from './application/use-cases/get-daily-nutrition.js';
@@ -89,8 +87,8 @@ export interface CreateNutritionModuleOptions {
   adminBasePath?: string;
   db: SqlExecutor;
   uow: UnitOfWork;
-  /** Meal photo analysis still calls Gemini from Node (not migrated yet). */
-  geminiClient?: GeminiClient;
+  /** Meal photo analysis (the Python AI backend: `PythonMealPhotoService`). */
+  mealPhotoAnalyzer?: MealPhotoAnalyzer;
   /** Voice meal parsing (the Python AI backend: `PythonVoiceMealService`). */
   voiceMealParser?: VoiceMealParser;
   /** Required: photo and voice analysis must never reach Gemini without the flag / quota gate. */
@@ -105,8 +103,9 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
   const targetAdapter = new PgUserProfileTargetAdapter(deps.db);
   const auditLogger = new PgNutritionAuditLogger(deps.db);
 
-  const mealPhotoService = deps.geminiClient ? new GeminiMealPhotoService(deps.geminiClient) : undefined;
-  const analyzeMealPhotoUseCase = mealPhotoService ? new AnalyzeMealPhotoUseCase(mealPhotoService, deps.aiUsageGate) : undefined;
+  const analyzeMealPhotoUseCase = deps.mealPhotoAnalyzer
+    ? new AnalyzeMealPhotoUseCase(deps.mealPhotoAnalyzer, deps.aiUsageGate)
+    : undefined;
   const parseVoiceMealUseCase = deps.voiceMealParser
     ? new ParseVoiceMealUseCase(deps.voiceMealParser, deps.aiUsageGate)
     : undefined;

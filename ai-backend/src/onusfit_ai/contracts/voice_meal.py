@@ -10,9 +10,13 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from onusfit_ai.contracts._base import ContractModel
-from onusfit_ai.contracts.common import AudioInput, ModelSelection, Usage
-
-Confidence = Literal["high", "medium", "low"]
+from onusfit_ai.contracts.common import (
+    AudioInput,
+    Confidence,
+    DetectedFoodItem,
+    ModelSelection,
+    Usage,
+)
 
 
 class ParseVoiceMealRequest(ContractModel):
@@ -28,23 +32,6 @@ class ParseVoiceMealRequest(ContractModel):
         if not (self.transcript and self.transcript.strip()) and self.audio is None:
             raise ValueError("either transcript or audio is required")
         return self
-
-
-class DetectedFoodItem(ContractModel):
-    id: str
-    name: str
-    brand: str | None = None
-    serving: str
-    serving_weight_g: float | None = None
-    serving_unit: str | None = None
-    serving_size: float | None = None
-    kcal: float
-    protein: float
-    carbs: float
-    fat: float
-    fiber: float | None = None
-    confidence: Confidence
-    is_ai_estimated: bool
 
 
 class VoiceMealResult(ContractModel):

@@ -1,6 +1,6 @@
 """Pieces shared by several internal endpoints."""
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field, StringConstraints, field_validator
 
@@ -10,6 +10,9 @@ from onusfit_ai.core.audio import (
     SUPPORTED_AUDIO_FORMATS,
     is_supported_audio_mime,
 )
+from onusfit_ai.core.image import MAX_IMAGE_BASE64_CHARS, SUPPORTED_IMAGE_MIME_TYPES
+
+Confidence = Literal["high", "medium", "low"]
 
 ModelName = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9._-]{1,64}$")]
 
@@ -48,3 +51,38 @@ class AudioInput(ContractModel):
                 f"unsupported audio format; supported: {', '.join(SUPPORTED_AUDIO_FORMATS)}"
             )
         return value
+
+
+class ImageInput(ContractModel):
+    """A photo as sent by the app: a MIME type and base64 text (raw, or a `data:` URL)."""
+
+    mime_type: str = Field(min_length=1, max_length=100)
+    base64: str = Field(min_length=1, max_length=MAX_IMAGE_BASE64_CHARS)
+
+    @field_validator("mime_type")
+    @classmethod
+    def _supported_format(cls, value: str) -> str:
+        if value not in SUPPORTED_IMAGE_MIME_TYPES:
+            raise ValueError(
+                f"unsupported image format; supported: {', '.join(SUPPORTED_IMAGE_MIME_TYPES)}"
+            )
+        return value
+
+
+class DetectedFoodItem(ContractModel):
+    """One detected food, as the mobile app receives it (shared by photo and voice meal)."""
+
+    id: str
+    name: str
+    brand: str | None = None
+    serving: str
+    serving_weight_g: float | None = None
+    serving_unit: str | None = None
+    serving_size: float | None = None
+    kcal: float
+    protein: float
+    carbs: float
+    fat: float
+    fiber: float | None = None
+    confidence: Confidence
+    is_ai_estimated: bool

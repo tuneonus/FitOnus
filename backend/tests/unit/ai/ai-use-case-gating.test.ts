@@ -14,7 +14,7 @@ import type {
 import type { UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
 import { AnalyzeMealPhotoUseCase } from '../../../src/modules/nutrition/application/use-cases/analyze-meal-photo.js';
 import { ParseVoiceMealUseCase } from '../../../src/modules/nutrition/application/use-cases/parse-voice-meal.js';
-import type { GeminiMealPhotoService } from '../../../src/modules/nutrition/infrastructure/gemini-meal-photo-service.js';
+import type { MealPhotoAnalyzer } from '../../../src/modules/nutrition/application/ports.js';
 import type { VoiceMealParser } from '../../../src/modules/nutrition/application/ports.js';
 import { markAiRequestDispatched } from '../../../src/shared/ai/ai-usage.js';
 import { isAppError } from '../../../src/shared/errors/app-error.js';
@@ -73,7 +73,7 @@ describe('meal photo analysis', () => {
 
   beforeEach(() => {
     service = { analyzePhoto: vi.fn().mockResolvedValue(result) };
-    useCase = new AnalyzeMealPhotoUseCase(service as unknown as GeminiMealPhotoService, gate);
+    useCase = new AnalyzeMealPhotoUseCase(service as unknown as MealPhotoAnalyzer, gate);
   });
 
   const call = () => useCase.execute({ userId: USER, imageBase64: PNG, mimeType: 'image/jpeg' });

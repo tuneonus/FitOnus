@@ -19,6 +19,7 @@ SECRET = "test-secret-test-secret-test-secret-123"
 FIXTURES = Path(__file__).parent / "fixtures" / "coach_chat"
 VOICE_FIXTURES = Path(__file__).parent / "fixtures" / "voice_meal"
 TRANSCRIBE_FIXTURES = Path(__file__).parent / "fixtures" / "transcribe"
+MEAL_PHOTO_FIXTURES = Path(__file__).parent / "fixtures" / "meal_photo"
 
 
 def load_request(name: str) -> dict[str, Any]:

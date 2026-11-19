@@ -27,7 +27,7 @@ Because there is no gate, the adapter cannot read the user id from the gate's re
 | Audio decoding for Gemini, prompt, Gemini call, model fallback, reply parsing | **Python** |
 | Token ledger | Python reports, Node writes (label `coach_chat`, as before, now attributed to the user instead of a null user) |
 
-Removed from Node: `GeminiClient.transcribeAudio` (its prompt and parser). Still on Node Gemini: meal photo and coach insights.
+Removed from Node: `GeminiClient.transcribeAudio` (its prompt and parser). Still on Node Gemini at that time: meal photo (since moved, see guide 05) and coach insights.
 
 ## 4. Request flow
 
@@ -121,7 +121,7 @@ To try it for real you need an `.m4a` of your own voice (the app records the sam
 
 ## 12. Known gaps
 
-- `GeminiClient.generateFromAudio` is now unused by production code (kept because older tests exercise the client's audio path). Remove it when meal photo (the last media user) is migrated.
+- `GeminiClient.generateFromAudio` is now unused by production code (kept because older tests exercise the client's audio path). Meal photo has since migrated too (guide 05), so `generateFromImage` is unused as well; both can be removed together with the tests that still exercise them.
 - Python's Gemini attempt limit is 20 s (Node used 25 s), bounded further by the HTTP timeout.
 - The usage ledger label is still `coach_chat` (the existing analytics grouping); a dedicated label needs a code change in the shared feature list.
 - Usage is attributed to the user now; before, it was recorded with no user.
