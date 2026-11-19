@@ -21,6 +21,8 @@ export interface NotificationRuntime {
   native: NotificationsNative;
   env: NotificationEnvironment;
   coordinator: NotificationCoordinator;
+  /** Device-level key/value storage (SecureStore) shared by the notification services. */
+  store: KeyValueStore;
   /** Server inbox, receipts and category preferences. */
   inboxApi: InboxApi;
   /** Route the existing `notificationService` through the real expo-notifications module. */
@@ -98,6 +100,7 @@ export function getNotificationRuntime(): NotificationRuntime {
     native,
     env,
     coordinator,
+    store,
     inboxApi,
     installLegacyEngine,
     requestReminderReconcile: reminderReconciler.request,

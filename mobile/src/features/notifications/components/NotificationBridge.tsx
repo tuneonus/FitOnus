@@ -2,7 +2,10 @@ import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { useSettingsStore } from '../../../shared/stores/settingsStore';
+import { logger } from '../../../utils/logger';
 import { useAuthStore } from '../../auth/stores/auth-store';
+import { ensureNotificationChannels } from '../services/notification-channels';
+import { describePushState } from '../services/notification-coordinator';
 import {
   startNotificationListeners,
   type NotificationListenerCallbacks,
@@ -28,9 +31,11 @@ try {
 /**
  * Headless integration point (renders nothing), mounted once by AppShell.
  *
- * It NEVER requests notification permission (that only happens from an explicit user action:
- * the "Enable notifications" button via the useNotifications hook, or the existing preferences
- * toggle). It:
+ * It NEVER requests notification permission itself (that only happens from an explicit user action:
+ * the one-time NotificationPermissionPrompt, the "Enable notifications" button via the useNotifications
+ * hook, or the existing preferences toggle). It:
+ *  - creates the Android notification channels at launch (server pushes land in `remote-updates`,
+ *    which must exist before the first push arrives, whether or not permission has been asked yet),
  *  - listens for notification taps / foreground arrivals / token rotation and cleans up on unmount,
  *  - holds a tap until the user is signed in and past onboarding, then navigates once,
  *  - re-syncs LOCAL reminders when the user signs in or changes the notification preferences,
@@ -98,6 +103,17 @@ export function NotificationBridge(): null {
       };
     }
 
+    // Channels need no permission. Creating them up front means a push that arrives before the user has
+    // ever been asked still uses the app's own HIGH-importance channel instead of Android's fallback one.
+    void ensureNotificationChannels(native, env).then((result) => {
+      if (!result.ok) logger.warn('Some notification channels could not be created', { failed: result.failed });
+    });
+
+    // Diagnostics only: the state and its reason, never the device token (see describePushState).
+    const unsubscribePushState = coordinator.subscribe((state) => {
+      logger.info(`Push registration: ${state.status}`, describePushState(state));
+    });
+
     const listeners: NotificationListenerHandle = startNotificationListeners(native, callbacks);
     const unregisterCleanup = registerSessionEndCleanup(async () => {
       await coordinator.logoutCleanup();
@@ -118,6 +134,7 @@ export function NotificationBridge(): null {
     return () => {
       useNotificationsStore.getState().attachInboxApi(null);
       listeners.stop();
+      unsubscribePushState();
       unregisterCleanup();
       unsubscribeSettings();
       cancelReminderReconcile();
@@ -152,13 +169,18 @@ export function NotificationBridge(): null {
     }
   }, [isAuthenticated, isAuthLoading, userId]);
 
-  // Retry a transient registration failure when the app returns to the foreground.
+  // On returning to the foreground: retry a transient registration failure, and register the device if the
+  // user has since granted permission (from the system dialog, or by flipping it in Android settings).
+  // `syncOnAuthReady` never prompts and returns immediately for a device registered recently.
   useEffect(() => {
     if (!isAuthenticated || !userId) return;
     const { coordinator } = getNotificationRuntime();
     const subscription = AppState.addEventListener('change', (next) => {
       if (next !== 'active') return;
-      void coordinator.retryPending(userId);
+      const current = coordinator.getState();
+      const retryable =
+        current.status === 'pending-retry' || (current.status === 'failed' && current.retryable);
+      void (retryable ? coordinator.retryPending(userId) : coordinator.syncOnAuthReady(userId));
       // Pushes that arrived while the app was in the background show up as soon as the user is back.
       void useNotificationsStore.getState().syncInbox();
     });

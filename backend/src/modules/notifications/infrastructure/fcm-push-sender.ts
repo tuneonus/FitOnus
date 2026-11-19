@@ -145,7 +145,13 @@ export class FcmHttpV1Sender implements PushSender {
             android: {
               priority: 'HIGH',
               ttl: MESSAGE_TTL,
-              notification: { channel_id: message.channelId },
+              // `channel_id` must match a channel the app creates (mobile: PUSH_CHANNELS.REMOTE, HIGH importance).
+              // `notification_priority` and `sound` cover Android < 8, which has no channels to carry them.
+              notification: {
+                channel_id: message.channelId,
+                notification_priority: 'PRIORITY_HIGH',
+                sound: 'default',
+              },
             },
           },
         }),

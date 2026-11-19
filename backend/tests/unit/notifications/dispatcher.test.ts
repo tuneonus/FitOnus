@@ -346,6 +346,64 @@ describe('NotificationDispatcher', () => {
     expect(summary.campaigns).toBe(2);
   });
 
+  describe('diagnostic logging', () => {
+    const makeLogged = (repo: FakeRepo, sender: PushSender) => {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      const dispatcher = new NotificationDispatcher(
+        { repo, sender, logger },
+        { ...DEFAULT_DISPATCHER_OPTIONS, retry: DEFAULT_RETRY_POLICY },
+      );
+      return { dispatcher, logger };
+    };
+
+    it('warns when a campaign has inbox rows but no active push device to deliver to', async () => {
+      const repo = new FakeRepo();
+      repo.campaigns = [campaign()];
+      repo.fanOut.mockResolvedValueOnce({
+        targetCount: 1,
+        skippedCount: 0,
+        notificationCount: 1,
+        deliveryCount: 0,
+      });
+      const { dispatcher, logger } = makeLogged(repo, new ScriptedSender(() => accepted));
+      await dispatcher.runOnce();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ campaignId: 'c1', notificationCount: 1 }),
+        expect.stringContaining('no active push devices'),
+      );
+    });
+
+    it('logs each refused delivery with its provider code, and never the token, title or body', async () => {
+      const repo = new FakeRepo();
+      repo.campaigns = [campaign({ fannedOutAt: new Date() })];
+      repo.addDelivery('a', 'secret-device-token-a');
+      repo.addDelivery('b', 'secret-device-token-b');
+      repo.addDelivery('c', null);
+      const sender = new ScriptedSender((message) =>
+        message.token === 'secret-device-token-a'
+          ? { kind: 'invalid_token', code: 'UNREGISTERED' }
+          : { kind: 'failed', code: 'INVALID_ARGUMENT' },
+      );
+      const { dispatcher, logger } = makeLogged(repo, sender);
+      await dispatcher.runOnce();
+
+      const codes = logger.warn.mock.calls.map(([fields]) => (fields as { code: string }).code).sort();
+      expect(codes).toEqual(['DEVICE_INACTIVE', 'INVALID_ARGUMENT', 'UNREGISTERED']);
+      const everything = JSON.stringify([...logger.info.mock.calls, ...logger.warn.mock.calls]);
+      expect(everything).not.toContain('secret-device-token');
+      expect(everything).not.toContain('There');
+    });
+
+    it('stays quiet for accepted deliveries', async () => {
+      const repo = new FakeRepo();
+      repo.campaigns = [campaign({ fannedOutAt: new Date() })];
+      repo.addDelivery('a');
+      const { dispatcher, logger } = makeLogged(repo, new ScriptedSender(() => accepted));
+      await dispatcher.runOnce();
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+  });
+
   it('survives a failing claim by returning an empty summary', async () => {
     const repo = new FakeRepo();
     repo.claimDueCampaigns.mockRejectedValueOnce(new Error('db down'));

@@ -6,6 +6,7 @@
  *   - `./services/notification-runtime`
  *   - `./hooks/useNotifications`
  *   - `./components/NotificationBridge`
+ *   - `./components/NotificationPermissionPrompt`
  * Import those by path from app code only.
  */
 export * from './services/notification-channels';
@@ -23,6 +24,7 @@ export * from './services/notification-scheduler';
 export * from './services/notification-engine-adapter';
 export * from './services/notification-reconcile';
 export * from './services/notification-permission-card';
+export * from './services/notification-permission-prompt';
 export * from './services/notification-coordinator';
 export * from './services/notification-logout-hook';
 export type * from './types/push';
