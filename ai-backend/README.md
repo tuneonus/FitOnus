@@ -48,10 +48,12 @@ ai-backend/
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `AI_SERVICE_JWT_SECRET` | yes (else every call is refused) | Verifies Node's service token. >= 32 chars; same value as `AI_BACKEND_SERVICE_SECRET` in `backend/.env`. |
-| `GEMINI_API_KEY` | yes for real answers | Gemini key. Server-side only. |
-| `ONUSFIT_AI_ENV` | no (default `development`) | Label shown by `/health/live`. |
-| `GEMINI_ATTEMPT_TIMEOUT_S` | no (default `20`) | Max seconds for one Gemini attempt. |
+| `AI_SERVICE_JWT_SECRET` | **yes** | Verifies Node's service token. >= 32 chars; same value as `AI_BACKEND_SERVICE_SECRET` in the Node API. In production a missing or short value stops the service from starting. |
+| `GEMINI_API_KEY` | **yes** | Gemini key. Server-side only. In production a missing value stops the service from starting. |
+| `ONUSFIT_AI_ENV` | no (default `development`) | `production` turns startup validation into a hard failure (the Docker image sets it). Also shown by `/health/live`. |
+| `PORT` | no | Set by Render (default 10000); the container binds `0.0.0.0:$PORT`. |
+| `LOG_LEVEL` | no (default `INFO`) | `DEBUG`..`CRITICAL`. Logs are metadata only whatever the level. |
+| `GEMINI_ATTEMPT_TIMEOUT_S` | no (default `20`) | Max seconds for one Gemini attempt (0 < value <= 60). |
 | `AI_SERVICE_JWT_ISSUER` / `AI_SERVICE_JWT_AUDIENCE` | no | Defaults match the Node side (`onusfit-node-api` / `onusfit-ai-backend`). |
 
 ## Run locally
@@ -63,6 +65,19 @@ cp .env.example .env                                                     # fill 
 set -a; source .env; set +a
 .venv/bin/uvicorn onusfit_ai.main:app --host 127.0.0.1 --port 8000
 curl http://127.0.0.1:8000/health/live
+```
+
+## Docker and deployment
+
+`Dockerfile` (multi-stage, Python 3.12, non-root user 10001, no secrets in the image) and `requirements.txt` (pinned runtime
+dependencies) are the production build; `.dockerignore` keeps tests, docs and `.env*` out. See
+[docs/render-deployment.md](docs/render-deployment.md) for the Render setup, the Node-to-Python connection and the limits of
+free hosting. Nothing is deployed yet.
+
+```bash
+docker build -t onusfit-ai-backend .            # run from ai-backend/
+docker run --rm -p 10000:10000 -e AI_SERVICE_JWT_SECRET=... -e GEMINI_API_KEY=... onusfit-ai-backend
+curl http://127.0.0.1:10000/health/live          # needs no secrets and never calls Gemini
 ```
 
 ## Checks
@@ -78,6 +93,7 @@ curl http://127.0.0.1:8000/health/live
 - Routes stay thin: validate -> call one function -> return a contract.
 - Pydantic models for everything that crosses HTTP; `extra="forbid"` so contract drift is loud.
 - Provider SDK code lives only in `llm/`.
-- Never log message text, memories, replies, tokens or keys; log metadata only.
+- Never log message text, memories, replies, tokens or keys; log metadata only (`core/logging.py` also masks anything that looks like a key or token).
+- Runtime dependencies are pinned in `requirements.txt` (what the image installs); change them in `pyproject.toml`, then regenerate it (see its header).
 - A new folder is added when its first real file exists, never in advance.
 - Prompt changes: bump `PROMPT_VERSION` and regenerate the golden fixtures (`tests/fixtures/coach_chat/`, `voice_meal/`, `transcribe/`) in the same change.

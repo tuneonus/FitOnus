@@ -16,7 +16,7 @@ FitOnus/
 ├── ai-backend/    Python FastAPI AI backend — generates AI Coach chat replies and insights, parses voice meals, analyzes meal photos and transcribes speech (the only implementation of each); not deployed
 ├── docs/          Symlink → Resources/docs (handbook, requirements, architecture, operations)
 ├── Resources/     Design source (Figma exports) and the real docs/ folder
-├── .github/       CI (backend, mobile, admin, secret scan, docker build)
+├── .github/       CI (backend, mobile, admin, secret scan, docker build; `ai-backend.yml`: pytest, Ruff, mypy, Docker build + smoke test)
 ├── AGENTS.md      Entry point for coding agents
 └── AI_*.md        AI engineering baseline / roadmap / architecture proposal (root, linked from the docs index)
 ```
@@ -138,7 +138,8 @@ Current contents (all that exists). It is the **only** implementation of AI Coac
 
 ```text
 ai-backend/
-├── pyproject.toml, README.md, .env.example, .gitignore
+├── pyproject.toml, requirements.txt (pinned runtime deps), README.md, .env.example, .gitignore
+├── Dockerfile, .dockerignore   production image (Python 3.12, non-root), built in CI; docs/render-deployment.md = Render guide
 ├── src/onusfit_ai/
 │   ├── main.py                create_app()
 │   ├── api/                   health.py, coach_chat.py, coach_insights.py, voice_meal.py, meal_photo.py, transcribe.py   (thin routes)
@@ -148,7 +149,7 @@ ai-backend/
 │   ├── speech/                transcribe.py (use case), parsing.py
 │   ├── prompts/               coach_chat.py, coach_insights.py, voice_meal.py, meal_photo.py, transcribe.py   (ported 1:1 from Node; golden-file tested)
 │   ├── llm/                   gemini.py (only Gemini caller), errors.py (classifier + cooldown)
-│   └── core/                  config.py, auth.py (service token), errors.py, js_compat.py, audio.py, image.py
+│   └── core/                  config.py, auth.py (service token), errors.py, js_compat.py, audio.py, image.py, logging.py (stdout, secrets masked); startup checks live in main.py
 └── tests/                     golden fixtures: fixtures/{coach_chat,coach_insights,voice_meal,meal_photo,transcribe}/ (rendered by the former Node code)
 ```
 

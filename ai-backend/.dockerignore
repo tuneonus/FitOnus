@@ -1,0 +1,27 @@
+# Keep the build context small and secret-free. The image needs only: Dockerfile inputs
+# (requirements.txt, pyproject.toml, README.md, src/).
+.git
+.github
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.mypy_cache
+.ruff_cache
+*.egg-info
+dist
+build
+htmlcov
+.coverage
+tests
+docs
+.env
+.env.*
+!.env.example
+*.log
+.vscode
+.idea
+Dockerfile
+.dockerignore

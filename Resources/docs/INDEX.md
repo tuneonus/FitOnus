@@ -34,6 +34,12 @@ Keep the context needed to maintain the application: agent instructions, product
 
 The architecture proposal and roadmap describe planned work. They do not indicate that the proposed services or integrations exist.
 
+## Python AI backend (`ai-backend/`)
+
+- [README](../../ai-backend/README.md): what it does, environment variables, how to run and check it
+- [Render deployment guide](../../ai-backend/docs/render-deployment.md): service type, build and start settings, environment variables, Node-to-Python connection, service-token authentication, free versus paid limits (preparation only: nothing is deployed)
+- [Migration readiness assessment](ai/PYTHON_MIGRATION_READINESS.md) and the walkthroughs in `ai/learning/` (01 chat integration, 02 Python-only architecture, 03 voice meal, 04 speech transcription, 05 meal photo, 06 coach insights)
+
 ## Product requirements
 
 - [01-project-overview.txt](01-project-overview.txt)
