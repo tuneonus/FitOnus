@@ -10,9 +10,11 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { useNotifications } from '../hooks/useNotifications';
 import { CATEGORY_LABELS, STATUS_LABELS, STATUS_VARIANTS, audienceSummary } from '../logic';
+import { NOTIFICATION_TEMPLATES, type NotificationTemplate } from '../templates';
 import type { CampaignStatus, NotificationCampaign } from '../types';
 import { NotificationComposerModal } from './NotificationComposerModal';
 import { NotificationDetailModal } from './NotificationDetailModal';
+import { NotificationTemplatePicker } from './NotificationTemplatePicker';
 
 const STATUS_FILTERS: { value: CampaignStatus | ''; label: string }[] = [
   { value: '', label: 'All statuses' },
@@ -31,16 +33,25 @@ export function NotificationsAdminView() {
   const list = useNotifications();
   const [composerOpen, setComposerOpen] = useState(false);
   const [draft, setDraft] = useState<NotificationCampaign | null>(null);
+  const [template, setTemplate] = useState<NotificationTemplate | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const openNew = () => {
     setDraft(null);
+    setTemplate(null);
+    setComposerOpen(true);
+  };
+
+  const openTemplate = (selected: NotificationTemplate) => {
+    setDraft(null);
+    setTemplate(selected);
     setComposerOpen(true);
   };
 
   const openDraft = (campaign: NotificationCampaign) => {
     setDetailId(null);
     setDraft(campaign);
+    setTemplate(null);
     setComposerOpen(true);
   };
 
@@ -58,6 +69,8 @@ export function NotificationsAdminView() {
       }
     >
       <div className="space-y-4">
+        <NotificationTemplatePicker templates={NOTIFICATION_TEMPLATES} onSelect={openTemplate} />
+
         <div className="toolbar sm:flex-row sm:items-center sm:justify-between">
           <div>
             <label htmlFor="notification-status-filter" className="sr-only">Filter by status</label>
@@ -159,6 +172,7 @@ export function NotificationsAdminView() {
         isOpen={composerOpen}
         onClose={() => setComposerOpen(false)}
         draft={draft}
+        template={template}
         onChanged={list.refresh}
       />
       <NotificationDetailModal

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Admin notification templates: a "Start from a template" picker on the Notifications page opens the existing composer with a template's title, message, category and tap destination prefilled. A template never selects recipients and has no API or database table; sending still goes through the existing permission-checked campaign endpoints behind the review step and confirmation dialog. The composer also now rejects control characters client-side (as the backend does), refuses a second save/send while one is in flight, words the confirmation without promising delivery, and reports a send whose answer was lost (timeout, dropped connection) as "outcome unknown" instead of "failed". No backend, database or mobile change.
 - AI observability (Phase 9): structured JSON logs in the Python AI backend with the same field names as the Node API, a correlation id sent from Node to Python (`X-Correlation-Id`), a shared error-category vocabulary, events for coach insights cache hits and deterministic fallbacks, and log-redaction tests; learning guide `ai/learning/07-ai-observability.md`. No behavior, API, database or deployment change.
 - Initial project documentation suite (docs 01-27).
 - Project governance documents (README, AGENT_RULES, DEVELOPMENT_WORKFLOW, ARCHITECTURE_DECISIONS).

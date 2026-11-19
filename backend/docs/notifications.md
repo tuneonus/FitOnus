@@ -11,6 +11,7 @@ Module: `src/modules/notifications` (migration `0018_create_notifications.sql`).
 | Preferences | Master switch = the existing `user_settings.notifications_enabled`. Per-category switches live in `notification_preferences`. Missing = on. |
 | Inbox | `GET /notifications` (paginated, newest first, unread total), unread count, mark one/all read, soft delete. Every query is scoped to the caller's user id, so another user's id is simply "not found". |
 | Campaigns (admin) | Draft, preview, edit (optimistic locking), send now, schedule, cancel (draft/scheduled only), per-device delivery list with error codes. |
+| Templates (admin UI only) | The admin console offers a few starter templates (`admin/src/features/notifications/templates.ts`). A template prefills title, message, category and tap destination in the composer and **nothing else**: no recipients, no saved state, no API of its own, no database table. The admin picks the audience, previews, and confirms before the normal campaign API above is called. Template text must be complete as written: the backend does not substitute placeholders. |
 | Delivery | FCM HTTP v1, server-side OAuth from a service account. Bounded retries with back-off. Dead tokens are deactivated. |
 
 ## Delivery states (what is and is not claimed)

@@ -214,6 +214,19 @@ export function toContent(state: ComposerState): NotificationContent {
 
 export type ComposerErrors = Partial<Record<'title' | 'body' | 'audience' | 'schedule', string>>;
 
+/**
+ * C0/C1 control characters have no place in a push notification (line feeds are allowed in the message only).
+ * Same rule as the backend request schema; pasted text is the usual way a tab or other control code sneaks in.
+ */
+export function hasControlCharacters(value: string, allowNewline: boolean): boolean {
+  for (const char of value) {
+    const code = char.codePointAt(0) ?? 0;
+    if (allowNewline && code === 10) continue;
+    if (code < 32 || (code >= 127 && code <= 159)) return true;
+  }
+  return false;
+}
+
 /** Client-side mirror of the backend rules, for instant feedback. The backend still enforces all of them. */
 export function validateComposer(state: ComposerState): ComposerErrors {
   const errors: ComposerErrors = {};
@@ -221,8 +234,10 @@ export function validateComposer(state: ComposerState): ComposerErrors {
   const body = state.body.trim();
   if (!title) errors.title = 'Enter a title.';
   else if (title.length > TITLE_MAX) errors.title = `Keep the title under ${TITLE_MAX} characters.`;
+  else if (hasControlCharacters(title, false)) errors.title = 'Remove the control characters from the title.';
   if (!body) errors.body = 'Enter a message.';
   else if (body.length > BODY_MAX) errors.body = `Keep the message under ${BODY_MAX} characters.`;
+  else if (hasControlCharacters(body, true)) errors.body = 'Remove the control characters from the message.';
 
   if (state.audienceType === 'users') {
     if (state.userIds.length === 0) errors.audience = 'Select at least one user.';
@@ -253,6 +268,119 @@ export function isoToLocalInput(iso: string): string {
   const date = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/**
+ * Runs at most one task at a time; a second call while one is running is refused instead of queued.
+ *
+ * Why not just a `busy` state flag: React applies state on the next render, so two clicks (or a held Enter key)
+ * that arrive before it can both read "not busy" and both send. This flag flips synchronously. The backend's
+ * Idempotency-Key is the second line of defence; this keeps the duplicate from being sent at all.
+ */
+export function createSingleFlight() {
+  let active = false;
+  return {
+    async run<T>(task: () => Promise<T>): Promise<{ ran: true; value: T } | { ran: false }> {
+      if (active) return { ran: false };
+      active = true;
+      try {
+        return { ran: true, value: await task() };
+      } finally {
+        // Released on failure too, so the admin can retry after an error.
+        active = false;
+      }
+    },
+  };
+}
+
+export interface ConfirmationInput {
+  title: string;
+  eligibleUsers: number;
+  pushableDevices: number;
+  scheduled: boolean;
+}
+
+/**
+ * Text for the "are you sure" dialog. It says what will be sent, not what will arrive: FCM accepting a message
+ * does not prove the phone showed it, so the dialog never promises delivery.
+ */
+export function confirmationSummary({ title, eligibleUsers, pushableDevices, scheduled }: ConfirmationInput): string {
+  const users = `${eligibleUsers.toLocaleString()} user${eligibleUsers === 1 ? '' : 's'}`;
+  const where =
+    pushableDevices > 0
+      ? ` on up to ${pushableDevices.toLocaleString()} device${pushableDevices === 1 ? '' : 's'}`
+      : ' in their in-app inbox only (no push devices)';
+  return scheduled
+    ? `“${title}” will be sent to ${users}${where} at the scheduled time. You can cancel it until it starts sending. Delivery to a phone is not guaranteed.`
+    : `“${title}” will be sent to ${users}${where}. It cannot be recalled once sent, and delivery to a phone is not guaranteed.`;
+}
+
+export interface SendFailure {
+  message: string;
+  /**
+   * True when the server may have queued the notification even though the answer never arrived (dropped
+   * connection, timeout, server error). The screen then refreshes the list so the admin can see for themselves.
+   */
+  outcomeUnknown: boolean;
+}
+
+/**
+ * Turns a failed send/schedule call into an honest message. The generic API messages ("Request timed out",
+ * "Something went wrong") are fine for a read but misleading for a send, where the request may have succeeded.
+ * Matches on the backend's stable error codes, never on message text.
+ */
+export function describeSendFailure(error: unknown): SendFailure {
+  const { code, status, message } =
+    typeof error === 'object' && error !== null
+      ? (error as { code?: unknown; status?: unknown; message?: unknown })
+      : ({} as { code?: unknown; status?: unknown; message?: unknown });
+  const text = typeof message === 'string' && message ? message : 'Failed to send the notification.';
+
+  switch (code) {
+    case 'NETWORK_ERROR':
+    case 'TIMEOUT':
+      return {
+        outcomeUnknown: true,
+        message:
+          'The connection dropped before the server answered, so it is not known whether this was sent. ' +
+          'Check the notification list before trying again. Retrying without changes will not send it twice.',
+      };
+    case 'IDEMPOTENCY_REQUEST_IN_PROGRESS':
+      return {
+        outcomeUnknown: true,
+        message:
+          'The previous attempt is still being processed. Wait a moment and check the notification list before sending again.',
+      };
+    case 'IDEMPOTENCY_KEY_REUSED':
+      return {
+        outcomeUnknown: true,
+        message:
+          'This notification was already submitted with different settings. Check the notification list before sending again.',
+      };
+    case 'PUSH_NOT_CONFIGURED':
+      return {
+        outcomeUnknown: false,
+        message: 'Push delivery is not configured on this server, so nothing was sent. You can still save this as a draft.',
+      };
+    case 'BULK_CONFIRMATION_REQUIRED':
+      return {
+        outcomeUnknown: false,
+        message: 'This audience needs bulk confirmation. Nothing was sent. Go back, review the audience and send again.',
+      };
+    case 'NO_ELIGIBLE_RECIPIENTS':
+      return {
+        outcomeUnknown: false,
+        message: 'No active users match this audience and their notification preferences. Nothing was sent.',
+      };
+    default:
+      if (typeof status === 'number' && status >= 500) {
+        return {
+          outcomeUnknown: true,
+          message: 'Something went wrong on the server. Check the notification list before trying again.',
+        };
+      }
+      return { outcomeUnknown: false, message: text };
+  }
 }
 
 export interface DeliveryBreakdown {

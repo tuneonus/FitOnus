@@ -15,6 +15,9 @@ import {
   TITLE_MAX,
   audienceSummary,
   composerFromCampaign,
+  confirmationSummary,
+  createSingleFlight,
+  describeSendFailure,
   emptyComposer,
   isoToLocalInput,
   localInputToIso,
@@ -24,6 +27,7 @@ import {
   type ComposerErrors,
   type ComposerState,
 } from '../logic';
+import { composerFromTemplate, type NotificationTemplate } from '../templates';
 import type { AudienceType, NotificationCampaign, NotificationPreview } from '../types';
 import { NOTIFICATION_DESTINATIONS, SERVER_CATEGORIES } from '../types';
 import { PushPreview } from './PushPreview';
@@ -34,20 +38,29 @@ interface ComposerModalProps {
   onClose: () => void;
   /** An existing draft to edit, or null to start a new notification. */
   draft: NotificationCampaign | null;
+  /** A template to prefill a new notification from. Ignored when editing a draft. */
+  template?: NotificationTemplate | null;
   onChanged: () => void;
 }
 
-export function NotificationComposerModal({ isOpen, onClose, draft, onChanged }: ComposerModalProps) {
+export function NotificationComposerModal({ isOpen, onClose, draft, template = null, onChanged }: ComposerModalProps) {
+  const source = draft ? null : template;
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={draft ? 'Edit notification draft' : 'New notification'}
+      title={draft ? 'Edit notification draft' : source ? 'New notification from template' : 'New notification'}
       description="Compose a push notification, check who it reaches, then send now or schedule it."
       maxWidth="2xl"
     >
-      {/* Re-mount per draft so form state never leaks between notifications. */}
-      <Composer key={draft?.id ?? 'new'} draft={draft} onClose={onClose} onChanged={onChanged} />
+      {/* Re-mount per draft or template so form state never leaks between notifications. */}
+      <Composer
+        key={draft?.id ?? (source ? `template:${source.id}` : 'new')}
+        draft={draft}
+        template={source}
+        onClose={onClose}
+        onChanged={onChanged}
+      />
     </Modal>
   );
 }
@@ -60,15 +73,21 @@ const AUDIENCE_OPTIONS: { value: AudienceType; title: string; hint: string }[] =
 
 function Composer({
   draft,
+  template,
   onClose,
   onChanged,
 }: {
   draft: NotificationCampaign | null;
+  template: NotificationTemplate | null;
   onClose: () => void;
   onChanged: () => void;
 }) {
   const { toast } = useToast();
-  const [form, setForm] = useState<ComposerState>(() => (draft ? composerFromCampaign(draft) : emptyComposer()));
+  const [form, setForm] = useState<ComposerState>(() =>
+    draft ? composerFromCampaign(draft) : template ? composerFromTemplate(template) : emptyComposer(),
+  );
+  // Refuses a second save/send while one is in flight (see createSingleFlight for why state alone is not enough).
+  const [flight] = useState(createSingleFlight);
   const [errors, setErrors] = useState<ComposerErrors>({});
   const [step, setStep] = useState<'compose' | 'review'>('compose');
   const [preview, setPreview] = useState<NotificationPreview | null>(null);
@@ -93,32 +112,36 @@ function Composer({
   const toggle = (list: string[], value: string) =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 
-  const fail = (err: unknown, fallback: string) => {
-    const message = err instanceof Error ? err.message : fallback;
+  const report = (message: string) => {
     setFormError(message);
     toast.error(message);
   };
+
+  const fail = (err: unknown, fallback: string) => report(err instanceof Error ? err.message : fallback);
 
   const saveDraft = async () => {
     const found = validateComposer(form);
     setErrors(found);
     if (Object.keys(found).length > 0 || busy) return;
-    setBusy('draft');
-    setFormError(null);
-    try {
-      const content = toContent(form);
-      const saved = currentRef.current
-        ? await notificationsApi.update(currentRef.current.id, { ...content, version: currentRef.current.version })
-        : await notificationsApi.create({ ...content, mode: 'draft', scheduledAt: null, confirmBulk: false });
-      currentRef.current = saved;
-      toast.success('Draft saved.');
-      onChanged();
-      onClose();
-    } catch (err) {
-      fail(err, 'Failed to save the draft.');
-    } finally {
-      setBusy(null);
-    }
+    // Creating a draft has no idempotency key, so a double click would otherwise save it twice.
+    await flight.run(async () => {
+      setBusy('draft');
+      setFormError(null);
+      try {
+        const content = toContent(form);
+        const saved = currentRef.current
+          ? await notificationsApi.update(currentRef.current.id, { ...content, version: currentRef.current.version })
+          : await notificationsApi.create({ ...content, mode: 'draft', scheduledAt: null, confirmBulk: false });
+        currentRef.current = saved;
+        toast.success('Draft saved.');
+        onChanged();
+        onClose();
+      } catch (err) {
+        fail(err, 'Failed to save the draft.');
+      } finally {
+        setBusy(null);
+      }
+    });
   };
 
   const goToReview = async () => {
@@ -145,43 +168,51 @@ function Composer({
       setConfirmOpen(false);
       return;
     }
-    setBusy('send');
-    setFormError(null);
-    keyRef.current ??= crypto.randomUUID();
-    const scheduledAt = timing === 'later' ? localInputToIso(scheduledLocal) : null;
-    try {
-      const content = toContent(form);
-      if (currentRef.current) {
-        // Persist the latest edits to the draft first, then queue it.
-        currentRef.current = await notificationsApi.update(currentRef.current.id, {
-          ...content,
-          version: currentRef.current.version,
-        });
-        await notificationsApi.send(
-          currentRef.current.id,
-          { scheduledAt, confirmBulk: preview.requiresConfirmation },
-          keyRef.current,
-        );
-      } else {
-        await notificationsApi.create(
-          {
+    // The lock is taken synchronously, before any await: a second click cannot start a second send.
+    await flight.run(async () => {
+      setBusy('send');
+      setFormError(null);
+      keyRef.current ??= crypto.randomUUID();
+      const scheduledAt = timing === 'later' ? localInputToIso(scheduledLocal) : null;
+      try {
+        const content = toContent(form);
+        if (currentRef.current) {
+          // Persist the latest edits to the draft first, then queue it.
+          currentRef.current = await notificationsApi.update(currentRef.current.id, {
             ...content,
-            mode: timing === 'later' ? 'schedule' : 'send_now',
-            scheduledAt,
-            confirmBulk: preview.requiresConfirmation,
-          },
-          keyRef.current,
-        );
+            version: currentRef.current.version,
+          });
+          await notificationsApi.send(
+            currentRef.current.id,
+            { scheduledAt, confirmBulk: preview.requiresConfirmation },
+            keyRef.current,
+          );
+        } else {
+          await notificationsApi.create(
+            {
+              ...content,
+              mode: timing === 'later' ? 'schedule' : 'send_now',
+              scheduledAt,
+              confirmBulk: preview.requiresConfirmation,
+            },
+            keyRef.current,
+          );
+        }
+        // "Queued" is the whole truth here: the dispatcher sends it moments later and FCM acceptance is
+        // reported per device in the notification's details, never assumed from this response.
+        toast.success(timing === 'later' ? 'Notification scheduled.' : 'Notification queued for sending.');
+        onChanged();
+        onClose();
+      } catch (err) {
+        const failure = describeSendFailure(err);
+        report(failure.message);
+        // The request may have gone through even though the answer was lost: show the real list state.
+        if (failure.outcomeUnknown) onChanged();
+        setConfirmOpen(false);
+      } finally {
+        setBusy(null);
       }
-      toast.success(timing === 'later' ? 'Notification scheduled.' : 'Notification queued for sending.');
-      onChanged();
-      onClose();
-    } catch (err) {
-      fail(err, 'Failed to send the notification.');
-      setConfirmOpen(false);
-    } finally {
-      setBusy(null);
-    }
+    });
   };
 
   const content = toContent(form);
@@ -201,6 +232,13 @@ function Composer({
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>{formError}</div>
         </div>
+      )}
+
+      {template && !draft && step === 'compose' && (
+        <p className="field-hint mb-4">
+          Started from the “{template.name}” template. Edit anything you like, then choose who receives it. Nothing is
+          sent until you confirm.
+        </p>
       )}
 
       {step === 'compose' ? (
@@ -496,11 +534,12 @@ function Composer({
         title={timing === 'later' ? 'Schedule this notification?' : 'Send this notification?'}
         description={
           preview
-            ? `${preview.audience.eligibleUsers.toLocaleString()} user${preview.audience.eligibleUsers === 1 ? '' : 's'} will receive “${content.title}”${
-                preview.audience.pushableDevices > 0
-                  ? ` on up to ${preview.audience.pushableDevices.toLocaleString()} device${preview.audience.pushableDevices === 1 ? '' : 's'}`
-                  : ' in their inbox'
-              }.`
+            ? confirmationSummary({
+                title: content.title,
+                eligibleUsers: preview.audience.eligibleUsers,
+                pushableDevices: preview.audience.pushableDevices,
+                scheduled: timing === 'later',
+              })
             : undefined
         }
         confirmLabel={timing === 'later' ? 'Schedule' : 'Send now'}
