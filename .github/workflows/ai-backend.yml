@@ -4,12 +4,12 @@ name: AI Backend CI
 # Build only: nothing is pushed or deployed from here.
 'on':
   push:
-    branches: [main]
+    branches: [main, development]
     paths:
       - 'ai-backend/**'
       - '.github/workflows/ai-backend.yml'
   pull_request:
-    branches: [main]
+    branches: [main, development]
     paths:
       - 'ai-backend/**'
       - '.github/workflows/ai-backend.yml'
