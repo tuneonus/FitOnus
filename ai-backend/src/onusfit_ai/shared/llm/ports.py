@@ -1,0 +1,49 @@
+"""What the use cases need from an LLM: plain data types and one Protocol, nothing else.
+
+This module imports no SDK, no FastAPI and no other part of the app, so the domain and application
+layers can depend on it without dragging Gemini or HTTP along. The only real implementation is
+`gemini.GeminiClient`; tests provide a fake with the same shape (see tests/conftest.py `FakeLlm`).
+"""
+
+from dataclasses import dataclass
+from typing import Protocol
+
+
+@dataclass(frozen=True)
+class LlmUsage:
+    model: str
+    is_fallback: bool
+    input_tokens: int
+    output_tokens: int
+    cached_tokens: int
+    thinking_tokens: int
+    total_tokens: int
+    duration_ms: int
+
+
+@dataclass(frozen=True)
+class LlmResult:
+    text: str
+    usage: LlmUsage
+
+
+@dataclass(frozen=True)
+class MediaInput:
+    """An audio/image clip sent to Gemini together with the prompt."""
+
+    mime_type: str
+    data: bytes
+
+
+class TextGenerator(Protocol):
+    """What the rest of the app needs from an LLM. Tests provide a fake with this shape."""
+
+    async def generate_text(
+        self,
+        prompt: str,
+        *,
+        primary_model: str,
+        fallback_model: str | None,
+        deadline_s: float,
+        media: MediaInput | None = None,
+    ) -> LlmResult: ...

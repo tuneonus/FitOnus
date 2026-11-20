@@ -5,7 +5,7 @@ import json
 import pytest
 
 from conftest import VOICE_FIXTURES
-from onusfit_ai.prompts.voice_meal import build_prompt
+from onusfit_ai.features.meals.application.prompts.voice_meal import build_prompt
 
 CASES = json.loads((VOICE_FIXTURES / "prompt_cases.json").read_text(encoding="utf-8"))
 

@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from conftest import MEAL_PHOTO_FIXTURES
-from onusfit_ai.prompts.meal_photo import build_prompt
+from onusfit_ai.features.meals.application.prompts.meal_photo import build_prompt
 
 CASES = json.loads((MEAL_PHOTO_FIXTURES / "prompt_cases.json").read_text(encoding="utf-8"))
 

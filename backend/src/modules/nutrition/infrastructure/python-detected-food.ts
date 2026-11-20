@@ -6,7 +6,7 @@ export const pythonConfidence = z.enum(['high', 'medium', 'low']);
 /**
  * One detected food as the Python AI service returns it, for both meal photo and voice meal. Every number and text
  * is bounded (`AI_ESTIMATE_LIMITS`), so even if the service were wrong or compromised, an absurd value is refused here
- * instead of reaching the member's diary. Mirrors ai-backend/src/onusfit_ai/contracts/common.py `DetectedFoodItem`.
+ * instead of reaching the member's diary. Mirrors ai-backend/src/onusfit_ai/shared/contracts/common.py `DetectedFoodItem`.
  */
 export const pythonDetectedFoodItemSchema = z.object({
   id: z.string().min(1).max(100),

@@ -42,7 +42,7 @@ Phone ──► NODE (front of house) ───────────► PYTHO
 | Saving conversations | Node | `ChatWithCoachUseCase` |
 | Which Gemini models to use | Node (admin console) → sent to Python each request | `GeminiRuntimeService.resolveModelNames` |
 | Prompt, Gemini call, reply parsing | **Python** | `ai-backend/src/onusfit_ai/…` |
-| Primary → backup **model** switching | **Python** | `llm/gemini.py` |
+| Primary → backup **model** switching | **Python** | `shared/llm/gemini.py` |
 | Gemini API key | **Python** (its own `GEMINI_API_KEY`) | env var |
 | Cost/usage ledger | Node (Python reports, Node writes) | `GeminiRuntimeService.recordExternalUsage` |
 
@@ -155,37 +155,37 @@ Tested guarantees (`coach-chat-python-integration.test.ts`, real use case + real
 **`main.py` — `create_app()`**
 - **Input:** none. **Processing:** builds the FastAPI app, disables `/docs` and `/openapi.json` (internal service), registers error handlers and the two routers. **Output:** the app (`app`). **Errors:** none. **Tests:** `test_health.py`, `test_coach_chat_api.py::test_openapi_docs_are_not_public`.
 
-**`api/health.py` — `live()`**
+**`shared/health/router.py` — `live()`**
 - **Input:** `GET /health/live`. **Processing:** reads settings. **Output:** `{status, service, version, environment}`. **Errors:** none (checks no dependency). **Tests:** `test_health.py`.
 
-**`api/coach_chat.py` — `coach_chat()`**
+**`features/coach/presentation/coach_chat.py` — `coach_chat()`**
 - **Input:** JSON body, `Authorization: Bearer <token>`, optional `X-Request-Id`. **Processing:** FastAPI runs the auth dependency, validates the body into `CoachChatRequest`, injects the LLM, calls `generate_coach_reply`. **Output:** `CoachChatResponse`. **Errors:** 401/503 auth, 422 validation, any `AiError` from the LLM layer. **Tests:** `test_coach_chat_api.py` (success shape, rejections, structured provider errors, no content in logs).
 
-**`contracts/coach_chat.py` (+ `_base.py`)** — the request/response models
+**`features/coach/domain/chat.py` (+ `_base.py`)** — the request/response models
 - **Input:** raw JSON. **Processing:** Pydantic checks types, lengths (`message` 1–1000, `history` ≤ 20…), allowed values, **forbids unknown fields** (so a body `userId` is refused), converts camelCase ↔ snake_case. **Output:** typed objects. **Errors:** `RequestValidationError` → 422 listing field names only. **Tests:** `test_coach_chat_api.py::test_invalid_requests_are_rejected_without_echoing_input`, `test_user_id_in_body_is_not_accepted`.
 
-**`coach/chat.py` — `generate_coach_reply()`**
+**`features/coach/application/chat.py` — `generate_coach_reply()`**
 - **Input:** request, an LLM object, trace id. **Processing:** `build_prompt` → `llm.generate_text` → `parse_coach_output` → map usage; logs metadata only. **Output:** `CoachChatResponse`. **Errors:** propagates `AiError`. **Tests:** `test_coach_chat_api.py` (with a fake LLM), `test_coach_chat_api.py::test_message_memories_and_reply_are_never_logged`.
 
-**`coach/parsing.py` — `parse_coach_output()`**
+**`features/coach/application/parsing.py` — `parse_coach_output()`**
 - **Input:** Gemini's raw text, whether memories were supplied. **Processing:** strip ```` ```json ```` fences → `json.loads` → accept if it's an object with string `text`; else use raw text. Adds `"AI Memory"` to `sources` when memories exist. **Output:** `(result, "ok" | "unstructured")`. **Errors:** none raised (bad JSON is an expected case). **Tests:** `test_coach_chat_parsing.py`.
 
-**`prompts/coach_chat.py` — `build_prompt()`**
+**`features/coach/application/prompts/coach_chat.py` — `build_prompt()`**
 - **Input:** message, context, history, memories. **Processing:** system rules + user data + memories + last 6 turns + the question; `js_num` formats numbers like JavaScript did. **Output:** one string. **Errors:** none. **Tests:** `test_coach_chat_prompt.py` compares with `tests/fixtures/coach_chat/*.prompt.golden.txt`, which are the exact prompts the former Node code produced. To change the prompt on purpose: bump `PROMPT_VERSION`, regenerate those files.
 
-**`llm/gemini.py` — `GeminiClient.generate_text()`**
+**`shared/llm/gemini.py` — `GeminiClient.generate_text()`**
 - **Input:** prompt, primary and fallback model names, deadline. **Processing:** plan models (skip any in cooldown), call with `asyncio.timeout`, **no SDK retries**, on a *model-fixable* failure try the backup model once, record cooldowns. **Output:** `LlmResult(text, usage)`. **Errors:** `AiError` with safe codes (`PROVIDER_RATE_LIMITED`, `PROVIDER_QUOTA_EXHAUSTED`, `PROVIDER_UNAVAILABLE`, `AI_UNAVAILABLE`, `PROVIDER_TIMEOUT`, `PROVIDER_AUTH_ERROR`, `PROVIDER_NOT_CONFIGURED`, `PROVIDER_ERROR`), each with `dispatched`. **Tests:** `test_gemini_client.py` (primary/fallback behavior, exactly two calls max, auth/daily-quota never fall back, timeout, cooldown, deadline, missing key).
 
-**`llm/errors.py` — `classify_gemini_error()`, `ModelCooldown`**
+**`shared/llm/errors.py` — `classify_gemini_error()`, `ModelCooldown`**
 - **Input:** any exception from the SDK. **Processing:** reads HTTP code/status/details, retry hints, model-specific quota. **Output:** `ClassifiedError(kind, is_retryable, is_project_wide, retry_after_seconds)`. **Errors:** never raises. **Tests:** `test_gemini_client.py::test_classifier_…`.
 
-**`core/config.py` — `get_settings()`**
+**`shared/config/config.py` — `get_settings()`**
 - **Input:** environment. **Processing:** reads `GEMINI_API_KEY`, `AI_SERVICE_JWT_*`, timeouts. **Output:** frozen `Settings`. **Errors:** none (missing secret is handled by auth, failing closed). **Tests:** used by every API test via env fixtures.
 
-**`core/auth.py` — `verify_service_token()`, `require_scope()`**
+**`shared/auth/auth.py` — `verify_service_token()`, `require_scope()`**
 - **Input:** `Authorization` header, endpoint scope. **Processing:** signature (HS256 only), issuer, audience, expiry, lifetime ≤ 60 s, scope, replay (`jti`). **Output:** `ServiceClaims`. **Errors:** 401 `AUTH_INVALID_TOKEN` (one vague message) or 503 `AUTH_NOT_CONFIGURED` if the secret is missing/short. **Tests:** `test_auth.py` (wrong secret/audience/issuer/scope, expired, too-long lifetime, garbage, replay, `alg: none`, fail-closed).
 
-**`core/errors.py` — `AiError`, `register_error_handlers()`**
+**`shared/errors/errors.py` — `AiError`, `register_error_handlers()`**
 - **Input:** an `AiError` or validation error. **Processing:** one JSON shape `{"error": {code, message, dispatched, retryAfterSeconds?}}`; validation errors list fields, never values. **Output:** JSON response. **Errors:** — . **Tests:** `test_coach_chat_api.py`.
 
 ---

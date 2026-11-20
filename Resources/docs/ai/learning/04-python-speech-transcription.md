@@ -42,7 +42,7 @@ Phone → POST /api/v1/coach/transcribe {audio}
 
 ## 5. Validation (both sides, on purpose)
 
-Node (`coach.schemas.ts`, using `shared/ai/audio-input.ts`) and Python (`core/audio.py`, `contracts/common.py`) apply the **same rules**:
+Node (`coach.schemas.ts`, using `shared/ai/audio-input.ts`) and Python (`shared/utils/audio.py`, `shared/contracts/common.py`) apply the **same rules**:
 
 - MIME type must *contain* one of `m4a, mp4, aac, wav, webm, ogg, mpeg, 3gpp` (so `audio/x-m4a` and `audio/mp4; codecs=…` pass; `audio/flac`, `image/png`, `video/quicktime` do not). This is the rule voice meal always used, now shared.
 - At most 15 MB of base64 text. (In the real app the global JSON body limit can answer `413` first; the schema cap is a second line of defense.)
@@ -71,14 +71,14 @@ Before deleting `transcribeAudio`, a throwaway script ran the real Node method o
 
 **Python (`ai-backend/src/onusfit_ai/`)**
 
-- `prompts/transcribe.py` — **`build_prompt()`**. *Input:* none (the clip is the input). *Processing:* the fixed prompt (English/Tamil/Tanglish rules, "JSON only"), generated from the Node source. *Output:* string. *Errors:* none. *Tests:* `test_transcribe_prompt.py` (golden).
-- `contracts/transcribe.py` — **`TranscribeRequest`** (`audio`, `model`, `deadlineMs`; no unknown fields, so no `userId`) and **`TranscribeResponse`** (`outcome: ok | unstructured`, `result`, `usage`, `traceId`). *Errors:* 422 listing field names, never values. *Tests:* `test_transcribe_api.py`.
-- `contracts/common.py` — new **`AudioInput`** with the format validator and size cap, shared with voice meal.
-- `core/audio.py` — **`is_supported_audio_mime`**, **`decode_audio_base64`**. *Errors:* invalid base64 → `AiError` 422, `dispatched=false`. *Tests:* `test_transcribe_api.py`, `test_voice_meal_api.py`.
-- `speech/parsing.py` — **`parse_transcription(raw)`**. *Input:* Gemini's text. *Processing:* strip fences → strict JSON → `String(transcript || "").trim()`, `String(detectedLanguage || "en")`; if not JSON (or `null`), the whole text is the transcript. *Output:* `(result, outcome)`. *Errors:* never raises. *Tests:* `test_transcribe_parsing.py` (21 goldens + outcome flags).
-- `speech/transcribe.py` — **`transcribe_audio(request, llm, trace_id)`**. *Processing:* decode audio → `llm.generate_text(prompt, media=clip)` → parse; logs metadata only (audio byte count, never content). *Output:* `TranscribeResponse`. *Errors:* propagates `AiError`. *Tests:* `test_transcribe_api.py` (success, data URL, formats, size limit, base64, scope, no-logging).
-- `api/transcribe.py` — **`POST /internal/v1/ai/speech/transcribe`**, scope `ai:speech:transcribe` (chat and voice tokens are refused).
-- `core/js_compat.py` — gained `strict_json_loads`, `js_prop`, `strip_code_fences`, now used by chat, voice and transcription parsers (one fence stripper instead of two).
+- `features/speech/application/prompts/transcribe.py` — **`build_prompt()`**. *Input:* none (the clip is the input). *Processing:* the fixed prompt (English/Tamil/Tanglish rules, "JSON only"), generated from the Node source. *Output:* string. *Errors:* none. *Tests:* `test_transcribe_prompt.py` (golden).
+- `features/speech/application/contracts.py` — **`TranscribeRequest`** (`audio`, `model`, `deadlineMs`; no unknown fields, so no `userId`) and **`TranscribeResponse`** (`outcome: ok | unstructured`, `result`, `usage`, `traceId`). *Errors:* 422 listing field names, never values. *Tests:* `test_transcribe_api.py`.
+- `shared/contracts/common.py` — new **`AudioInput`** with the format validator and size cap, shared with voice meal.
+- `shared/utils/audio.py` — **`is_supported_audio_mime`**, **`decode_audio_base64`**. *Errors:* invalid base64 → `AiError` 422, `dispatched=false`. *Tests:* `test_transcribe_api.py`, `test_voice_meal_api.py`.
+- `features/speech/application/parsing.py` — **`parse_transcription(raw)`**. *Input:* Gemini's text. *Processing:* strip fences → strict JSON → `String(transcript || "").trim()`, `String(detectedLanguage || "en")`; if not JSON (or `null`), the whole text is the transcript. *Output:* `(result, outcome)`. *Errors:* never raises. *Tests:* `test_transcribe_parsing.py` (21 goldens + outcome flags).
+- `features/speech/application/transcribe.py` — **`transcribe_audio(request, llm, trace_id)`**. *Processing:* decode audio → `llm.generate_text(prompt, media=clip)` → parse; logs metadata only (audio byte count, never content). *Output:* `TranscribeResponse`. *Errors:* propagates `AiError`. *Tests:* `test_transcribe_api.py` (success, data URL, formats, size limit, base64, scope, no-logging).
+- `features/speech/presentation/transcribe.py` — **`POST /internal/v1/ai/speech/transcribe`**, scope `ai:speech:transcribe` (chat and voice tokens are refused).
+- `shared/utils/js_compat.py` — gained `strict_json_loads`, `js_prop`, `strip_code_fences`, now used by chat, voice and transcription parsers (one fence stripper instead of two).
 
 **Node (`backend/src/`)**
 

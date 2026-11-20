@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 from conftest import TRANSCRIBE_FIXTURES
-from onusfit_ai.speech.parsing import parse_transcription
+from onusfit_ai.features.speech.application.parsing import parse_transcription
 
 CASES = json.loads((TRANSCRIBE_FIXTURES / "parse_cases.json").read_text(encoding="utf-8"))
 

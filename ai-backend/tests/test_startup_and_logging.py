@@ -9,9 +9,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import SECRET
-from onusfit_ai.core.config import configuration_problems
-from onusfit_ai.core.logging import configure_logging, redact
 from onusfit_ai.main import create_app
+from onusfit_ai.shared.config import configuration_problems
+from onusfit_ai.shared.logging import configure_logging, redact
 
 # Built at runtime so the repository never contains a literal that looks like a real key to secret scanners.
 KEY_VALUE = "AI" + "za" + "SyFAKE-FAKE-FAKE-FAKE-FAKE-FAKE-1234"

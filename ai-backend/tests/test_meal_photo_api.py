@@ -8,9 +8,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import FakeLlm, make_token
-from onusfit_ai.core.errors import AiError
-from onusfit_ai.llm.gemini import GeminiClient, get_llm
 from onusfit_ai.main import create_app
+from onusfit_ai.shared.errors import AiError
+from onusfit_ai.shared.llm.dependencies import get_llm
+from onusfit_ai.shared.llm.gemini import GeminiClient
 from test_gemini_client import FakeSdk, make_response, overloaded, rate_limit
 
 URL = "/internal/v1/ai/meals/analyze-photo"

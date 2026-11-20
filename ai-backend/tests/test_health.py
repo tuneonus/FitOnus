@@ -23,7 +23,7 @@ def test_live_reports_environment_from_env(monkeypatch) -> None:  # type: ignore
 
 
 def test_health_needs_no_configuration_no_token_and_never_calls_gemini(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    from onusfit_ai.llm.gemini import get_llm
+    from onusfit_ai.shared.llm.dependencies import get_llm
 
     for name in ("AI_SERVICE_JWT_SECRET", "GEMINI_API_KEY", "ONUSFIT_AI_ENV"):
         monkeypatch.delenv(name, raising=False)

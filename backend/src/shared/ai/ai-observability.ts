@@ -15,7 +15,7 @@ import type { PythonAiError } from './python-ai-client.js';
 
 /**
  * Why an AI call failed, in the words an operator needs. The same names are used by the Python AI
- * backend (`onusfit_ai/core/observability.py`).
+ * backend (`onusfit_ai/shared/observability/observability.py`).
  */
 export const AI_ERROR_CATEGORIES = [
   /** Gemini did not answer within the deadline. */
@@ -48,7 +48,7 @@ export type AiErrorCategory = (typeof AI_ERROR_CATEGORIES)[number];
 /**
  * Python outcomes that mean "the model answered but its output was not usable". `no_food` is NOT one
  * of them: "this photo has no food" is a valid answer. Must match `INVALID_OUTPUT_OUTCOMES` in
- * ai-backend/src/onusfit_ai/core/observability.py.
+ * ai-backend/src/onusfit_ai/shared/observability/observability.py.
  */
 export const INVALID_OUTPUT_OUTCOMES: ReadonlySet<string> = new Set([
   'unusable',

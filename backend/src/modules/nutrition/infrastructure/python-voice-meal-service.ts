@@ -21,7 +21,7 @@ const MIN_DEADLINE_MS = 1_000;
 
 export const VOICE_MEAL_UNAVAILABLE_MESSAGE = 'Voice meal parsing is temporarily unavailable. Please try again shortly.';
 
-/** Python's reply, validated and bounded before anything is trusted. Mirrors ai-backend/contracts/voice_meal.py. */
+/** Python's reply, validated and bounded before anything is trusted. Mirrors ai-backend/src/onusfit_ai/features/meals/domain/voice.py. */
 const pythonVoiceResponseSchema = z.object({
   outcome: z.enum(['ok', 'no_food', 'parse_failed']),
   result: z.object({

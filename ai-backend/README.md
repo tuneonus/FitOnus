@@ -26,23 +26,57 @@ ai-backend/
 ├── pyproject.toml
 ├── .env.example
 ├── src/onusfit_ai/
-│   ├── main.py            # create_app(): mounts routers + error handlers (no public /docs)
-│   ├── api/               # thin HTTP routes
-│   │   ├── health.py      #   GET  /health/live
-│   │   ├── coach_chat.py  #   POST /internal/v1/ai/coach/chat
-│   │   ├── coach_insights.py #  POST /internal/v1/ai/coach/insights
-│   │   ├── voice_meal.py  #   POST /internal/v1/ai/meals/parse-voice
-│   │   ├── meal_photo.py  #   POST /internal/v1/ai/meals/analyze-photo
-│   │   └── transcribe.py  #   POST /internal/v1/ai/speech/transcribe
-│   ├── contracts/         # Pydantic request/response models (no logic)
-│   ├── coach/             # chat (chat.py, parsing.py) and insights (insights.py, insights_parsing.py) use cases
-│   ├── meals/             # voice meal (voice.py, parsing.py) and meal photo (photo.py, photo_parsing.py) use cases; sanitize.py bounds the parsed result (limits.py)
-│   ├── speech/            # transcription use case (transcribe.py) + reply parsing (parsing.py)
-│   ├── prompts/           # versioned prompt text (ported 1:1 from Node): coach_chat.py, coach_insights.py, voice_meal.py, meal_photo.py, transcribe.py
-│   ├── llm/               # the ONLY code that talks to Gemini (+ error classifier, cooldown, telemetry.py = the per-call log event)
-│   └── core/              # settings, service-token auth, error type, js_compat.py (JavaScript-equivalent number/string rules), logging.py + observability.py (structured logs, request ids, error categories)
-└── tests/                 # pytest; tests/fixtures/coach_chat/ holds golden files shared with Node
+│   ├── main.py            # create_app(): mounts routers, middleware, error handlers (no public /docs)
+│   ├── features/          # Feature-based modular clean architecture (features never import each other)
+│   │   ├── coach/         # AI Coach feature
+│   │   │   ├── domain/           # Fitness profile, chat/insights contracts and models
+│   │   │   ├── application/      # Chat and insights use cases + parsers; prompts/ (pure builders)
+│   │   │   └── presentation/     # FastAPI routers: /internal/v1/ai/coach/chat, /insights
+│   │   ├── meals/         # Nutrition/meals feature
+│   │   │   ├── domain/           # Contracts, limits, sanitization rules
+│   │   │   ├── application/      # Voice and photo meal use cases + parsers; prompts/
+│   │   │   └── presentation/     # FastAPI routers: /internal/v1/ai/meals/parse-voice, /analyze-photo
+│   │   └── speech/        # Speech feature
+│   │       ├── application/      # Transcription use case, parser, contracts; prompts/
+│   │       └── presentation/     # FastAPI router: /internal/v1/ai/speech/transcribe
+│   └── shared/            # Cross-cutting code. "Pure" = no framework, no SDK (see Architecture rules)
+│       ├── auth/          # Service JWT token verification
+│       ├── config/        # Environment and settings configuration                         (pure)
+│       ├── contracts/     # Base contract models and shared wire types                     (pure)
+│       ├── errors/        # AiError, the one JSON error shape, error handlers
+│       ├── health/        # Liveness endpoint (/health/live) and contract
+│       ├── llm/           # ports.py (TextGenerator + data types, pure), gemini.py (the adapter), errors.py
+│       │                  #   (classifier + cooldown), dependencies.py (FastAPI wiring), telemetry.py
+│       ├── logging/       # Structured logging, formatters, masking                         (pure)
+│       ├── observability/ # Request middleware, correlation IDs, error categories
+│       ├── request_limits/# Request body size cap (413 before auth/parsing)
+│       └── utils/         # Audio, image, text, JS-compat helpers; InvalidMediaError        (pure)
+└── tests/                 # pytest suite, golden fixtures, architecture and wire-contract tests
 ```
+
+## Architecture rules
+
+`tests/test_architecture.py` checks these on every run (static imports plus fresh-interpreter imports):
+
+| Layer | May import | Must not import |
+|---|---|---|
+| `features/<f>/domain` | pydantic, `shared.contracts`, `shared.utils`, its own domain | application, presentation, another feature, FastAPI, Starlette, Gemini SDK, `shared.errors`/`auth`/`llm.gemini` |
+| `features/<f>/application` | the above + `shared.llm.ports`, `shared.llm.telemetry`, `shared.logging`, its own domain | presentation, another feature, FastAPI, Starlette, Gemini SDK, `shared.llm.gemini`, `shared.errors` |
+| `features/<f>/presentation` | FastAPI, `shared.auth`, `shared.llm.ports`/`dependencies`, its own application/domain | another feature |
+| `shared` | other `shared` modules | any feature. Pure modules (listed above) import no framework or SDK |
+
+- Use cases take an `llm: TextGenerator` (the Protocol in `shared/llm/ports.py`); `shared/llm/dependencies.py` is
+  the one place that picks the real Gemini client, and tests swap it with `app.dependency_overrides[get_llm]`.
+- The audio/image helpers raise `InvalidMediaError`, which knows nothing about HTTP; `shared/errors` turns it into
+  the `422 INVALID_REQUEST` (`dispatched: false`) that Node expects.
+- `google` (Gemini SDK), `httpx` and `jwt` are imported by exactly one module each (`shared/llm/gemini.py`,
+  `shared/llm/errors.py`, `shared/auth/auth.py`).
+- The feature packages (`features/<f>/__init__.py`) re-export nothing, so importing a domain or application module
+  never loads FastAPI or the Gemini SDK.
+- `tests/test_wire_contract.py` pins every Node-facing request and response model to
+  `tests/fixtures/contracts/wire_fields.json`; `backend/tests/unit/ai/python-wire-contract.test.ts` checks the
+  Node adapters and fakes against the same file. Change a model: regenerate it with
+  `UPDATE_CONTRACT_SNAPSHOT=1 .venv/bin/python -m pytest tests/test_wire_contract.py`, then update Node.
 
 ## Environment variables
 
@@ -93,8 +127,12 @@ curl http://127.0.0.1:10000/health/live          # needs no secrets and never ca
 
 - Routes stay thin: validate -> call one function -> return a contract.
 - Pydantic models for everything that crosses HTTP; `extra="forbid"` so contract drift is loud.
-- Provider SDK code lives only in `llm/`.
-- Never log message text, memories, replies, tokens or keys; log metadata only. Write events with `log_event` (numbers, booleans, closed lists); `core/logging.py` masks fields with sensitive names and anything that looks like a key, bearer token or JWT. `tests/test_observability.py` plants sentinel user content on all five endpoints and fails if any reaches the logs.
+- Model output is never forwarded unchecked to the app. The coach chat reply's `blocks` field is part of the contract
+  but always `null`: the prompt never asks for blocks, and the mobile app renders them (an `action` block runs writes
+  after one tap), so a block the model made up is dropped by `features/coach/application/parsing.py`. To bring rich
+  blocks back, ask for them in the prompt AND validate each type with its own Pydantic model first.
+- Provider SDK code lives only in `shared/llm/` (the `google` import is in `gemini.py` alone).
+- Never log message text, memories, replies, tokens or keys; log metadata only. Write events with `log_event` (numbers, booleans, closed lists); `shared/logging/logging.py` masks fields with sensitive names and anything that looks like a key, bearer token or JWT. `tests/test_observability.py` plants sentinel user content on all five endpoints and fails if any reaches the logs.
 - Runtime dependencies are pinned in `requirements.txt` (what the image installs); change them in `pyproject.toml`, then regenerate it (see its header).
 - A new folder is added when its first real file exists, never in advance.
 - Prompt changes: bump `PROMPT_VERSION` and regenerate the golden fixtures (`tests/fixtures/coach_chat/`, `voice_meal/`, `transcribe/`) in the same change.

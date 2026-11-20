@@ -4,8 +4,8 @@ import base64
 
 import pytest
 
-from onusfit_ai.core.errors import AiError
-from onusfit_ai.core.image import decode_image_base64, looks_like_supported_image
+from onusfit_ai.shared.utils.image import decode_image_base64, looks_like_supported_image
+from onusfit_ai.shared.utils.media import InvalidMediaError
 
 JPEG = b"\xff\xd8\xff\xe0\x00\x10JFIF"
 PNG = b"\x89PNG\r\n\x1a\n\x00\x00"
@@ -33,12 +33,8 @@ def test_raw_and_data_url_base64_decode_to_the_same_bytes() -> None:
 
 
 @pytest.mark.parametrize("text", ["!!!!", "a,b", "aGVsbG8=", "====", "A"])
-def test_undecodable_or_non_image_data_is_a_422_before_gemini(text: str) -> None:
-    with pytest.raises(AiError) as caught:
+def test_undecodable_or_non_image_data_is_rejected_before_gemini(text: str) -> None:
+    # The helper knows nothing about HTTP; tests/test_media_rules.py checks the 422 it becomes.
+    with pytest.raises(InvalidMediaError) as caught:
         decode_image_base64(text)
-    assert (caught.value.status_code, caught.value.code, caught.value.dispatched) == (
-        422,
-        "INVALID_REQUEST",
-        False,
-    )
-    assert text not in caught.value.message
+    assert text not in str(caught.value)

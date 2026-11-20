@@ -1,4 +1,4 @@
-"""Bounds on what the model says (meals/sanitize.py) and on what a member's words may do to the prompt."""
+"""Bounds on what the model says (features/meals/domain/sanitize.py) and on what a member's words may do to the prompt."""
 
 import base64
 import json
@@ -8,12 +8,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import FakeLlm, make_token
-from onusfit_ai.contracts.common import DetectedFoodItem
-from onusfit_ai.contracts.meal_photo import MealPhotoResult
-from onusfit_ai.contracts.voice_meal import VoiceMealResult
-from onusfit_ai.core.text import clean_prompt_text, clean_text
-from onusfit_ai.meals import limits
-from onusfit_ai.meals.sanitize import sanitize_item, sanitize_photo_result, sanitize_voice_result
+from onusfit_ai.features.meals.domain import (
+    DetectedFoodItem,
+    MealPhotoResult,
+    VoiceMealResult,
+    limits,
+    sanitize_item,
+    sanitize_photo_result,
+    sanitize_voice_result,
+)
+from onusfit_ai.shared.utils.text import clean_prompt_text, clean_text
 
 MODEL = {"primary": "gemini-primary", "fallback": None}
 JPEG = base64.b64encode(b"\xff\xd8\xff\xe0\x00\x10JFIF-fake-photo-bytes").decode()

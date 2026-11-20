@@ -6,8 +6,8 @@ from typing import Any
 import pytest
 
 from conftest import INSIGHTS_FIXTURES
-from onusfit_ai.contracts.coach_chat import UserFitnessContext
-from onusfit_ai.prompts.coach_insights import build_prompt
+from onusfit_ai.features.coach.application.prompts.coach_insights import build_prompt
+from onusfit_ai.features.coach.domain.chat import UserFitnessContext
 
 CASES = json.loads((INSIGHTS_FIXTURES / "prompt_cases.json").read_text(encoding="utf-8"))
 

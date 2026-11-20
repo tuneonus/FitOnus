@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 
 from conftest import INSIGHTS_FIXTURES
-from onusfit_ai.coach.insights_parsing import parse_insights_output
+from onusfit_ai.features.coach.application.insights_parsing import parse_insights_output
 
 CASES = json.loads((INSIGHTS_FIXTURES / "parse_cases.json").read_text(encoding="utf-8"))
 

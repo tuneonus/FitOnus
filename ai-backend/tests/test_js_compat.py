@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from onusfit_ai.core.js_compat import (
+from onusfit_ai.shared.utils.js_compat import (
     js_num,
     js_number,
     js_or,

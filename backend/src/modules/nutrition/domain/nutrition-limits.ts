@@ -85,10 +85,10 @@ export const SERVING_UNIT_MAX_LENGTH = 30;
 
 /**
  * What a believable AI estimate (meal photo, voice meal) looks like. The Python service bounds its own output to
- * these numbers (ai-backend/src/onusfit_ai/meals/limits.py) and this side checks them again on the way in, so a
- * hallucinated or hostile model reply can never reach a member. They sit inside the write-path limits above, so
- * every detected item can be saved. `tests/unit/nutrition/ai-estimate-limits.test.ts` pins that the Python file
- * agrees: change both together.
+ * these numbers (ai-backend/src/onusfit_ai/features/meals/domain/limits.py) and this side checks them again on the
+ * way in, so a hallucinated or hostile model reply can never reach a member. They sit inside the write-path limits
+ * above, so every detected item can be saved. `tests/unit/nutrition/ai-estimate-limits.test.ts` pins that the Python
+ * file agrees: change both together.
  */
 export const AI_ESTIMATE_LIMITS = {
   /** A meal of maximum items must still fit the meal totals above: 20 x 2,500 kcal, 20 x 250 g. */

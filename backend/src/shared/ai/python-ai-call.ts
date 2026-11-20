@@ -11,7 +11,7 @@ import { PythonAiError } from './python-ai-client.js';
 
 const intNumber = z.number().int().nonnegative();
 
-/** The `usage` block every internal Python endpoint returns (ai-backend/contracts/common.py `Usage`). */
+/** The `usage` block every internal Python endpoint returns (ai-backend/src/onusfit_ai/shared/contracts/common.py `Usage`). */
 export const pythonUsageSchema = z.object({
   model: z.string(),
   isFallback: z.boolean(),

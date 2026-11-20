@@ -63,10 +63,10 @@ Meal photo and voice meal answers come from the Python AI service (`ai-backend`)
 1. **Request hints (Node).** Meal type and language are short labels (`aiHintSchema`: letters, digits, spaces and a
    little punctuation, at most 50 characters); notes at most 250, spoken or typed text at most 2,000.
 2. **Prompt input (Python).** Request contracts flatten member-written text to one line and turn double quotes into
-   single quotes (`core/text.py`), so a note cannot close its quotes or start a new "instruction" line.
-3. **Parsing (Python).** `meals/parsing.py` and `meals/photo_parsing.py` still reproduce the former Node parser exactly;
+   single quotes (`shared/utils/text.py`), so a note cannot close its quotes or start a new "instruction" line.
+3. **Parsing (Python).** `features/meals/application/parsing.py` and `features/meals/application/photo_parsing.py` still reproduce the former Node parser exactly;
    their golden fixtures are unchanged.
-4. **Sanitising (Python).** `meals/sanitize.py` bounds the parsed result: at most 20 items; per item at most 2,500 kcal,
+4. **Sanitising (Python).** `features/meals/domain/sanitize.py` bounds the parsed result: at most 20 items; per item at most 2,500 kcal,
    250 g of protein, carbs or fat, 100 g of fibre, a 5,000 g serving and a serving size of 1,000; non-positive weights
    and sizes fall back to defaults; text is one clean line within the lengths the diary accepts. Totals are recomputed
    from the bounded items. When anything had to be changed the item becomes `low` confidence and the reply carries a
@@ -75,7 +75,7 @@ Meal photo and voice meal answers come from the Python AI service (`ai-backend`)
    answers a controlled 503 for anything outside them.
 
 The limits live in two files that must agree: `backend/src/modules/nutrition/domain/nutrition-limits.ts` and
-`ai-backend/src/onusfit_ai/meals/limits.py` (a Node test reads the Python file and fails on any difference). They sit
+`ai-backend/src/onusfit_ai/features/meals/domain/limits.py` (a Node test reads the Python file and fails on any difference). They sit
 inside the meal-logging limits, including the meal totals (20 items x 2,500 kcal = the 50,000 kcal cap), so every
 detected item can be saved.
 

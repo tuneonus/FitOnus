@@ -25,12 +25,12 @@ const USER = '11111111-1111-4111-8111-111111111111';
 // --- the Python side's numbers, read from its source -------------------------------------------------------------
 
 const pythonLimitsSource = readFileSync(
-  resolve(__dirname, '../../../../ai-backend/src/onusfit_ai/meals/limits.py'),
+  resolve(__dirname, '../../../../ai-backend/src/onusfit_ai/features/meals/domain/limits.py'),
   'utf8',
 );
 const pythonLimit = (name: string): number => {
   const match = new RegExp(`^${name} = (\\d+)$`, 'm').exec(pythonLimitsSource);
-  if (!match) throw new Error(`${name} is missing from ai-backend meals/limits.py`);
+  if (!match) throw new Error(`${name} is missing from ai-backend features/meals/domain/limits.py`);
   return Number(match[1]);
 };
 

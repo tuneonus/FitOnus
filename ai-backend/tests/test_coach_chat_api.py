@@ -5,9 +5,10 @@ from fastapi.testclient import TestClient
 from fastapi.testclient import TestClient as _TC
 
 from conftest import FakeLlm, load_request, make_token
-from onusfit_ai.core.errors import AiError
-from onusfit_ai.llm.gemini import get_llm
 from onusfit_ai.main import create_app
+from onusfit_ai.shared.errors import AiError
+from onusfit_ai.shared.llm.dependencies import get_llm
+from onusfit_ai.shared.llm.errors import LlmServiceError
 
 URL = "/internal/v1/ai/coach/chat"
 
@@ -48,10 +49,67 @@ def test_unstructured_model_reply_is_flagged(client: TestClient, fake_llm: FakeL
     assert body["result"]["text"] == "plain prose reply"
 
 
-def test_blocks_are_passed_through(client: TestClient, fake_llm: FakeLlm) -> None:
-    fake_llm.text = '{"text":"x","blocks":[{"type":"metrics","title":"T","items":[]}, 5]}'
-    body = client.post(URL, json=load_request("sparse"), headers=auth()).json()
-    assert body["result"]["blocks"] == [{"type": "metrics", "title": "T", "items": []}]
+# Audit M5 (approved): the prompt never asks for `blocks`, but the mobile app renders them and an "action"
+# block runs writes (log a meal, set the weight) after one tap. A block the model invented must never
+# reach the app, so the field stays in the contract (Node and mobile unchanged) and is always null.
+ACTION_BLOCK = {
+    "type": "action",
+    "id": "a1",
+    "title": "Log breakfast",
+    "summary": [{"label": "Calories", "value": "200 kcal"}],  # what the member READS ...
+    "payload": {"kind": "updateWeight", "value": 1000},  # ... is not what runs on confirm
+    "status": "pending",
+}
+
+
+def reply_with_blocks(blocks: Any) -> str:
+    import json
+
+    return json.dumps(
+        {"text": "x", "followUps": ["Next?"], "sources": ["Profile"], "blocks": blocks}
+    )
+
+
+@pytest.mark.parametrize(
+    "blocks",
+    [
+        [{"type": "metrics", "title": "T", "items": []}, 5],
+        [ACTION_BLOCK],
+        [{"type": "link", "label": "x", "description": "y", "route": "Anything"}],
+        "not-a-list",
+        {"type": "action"},
+    ],
+    ids=["display-block", "action-block", "link-block", "string", "object"],
+)
+def test_model_supplied_blocks_never_reach_the_response(
+    client: TestClient, fake_llm: FakeLlm, blocks: Any
+) -> None:
+    fake_llm.text = reply_with_blocks(blocks)
+    response = client.post(URL, json=load_request("sparse"), headers=auth())
+
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert (
+        result["blocks"] is None
+    )  # still in the contract, so Node's schema and the app are unaffected
+    assert "blocks" in result
+    # Everything else about the reply is unchanged.
+    assert (result["text"], result["followUps"], result["sources"]) == ("x", ["Next?"], ["Profile"])
+    assert response.json()["outcome"] == "ok"
+
+
+@pytest.mark.parametrize("depth", [900, 3000])
+def test_a_deeply_nested_block_cannot_crash_the_response(
+    client: TestClient, fake_llm: FakeLlm, depth: int
+) -> None:
+    # Before the fix a nested block was forwarded and serializing it raised RecursionError: an HTTP 500
+    # after Gemini had already been billed (Node counts a 500 as dispatched, so the quota unit was lost).
+    nested = "[" * depth + "]" * depth
+    fake_llm.text = '{"text":"x","blocks":[{"type":"metrics","items":' + nested + "}]}"
+    response = client.post(URL, json=load_request("sparse"), headers=auth())
+
+    assert response.status_code == 200
+    assert response.json()["result"]["blocks"] is None
 
 
 @pytest.mark.parametrize(
@@ -107,6 +165,26 @@ def test_provider_errors_become_structured_json(fake_llm: FakeLlm) -> None:
             "message": "slow down",
             "dispatched": True,
             "retryAfterSeconds": 25,
+        }
+    }
+
+
+def test_llm_service_error_maps_to_http_status(fake_llm: FakeLlm) -> None:
+    fake_llm.error = LlmServiceError(
+        code="PROVIDER_TIMEOUT",
+        message="timed out",
+        dispatched=False,
+    )
+    app = create_app()
+    app.dependency_overrides[get_llm] = lambda: fake_llm
+    response = _TC(app).post(URL, json=load_request("sparse"), headers=auth())
+
+    assert response.status_code == 504
+    assert response.json() == {
+        "error": {
+            "code": "PROVIDER_TIMEOUT",
+            "message": "timed out",
+            "dispatched": False,
         }
     }
 

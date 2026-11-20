@@ -13,10 +13,11 @@ import jwt
 import pytest
 from fastapi.testclient import TestClient
 
-from onusfit_ai.core.auth import replay_cache
-from onusfit_ai.core.logging import configure_logging
-from onusfit_ai.llm.gemini import LlmResult, LlmUsage, MediaInput, get_llm
 from onusfit_ai.main import create_app
+from onusfit_ai.shared.auth import replay_cache
+from onusfit_ai.shared.llm.dependencies import get_llm
+from onusfit_ai.shared.llm.ports import LlmResult, LlmUsage, MediaInput
+from onusfit_ai.shared.logging import configure_logging
 
 SECRET = "test-secret-test-secret-test-secret-123"
 FIXTURES = Path(__file__).parent / "fixtures" / "coach_chat"

@@ -1,9 +1,12 @@
+import sys
+import threading
 import time
 
 import pytest
 from fastapi.testclient import TestClient
 
 from conftest import SECRET, load_request, make_token
+from onusfit_ai.shared.auth.auth import ReplayCache
 
 URL = "/internal/v1/ai/coach/chat"
 
@@ -90,3 +93,41 @@ def test_short_secret_fails_closed(client: TestClient, monkeypatch: pytest.Monke
 
 def test_secret_constant_is_long_enough() -> None:
     assert len(SECRET) >= 32
+
+
+def stress_replay_cache(
+    cache: object, threads: int = 16, tokens: int = 400
+) -> tuple[list[int], list[BaseException]]:
+    """Every thread presents the same `tokens` ids; returns the ids that were accepted and any crashes."""
+    accepted: list[int] = []
+    crashes: list[BaseException] = []
+    start = threading.Barrier(threads)
+
+    def worker() -> None:
+        start.wait()
+        try:
+            for jti in range(tokens):
+                if cache.check_and_store(f"jti-{jti}", expires_at=2e9, now=1.0):  # type: ignore[attr-defined]
+                    accepted.append(jti)
+        except BaseException as exc:  # noqa: BLE001 - the point is to see any failure
+            crashes.append(exc)
+
+    switch_interval = sys.getswitchinterval()
+    sys.setswitchinterval(1e-6)  # switch threads as often as possible to expose a race
+    try:
+        pool = [threading.Thread(target=worker) for _ in range(threads)]
+        for thread in pool:
+            thread.start()
+        for thread in pool:
+            thread.join()
+    finally:
+        sys.setswitchinterval(switch_interval)
+    return accepted, crashes
+
+
+def test_replay_cache_accepts_each_token_exactly_once_across_threads() -> None:
+    # Regression (audit L1): FastAPI runs the auth dependency on worker threads, and the unlocked
+    # "check, then store" could let one token pass twice (or crash while another thread added an entry).
+    accepted, crashes = stress_replay_cache(ReplayCache())
+    assert crashes == []
+    assert sorted(accepted) == list(range(400))

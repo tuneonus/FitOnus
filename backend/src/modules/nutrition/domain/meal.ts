@@ -1,8 +1,8 @@
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 /**
- * The `brand` label the AI parsers stamp on every item they produce (`ai-backend/.../meals/photo_parsing.py` and
- * `meals/parsing.py`). A saved meal item has no provenance column yet, so this label is how an AI estimate is
+ * The `brand` label the AI parsers stamp on every item they produce (`features/meals/application/photo_parsing.py`
+ * and `parsing.py` in ai-backend). A saved meal item has no provenance column yet, so this label is how an AI estimate is
  * recognised after it was saved. When real provenance is stored, `isAiEstimateBrand` is the only thing to replace.
  */
 export const AI_ESTIMATE_BRANDS: readonly string[] = ['AI Estimate', 'AI Voice Estimate'];

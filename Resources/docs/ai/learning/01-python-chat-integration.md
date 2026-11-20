@@ -41,17 +41,17 @@ COACH_CHAT_BACKEND=PYTHON_GEMINI   # Node asks Python first; Node Gemini is the 
 | File | What it is | Why it exists |
 |---|---|---|
 | `src/onusfit_ai/main.py` | Builds the FastAPI app | The entry point (`uvicorn onusfit_ai.main:app`). Mounts the routes and error handlers. Turns off `/docs` because this is an internal service. |
-| `src/onusfit_ai/api/coach_chat.py` | The route `POST /internal/v1/ai/coach/chat` | A *thin* HTTP wrapper: receive request → call one function → return the answer. |
-| `src/onusfit_ai/contracts/_base.py` | Shared Pydantic settings | camelCase on the wire, strict (unknown fields rejected). |
-| `src/onusfit_ai/contracts/coach_chat.py` | Request/response shapes | The "contract" between Node and Python. Pydantic validates it automatically. |
-| `src/onusfit_ai/coach/chat.py` | `generate_coach_reply` | The use case: prompt → Gemini → parse → response. No HTTP in it, so it is easy to test. |
-| `src/onusfit_ai/coach/parsing.py` | `parse_coach_output` | Turns Gemini's raw text into structured data (strips ```` ```json ```` fences, falls back to plain text). |
-| `src/onusfit_ai/prompts/coach_chat.py` | The prompt text | A line-for-line port of the Node prompt, with a version label. |
-| `src/onusfit_ai/llm/gemini.py` | `GeminiClient` | The **only** file that talks to Google. Handles the fallback model, timeouts, cooldown. |
-| `src/onusfit_ai/llm/errors.py` | Error classifier + cooldown | Decides "is this failure worth trying the backup model?" and "skip a model that just failed". |
-| `src/onusfit_ai/core/config.py` | `Settings` | Reads environment variables (secrets never live in code). |
-| `src/onusfit_ai/core/auth.py` | Service-token check | Makes sure only Node can call this service. |
-| `src/onusfit_ai/core/errors.py` | `AiError` + handlers | One consistent JSON error shape; never echoes user content. |
+| `src/onusfit_ai/features/coach/presentation/coach_chat.py` | The route `POST /internal/v1/ai/coach/chat` | A *thin* HTTP wrapper: receive request → call one function → return the answer. |
+| `src/onusfit_ai/shared/contracts/_base.py` | Shared Pydantic settings | camelCase on the wire, strict (unknown fields rejected). |
+| `src/onusfit_ai/features/coach/domain/chat.py` | Request/response shapes | The "contract" between Node and Python. Pydantic validates it automatically. |
+| `src/onusfit_ai/features/coach/application/chat.py` | `generate_coach_reply` | The use case: prompt → Gemini → parse → response. No HTTP in it, so it is easy to test. |
+| `src/onusfit_ai/features/coach/application/parsing.py` | `parse_coach_output` | Turns Gemini's raw text into structured data (strips ```` ```json ```` fences, falls back to plain text). |
+| `src/onusfit_ai/features/coach/application/prompts/coach_chat.py` | The prompt text | A line-for-line port of the Node prompt, with a version label. |
+| `src/onusfit_ai/shared/llm/gemini.py` | `GeminiClient` | The **only** file that talks to Google. Handles the fallback model, timeouts, cooldown. |
+| `src/onusfit_ai/shared/llm/errors.py` | Error classifier + cooldown | Decides "is this failure worth trying the backup model?" and "skip a model that just failed". |
+| `src/onusfit_ai/shared/config/config.py` | `Settings` | Reads environment variables (secrets never live in code). |
+| `src/onusfit_ai/shared/auth/auth.py` | Service-token check | Makes sure only Node can call this service. |
+| `src/onusfit_ai/shared/errors/errors.py` | `AiError` + handlers | One consistent JSON error shape; never echoes user content. |
 | `tests/…` (7 files) + `tests/fixtures/coach_chat/*` | 59 tests + shared fixtures | See §11. |
 | `.env.example` | Template of settings | Copy to `.env`. |
 
@@ -108,7 +108,7 @@ Steps 1–4 and 10–11 are untouched. Only steps 5–9 are new.
 FastAPI turns a Python function into an HTTP endpoint with a decorator:
 
 ```python
-# api/coach_chat.py
+# features/coach/presentation/coach_chat.py
 router = APIRouter(prefix="/internal/v1/ai/coach", tags=["coach"])
 
 @router.post("/chat", response_model=CoachChatResponse)
@@ -128,17 +128,17 @@ Things to notice:
 - **Parameters are inputs.** FastAPI looks at each parameter's *type* to decide where it comes from: a Pydantic model → the JSON body; `Header(...)` → a header; `Depends(...)` → the result of another function.
 - **`Depends`** is dependency injection: FastAPI calls `require_chat_scope` (the auth check) and `get_llm` (builds the Gemini client) and passes the results in. If the auth check raises an error, your function never runs. This also makes testing easy: a test can replace `get_llm` with a fake (`app.dependency_overrides[get_llm] = ...`).
 - **`async def` / `await`**: while Python waits for Gemini (seconds), the server can handle other requests. `await` means "pause here until the answer arrives, but let others run".
-- **The route is thin**: no prompt, no Gemini, no parsing. Just plumbing. The real work is in `coach/chat.py`.
+- **The route is thin**: no prompt, no Gemini, no parsing. Just plumbing. The real work is in `features/coach/application/chat.py`.
 - **`main.py:create_app`** assembles everything: `register_error_handlers(app)` and `app.include_router(coach_chat.router)`.
 
 ---
 
-## 4. How Pydantic validates data (`contracts/`)
+## 4. How Pydantic validates data (`features/coach/domain/`, `shared/contracts/`)
 
 A **Pydantic model** is a class describing the exact shape of some data. Pydantic checks incoming JSON against it and gives you real typed Python objects, or a clear error.
 
 ```python
-# contracts/coach_chat.py
+# features/coach/domain/chat.py
 class CoachChatRequest(ContractModel):
     message: str = Field(min_length=1, max_length=1000)
     context: UserFitnessContext
@@ -149,7 +149,7 @@ class CoachChatRequest(ContractModel):
 ```
 
 ```python
-# contracts/_base.py
+# shared/contracts/_base.py
 class ContractModel(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
 ```
@@ -160,7 +160,7 @@ class ContractModel(BaseModel):
 - `Literal["user", "assistant"]` (in `ChatTurn.role`) allows only those two strings.
 - Responses use Pydantic too: `CoachChatResponse` is the promise Python makes to Node.
 
-When validation fails, FastAPI raises `RequestValidationError`. Our handler (`core/errors.py:handle_validation_error`) turns it into:
+When validation fails, FastAPI raises `RequestValidationError`. Our handler (`shared/errors/errors.py:handle_validation_error`) turns it into:
 
 ```json
 {"error": {"code": "INVALID_REQUEST", "message": "Request validation failed.", "dispatched": false,
@@ -171,7 +171,7 @@ It lists **where and why** but never **the value**, because the value could be a
 
 ---
 
-## 5. How Python calls Gemini (`llm/gemini.py`)
+## 5. How Python calls Gemini (`shared/llm/gemini.py`)
 
 ```python
 from google import genai
@@ -194,7 +194,7 @@ usage = response.usage_metadata              # token counts
 
 **Why at most two attempts?** Every attempt can cost money and time. "Primary then one fallback" is bounded; a retry loop is not. (Test: `test_both_models_failing_gives_ai_unavailable_after_exactly_two_calls`.)
 
-### The prompt (`prompts/coach_chat.py`)
+### The prompt (`features/coach/application/prompts/coach_chat.py`)
 
 `build_prompt(message, context, history, memories)` returns **one big string**: the coach's rules and the user's data, then memories, then the last 6 chat turns, then the question. It is a **line-for-line port of the Node prompt**, deliberately. During a migration you change *one thing at a time*: if answers change and you changed language *and* wording, you cannot tell which caused it.
 
@@ -207,7 +207,7 @@ If anyone changes one prompt without the other, a test fails. (I checked this by
 
 Tiny trap handled in `js_num`: JavaScript prints `72` for `72.0`, Python prints `72.0`. Without `js_num`, the Python prompt would say "Height: 175.0 cm" and differ from Node.
 
-### Parsing the reply (`coach/parsing.py`)
+### Parsing the reply (`features/coach/application/parsing.py`)
 
 `parse_coach_output(raw_text, has_memories)`:
 - **Input:** Gemini's text, e.g. ```` ```json\n{"text":"...","followUps":[...]}\n``` ````
@@ -254,7 +254,7 @@ new SignJWT({ scope: 'ai:coach:chat', rid: requestId })
   .sign(secretKey)               // HS256, shared secret (>= 32 chars)
 ```
 
-**Python verifies** (`core/auth.py:verify_service_token`): **Input** the `Authorization` header + the endpoint's scope. **Processing:** secret configured and ≥32 chars? → `jwt.decode(..., algorithms=["HS256"], audience, issuer, leeway=5 s, require exp/iat/sub/jti/iss/aud)` → lifetime ≤ 60 s → `scope` equals this endpoint's scope → `jti` not seen before (replay cache). **Output** `ServiceClaims(user_id, request_id, jti)`. **Errors:** 401 `AUTH_INVALID_TOKEN` (one deliberately vague message: never tell a caller *why*), or 503 `AUTH_NOT_CONFIGURED` if the secret is missing/short (**fail closed**: with no secret, accept nothing).
+**Python verifies** (`shared/auth/auth.py:verify_service_token`): **Input** the `Authorization` header + the endpoint's scope. **Processing:** secret configured and ≥32 chars? → `jwt.decode(..., algorithms=["HS256"], audience, issuer, leeway=5 s, require exp/iat/sub/jti/iss/aud)` → lifetime ≤ 60 s → `scope` equals this endpoint's scope → `jti` not seen before (replay cache). **Output** `ServiceClaims(user_id, request_id, jti)`. **Errors:** 401 `AUTH_INVALID_TOKEN` (one deliberately vague message: never tell a caller *why*), or 503 `AUTH_NOT_CONFIGURED` if the secret is missing/short (**fail closed**: with no secret, accept nothing).
 
 What each check defends against:
 
@@ -331,13 +331,13 @@ Key numbers (`python-coach-chat-service.ts`):
 
 | Function | Input | Processing | Output | Errors |
 |---|---|---|---|---|
-| `api/coach_chat.py:coach_chat` | HTTP body, auth header, `X-Request-Id` | FastAPI validates + authenticates, then calls `generate_coach_reply` | `CoachChatResponse` JSON | 401/503 auth, 422 validation, any `AiError` |
-| `coach/chat.py:generate_coach_reply` | validated request, an LLM object, trace id | `build_prompt` → `llm.generate_text` → `parse_coach_output` → build response; logs **metadata only** | `CoachChatResponse` | propagates `AiError` from the LLM layer |
-| `prompts/coach_chat.py:build_prompt` | message, context, history, memories | system rules + data + memories + last 6 turns + question | one prompt string | none |
-| `llm/gemini.py:GeminiClient.generate_text` | prompt, models, deadline | plan models, call with timeout, fallback once, cooldown | `LlmResult` | `AiError` (§5) |
-| `llm/errors.py:classify_gemini_error` | any exception | reads HTTP code/status/details; extracts retry hint | `ClassifiedError(kind, is_retryable, is_project_wide, retry_after)` | never raises |
-| `core/auth.py:verify_service_token` | header, expected scope | JWT checks (§7) | `ServiceClaims` | `AiError` 401/503 |
-| `core/errors.py:handle_validation_error` | Pydantic error | list field + problem type only | 422 JSON | none |
+| `features/coach/presentation/coach_chat.py:coach_chat` | HTTP body, auth header, `X-Request-Id` | FastAPI validates + authenticates, then calls `generate_coach_reply` | `CoachChatResponse` JSON | 401/503 auth, 422 validation, any `AiError` |
+| `features/coach/application/chat.py:generate_coach_reply` | validated request, an LLM object, trace id | `build_prompt` → `llm.generate_text` → `parse_coach_output` → build response; logs **metadata only** | `CoachChatResponse` | propagates `AiError` from the LLM layer |
+| `features/coach/application/prompts/coach_chat.py:build_prompt` | message, context, history, memories | system rules + data + memories + last 6 turns + question | one prompt string | none |
+| `shared/llm/gemini.py:GeminiClient.generate_text` | prompt, models, deadline | plan models, call with timeout, fallback once, cooldown | `LlmResult` | `AiError` (§5) |
+| `shared/llm/errors.py:classify_gemini_error` | any exception | reads HTTP code/status/details; extracts retry hint | `ClassifiedError(kind, is_retryable, is_project_wide, retry_after)` | never raises |
+| `shared/auth/auth.py:verify_service_token` | header, expected scope | JWT checks (§7) | `ServiceClaims` | `AiError` 401/503 |
+| `shared/errors/errors.py:handle_validation_error` | Pydantic error | list field + problem type only | 422 JSON | none |
 | `PythonAiClient.postJson` | request descriptor | sign → fetch → classify | parsed JSON (unknown) | `PythonAiError` |
 | `PythonCoachChatService.generateCoachResponse` | same as Node's service | Python → validate → map; or bounded fallback | `CoachResponse` | `AppError` |
 | `GeminiRuntimeService.recordExternalUsage` | usage event | compute cost from the pricing table, insert ledger row | `void` | rejects if DB write fails (adapter ignores it) |
@@ -399,9 +399,9 @@ New Python tests: `tests/test_auth.py`, `test_coach_chat_api.py`, `test_coach_ch
 
 ## 12. What to study first
 
-1. **Pydantic**: read `contracts/coach_chat.py` and `tests/test_coach_chat_api.py::test_invalid_requests_are_rejected_without_echoing_input`. Try adding a field and watch a test fail.
-2. **FastAPI `Depends`**: read `api/coach_chat.py` and `core/auth.py:require_scope`. Why can a test replace `get_llm`?
-3. **Async Python**: `llm/gemini.py:_call` (`asyncio.timeout`) and `tests/test_gemini_client.py::test_timeout_is_not_retried_and_maps_to_504`.
+1. **Pydantic**: read `features/coach/domain/chat.py` and `tests/test_coach_chat_api.py::test_invalid_requests_are_rejected_without_echoing_input`. Try adding a field and watch a test fail.
+2. **FastAPI `Depends`**: read `features/coach/presentation/coach_chat.py` and `shared/auth/auth.py:require_scope`. Why can a test replace `get_llm`?
+3. **Async Python**: `shared/llm/gemini.py:_call` (`asyncio.timeout`) and `tests/test_gemini_client.py::test_timeout_is_not_retried_and_maps_to_504`.
 4. **JWT basics** (header.payload.signature, HS256, `exp`, `aud`) then `tests/test_auth.py`.
 5. **Prompt parity as a testing technique**: golden files shared by two languages.
 6. **The "dispatched" idea** (§9) — a good interview story about billing-safe fallbacks.

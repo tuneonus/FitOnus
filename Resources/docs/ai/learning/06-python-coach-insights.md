@@ -87,12 +87,12 @@ Quirks of the Node parser that are **preserved**:
 
 **Python (`ai-backend/src/onusfit_ai/`)**
 
-- `prompts/coach_insights.py` — **`build_prompt(context, lang)`**, version `coach_insights_v1_node_parity`; verbatim port, compared against the 26 golden prompts (`test_coach_insights_prompt.py`). Uses `js_num` / `js_nullish` so numbers and `??` print like JavaScript.
-- `contracts/coach_insights.py` — **`CoachInsightsRequest`** (`context` = the existing `UserFitnessContext` model, `lang`, `model`, `deadlineMs`; no unknown fields, so no `userId`), **`CoachInsightsResponse`** (`outcome: ok | unusable`, `result` or `null`, `usage`, `traceId`).
-- `coach/insights_parsing.py` — **`parse_insights_output(raw, display_name)`** → `(result | None, outcome)`; never raises (`test_coach_insights_parsing.py`, 39 goldens + extras).
-- `coach/insights.py` — **`generate_coach_insights`**: prompt → `llm.generate_text` → parse; logs metadata only (no name, goal, workouts, prompt or reply).
-- `api/coach_insights.py` — **`POST /internal/v1/ai/coach/insights`**, scope `ai:coach:insights` (chat, meal, voice and transcription tokens are refused, and an insights token does not open the chat endpoint). Registered in `main.py`.
-- `core/js_compat.py` — gained **`js_nullish`** (the `${value ?? default}` rule), moved out of the chat prompt where it was private; the chat golden prompts still pass byte for byte.
+- `features/coach/application/prompts/coach_insights.py` — **`build_prompt(context, lang)`**, version `coach_insights_v1_node_parity`; verbatim port, compared against the 26 golden prompts (`test_coach_insights_prompt.py`). Uses `js_num` / `js_nullish` so numbers and `??` print like JavaScript.
+- `features/coach/domain/insights.py` — **`CoachInsightsRequest`** (`context` = the existing `UserFitnessContext` model, `lang`, `model`, `deadlineMs`; no unknown fields, so no `userId`), **`CoachInsightsResponse`** (`outcome: ok | unusable`, `result` or `null`, `usage`, `traceId`).
+- `features/coach/application/insights_parsing.py` — **`parse_insights_output(raw, display_name)`** → `(result | None, outcome)`; never raises (`test_coach_insights_parsing.py`, 39 goldens + extras).
+- `features/coach/application/insights.py` — **`generate_coach_insights`**: prompt → `llm.generate_text` → parse; logs metadata only (no name, goal, workouts, prompt or reply).
+- `features/coach/presentation/coach_insights.py` — **`POST /internal/v1/ai/coach/insights`**, scope `ai:coach:insights` (chat, meal, voice and transcription tokens are refused, and an insights token does not open the chat endpoint). Registered in `main.py`.
+- `shared/utils/js_compat.py` — gained **`js_nullish`** (the `${value ?? default}` rule), moved out of the chat prompt where it was private; the chat golden prompts still pass byte for byte.
 
 **Node (`backend/src/modules/coach/`)**
 

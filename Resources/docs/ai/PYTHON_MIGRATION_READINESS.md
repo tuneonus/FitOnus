@@ -343,7 +343,8 @@ User identity is **only** the JWT `sub`; there is no `userId` in the body.
 | Python status / `error.code` | Meaning | Node action |
 |---|---|---|
 | 401/403 `AUTH` | bad service token | log critical; use Node fallback path; do **not** charge twice |
-| 422 `INVALID_REQUEST` | contract bug | log; Node fallback |
+| 422 `INVALID_REQUEST` | contract bug, or unusable audio/image (`dispatched:false`) | log; Node fallback |
+| 413 `PAYLOAD_TOO_LARGE` | body over the Python cap (about 15.5 MiB), refused before auth and parsing, `dispatched:false` | Node maps any 413 to `invalid_request`; refund |
 | 429 `PROVIDER_RATE_LIMITED` (+`retryAfterSeconds`) | Gemini 429 | map to public 429 `RATE_LIMITED` (existing mapping) |
 | 503 `PROVIDER_UNAVAILABLE` / `PROVIDER_TIMEOUT` | Gemini overloaded/timeout, `dispatched:true` | public 503 `SERVICE_UNAVAILABLE` with the existing timeout message; unit consumed (existing rule) |
 | 503 `AI_UNAVAILABLE` | both models cooling/failed | public 503 `AI_UNAVAILABLE` + `retryAfterSeconds` |
@@ -386,7 +387,7 @@ User identity is **only** the JWT `sub`; there is no `userId` in the body.
 
 | Item | Status **[VERIFIED 2026-11-18]** |
 |---|---|
-| Layout | Valid `src/` layout: `pyproject.toml`, `README.md`, `src/onusfit_ai/{__init__,main}.py`, `api/health.py`, `contracts/health.py`, `core/config.py`, `tests/test_health.py`. No empty future directories. |
+| Layout | Valid `src/` layout: `pyproject.toml`, `README.md`, `src/onusfit_ai/{__init__,main}.py`, `shared/health/router.py`, `shared/health/models.py`, `shared/config/config.py`, `tests/test_health.py`. No empty future directories. |
 | Package build config | hatchling wheel target `src/onusfit_ai`; pytest `pythonpath=["src"]`. Not built. |
 | FastAPI app | `create_app()` factory + `app = create_app()`; one router. Appropriate for now. |
 | Health | `GET /health/live` only (process up; checks nothing). **No readiness** endpoint; correct for now (no dependencies), required before deployment. |

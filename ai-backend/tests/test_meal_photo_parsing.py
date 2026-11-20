@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 
 from conftest import MEAL_PHOTO_FIXTURES
-from onusfit_ai.meals.photo_parsing import parse_meal_photo_output
+from onusfit_ai.features.meals.application.photo_parsing import parse_meal_photo_output
 
 CASES = json.loads((MEAL_PHOTO_FIXTURES / "parse_cases.json").read_text(encoding="utf-8"))
 

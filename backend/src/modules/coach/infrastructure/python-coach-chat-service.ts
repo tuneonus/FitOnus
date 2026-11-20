@@ -18,7 +18,7 @@ const MIN_DEADLINE_MS = 1_000;
 /** Shown to the user for every failure that is about the AI backend itself (nothing internal leaks). */
 export const AI_BACKEND_UNAVAILABLE_MESSAGE = 'The AI Coach is temporarily unavailable. Please try again shortly.';
 
-/** Python's reply. Mirrors ai-backend/contracts/coach_chat.py. */
+/** Python's reply. Mirrors ai-backend/src/onusfit_ai/features/coach/domain/chat.py. */
 const pythonChatResponseSchema = z.object({
   outcome: z.enum(['ok', 'unstructured']),
   result: z.object({

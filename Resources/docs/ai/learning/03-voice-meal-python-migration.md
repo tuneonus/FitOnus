@@ -53,13 +53,13 @@ The last row is deliberate: changing it would change what the app shows. Python 
 3. **Prove** equality: `tests/test_voice_meal_prompt.py` and `tests/test_voice_meal_parsing.py` must reproduce every recorded result.
 4. **Then delete** the Node code.
 
-This is the "golden master" technique. It caught real language differences, all handled in `core/js_compat.py`:
+This is the "golden master" technique. It caught real language differences, all handled in `shared/utils/js_compat.py`:
 
 | JavaScript behavior the app depended on | Python default | Helper |
 |---|---|---|
 | `Math.round(2.5) === 3` | `round(2.5) == 2` (banker's rounding) | `js_round` |
 | `Number("abc") \|\| 0` → `0`; `Number("260")` → `260` | `float("abc")` raises | `js_number`, `number_or` |
-| `reduce` adds floats left-to-right | `sum()` (3.12) uses compensated summation, so `0.1+0.2+0.3` can differ | explicit loop in `meals/parsing.py` |
+| `reduce` adds floats left-to-right | `sum()` (3.12) uses compensated summation, so `0.1+0.2+0.3` can differ | explicit loop in `features/meals/application/parsing.py` |
 | `[]` and `{}` are truthy | falsy | `js_truthy`, `js_or` |
 | `String(true)` → `"true"`; `String(5.0)` → `"5"` | `"True"`; `"5.0"` | `js_string`, `js_num` |
 | `JSON.parse('{"a":NaN}')` throws | `json.loads` accepts `NaN` | `parse_constant` rejects it |
@@ -68,14 +68,14 @@ This is the "golden master" technique. It caught real language differences, all 
 
 **Python (`ai-backend/src/onusfit_ai/`)**
 
-- `prompts/voice_meal.py` — **`build_prompt(transcript, lang, meal_type)`**. *Input:* optional transcript, language hint, meal type. *Processing:* the 50-line prompt (English/Tamil/Tanglish quantity rules, JSON schema) with a `CONTEXT:` block listing only the hints that are non-empty. Generated from the Node source, then verified. *Output:* one string (same for the text and audio paths; the clip is sent separately). *Errors:* none. *Tests:* `test_voice_meal_prompt.py` (5 Node-rendered goldens).
-- `contracts/voice_meal.py` — **`ParseVoiceMealRequest`** (transcript ≤ 2000 chars, optional audio `{mimeType, base64}`, lang, mealType, models, deadline; *at least a transcript or audio*, no unknown fields, so no `userId`) and **`ParseVoiceMealResponse`** (`outcome`, `result`, `usage`, `traceId`). *Errors:* Pydantic → 422 listing field names only. *Tests:* `test_voice_meal_api.py::test_invalid_requests_are_rejected_without_echoing_input`.
-- `contracts/common.py` — `ModelSelection`, `Usage`, shared by chat and voice (moved out of the chat contract).
-- `meals/parsing.py` — **`parse_voice_meal_output(raw, fallback_transcript)`**. *Input:* Gemini's raw text and the user's typed transcript. *Processing:* strip code fences → JSON → read items with JavaScript-style coercion and rounding → totals with one decimal → `ok` / `no_food` / `parse_failed`. *Output:* `(VoiceMealResult, outcome)`. *Errors:* never raises (bad JSON, null items, NaN → `parse_failed` result). *Tests:* `test_voice_meal_parsing.py` (22 goldens + outcome flags + rounding/summing/id tests).
-- `meals/voice.py` — **`parse_voice_meal(request, llm, trace_id)`**. *Input:* validated request, an LLM object. *Processing:* build prompt → decode audio (raw base64 or `data:` URL) → `llm.generate_text(..., media=clip)` → parse → map usage; logs metadata only. *Output:* `ParseVoiceMealResponse`. *Errors:* invalid base64 → 422 (`dispatched:false`, Gemini never called); LLM errors propagate as `AiError`. *Tests:* `test_voice_meal_api.py` (text, audio, data URL, both, bad base64, no content in logs).
-- `api/voice_meal.py` — **`parse_voice`**: `POST /internal/v1/ai/meals/parse-voice`, scope `ai:meals:voice` (a chat token is refused). *Tests:* `test_voice_meal_api.py::test_a_chat_scoped_token_cannot_call_the_voice_endpoint`.
-- `llm/gemini.py` — new `MediaInput` and a `media` parameter: sends `[clip, prompt]` (same order as the old Node client) to the primary **and** the fallback model. *Tests:* `test_gemini_client.py` (audio order, audio on fallback).
-- `core/js_compat.py` — the table in §5. *Tests:* `test_js_compat.py`.
+- `features/meals/application/prompts/voice_meal.py` — **`build_prompt(transcript, lang, meal_type)`**. *Input:* optional transcript, language hint, meal type. *Processing:* the 50-line prompt (English/Tamil/Tanglish quantity rules, JSON schema) with a `CONTEXT:` block listing only the hints that are non-empty. Generated from the Node source, then verified. *Output:* one string (same for the text and audio paths; the clip is sent separately). *Errors:* none. *Tests:* `test_voice_meal_prompt.py` (5 Node-rendered goldens).
+- `features/meals/domain/voice.py` — **`ParseVoiceMealRequest`** (transcript ≤ 2000 chars, optional audio `{mimeType, base64}`, lang, mealType, models, deadline; *at least a transcript or audio*, no unknown fields, so no `userId`) and **`ParseVoiceMealResponse`** (`outcome`, `result`, `usage`, `traceId`). *Errors:* Pydantic → 422 listing field names only. *Tests:* `test_voice_meal_api.py::test_invalid_requests_are_rejected_without_echoing_input`.
+- `shared/contracts/common.py` — `ModelSelection`, `Usage`, shared by chat and voice (moved out of the chat contract).
+- `features/meals/application/parsing.py` — **`parse_voice_meal_output(raw, fallback_transcript)`**. *Input:* Gemini's raw text and the user's typed transcript. *Processing:* strip code fences → JSON → read items with JavaScript-style coercion and rounding → totals with one decimal → `ok` / `no_food` / `parse_failed`. *Output:* `(VoiceMealResult, outcome)`. *Errors:* never raises (bad JSON, null items, NaN → `parse_failed` result). *Tests:* `test_voice_meal_parsing.py` (22 goldens + outcome flags + rounding/summing/id tests).
+- `features/meals/application/voice.py` — **`parse_voice_meal(request, llm, trace_id)`**. *Input:* validated request, an LLM object. *Processing:* build prompt → decode audio (raw base64 or `data:` URL) → `llm.generate_text(..., media=clip)` → parse → map usage; logs metadata only. *Output:* `ParseVoiceMealResponse`. *Errors:* invalid base64 → 422 (`dispatched:false`, Gemini never called); LLM errors propagate as `AiError`. *Tests:* `test_voice_meal_api.py` (text, audio, data URL, both, bad base64, no content in logs).
+- `features/meals/presentation/voice_meal.py` — **`parse_voice`**: `POST /internal/v1/ai/meals/parse-voice`, scope `ai:meals:voice` (a chat token is refused). *Tests:* `test_voice_meal_api.py::test_a_chat_scoped_token_cannot_call_the_voice_endpoint`.
+- `shared/llm/gemini.py` — new `MediaInput` and a `media` parameter: sends `[clip, prompt]` (same order as the old Node client) to the primary **and** the fallback model. *Tests:* `test_gemini_client.py` (audio order, audio on fallback).
+- `shared/utils/js_compat.py` — the table in §5. *Tests:* `test_js_compat.py`.
 
 **Node (`backend/src/`)**
 

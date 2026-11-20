@@ -1,7 +1,7 @@
 """The transcription prompt must equal the one the former Node implementation sent."""
 
 from conftest import TRANSCRIBE_FIXTURES
-from onusfit_ai.prompts.transcribe import build_prompt
+from onusfit_ai.features.speech.application.prompts.transcribe import build_prompt
 
 
 def test_prompt_matches_node_golden() -> None:

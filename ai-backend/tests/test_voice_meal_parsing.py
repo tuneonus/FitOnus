@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 
 from conftest import VOICE_FIXTURES
-from onusfit_ai.meals.parsing import parse_voice_meal_output
+from onusfit_ai.features.meals.application.parsing import parse_voice_meal_output
 
 CASES = json.loads((VOICE_FIXTURES / "parse_cases.json").read_text(encoding="utf-8"))
 

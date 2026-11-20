@@ -30,7 +30,7 @@ const MIN_DEADLINE_MS = 1_000;
 /** Never shown to a user (every failure becomes deterministic insights); used for log context only. */
 const UNAVAILABLE_MESSAGE = 'Coach insights are temporarily unavailable.';
 
-/** Python's reply, validated before anything is trusted. Mirrors ai-backend/contracts/coach_insights.py. */
+/** Python's reply, validated before anything is trusted. Mirrors ai-backend/src/onusfit_ai/features/coach/domain/insights.py. */
 const pythonInsightsResponseSchema = z.object({
   outcome: z.enum(['ok', 'unusable']),
   result: z

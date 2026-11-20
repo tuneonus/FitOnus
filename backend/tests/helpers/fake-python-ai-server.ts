@@ -23,7 +23,7 @@ export const json = (response: ServerResponse, status: number, body: unknown): v
   response.end(JSON.stringify(body));
 };
 
-/** A successful reply in the exact shape of ai-backend/contracts/coach_chat.py `CoachChatResponse`. */
+/** A successful reply in the exact shape of ai-backend/src/onusfit_ai/features/coach/domain/chat.py `CoachChatResponse`. */
 export const okCoachReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   outcome: 'ok',
   result: {
@@ -47,7 +47,7 @@ export const okCoachReply = (overrides: Record<string, unknown> = {}): Record<st
   ...overrides,
 });
 
-/** A successful voice-meal reply in the exact shape of ai-backend/contracts/voice_meal.py. */
+/** A successful voice-meal reply in the exact shape of ai-backend/src/onusfit_ai/features/meals/domain/voice.py. */
 export const okVoiceReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   outcome: 'ok',
   result: {
@@ -94,7 +94,7 @@ export const okVoiceReply = (overrides: Record<string, unknown> = {}): Record<st
   ...overrides,
 });
 
-/** A successful meal photo reply in the shape of ai-backend/contracts/meal_photo.py. */
+/** A successful meal photo reply in the shape of ai-backend/src/onusfit_ai/features/meals/domain/photo.py. */
 export const okMealPhotoReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   outcome: 'ok',
   result: {
@@ -141,7 +141,7 @@ export const okMealPhotoReply = (overrides: Record<string, unknown> = {}): Recor
   ...overrides,
 });
 
-/** A successful coach insights reply in the shape of ai-backend/contracts/coach_insights.py. */
+/** A successful coach insights reply in the shape of ai-backend/src/onusfit_ai/features/coach/domain/insights.py. */
 export const okInsightsReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   outcome: 'ok',
   result: {
@@ -179,7 +179,7 @@ export const okInsightsReply = (overrides: Record<string, unknown> = {}): Record
   ...overrides,
 });
 
-/** A successful transcription reply in the shape of ai-backend/contracts/transcribe.py. */
+/** A successful transcription reply in the shape of ai-backend/src/onusfit_ai/features/speech/application/contracts.py. */
 export const okTranscribeReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   outcome: 'ok',
   result: { transcript: 'inniku leg workout mudichiten', detectedLanguage: 'tanglish' },

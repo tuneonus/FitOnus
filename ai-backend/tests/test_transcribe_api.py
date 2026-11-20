@@ -6,9 +6,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import FakeLlm, make_token
-from onusfit_ai.core.errors import AiError
-from onusfit_ai.llm.gemini import get_llm
 from onusfit_ai.main import create_app
+from onusfit_ai.shared.errors import AiError
+from onusfit_ai.shared.llm.dependencies import get_llm
 
 URL = "/internal/v1/ai/speech/transcribe"
 MODEL = {"primary": "gemini-primary", "fallback": "gemini-backup"}

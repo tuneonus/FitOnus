@@ -7,11 +7,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from onusfit_ai import __version__
-from onusfit_ai.api import coach_chat, coach_insights, health, meal_photo, transcribe, voice_meal
-from onusfit_ai.core.config import Settings, configuration_problems, get_settings, is_production
-from onusfit_ai.core.errors import register_error_handlers
-from onusfit_ai.core.logging import configure_logging, log_event
-from onusfit_ai.core.observability import RequestObservabilityMiddleware
+from onusfit_ai.features.coach.presentation import router as coach_router
+from onusfit_ai.features.meals.presentation import router as meals_router
+from onusfit_ai.features.speech.presentation import router as speech_router
+from onusfit_ai.shared.config import Settings, configuration_problems, get_settings, is_production
+from onusfit_ai.shared.errors import register_error_handlers
+from onusfit_ai.shared.health import router as health_router
+from onusfit_ai.shared.logging import configure_logging, log_event
+from onusfit_ai.shared.observability import RequestObservabilityMiddleware
+from onusfit_ai.shared.request_limits import MAX_REQUEST_BODY_BYTES, RequestBodyLimitMiddleware
 
 logger = logging.getLogger("onusfit_ai.main")
 
@@ -68,7 +72,12 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app() -> FastAPI:
-    # No public API docs: this is an internal service (Node is the only caller).
+    """Create and configure the FastAPI application instance.
+
+    Wires error handlers, observability middleware, and mounts feature routers.
+    API documentation endpoints (Swagger/ReDoc) are disabled because this is a private
+    internal service invoked exclusively by the Node.js backend.
+    """
     app = FastAPI(
         title="OnusFit AI Backend",
         version=__version__,
@@ -78,14 +87,17 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     register_error_handlers(app)
-    # Ids bound here reach auth, the handlers and the Gemini client: every line carries them.
+    # Middleware added last is outermost: the body limit sits inside observability, so a refused
+    # request is still logged with its correlation ids.
+    app.add_middleware(RequestBodyLimitMiddleware, max_bytes=MAX_REQUEST_BODY_BYTES)
+    # Observability middleware wraps requests to bind correlation IDs into contextvars for logging.
     app.add_middleware(RequestObservabilityMiddleware)
-    app.include_router(health.router)
-    app.include_router(coach_chat.router)
-    app.include_router(coach_insights.router)
-    app.include_router(voice_meal.router)
-    app.include_router(meal_photo.router)
-    app.include_router(transcribe.router)
+
+    # Mount modular feature routers
+    app.include_router(health_router)
+    app.include_router(coach_router)
+    app.include_router(meals_router)
+    app.include_router(speech_router)
     return app
 
 

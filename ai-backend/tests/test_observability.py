@@ -13,23 +13,24 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import FakeLlm, JsonLogs, load_request, make_token
-from onusfit_ai.core.errors import AiError
-from onusfit_ai.core.logging import (
+from onusfit_ai.main import create_app
+from onusfit_ai.shared.errors import AiError
+from onusfit_ai.shared.llm.dependencies import get_llm
+from onusfit_ai.shared.llm.errors import LlmServiceError, ModelCooldown
+from onusfit_ai.shared.llm.gemini import GeminiClient
+from onusfit_ai.shared.llm.telemetry import INVALID_OUTPUT_OUTCOMES
+from onusfit_ai.shared.logging import (
     clean_fields,
     configure_logging,
     log_event,
     redact,
 )
-from onusfit_ai.core.observability import (
+from onusfit_ai.shared.observability import (
     FEATURE_BY_PATH,
-    INVALID_OUTPUT_OUTCOMES,
     category_for_error_code,
     category_for_gemini_kind,
     safe_id,
 )
-from onusfit_ai.llm.errors import ModelCooldown
-from onusfit_ai.llm.gemini import GeminiClient, get_llm
-from onusfit_ai.main import create_app
 from test_coach_insights_api import GOOD_REPLY as INSIGHTS_REPLY
 from test_coach_insights_api import body as insights_body
 from test_gemini_client import (
@@ -663,7 +664,7 @@ class TestGeminiAttemptEvents:
     ) -> None:
         sdk = FakeSdk({"primary": error, "fallback": error})
 
-        with pytest.raises(AiError) as info:
+        with pytest.raises(LlmServiceError) as info:
             await generate(GeminiClient("k", sdk_client=sdk))
 
         assert info.value.code == "AI_UNAVAILABLE"
@@ -676,7 +677,7 @@ class TestGeminiAttemptEvents:
 
     async def test_an_invalid_key_never_tries_the_backup_model(self, json_logs: JsonLogs) -> None:
         sdk = FakeSdk({"primary": auth_error(), "fallback": make_response()})
-        with pytest.raises(AiError):
+        with pytest.raises(LlmServiceError):
             await generate(GeminiClient("k", sdk_client=sdk))
         (event,) = json_logs.events("ai.gemini.attempt_failed")
         assert event["errorCategory"] == "gemini_auth" and event["willTryFallbackModel"] is False
@@ -685,7 +686,7 @@ class TestGeminiAttemptEvents:
         self, json_logs: JsonLogs
     ) -> None:
         sdk = FakeSdk({"primary": daily_quota(), "fallback": make_response()})
-        with pytest.raises(AiError):
+        with pytest.raises(LlmServiceError):
             await generate(GeminiClient("k", sdk_client=sdk))
         (event,) = json_logs.events("ai.gemini.attempt_failed")
         assert event["errorCategory"] == "gemini_quota_exhausted"
@@ -693,7 +694,7 @@ class TestGeminiAttemptEvents:
 
     async def test_a_timeout_is_categorised(self, json_logs: JsonLogs) -> None:
         sdk = FakeSdk({"primary": TimeoutError("timed out"), "fallback": make_response()})
-        with pytest.raises(AiError):
+        with pytest.raises(LlmServiceError):
             await generate(GeminiClient("k", sdk_client=sdk))
         assert json_logs.events("ai.gemini.attempt_failed")[0]["errorCategory"] == "gemini_timeout"
 
@@ -716,7 +717,7 @@ class TestGeminiAttemptEvents:
         hostile.message = f"SENTINEL_PROVIDER_TEXT {GOOGLE_KEY} Bearer {FAKE_JWT}"
         sdk = FakeSdk({"primary": hostile, "fallback": hostile})
 
-        with pytest.raises(AiError):
+        with pytest.raises(LlmServiceError):
             await generate(GeminiClient("k", sdk_client=sdk))
 
         assert json_logs.events("ai.gemini.attempt_failed")

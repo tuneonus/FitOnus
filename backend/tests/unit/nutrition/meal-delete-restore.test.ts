@@ -259,7 +259,10 @@ describe('AI estimate provenance in the meal view', () => {
 
   it('uses exactly the labels the Python parsers stamp (the label is a cross-service contract)', () => {
     const python = (file: string) =>
-      readFileSync(new URL(`../../../../ai-backend/src/onusfit_ai/meals/${file}`, import.meta.url), 'utf8');
+      readFileSync(
+        new URL(`../../../../ai-backend/src/onusfit_ai/features/meals/application/${file}`, import.meta.url),
+        'utf8',
+      );
 
     // photo_parsing.py: `brand="AI Estimate"`, parsing.py (voice): `brand="AI Voice Estimate"`.
     expect(python('photo_parsing.py')).toContain('brand="AI Estimate"');

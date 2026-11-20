@@ -20,7 +20,7 @@ const MIN_DEADLINE_MS = 1_000;
 /** Same wording the app has always received when image analysis fails. */
 export const MEAL_PHOTO_UNAVAILABLE_MESSAGE = 'Unable to analyze meal image right now. Please try again.';
 
-/** Python's reply, validated and bounded before anything is trusted. Mirrors ai-backend/contracts/meal_photo.py. */
+/** Python's reply, validated and bounded before anything is trusted. Mirrors ai-backend/src/onusfit_ai/features/meals/domain/photo.py. */
 const pythonMealPhotoResponseSchema = z.object({
   outcome: z.enum(['ok', 'no_food', 'parse_failed']),
   result: z.object({

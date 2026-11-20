@@ -7,9 +7,13 @@ from typing import Any
 import pytest
 from google.genai import errors as genai_errors
 
-from onusfit_ai.core.errors import AiError
-from onusfit_ai.llm.errors import ModelCooldown, classify_gemini_error
-from onusfit_ai.llm.gemini import GeminiClient, MediaInput
+from onusfit_ai.shared.llm.errors import (
+    LlmServiceError,
+    ModelCooldown,
+    classify_gemini_error,
+)
+from onusfit_ai.shared.llm.gemini import GeminiClient
+from onusfit_ai.shared.llm.ports import MediaInput
 
 
 def make_response(text: str = "hi") -> Any:
@@ -61,6 +65,19 @@ def auth_error() -> genai_errors.ClientError:
     )
 
 
+def bad_request() -> genai_errors.ClientError:
+    return genai_errors.ClientError(
+        400,
+        {
+            "error": {
+                "code": 400,
+                "message": "Unable to process input audio",
+                "status": "INVALID_ARGUMENT",
+            }
+        },
+    )
+
+
 def daily_quota() -> genai_errors.ClientError:
     return genai_errors.ClientError(
         429,
@@ -109,11 +126,10 @@ async def test_overload_on_primary_uses_fallback() -> None:
 
 async def test_both_models_failing_gives_ai_unavailable_after_exactly_two_calls() -> None:
     sdk = FakeSdk({"primary": rate_limit(), "fallback": overloaded()})
-    with pytest.raises(AiError) as info:
+    with pytest.raises(LlmServiceError) as info:
         await run(GeminiClient("k", sdk_client=sdk))
     assert sdk.calls == ["primary", "fallback"]  # bounded: never more than two attempts
-    assert (info.value.status_code, info.value.code, info.value.dispatched) == (
-        503,
+    assert (info.value.code, info.value.dispatched) == (
         "AI_UNAVAILABLE",
         True,
     )
@@ -121,7 +137,7 @@ async def test_both_models_failing_gives_ai_unavailable_after_exactly_two_calls(
 
 async def test_auth_error_never_tries_fallback() -> None:
     sdk = FakeSdk({"primary": auth_error(), "fallback": make_response()})
-    with pytest.raises(AiError) as info:
+    with pytest.raises(LlmServiceError) as info:
         await run(GeminiClient("k", sdk_client=sdk))
     assert sdk.calls == ["primary"]
     assert info.value.code == "PROVIDER_AUTH_ERROR"
@@ -129,15 +145,15 @@ async def test_auth_error_never_tries_fallback() -> None:
 
 async def test_project_wide_daily_quota_never_tries_fallback() -> None:
     sdk = FakeSdk({"primary": daily_quota(), "fallback": make_response()})
-    with pytest.raises(AiError) as info:
+    with pytest.raises(LlmServiceError) as info:
         await run(GeminiClient("k", sdk_client=sdk))
     assert sdk.calls == ["primary"]
-    assert (info.value.status_code, info.value.code) == (429, "PROVIDER_QUOTA_EXHAUSTED")
+    assert info.value.code == "PROVIDER_QUOTA_EXHAUSTED"
 
 
 async def test_unknown_error_is_not_retried() -> None:
     sdk = FakeSdk({"primary": RuntimeError("boom"), "fallback": make_response()})
-    with pytest.raises(AiError) as info:
+    with pytest.raises(LlmServiceError) as info:
         await run(GeminiClient("k", sdk_client=sdk))
     assert sdk.calls == ["primary"]
     assert info.value.code == "PROVIDER_ERROR"
@@ -150,11 +166,10 @@ async def test_timeout_is_not_retried_and_maps_to_504() -> None:
 
     sdk = FakeSdk({"primary": hang, "fallback": make_response()})
     client = GeminiClient("k", sdk_client=sdk, attempt_timeout_s=0.05)
-    with pytest.raises(AiError) as info:
+    with pytest.raises(LlmServiceError) as info:
         await run(client)
     assert sdk.calls == ["primary"]
-    assert (info.value.status_code, info.value.code, info.value.dispatched) == (
-        504,
+    assert (info.value.code, info.value.dispatched) == (
         "PROVIDER_TIMEOUT",
         True,
     )
@@ -181,14 +196,14 @@ async def test_both_models_cooling_fails_fast_without_calling_gemini() -> None:
     cooldown.record_failure("primary", 60)
     cooldown.record_failure("fallback", 60)
     sdk = FakeSdk({"primary": make_response(), "fallback": make_response()})
-    with pytest.raises(AiError) as info:
+    with pytest.raises(LlmServiceError) as info:
         await run(GeminiClient("k", sdk_client=sdk, cooldown=cooldown))
     assert sdk.calls == []
     assert (info.value.code, info.value.dispatched) == ("AI_UNAVAILABLE", False)
 
 
 async def test_missing_api_key_fails_before_any_call() -> None:
-    with pytest.raises(AiError) as info:
+    with pytest.raises(LlmServiceError) as info:
         await run(GeminiClient(None))
     assert (info.value.code, info.value.dispatched) == ("PROVIDER_NOT_CONFIGURED", False)
 
@@ -201,7 +216,7 @@ async def test_exhausted_deadline_does_not_start_a_fallback_attempt() -> None:
         raise rate_limit()
 
     sdk = FakeSdk({"primary": slow_fail, "fallback": make_response()})
-    with pytest.raises(AiError):
+    with pytest.raises(LlmServiceError):
         await run(GeminiClient("k", sdk_client=sdk, clock=lambda: now[0]), deadline_s=10)
     assert sdk.calls == ["primary"]  # under 1 s left: no second attempt
 
@@ -266,3 +281,44 @@ async def test_audio_is_also_sent_to_the_fallback_model() -> None:
     await run(GeminiClient("k", sdk_client=sdk), media=MediaInput("audio/webm", b"x"))
     assert sdk.calls == ["primary", "fallback"]
     assert all(isinstance(c, list) and len(c) == 2 for c in sdk.contents)
+
+
+def test_http_400_is_classified_as_a_bad_request_that_no_other_model_can_fix() -> None:
+    classified = classify_gemini_error(bad_request())
+    assert classified.kind == "BAD_REQUEST"
+    assert not classified.is_retryable and not classified.is_project_wide
+
+
+async def test_a_bad_request_does_not_put_the_model_in_cooldown() -> None:
+    # Regression (audit M1): one user's unreadable upload used to start a shared 5 s cooldown, so the
+    # next user's valid request was refused with AI_UNAVAILABLE without Gemini even being called.
+    sdk = FakeSdk({"primary": bad_request()})
+    client = GeminiClient("k", sdk_client=sdk)
+    call: dict[str, Any] = {"primary_model": "primary", "fallback_model": None, "deadline_s": 10}
+
+    with pytest.raises(LlmServiceError) as first:
+        await client.generate_text("prompt", **call)
+    # Same wire error as before the fix (Gemini was called, so it may have been billed).
+    assert (first.value.code, first.value.dispatched) == (
+        "PROVIDER_ERROR",
+        True,
+    )
+
+    sdk.plan["primary"] = make_response("fine")  # the next user's request is valid
+    result = await client.generate_text("prompt", **call)
+    assert result.text == "fine"
+    assert sdk.calls == ["primary", "primary"]
+
+
+async def test_failures_about_the_model_itself_still_start_a_cooldown() -> None:
+    # The carve-out above is narrow: a generic failure is still treated as "the model is unhealthy".
+    sdk = FakeSdk({"primary": RuntimeError("boom")})
+    client = GeminiClient("k", sdk_client=sdk)
+    call: dict[str, Any] = {"primary_model": "primary", "fallback_model": None, "deadline_s": 10}
+
+    with pytest.raises(LlmServiceError):
+        await client.generate_text("prompt", **call)
+    with pytest.raises(LlmServiceError) as second:
+        await client.generate_text("prompt", **call)
+    assert second.value.code == "AI_UNAVAILABLE" and second.value.dispatched is False
+    assert sdk.calls == ["primary"]  # the second request never reached Gemini

@@ -42,7 +42,7 @@ Phone → POST /api/v1/nutrition/meal-photo/analyze {image, mimeType, mealType?,
 | Node route (zod) | `image` non-empty, `mimeType` ∈ {jpeg, png, webp, heic} (default jpeg), `notes` ≤ 250 | `400 VALIDATION_FAILED`, nothing charged |
 | Node use case | image not blank, base64 ≤ 10 MB (10 × 1024 × 1024 characters), mime allow-list | `400` / `413 PAYLOAD_TOO_LARGE`, nothing charged |
 | Python contract (Pydantic) | same mime allow-list (exact, case-sensitive), same 10 MB cap, `notes` ≤ 250, `mealType` ≤ 200, deadline 1–30 s, no unknown fields (so no `userId`) | `422`, field **names** listed, values never echoed |
-| Python image check (`core/image.py`) | accepts raw base64 or a `data:` URL; decoded bytes must start with a JPEG, PNG, WebP or HEIC/HEIF signature | `422 INVALID_REQUEST`, `dispatched: false` (Gemini never called, so Node refunds the unit) |
+| Python image check (`shared/utils/image.py`) | accepts raw base64 or a `data:` URL; decoded bytes must start with a JPEG, PNG, WebP or HEIC/HEIF signature | `422 INVALID_REQUEST`, `dispatched: false` (Gemini never called, so Node refunds the unit) |
 
 Two decisions worth knowing:
 
@@ -66,7 +66,7 @@ Same mapping as every migrated feature (`toPublicAiError`), with the wording the
 
 **Time budget.** The app waits **30 s**. Node's HTTP call to Python is capped at **27 s** (`MEAL_PHOTO_MAX_TIMEOUT_MS`, even if `AI_BACKEND_TIMEOUT_MS` is set higher); Python's total Gemini deadline is **1.5 s shorter (25.5 s)** and covers primary *and* backup. One Gemini attempt is limited to `GEMINI_ATTEMPT_TIMEOUT_S` (default 20 s; Node used 25 s for images, see §10). Nothing retries: one call to Python, at most primary + one backup model inside it.
 
-**Model fallback** lives in Python's `llm/gemini.py` (shared by all features): rate-limit/overload on the primary → the same image and prompt go to the backup model; auth errors and project-wide daily quota never try the backup. The admin console's primary/backup names for `meal_photo` still decide *which* models.
+**Model fallback** lives in Python's `shared/llm/gemini.py` (shared by all features): rate-limit/overload on the primary → the same image and prompt go to the backup model; auth errors and project-wide daily quota never try the backup. The admin console's primary/backup names for `meal_photo` still decide *which* models.
 
 ## 6. Characterization-first
 
@@ -89,15 +89,15 @@ While porting, a real gap in the shared helper `core/js_compat.js_num` showed up
 
 **Python (`ai-backend/src/onusfit_ai/`)**
 
-- `core/image.py` — **`decode_image_base64`**, **`looks_like_supported_image`**. *Input:* base64 text or data URL. *Output:* bytes. *Errors:* `AiError` 422, `dispatched=false`, message never echoes the input. *Tests:* `test_image_rules.py` (16).
-- `contracts/common.py` — new **`ImageInput`** (mime allow-list, 10 MB cap); `DetectedFoodItem` and `Confidence` moved here from `voice_meal.py` because photo and voice share them (no behavior change).
-- `contracts/meal_photo.py` — **`AnalyzeMealPhotoRequest`** (`image`, `mealType?`, `notes?`, `model`, `deadlineMs`), **`MealPhotoResult`**, **`AnalyzeMealPhotoResponse`** (`outcome: ok | no_food | parse_failed`, `result`, `usage`, `traceId`). The `outcome` flag is new: Node's "not formatted correctly" answer used to look exactly like "no food", now it can be counted.
-- `prompts/meal_photo.py` — **`build_prompt(meal_type, notes)`**, version `meal_photo_v1_node_parity`; verbatim port, compared with the 7 golden prompts (`test_meal_photo_prompt.py`, 9 tests).
-- `meals/photo_parsing.py` — **`parse_meal_photo_output(raw)`** → `(result, outcome)`, never raises (`test_meal_photo_parsing.py`, 65 tests incl. the 48 goldens).
-- `meals/photo.py` — **`analyze_meal_photo(request, llm, trace_id)`**: decode image → `llm.generate_text(prompt, media=image)` → parse; logs metadata only.
-- `api/meal_photo.py` — **`POST /internal/v1/ai/meals/analyze-photo`**, scope `ai:meals:photo` (chat, voice and transcription tokens are refused). Registered in `main.py`.
-- `meals/parsing.py` — `now_iso` and `one_decimal` made public so the photo parser reuses them instead of copying.
-- `llm/gemini.py` — **unchanged**: it already sends any `MediaInput` (image or audio) to both models.
+- `shared/utils/image.py` — **`decode_image_base64`**, **`looks_like_supported_image`**. *Input:* base64 text or data URL. *Output:* bytes. *Errors:* `AiError` 422, `dispatched=false`, message never echoes the input. *Tests:* `test_image_rules.py` (16).
+- `shared/contracts/common.py` — new **`ImageInput`** (mime allow-list, 10 MB cap); `DetectedFoodItem` and `Confidence` moved here from `voice_meal.py` because photo and voice share them (no behavior change).
+- `features/meals/domain/photo.py` — **`AnalyzeMealPhotoRequest`** (`image`, `mealType?`, `notes?`, `model`, `deadlineMs`), **`MealPhotoResult`**, **`AnalyzeMealPhotoResponse`** (`outcome: ok | no_food | parse_failed`, `result`, `usage`, `traceId`). The `outcome` flag is new: Node's "not formatted correctly" answer used to look exactly like "no food", now it can be counted.
+- `features/meals/application/prompts/meal_photo.py` — **`build_prompt(meal_type, notes)`**, version `meal_photo_v1_node_parity`; verbatim port, compared with the 7 golden prompts (`test_meal_photo_prompt.py`, 9 tests).
+- `features/meals/application/photo_parsing.py` — **`parse_meal_photo_output(raw)`** → `(result, outcome)`, never raises (`test_meal_photo_parsing.py`, 65 tests incl. the 48 goldens).
+- `features/meals/application/photo.py` — **`analyze_meal_photo(request, llm, trace_id)`**: decode image → `llm.generate_text(prompt, media=image)` → parse; logs metadata only.
+- `features/meals/presentation/meal_photo.py` — **`POST /internal/v1/ai/meals/analyze-photo`**, scope `ai:meals:photo` (chat, voice and transcription tokens are refused). Registered in `main.py`.
+- `features/meals/application/parsing.py` — `now_iso` and `one_decimal` made public so the photo parser reuses them instead of copying.
+- `shared/llm/gemini.py` — **unchanged**: it already sends any `MediaInput` (image or audio) to both models.
 
 **Node (`backend/src/`)**
 

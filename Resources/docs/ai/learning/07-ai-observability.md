@@ -13,7 +13,7 @@
 | JSON logs with a redact list | Node: `shared/logging/logger.ts` (pino) | Reused and extended. |
 | One access line per HTTP request, request id echoed as `X-Request-Id` | Node: `middleware/request-context.ts` (pino-http) | The id is also `requestId` in the error envelope. Reused. |
 | Usage ledger: tokens, cost, duration, per call | table `gemini_usage_events`, admin screens | **Unchanged.** Written only for *successful* Python calls. |
-| Plain-text metadata line per AI call + key/JWT masking | Python: `core/logging.py` | Replaced by JSON lines; the masking stays as the last line of defence. |
+| Plain-text metadata line per AI call + key/JWT masking | Python: `shared/logging/logging.py` | Replaced by JSON lines; the masking stays as the last line of defence. |
 | Failure kinds (`PythonAiErrorKind`), `dispatched` flag | Node: `shared/ai/python-ai-client.ts` | Reused as the input of the new classifier. |
 
 **Gaps found:** the HTTP request id and the AI call id were unrelated (`chat-…` is made up inside each adapter), so a Node line and a Python line could not be joined; Python wrote plain text and logged nothing for auth failures, validation failures or the first (failed) Gemini attempt except one warning; coach insights **cache hits and deterministic fallbacks were silent**, and a fallback is itself cached for 10 minutes, so it could be served again with no trace; there was no common vocabulary for "why did it fail"; Node's log carried only total tokens.
