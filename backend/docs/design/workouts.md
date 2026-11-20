@@ -663,6 +663,13 @@ Protected by `authenticate`, `requirePermission('admin:access')`, and `X-Panel-I
 - **Query Params:** `page`, `limit`, `search`
 - **Response `200 OK`:** Paginated list of system-curated templates (`is_template = true, user_id IS NULL`) with exercise counts.
 
+#### 4b. `POST /api/v1/admin/workouts/templates/images`
+- **Body:** the raw image (`Content-Type: image/jpeg|png|webp|heic`), at most 10 MiB. Not JSON or multipart.
+- **Effect:** the file is decoded, stripped of all metadata, scaled to at most 1600 px and stored as one WebP under `onusfit/workouts/` in the public bucket. It attaches nothing: the admin saves the template with the returned key as `coverImageKey`.
+- **Audit Action Logged:** `workout.template.cover_upload`
+- **Response `201 Created`:** `{ imageKey, imageUrl, contentType: 'image/webp', sizeBytes, width, height, source }`.
+- Rules and errors are in [../media.md](../media.md#workout-template-covers). Migration `0024` adds `workouts.cover_image_key` (only a system template may hold one).
+
 #### 5. `POST /api/v1/admin/workouts/templates`
 - **Payload:**
 ```json
@@ -686,12 +693,13 @@ Protected by `authenticate`, `requirePermission('admin:access')`, and `X-Panel-I
   ]
 }
 ```
-- **Audit Action Logged:** `workout.template.create`
-- **Response `201 Created`:** Created system template (`is_template = true, user_id = null`).
+- **Optional:** `coverImageKey` (from the cover upload above). The key is verified to exist in storage (`422 IMAGE_NOT_FOUND`, `503` when storage cannot answer).
+- **Audit Action Logged:** `workout.template.create` (details include `hasCover`, never the key)
+- **Response `201 Created`:** Created system template (`is_template = true, user_id = null`), with `coverImageUrl` and `coverImageKey` (both `null` without a cover).
 
 #### 6. `PUT /api/v1/admin/workouts/templates/:id`
-- **Payload:** Updated template metadata and exercises
-- **Audit Action Logged:** `workout.template.update`
+- **Payload:** Updated template metadata and exercises. `coverImageKey` omitted = unchanged, `null` = remove the cover, a key = replace it (the previous object stays in storage; nothing is ever deleted).
+- **Audit Action Logged:** `workout.template.update` (details include `hasCover` and `coverChanged`)
 - **Response `200 OK`:** Updated system template.
 
 #### 7. `DELETE /api/v1/admin/workouts/templates/:id`

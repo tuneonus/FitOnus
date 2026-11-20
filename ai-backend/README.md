@@ -36,7 +36,7 @@ ai-backend/
 │   │   └── transcribe.py  #   POST /internal/v1/ai/speech/transcribe
 │   ├── contracts/         # Pydantic request/response models (no logic)
 │   ├── coach/             # chat (chat.py, parsing.py) and insights (insights.py, insights_parsing.py) use cases
-│   ├── meals/             # voice meal (voice.py, parsing.py) and meal photo (photo.py, photo_parsing.py) use cases
+│   ├── meals/             # voice meal (voice.py, parsing.py) and meal photo (photo.py, photo_parsing.py) use cases; sanitize.py bounds the parsed result (limits.py)
 │   ├── speech/            # transcription use case (transcribe.py) + reply parsing (parsing.py)
 │   ├── prompts/           # versioned prompt text (ported 1:1 from Node): coach_chat.py, coach_insights.py, voice_meal.py, meal_photo.py, transcribe.py
 │   ├── llm/               # the ONLY code that talks to Gemini (+ error classifier, cooldown, telemetry.py = the per-call log event)

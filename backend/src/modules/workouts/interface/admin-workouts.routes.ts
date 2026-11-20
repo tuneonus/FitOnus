@@ -13,6 +13,7 @@ import {
   updateAdminTemplateRequest,
   updateExerciseAdminRequest,
   uploadedExerciseImageSchema,
+  uploadedWorkoutCoverSchema,
   workoutPlanDetailSchema,
   workoutStatsSchema,
 } from './workouts.schemas.js';
@@ -20,7 +21,7 @@ import {
 const tags = ['Admin Workouts'];
 
 export interface WorkoutAdminRateLimiters {
-  /** Image uploads: each one decodes and re-encodes a picture and writes to the public bucket. */
+  /** Image uploads (exercises, template covers): each decodes and re-encodes a picture and writes to the public bucket. */
   adminImageUploads: RequestHandler;
 }
 
@@ -155,12 +156,40 @@ export function createWorkoutAdminRoutes(
         handler: controller.listTemplates,
       }),
 
+      // 4b. Upload a template cover picture
+      defineRoute({
+        method: 'post',
+        path: '/templates/images',
+        summary: 'Admin Upload Workout Template Cover',
+        description:
+          'The request body is the raw image file, not JSON or multipart: send Content-Type image/jpeg, image/png, ' +
+          'image/webp or image/heic. At most 10 MB, 8192 px on a side and 40 megapixels (HEIC: 16). The file content ' +
+          'is inspected, so the declared type alone is not trusted. The image is converted to an optimized WebP (at ' +
+          'most 1600 px on the long side) with all metadata (EXIF, GPS) removed and stored in the public media bucket ' +
+          'under onusfit/workouts/ with a random name. Returns the imageKey to send as coverImageKey when creating or ' +
+          'updating a template, and its public imageUrl. Uploading attaches nothing by itself. Answers 503 when R2 ' +
+          'is not configured. Only for admin-authored artwork: the bucket is public.',
+        tags,
+        access: { kind: 'permission', permission: 'admin:access' },
+        middleware: limiters ? [limiters.adminImageUploads] : [],
+        response: {
+          status: 201,
+          description: 'Stored image',
+          message: 'Image uploaded',
+          schema: uploadedWorkoutCoverSchema,
+        },
+        errorStatuses: [400, 401, 403, 413, 415, 422, 503],
+        handler: controller.uploadTemplateCover,
+      }),
+
       // 5. Create System Template
       defineRoute({
         method: 'post',
         path: '/templates',
         summary: 'Admin Create Workout Template',
-        description: 'Create a system-curated starter workout routine (is_template = true, user_id = null).',
+        description:
+          'Create a system-curated starter workout routine (is_template = true, user_id = null). An optional ' +
+          'coverImageKey (from POST /templates/images) attaches a cover picture.',
         tags,
         access: { kind: 'permission', permission: 'admin:access' },
         request: createAdminTemplateRequest,
@@ -170,7 +199,7 @@ export function createWorkoutAdminRoutes(
           message: 'System workout template created successfully',
           schema: workoutPlanDetailSchema,
         },
-        errorStatuses: [400, 401, 403],
+        errorStatuses: [400, 401, 403, 422, 503],
         handler: controller.createTemplate,
       }),
 
@@ -179,7 +208,9 @@ export function createWorkoutAdminRoutes(
         method: 'put',
         path: '/templates/:id',
         summary: 'Admin Update Workout Template',
-        description: 'Update exercises or configuration of a system template.',
+        description:
+          'Update exercises or configuration of a system template. coverImageKey: omitted = unchanged, null = ' +
+          'remove the cover, a key from POST /templates/images = replace it (the old object stays in storage).',
         tags,
         access: { kind: 'permission', permission: 'admin:access' },
         request: updateAdminTemplateRequest,
@@ -189,7 +220,7 @@ export function createWorkoutAdminRoutes(
           message: 'System workout template updated successfully',
           schema: workoutPlanDetailSchema,
         },
-        errorStatuses: [400, 401, 403, 404],
+        errorStatuses: [400, 401, 403, 404, 422, 503],
         handler: controller.updateTemplate,
       }),
 

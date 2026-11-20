@@ -170,6 +170,7 @@ export class WorkoutService {
         ? plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)
         : 'Intermediate',
       tags: plan.tags || [],
+      coverImageUrl: plan.coverImageUrl ?? null,
       exercisesCount: plan.exerciseCount ?? 0,
       isAiGenerated: plan.tags?.includes('ai-generated') ?? false,
     };
@@ -185,6 +186,7 @@ export class WorkoutService {
         ? plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)
         : 'Intermediate',
       tags: plan.tags || [],
+      coverImageUrl: plan.coverImageUrl ?? null,
       exercisesCount: plan.exerciseCount ?? plan.exercises?.length ?? 0,
       exercises: (plan.exercises || []).map((we) => ({
         id: we.id,

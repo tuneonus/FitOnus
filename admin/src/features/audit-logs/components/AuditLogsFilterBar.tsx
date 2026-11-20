@@ -39,6 +39,7 @@ export function AuditLogsFilterBar({
           <option value="notification.cancel">Notification cancellations (notification.cancel)</option>
           <option value="notification.image_upload">Notification image uploads (notification.image_upload)</option>
           <option value="workout.exercise.image_upload">Exercise image uploads (workout.exercise.image_upload)</option>
+          <option value="workout.template.cover_upload">Workout cover uploads (workout.template.cover_upload)</option>
         </select>
       </div>
 

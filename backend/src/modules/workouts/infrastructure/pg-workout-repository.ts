@@ -14,6 +14,7 @@ interface WorkoutRow {
   is_template: boolean;
   is_ai_generated: boolean;
   tags: string[];
+  cover_image_key: string | null;
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
@@ -63,6 +64,7 @@ function toPlanDomain(row: WorkoutRow, exercises: WorkoutPlanExercise[] = []): W
     isTemplate: row.is_template,
     isAiGenerated: row.is_ai_generated,
     tags: row.tags ?? [],
+    coverImageKey: row.cover_image_key ?? null,
     exercises,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -205,30 +207,43 @@ export class PgWorkoutPlanRepository implements IWorkoutPlanRepository {
   }
 
   async create(plan: WorkoutPlan): Promise<WorkoutPlan> {
+    const columns = [
+      'id',
+      'user_id',
+      'name',
+      'description',
+      'workout_type',
+      'estimated_duration_minutes',
+      'difficulty',
+      'is_template',
+      'is_ai_generated',
+      'tags',
+    ];
+    const values: unknown[] = [
+      plan.id,
+      plan.userId,
+      plan.name,
+      plan.description,
+      plan.workoutType,
+      plan.estimatedDurationMinutes,
+      plan.difficulty,
+      plan.isTemplate,
+      plan.isAiGenerated,
+      [...plan.tags],
+    ];
+    // Only a system template can have a cover (the database CHECK says so), so only a template names the column. A
+    // member's own routine is written exactly as it was before covers existed, which keeps creating and editing
+    // routines working even on a database that has not had migration 0024 applied yet.
+    if (plan.isTemplate) {
+      columns.push('cover_image_key');
+      values.push(plan.coverImageKey);
+    }
+    columns.push('created_at', 'updated_at', 'deleted_at');
+    values.push(plan.createdAt, plan.updatedAt, plan.deletedAt);
+
     await this.db.query(
-      `
-      INSERT INTO workouts (
-        id, user_id, name, description, workout_type,
-        estimated_duration_minutes, difficulty, is_template, is_ai_generated,
-        tags, created_at, updated_at, deleted_at
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-      `,
-      [
-        plan.id,
-        plan.userId,
-        plan.name,
-        plan.description,
-        plan.workoutType,
-        plan.estimatedDurationMinutes,
-        plan.difficulty,
-        plan.isTemplate,
-        plan.isAiGenerated,
-        [...plan.tags],
-        plan.createdAt,
-        plan.updatedAt,
-        plan.deletedAt,
-      ],
+      `INSERT INTO workouts (${columns.join(', ')}) VALUES (${values.map((_, i) => `$${i + 1}`).join(', ')})`,
+      values,
     );
 
     for (const ex of plan.exercises) {
@@ -262,29 +277,34 @@ export class PgWorkoutPlanRepository implements IWorkoutPlanRepository {
   }
 
   async update(id: string, plan: WorkoutPlan): Promise<WorkoutPlan | null> {
+    const assignments = [
+      'name = $2',
+      'description = $3',
+      'workout_type = $4',
+      'estimated_duration_minutes = $5',
+      'difficulty = $6',
+      'tags = $7',
+    ];
+    const values: unknown[] = [
+      id,
+      plan.name,
+      plan.description,
+      plan.workoutType,
+      plan.estimatedDurationMinutes,
+      plan.difficulty,
+      [...plan.tags],
+    ];
+    // Same rule as `create`: only a system template names the cover column.
+    if (plan.isTemplate) {
+      values.push(plan.coverImageKey);
+      assignments.push(`cover_image_key = $${values.length}`);
+    }
+    values.push(plan.updatedAt);
+    assignments.push(`updated_at = $${values.length}`);
+
     await this.db.query(
-      `
-      UPDATE workouts
-      SET
-        name = $2,
-        description = $3,
-        workout_type = $4,
-        estimated_duration_minutes = $5,
-        difficulty = $6,
-        tags = $7,
-        updated_at = $8
-      WHERE id = $1 AND deleted_at IS NULL
-      `,
-      [
-        id,
-        plan.name,
-        plan.description,
-        plan.workoutType,
-        plan.estimatedDurationMinutes,
-        plan.difficulty,
-        [...plan.tags],
-        plan.updatedAt,
-      ],
+      `UPDATE workouts SET ${assignments.join(', ')} WHERE id = $1 AND deleted_at IS NULL`,
+      values,
     );
 
     // Replace exercises atomically

@@ -1,100 +1,93 @@
-import { describe, it } from 'node:test';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import type {
-  ParseVoiceMealParams,
-  VoiceMealParseResult,
-} from '../src/features/ai-coach/services/voice-meal-api';
-import type { FoodItem } from '../src/features/nutrition/types/nutrition';
+import { apiClient } from '../src/services/api-client';
+import { useAuthStore } from '../src/features/auth/stores/auth-store';
+import { queryClient } from '../src/providers/query-provider';
+import { VoiceMealApi } from '../src/features/ai-coach/services/voice-meal-api';
+import { voiceMealResponseSchema } from '../../backend/src/modules/nutrition/interface/voice-meal.schemas';
 
-describe('Voice Meal AI Mobile Contracts & Data Mapping', () => {
-  it('validates ParseVoiceMealParams supports both audio and transcript', () => {
-    const transcriptParams: ParseVoiceMealParams = {
-      transcript: 'Two rotis with dal and paneer',
-      mealType: 'lunch',
-      lang: 'en',
-    };
+const dosa = {
+  id: 'voice-food-1700000000000-0',
+  name: 'Plain Dosa',
+  brand: 'AI Voice Estimate',
+  serving: '2 pieces · 160 g',
+  servingWeightG: 160,
+  servingUnit: 'piece',
+  servingSize: 2,
+  kcal: 266,
+  protein: 6,
+  carbs: 45,
+  fat: 7,
+  fiber: 2,
+  confidence: 'high' as const,
+  isAiEstimated: true,
+};
 
-    assert.equal(transcriptParams.transcript, 'Two rotis with dal and paneer');
-    assert.equal(transcriptParams.mealType, 'lunch');
+describe('VoiceMealApi (real client, canned HTTP)', () => {
+  const original = apiClient.defaults.adapter;
+  let posted: { url?: string; body: Record<string, unknown> } | null = null;
 
-    const audioParams: ParseVoiceMealParams = {
-      audio: 'base64EncodedAudioData',
-      mimeType: 'audio/m4a',
-      mealType: 'dinner',
-    };
-
-    assert.equal(audioParams.audio, 'base64EncodedAudioData');
-    assert.equal(audioParams.mimeType, 'audio/m4a');
+  beforeEach(() => {
+    useAuthStore
+      .getState()
+      .setAuth({ id: 'u1', name: 'U', email: 'u@example.test', isEmailVerified: true });
+    posted = null;
+  });
+  afterEach(() => {
+    apiClient.defaults.adapter = original;
+    useAuthStore.getState().clearAuth();
+    queryClient.clear();
   });
 
-  it('validates VoiceMealParseResult maps items with estimated flag and numeric confidence', () => {
-    const mockFood: FoodItem = {
-      id: 'voice-food-1',
-      name: 'Whole Wheat Roti',
-      brand: 'AI Voice Estimate',
-      serving: '2 pieces · 80 g',
-      kcal: 240,
-      protein: 8,
-      carbs: 40,
-      fat: 6,
-      fiber: 6,
-      estimated: true,
-      confidence: 0.95,
-    };
+  const reply = (data: unknown) => {
+    apiClient.defaults.adapter = (async (config: { url?: string; data?: unknown }) => {
+      posted = { url: config.url, body: JSON.parse(String(config.data)) };
+      return { config, status: 200, statusText: 'OK', headers: {}, data: { success: true, data } };
+    }) as never;
+  };
 
-    const result: VoiceMealParseResult = {
-      transcript: 'Two rotis',
-      detectedLanguage: 'en',
-      items: [mockFood],
-      confidence: 'high',
-      totalKcal: 240,
-      totalProteinGrams: 8,
-      totalCarbsGrams: 40,
-      totalFatGrams: 6,
-      parsedAt: new Date().toISOString(),
-    };
+  it('parses a Tanglish meal into estimated items with numeric confidence', async () => {
+    // Checked against the backend's own response schema, so the test breaks if the contract moves.
+    reply(
+      voiceMealResponseSchema.parse({
+        transcript: 'rendu dosai sambar konjam chutney',
+        detectedLanguage: 'tanglish',
+        items: [
+          dosa,
+          { ...dosa, id: 'voice-food-1700000000000-1', name: 'Sambar', confidence: 'low' },
+        ],
+        confidence: 'medium',
+        totalKcal: 400,
+        totalProteinGrams: 12,
+        totalCarbsGrams: 60,
+        totalFatGrams: 10,
+        parsedAt: '2026-11-05T10:00:00.000Z',
+      }),
+    );
 
-    assert.equal(result.transcript, 'Two rotis');
-    assert.equal(result.items.length, 1);
-    assert.equal(result.items[0]?.estimated, true);
-    assert.equal(result.items[0]?.confidence, 0.95);
-    assert.equal(result.totalKcal, 240);
-  });
-
-  it('handles Tanglish/Tamil meal voice results', () => {
-    const dosaFood: FoodItem = {
-      id: 'v-dosa-1',
-      name: 'Plain Dosa',
-      brand: 'AI Voice Estimate',
-      serving: '2 pieces · 160 g',
-      kcal: 266,
-      protein: 6,
-      carbs: 45,
-      fat: 7,
-      fiber: 2,
-      estimated: true,
-      confidence: 0.95,
-    };
-
-    const result: VoiceMealParseResult = {
+    const result = await VoiceMealApi.parseVoiceMeal({
       transcript: 'rendu dosai sambar konjam chutney',
-      detectedLanguage: 'tanglish',
-      items: [dosaFood],
-      confidence: 'high',
-      totalKcal: 266,
-      totalProteinGrams: 6,
-      totalCarbsGrams: 45,
-      totalFatGrams: 7,
-      parsedAt: new Date().toISOString(),
-    };
+      mealType: 'lunch',
+    });
 
+    assert.equal(posted!.url, '/nutrition/voice-meal/parse');
+    assert.deepEqual(posted!.body, {
+      transcript: 'rendu dosai sambar konjam chutney',
+      mealType: 'lunch',
+    });
     assert.equal(result.detectedLanguage, 'tanglish');
-    assert.equal(result.items[0]?.name, 'Plain Dosa');
+    assert.deepEqual(
+      result.items.map((item) => item.confidence),
+      [0.95, 0.6],
+    );
+    assert.ok(result.items.every((item) => item.estimated === true && item.foodId === null));
+    assert.equal(result.items[0]!.brand, 'AI Voice Estimate');
+    assert.equal(result.items[0]!.servingSize, 2);
   });
 
-  it('correctly handles unclear or empty speech result', () => {
-    const result: VoiceMealParseResult = {
-      transcript: '',
+  it('sends recorded audio with its mime type', async () => {
+    reply({
+      transcript: 'two rotis',
       detectedLanguage: 'en',
       items: [],
       confidence: 'low',
@@ -102,12 +95,51 @@ describe('Voice Meal AI Mobile Contracts & Data Mapping', () => {
       totalProteinGrams: 0,
       totalCarbsGrams: 0,
       totalFatGrams: 0,
-      unclearReason: 'No speech was detected. Please speak closer to the mic.',
-      parsedAt: new Date().toISOString(),
-    };
+      parsedAt: '2026-11-05T10:00:00.000Z',
+    });
 
-    assert.equal(result.items.length, 0);
-    assert.equal(result.confidence, 'low');
-    assert.ok(result.unclearReason?.includes('No speech'));
+    await VoiceMealApi.parseVoiceMeal({
+      audio: 'YXVkaW8=',
+      mimeType: 'audio/m4a',
+      mealType: 'dinner',
+    });
+
+    assert.deepEqual(posted!.body, {
+      audio: 'YXVkaW8=',
+      mimeType: 'audio/m4a',
+      mealType: 'dinner',
+    });
+  });
+
+  it('an unclear recording yields no items and the reason', async () => {
+    reply({
+      transcript: '',
+      detectedLanguage: 'en',
+      items: [],
+      confidence: 'low',
+      unclearReason: 'No speech was detected. Please speak closer to the mic.',
+      totalKcal: 0,
+      totalProteinGrams: 0,
+      totalCarbsGrams: 0,
+      totalFatGrams: 0,
+      parsedAt: '2026-11-05T10:00:00.000Z',
+    });
+
+    const result = await VoiceMealApi.parseVoiceMeal({ audio: 'YXVkaW8=', mimeType: 'audio/m4a' });
+
+    assert.deepEqual(result.items, []);
+    assert.match(result.unclearReason ?? '', /No speech/);
+  });
+
+  it('rejects an empty reply', async () => {
+    apiClient.defaults.adapter = (async (config: unknown) => ({
+      config,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      data: { success: true },
+    })) as never;
+
+    await assert.rejects(VoiceMealApi.parseVoiceMeal({ transcript: 'x' }), /Invalid response/);
   });
 });

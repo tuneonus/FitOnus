@@ -1,3 +1,5 @@
+import type { PublicImageUrlResolver } from '../../../../shared/images/public-image-url.js';
+import { NO_WORKOUT_COVER_URLS } from '../../domain/workout-cover.js';
 import type { IWorkoutPlanRepository } from '../ports.js';
 import { toWorkoutPlanView, type WorkoutPlanView } from '../workout-view.js';
 
@@ -9,7 +11,10 @@ export interface ListWorkoutPlansInput {
 }
 
 export class ListWorkoutPlansUseCase {
-  constructor(private readonly workoutRepo: IWorkoutPlanRepository) {}
+  constructor(
+    private readonly workoutRepo: IWorkoutPlanRepository,
+    private readonly resolveCoverUrl: PublicImageUrlResolver = NO_WORKOUT_COVER_URLS,
+  ) {}
 
   async execute(
     input: ListWorkoutPlansInput,
@@ -25,7 +30,7 @@ export class ListWorkoutPlansUseCase {
     });
 
     return {
-      plans: plans.map((p) => toWorkoutPlanView(p, false)),
+      plans: plans.map((p) => toWorkoutPlanView(p, false, this.resolveCoverUrl)),
       total,
       page,
       limit,

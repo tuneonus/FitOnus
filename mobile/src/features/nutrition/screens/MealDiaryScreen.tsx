@@ -15,14 +15,18 @@ import { useTheme } from '@/hooks/use-theme';
 import { premium } from '@/shared/theme/premium';
 import { useNutritionStore } from '../store/nutritionStore';
 import { nutritionApi } from '../api/nutrition-api';
+import { localDateKey } from '@/features/home/utils/home-overview';
 
 export function MealDiaryScreen() {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
   const setSelectedDate = useNutritionStore((state) => state.setSelectedDate);
+  // The week ends on the device's own today. Left to the server, "today" is decided in UTC when no time zone is
+  // sent, which near midnight is a different day from the one the member is living in.
+  const today = localDateKey();
   const diary = useQuery({
-    queryKey: ['dashboard', 'nutrition-diary', 'week'],
-    queryFn: () => nutritionApi.getNutritionAnalytics('week'),
+    queryKey: ['dashboard', 'nutrition-diary', 'week', today],
+    queryFn: () => nutritionApi.getNutritionAnalytics('week', today),
     retry: 1,
   });
   const data = diary.data;
@@ -42,7 +46,7 @@ export function MealDiaryScreen() {
     >
       <View style={styles.content}>
         <Text style={[premium.type.body, { color: colors.muted }]}>
-          A clearer view of your week. Tap a logged day to review its meals.
+          A clearer view of your week. Tap a day to review or add its meals.
         </Text>
         {diary.isLoading ? (
           <View accessibilityLabel="Loading nutrition history" accessibilityState={{ busy: true }}>
@@ -107,7 +111,11 @@ export function MealDiaryScreen() {
                 key={day.date}
                 icon={BookOpenText}
                 title={day.label || day.date}
-                detail={`${Math.round(day.value).toLocaleString()} kcal logged`}
+                detail={
+                  day.value > 0
+                    ? `${Math.round(day.value).toLocaleString()} kcal logged`
+                    : 'Nothing logged'
+                }
                 onPress={() => {
                   setSelectedDate(day.date);
                   navigate('nutrition');

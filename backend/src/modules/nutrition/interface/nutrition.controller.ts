@@ -3,6 +3,10 @@ import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
 import type { CreateCustomFoodUseCase } from '../application/use-cases/create-custom-food.js';
+import type { DeleteMealUseCase } from '../application/use-cases/delete-meal.js';
+import type { DeleteWaterUseCase } from '../application/use-cases/delete-water.js';
+import type { SetWaterTargetUseCase, WaterTargetView } from '../application/use-cases/set-water-target.js';
+import type { RestoreMealUseCase } from '../application/use-cases/restore-meal.js';
 import type { GetDailyNutritionUseCase } from '../application/use-cases/get-daily-nutrition.js';
 import type { GetFoodDetailsUseCase } from '../application/use-cases/get-food-details.js';
 import type { GetMealUseCase } from '../application/use-cases/get-meal.js';
@@ -30,6 +34,8 @@ import type {
 import {
   addFavoriteRequest,
   createCustomFoodRequest,
+  deleteMealRequest,
+  deleteWaterRequest,
   getDailyNutritionRequest,
   getFoodByBarcodeRequest,
   getFoodDetailsRequest,
@@ -40,6 +46,8 @@ import {
   logMealRequest,
   logWaterRequest,
   removeFavoriteRequest,
+  restoreMealRequest,
+  setWaterTargetRequest,
   searchFoodsRequest,
   updateMealRequest,
 } from './nutrition.schemas.js';
@@ -53,7 +61,11 @@ export interface NutritionMemberUseCases {
   logMeal: LogMealUseCase;
   updateMeal: UpdateMealUseCase;
   getMeal: GetMealUseCase;
+  deleteMeal: DeleteMealUseCase;
+  restoreMeal: RestoreMealUseCase;
   logWater: LogWaterUseCase;
+  deleteWater: DeleteWaterUseCase;
+  setWaterTarget: SetWaterTargetUseCase;
   getNutritionAnalytics: GetNutritionAnalyticsUseCase;
   manageFoodFavorites: ManageFoodFavoritesUseCase;
   analyzeMealPhoto?: AnalyzeMealPhotoUseCase;
@@ -181,6 +193,45 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
       const { params } = getValidated(req, getMealRequest);
       const data = await useCases.getMeal.execute(actor.userId, params.id);
       return { data, message: 'Meal retrieved successfully' };
+    },
+
+    deleteMeal: async (req: Request): Promise<RouteResult<{ id: string; deleted: true }>> => {
+      const actor = requireActor(req);
+      const { params } = getValidated(req, deleteMealRequest);
+      const result = await useCases.deleteMeal.execute({ userId: actor.userId, id: params.id });
+      return {
+        data: { id: result.id, deleted: true },
+        headers: result.alreadyDeleted ? { 'Idempotent-Replayed': 'true' } : undefined,
+        message: result.alreadyDeleted ? 'Meal was already deleted' : 'Meal deleted successfully',
+      };
+    },
+
+    restoreMeal: async (req: Request): Promise<RouteResult<MealView>> => {
+      const actor = requireActor(req);
+      const { params } = getValidated(req, restoreMealRequest);
+      const result = await useCases.restoreMeal.execute({ userId: actor.userId, id: params.id });
+      return {
+        data: result.meal,
+        headers: result.restored ? undefined : { 'Idempotent-Replayed': 'true' },
+        message: result.restored ? 'Meal restored successfully' : 'Meal was not deleted',
+      };
+    },
+
+    deleteWater: async (req: Request): Promise<RouteResult<{ id: string; deleted: true }>> => {
+      const actor = requireActor(req);
+      const { params } = getValidated(req, deleteWaterRequest);
+      const result = await useCases.deleteWater.execute({ userId: actor.userId, id: params.id });
+      return { data: { id: result.id, deleted: true }, message: 'Water entry deleted successfully' };
+    },
+
+    setWaterTarget: async (req: Request): Promise<RouteResult<WaterTargetView>> => {
+      const actor = requireActor(req);
+      const { body } = getValidated(req, setWaterTargetRequest);
+      const data = await useCases.setWaterTarget.execute({ userId: actor.userId, targetMl: body.targetMl });
+      return {
+        data,
+        message: body.targetMl === null ? 'Water target cleared' : 'Water target saved successfully',
+      };
     },
 
     logWater: async (req: Request): Promise<RouteResult<WaterIntakeView>> => {

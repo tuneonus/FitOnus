@@ -74,12 +74,38 @@ export const MEAL_LIMITS = {
 
 export const WATER_LIMITS = {
   amountMl: { min: 1, max: 10_000 },
+  /** The member's own daily water target. The CHECK in migration 0028 uses the same range. */
+  targetMl: { min: 500, max: 8_000 },
 } as const satisfies Record<string, NumericLimit>;
 
 export const FOOD_NAME_MAX_LENGTH = 150;
 export const FOOD_BRAND_MAX_LENGTH = 100;
 export const FOOD_BARCODE_MAX_LENGTH = 64;
 export const SERVING_UNIT_MAX_LENGTH = 30;
+
+/**
+ * What a believable AI estimate (meal photo, voice meal) looks like. The Python service bounds its own output to
+ * these numbers (ai-backend/src/onusfit_ai/meals/limits.py) and this side checks them again on the way in, so a
+ * hallucinated or hostile model reply can never reach a member. They sit inside the write-path limits above, so
+ * every detected item can be saved. `tests/unit/nutrition/ai-estimate-limits.test.ts` pins that the Python file
+ * agrees: change both together.
+ */
+export const AI_ESTIMATE_LIMITS = {
+  /** A meal of maximum items must still fit the meal totals above: 20 x 2,500 kcal, 20 x 250 g. */
+  maxItems: 20,
+  itemKcal: 2_500,
+  itemMacroG: 250,
+  itemFiberG: 100,
+  servingWeightG: 5_000,
+  servingSize: 1_000,
+  nameLength: FOOD_NAME_MAX_LENGTH,
+  servingTextLength: 100,
+  unitLength: SERVING_UNIT_MAX_LENGTH,
+  /** Meal type and language hints a member can send with a request. */
+  hintLength: 50,
+  notesLength: 250,
+  transcriptLength: 2_000,
+} as const;
 
 function invalid(message: string, details?: Record<string, unknown>): AppError {
   return new AppError('unprocessable', 'VALIDATION_FAILED', message, details);

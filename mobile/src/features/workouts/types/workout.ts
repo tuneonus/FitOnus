@@ -38,6 +38,11 @@ export type WorkoutSession = {
   focus: string;
   durationMin: number;
   intensity: string;
+  /**
+   * Public https URL of the routine's cover picture, when the planned routine is a curated template that has one.
+   * Absent for a generated or customised plan and for a routine without a cover.
+   */
+  coverImageUrl?: string | null;
   exercises: PlannedExercise[];
 };
 
@@ -191,6 +196,8 @@ export type WorkoutPlanSummaryView = {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   estimatedDurationMinutes: number | null;
   tags: string[];
+  /** Public https URL of a curated routine's cover picture. Absent from an older backend; null for no cover. */
+  coverImageUrl?: string | null;
   exerciseCount: number;
   createdAt: string;
   updatedAt: string;

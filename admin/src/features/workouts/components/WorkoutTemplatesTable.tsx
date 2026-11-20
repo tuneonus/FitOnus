@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { ImageThumbnail } from '../../media/components/ImageThumbnail';
 import type { WorkoutTemplate } from '../types';
 import type { PaginationMeta } from '@/types';
 
@@ -89,9 +90,19 @@ export function WorkoutTemplatesTable({
                 <tr key={tpl.id}>
                   <td className="pl-5">
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="avatar h-9 w-9 text-ink-300">
-                        <Layers className="h-4 w-4" />
-                      </span>
+                      {tpl.coverImageUrl ? (
+                        // The cover the app shows. There is no smaller copy, so the browser scales the stored image.
+                        <ImageThumbnail
+                          imageUrl={tpl.coverImageUrl}
+                          sizeClass="h-9 w-9"
+                          sizes="2.25rem"
+                          fallback={<Layers className="h-4 w-4 text-ink-500" aria-hidden="true" />}
+                        />
+                      ) : (
+                        <span className="avatar h-9 w-9 text-ink-300">
+                          <Layers className="h-4 w-4" />
+                        </span>
+                      )}
                       <div className="min-w-0">
                         <p className="max-w-[280px] truncate font-medium text-white">{tpl.name}</p>
                         <p className="max-w-[280px] truncate text-xs text-ink-400">

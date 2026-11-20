@@ -5,6 +5,7 @@ import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { localDateKey } from '@/features/home/utils/home-overview';
 import { workoutApi } from '../api/workout-api';
 import { useWorkoutStore } from '../store/workoutStore';
+import { plannedSessionFromPlan } from '../utils/planned-session';
 
 /** Reuse the dashboard recommendation and existing plan API after an app restart. */
 export function usePlannedWorkout() {
@@ -51,20 +52,7 @@ export function usePlannedWorkout() {
           equipment: exercise.equipment,
         })),
       ],
-      plannedSession: {
-        id: plan.id,
-        title: plan.name,
-        focus: plan.description ?? '',
-        durationMin: plan.estimatedDurationMinutes ?? 0,
-        intensity: plan.difficulty,
-        exercises: plan.exercises.map((exercise) => ({
-          exerciseId: exercise.exerciseId,
-          sets: exercise.targetSets,
-          reps: exercise.targetReps,
-          restSec: exercise.restSeconds ?? 0,
-          weight: 0,
-        })),
-      },
+      plannedSession: plannedSessionFromPlan(plan),
     }));
   }, [query.data, query.error, status, planned?.isDraft]);
 }

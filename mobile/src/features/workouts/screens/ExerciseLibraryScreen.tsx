@@ -9,6 +9,7 @@ import { Chip } from '@/shared/components/ui/Chip';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { Reveal } from '@/shared/components/ui/Reveal';
 import { showToast } from '@/shared/stores/toastStore';
 import { useWorkoutStore } from '../store/workoutStore';
 import { workoutApi } from '../api/workout-api';
@@ -146,7 +147,7 @@ export function ExerciseLibraryScreen() {
           onAction={clear}
         />
       ) : (
-        <View style={styles.list}>
+        <Reveal style={styles.list}>
           <Text
             accessibilityLiveRegion="polite"
             style={[premium.type.caption, { color: colors.muted }]}
@@ -193,7 +194,7 @@ export function ExerciseLibraryScreen() {
               ) : null}
             </View>
           ))}
-        </View>
+        </Reveal>
       )}
     </FeatureScreen>
   );

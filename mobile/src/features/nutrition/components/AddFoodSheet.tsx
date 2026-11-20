@@ -23,7 +23,7 @@ type AddFoodSheetProps = {
 export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetProps) {
   const { colors } = useTheme();
   const { navigate } = useNavigation();
-  const { logMeal, createCustomFood, removeEntry } = useNutritionStore();
+  const { logMeal, createCustomFood } = useNutritionStore();
   const [mode, setMode] = useState<'pick' | 'manual'>('pick');
   const [meal, setMeal] = useState<MealType>(initialMeal);
   const [form, setForm] = useState({ name: '', kcal: '', protein: '', carbs: '', fat: '' });
@@ -124,6 +124,8 @@ export function AddFoodSheet({ open, meal: initialMeal, onClose }: AddFoodSheetP
         items: [
           {
             id: foodId || `q-${Date.now()}`,
+            // The custom food just created (null when it could only be logged offline as a plain entry).
+            foodId: foodId ?? null,
             name: form.name.trim(),
             serving: '1 serving',
             kcal,

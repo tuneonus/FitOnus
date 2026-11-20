@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { ImageUploadField } from '../../media/components/ImageUploadField';
+import { TEMPLATE_COVER_UNCONFIGURED_ADVICE, type UploadedImageRef } from '../../media/image-upload';
+import { workoutsApi } from '../api';
+import { coverNote, initialTemplateCover } from '../image-logic';
 import type {
   WorkoutTemplate,
   CreateTemplateInput,
@@ -39,6 +43,9 @@ function TemplateForm({
     template?.estimatedDurationMinutes || 45
   );
   const [tags, setTags] = useState(template?.tags.join(', ') || '');
+  // The cover an admin uploaded. Removing it brings back the plain card; nothing else replaces it.
+  const [cover, setCover] = useState<UploadedImageRef | null>(initialTemplateCover(template));
+  const [coverBusy, setCoverBusy] = useState(false);
   const [exercises, setExercises] = useState<TemplateExerciseInput[]>(
     template
       ? template.exercises.map((e, idx) => ({
@@ -107,6 +114,8 @@ function TemplateForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // A cover is still being uploaded: saving now would save the routine without it.
+    if (coverBusy) return;
     if (!name.trim()) {
       setError('Routine name is required.');
       return;
@@ -134,6 +143,8 @@ function TemplateForm({
             ? estimatedDurationMinutes
             : null,
         tags: parsedTags,
+        // The key of the uploaded cover, or null for none (which also removes a previous cover).
+        coverImageKey: cover?.key ?? null,
         exercises: exercises.map((e, idx) => ({
           exerciseId: e.exerciseId,
           orderIndex: idx,
@@ -243,6 +254,21 @@ function TemplateForm({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Focuses on chest, shoulders, and triceps with progressive compound overload."
           className="input"
+        />
+      </div>
+
+      {/* Row 4: Cover image (optional) */}
+      <div>
+        <ImageUploadField
+          value={cover}
+          onChange={setCover}
+          onBusyChange={setCoverBusy}
+          disabled={isSubmitting}
+          upload={workoutsApi.uploadTemplateCover}
+          unconfiguredAdvice={TEMPLATE_COVER_UNCONFIGURED_ADVICE}
+          label="Cover image"
+          previewAlt="Preview of the routine cover"
+          hint={`Resized to at most 1600 px. Wide pictures (16:9) work best. ${coverNote(cover)} Uploaded images are public: only use pictures that anyone may see.`}
         />
       </div>
 
@@ -383,10 +409,10 @@ function TemplateForm({
         </button>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || coverBusy}
           className="btn btn-primary"
         >
-          {isSubmitting ? 'Saving…' : isEditing ? 'Update Routine' : 'Create Routine'}
+          {isSubmitting ? 'Saving…' : coverBusy ? 'Uploading cover…' : isEditing ? 'Update Routine' : 'Create Routine'}
         </button>
       </div>
     </form>

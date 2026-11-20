@@ -68,7 +68,7 @@ export function createAnalyticsModule(deps: CreateAnalyticsModuleOptions): Analy
     getWorkouts: new GetWorkoutAnalyticsUseCase(workoutRepo, bodyRepo),
     getExerciseProgression: new GetExerciseProgressionUseCase(workoutRepo),
     getNutrition: new GetNutritionAnalyticsUseCase(nutritionRepo, bodyRepo),
-    getHydration: new GetHydrationAnalyticsUseCase(nutritionRepo),
+    getHydration: new GetHydrationAnalyticsUseCase(nutritionRepo, bodyRepo),
     getBody: new GetBodyAnalyticsUseCase(bodyRepo),
     getGoalsHabits: new GetGoalsHabitsAnalyticsUseCase(goalsHabitsRepo),
   };

@@ -38,6 +38,17 @@ export interface BuildMealItemParams {
   now: Date;
 }
 
+/** The portion fields every requested meal line must carry, checked before the line is priced or reused. */
+export function assertPortionInput(item: Pick<LogMealItemInput, 'servingMultiplier' | 'loggedWeightG'>): void {
+  if (item.servingMultiplier <= 0) {
+    throw new AppError('bad_request', 'VALIDATION_FAILED', 'Item serving multiplier must be greater than 0');
+  }
+  assertInRange('servingMultiplier', item.servingMultiplier, MEAL_ITEM_LIMITS.servingMultiplier);
+  if (item.loggedWeightG !== undefined) {
+    assertInRange('loggedWeightG', item.loggedWeightG, MEAL_ITEM_LIMITS.loggedWeightG);
+  }
+}
+
 /**
  * Turns one requested meal line into a persistable `MealItem`.
  *
@@ -50,13 +61,7 @@ export interface BuildMealItemParams {
 export async function buildMealItem(params: BuildMealItemParams): Promise<MealItem> {
   const { item, mealId, userId, foodRepo, now } = params;
 
-  if (item.servingMultiplier <= 0) {
-    throw new AppError('bad_request', 'VALIDATION_FAILED', 'Item serving multiplier must be greater than 0');
-  }
-  assertInRange('servingMultiplier', item.servingMultiplier, MEAL_ITEM_LIMITS.servingMultiplier);
-  if (item.loggedWeightG !== undefined) {
-    assertInRange('loggedWeightG', item.loggedWeightG, MEAL_ITEM_LIMITS.loggedWeightG);
-  }
+  assertPortionInput(item);
 
   if (item.foodId) {
     // Enforce food catalog & visibility

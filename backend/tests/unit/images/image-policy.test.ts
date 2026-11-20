@@ -25,11 +25,11 @@ describe('the storage root and the features that may use it', () => {
     expect(IMAGE_KEY_ROOT).toBe('onusfit');
   });
 
-  it('has exactly the notifications and exercises features', () => {
-    expect([...PUBLIC_IMAGE_FEATURES]).toEqual(['notifications', 'exercises']);
+  it('has exactly the notifications, exercises and workouts features', () => {
+    expect([...PUBLIC_IMAGE_FEATURES]).toEqual(['notifications', 'exercises', 'workouts']);
   });
 
-  it.each(['notifications', 'exercises'])('allows %s', (feature) => {
+  it.each(['notifications', 'exercises', 'workouts'])('allows %s', (feature) => {
     expect(isPublicImageFeature(feature)).toBe(true);
   });
 
@@ -155,6 +155,10 @@ describe('isCanonicalImageKey', () => {
     expect(isCanonicalImageKey(`onusfit/notifications/${HEX}.webp`, 'notifications')).toBe(true);
     expect(isCanonicalImageKey(`onusfit/notifications/${HEX}.webp`, 'exercises')).toBe(false);
     expect(isCanonicalImageKey(`onusfit/exercises/${HEX}.webp`, 'notifications')).toBe(false);
+    expect(isCanonicalImageKey(`onusfit/workouts/${HEX}.webp`, 'workouts')).toBe(true);
+    // A workout cover can never be mistaken for an exercise picture, or the other way round.
+    expect(isCanonicalImageKey(`onusfit/workouts/${HEX}.webp`, 'exercises')).toBe(false);
+    expect(isCanonicalImageKey(`onusfit/exercises/${HEX}.webp`, 'workouts')).toBe(false);
   });
 
   it.each([
@@ -189,6 +193,7 @@ describe('isCanonicalImageKey', () => {
   it('names the feature a key belongs to', () => {
     expect(featureOfKey(`onusfit/exercises/${HEX}.webp`)).toBe('exercises');
     expect(featureOfKey(`onusfit/notifications/${HEX}.webp`)).toBe('notifications');
+    expect(featureOfKey(`onusfit/workouts/${HEX}.webp`)).toBe('workouts');
     expect(featureOfKey(`notifications/${HEX}.jpg`)).toBeNull();
   });
 
@@ -234,7 +239,8 @@ describe('the notification profile (FCM compatibility)', () => {
     expect(push!.maxBytes).toBeLessThanOrEqual(1_000_000);
   });
 
-  it('exercises need no derivative', () => {
+  it('exercises and workout covers need no derivative', () => {
     expect(FEATURE_PROFILES.exercises.derivatives).toEqual([]);
+    expect(FEATURE_PROFILES.workouts.derivatives).toEqual([]);
   });
 });

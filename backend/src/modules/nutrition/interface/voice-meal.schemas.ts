@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { detectedFoodItemSchema } from './meal-photo.schemas.js';
+import { AI_ESTIMATE_LIMITS } from '../domain/nutrition-limits.js';
+import { aiHintSchema, detectedFoodItemSchema } from './meal-photo.schemas.js';
 
 export const voiceMealResponseSchema = z.object({
   transcript: z.string(),
@@ -18,11 +19,11 @@ export const voiceMealResponseSchema = z.object({
 export const parseVoiceMealRequest = {
   body: z
     .object({
-      transcript: z.string().max(2000).optional(),
+      transcript: z.string().max(AI_ESTIMATE_LIMITS.transcriptLength).optional(),
       audio: z.string().optional(),
-      mimeType: z.string().optional(),
-      lang: z.string().max(50).optional(),
-      mealType: z.string().max(50).optional(),
+      mimeType: z.string().max(100).optional(),
+      lang: aiHintSchema.optional(),
+      mealType: aiHintSchema.optional(),
     })
     .refine((data) => Boolean((data.transcript && data.transcript.trim()) || (data.audio && data.audio.trim())), {
       message: 'Either spoken audio or transcript text must be provided.',

@@ -90,6 +90,8 @@ export function mapBackendFoodToFoodItem(food: BackendFoodView): FoodItem {
 
   return {
     id: food.id,
+    // A catalog food: the only kind of item whose id is also a food id. Logging sends this, never `id`.
+    foodId: food.id,
     name: food.name,
     brand: food.brand || undefined,
     barcode: food.barcode,
@@ -114,8 +116,22 @@ export function mapBackendFoodToFoodItem(food: BackendFoodView): FoodItem {
   };
 }
 
+/** "2× 1 piece (100g)": the serving line of a logged item, from the multiplier and the exact logged weight. */
+export function formatLoggedServing(
+  multiplier: number,
+  servingSize: number,
+  servingUnit: string | undefined,
+  loggedWeightG: number,
+): string {
+  return `${multiplier}× ${servingSize} ${servingUnit || 'g'} (${Math.round(loggedWeightG)}g)`;
+}
+
 /**
  * Maps a backend MealView DTO into a mobile MealEntry.
+ *
+ * A saved item is a frozen snapshot, so its numbers are carried exactly as stored (screens round when they
+ * display). That keeps an edit or an undo from rewriting a snapshot with display-rounded values. Identity is kept
+ * apart on purpose: `id`/`mealItemId` is the stored item, `foodId` is the catalog food it came from (or null).
  */
 export function mapBackendMealToMealEntry(meal: BackendMealView): MealEntry {
   const timeFormatted = meal.createdAt
@@ -132,24 +148,73 @@ export function mapBackendMealToMealEntry(meal: BackendMealView): MealEntry {
     date: meal.date,
     notes: meal.notes,
     isSynced: true,
-    items: meal.items.map((it) => {
-      const unit = it.servingUnit || 'g';
-      const serving = `${it.servingMultiplier}× ${it.servingSize} ${unit} (${Math.round(it.loggedWeightG)}g)`;
-      return {
-        id: it.id,
-        name: it.foodName,
-        brand: it.foodBrand || undefined,
-        serving,
-        kcal: Math.round(it.calories),
-        protein: round1(it.proteinG),
-        carbs: round1(it.carbsG),
-        fat: round1(it.fatG),
-        fiber: round1(it.fiberG),
-        servingSize: it.servingSize,
-        servingUnit: it.servingUnit,
-        servingWeightG: it.servingWeightG,
-        servingMultiplier: it.servingMultiplier,
-      };
-    }),
+    items: meal.items.map((it) => ({
+      id: it.id,
+      mealItemId: it.id,
+      foodId: it.foodId,
+      loggedWeightG: it.loggedWeightG,
+      name: it.foodName,
+      brand: it.foodBrand || undefined,
+      serving: formatLoggedServing(it.servingMultiplier, it.servingSize, it.servingUnit, it.loggedWeightG),
+      kcal: it.calories,
+      protein: it.proteinG,
+      carbs: it.carbsG,
+      fat: it.fatG,
+      fiber: it.fiberG,
+      servingSize: it.servingSize,
+      servingUnit: it.servingUnit,
+      servingWeightG: it.servingWeightG,
+      servingMultiplier: it.servingMultiplier,
+      estimated: it.isEstimated === true,
+    })),
+  };
+}
+
+function round2(val: number): number {
+  return Math.round(val * 100) / 100;
+}
+
+/**
+ * Scales an item by `factor` RELATIVE to its current portion, which is what the edit sheet shows: the sheet starts
+ * at 1× (the portion as logged), so choosing 1.5× on an item logged at 2× means 3× of the base serving. The item's
+ * `servingMultiplier` stays absolute (a multiple of the base serving), which is also what the backend stores.
+ */
+export function scaleFood(item: FoodItem, factor: number): FoodItem {
+  const multiplier = Math.round((item.servingMultiplier ?? 1) * factor * 10_000) / 10_000;
+  const loggedWeight =
+    item.loggedWeightG !== undefined ? { loggedWeightG: round2(item.loggedWeightG * factor) } : {};
+
+  if (item.referenceNutrients) {
+    const portion = calculatePortionNutrients(item, multiplier);
+    return {
+      ...item,
+      kcal: portion.kcal,
+      protein: portion.protein,
+      carbs: portion.carbs,
+      fat: portion.fat,
+      fiber: portion.fiber,
+      serving: portion.servingText,
+      servingMultiplier: multiplier,
+      ...loggedWeight,
+    };
+  }
+
+  const r = (n: number) => Math.round(n * factor * 10) / 10;
+  const serving =
+    item.loggedWeightG !== undefined && item.servingSize !== undefined
+      ? formatLoggedServing(multiplier, item.servingSize, item.servingUnit, round2(item.loggedWeightG * factor))
+      : multiplier === 1
+        ? item.serving.replace(/^[\d.]+× /, '')
+        : `${multiplier}× ${item.serving.replace(/^[\d.]+× /, '')}`;
+  return {
+    ...item,
+    kcal: Math.round(item.kcal * factor),
+    protein: r(item.protein),
+    carbs: r(item.carbs),
+    fat: r(item.fat),
+    fiber: r(item.fiber),
+    serving,
+    servingMultiplier: multiplier,
+    ...loggedWeight,
   };
 }

@@ -103,6 +103,7 @@ describe('Nutrition Application Use Cases', () => {
       create: vi.fn(),
       update: vi.fn(),
       softDelete: vi.fn(),
+      restore: vi.fn(),
       getMostLoggedFoods: vi.fn(),
       countLoggedDays: vi.fn(),
     };
@@ -110,7 +111,8 @@ describe('Nutrition Application Use Cases', () => {
     waterRepo = {
       findById: vi.fn(),
       create: vi.fn(),
-      listByDate: vi.fn(),
+      delete: vi.fn(),
+      listByDate: vi.fn().mockResolvedValue([]),
       getTotalByDate: vi.fn(),
       getTotalDateRange: vi.fn(),
     };
@@ -498,9 +500,18 @@ describe('Nutrition Application Use Cases', () => {
 
       vi.mocked(mealRepo.listByDate).mockResolvedValueOnce([meal]);
       vi.mocked(waterRepo.getTotalByDate).mockResolvedValueOnce(1500);
+      vi.mocked(waterRepo.listByDate).mockResolvedValueOnce([
+        new WaterIntake({ id: '77777777-7777-4777-8777-777777777771', userId: user1, date: '2026-11-05', amountMl: 1000 }),
+        new WaterIntake({ id: '77777777-7777-4777-8777-777777777772', userId: user1, date: '2026-11-05', amountMl: 500 }),
+      ]);
       vi.mocked(targetPort.findTargetsByUserId).mockResolvedValueOnce({
-        dailyCalorieTarget: 2000,
-        dailyProteinGrams: 150,
+        source: 'saved',
+        calories: 2000,
+        proteinG: 150,
+        carbsG: 220,
+        fatG: 55,
+        waterMl: 2500,
+        waterSource: 'estimated',
       });
 
       const useCase = new GetDailyNutritionUseCase(mealRepo, waterRepo, targetPort);
@@ -510,32 +521,39 @@ describe('Nutrition Application Use Cases', () => {
       expect(result.consumed.calories).toBe(450);
       expect(result.consumed.proteinG).toBe(30);
       expect(result.consumed.waterMl).toBe(1500);
+      // Each entry is listed individually so a single one can be deleted.
+      expect(result.waterEntries.map((entry) => [entry.id, entry.amountMl])).toEqual([
+        ['77777777-7777-4777-8777-777777777771', 1000],
+        ['77777777-7777-4777-8777-777777777772', 500],
+      ]);
 
+      // Every target comes from the one resolver, with where it came from.
       expect(result.targets).toEqual({
         calories: 2000,
         proteinG: 150,
-        carbsG: null,
-        fatG: null,
-        waterMl: null,
+        carbsG: 220,
+        fatG: 55,
+        waterMl: 2500,
+        source: 'saved',
+        waterSource: 'estimated',
       });
 
       expect(result.remaining).toEqual({
         calories: 1550,
         proteinG: 120,
-        carbsG: 0,
-        fatG: 0,
+        carbsG: 180,
+        fatG: 40,
         fiberG: 0,
-        waterMl: 0,
+        waterMl: 1000,
       });
     });
 
     it('returns targets: null and remaining: null when user has no targets configured', async () => {
       vi.mocked(mealRepo.listByDate).mockResolvedValueOnce([]);
       vi.mocked(waterRepo.getTotalByDate).mockResolvedValueOnce(0);
-      vi.mocked(targetPort.findTargetsByUserId).mockResolvedValueOnce({
-        dailyCalorieTarget: null,
-        dailyProteinGrams: null,
-      });
+      vi.mocked(targetPort.findTargetsByUserId).mockResolvedValueOnce(
+        { source: null, calories: null, proteinG: null, carbsG: null, fatG: null, waterMl: null, waterSource: null },
+      );
 
       const useCase = new GetDailyNutritionUseCase(mealRepo, waterRepo, targetPort);
       const result = await useCase.execute({ userId: user1, date: '2026-11-05' });
@@ -625,8 +643,13 @@ describe('Nutrition Application Use Cases', () => {
 
       vi.mocked(mealRepo.listDateRange).mockResolvedValueOnce([mealDay1, mealDay2]);
       vi.mocked(targetPort.findTargetsByUserId).mockResolvedValueOnce({
-        dailyCalorieTarget: 2200,
-        dailyProteinGrams: 160,
+        source: 'saved',
+        calories: 2200,
+        proteinG: 160,
+        carbsG: 250,
+        fatG: 61,
+        waterMl: null,
+        waterSource: null,
       });
       vi.mocked(mealRepo.getMostLoggedFoods).mockResolvedValueOnce([
         { foodName: 'Chicken Breast, raw', count: 5, totalCalories: 1000 },

@@ -4,6 +4,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { nutritionApi } from '../api/nutrition-api';
 import type { LogMealInput, LogWaterInput } from '../types/nutrition';
 import { generateUUID } from '../utils/uuid';
+import { classifySyncFailure, rejectionReason } from '../utils/sync-failure';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { logger } from '@/utils/logger';
 
@@ -21,6 +22,32 @@ export interface QueuedWaterLog {
   enqueuedAt: string;
   retryCount: number;
   lastError?: string;
+}
+
+/**
+ * An entry the server refused for good (a permanent 4xx). It is kept here, out of the live queue, so the member can
+ * see what was not saved and why instead of it vanishing, and can retry or dismiss it.
+ */
+export interface RejectedNutritionLog {
+  kind: 'meal' | 'water';
+  /** The entry's client id (the meal or water id it was logged under). */
+  id: string;
+  payload: LogMealInput | LogWaterInput;
+  rejectedAt: string;
+  status: number;
+  reason: string;
+}
+
+/** The newest this many refused entries are kept; older ones are dropped so the list cannot grow without bound. */
+const MAX_REJECTED = 50;
+
+export interface NutritionSyncResult {
+  syncedMeals: number;
+  syncedWater: number;
+  /** Entries still queued for another attempt. */
+  remaining: number;
+  /** Entries the server refused for good during this run (now in the rejected list). */
+  rejected: number;
 }
 
 type SyncListener = () => void;
@@ -44,6 +71,12 @@ class NutritionOfflineSyncService {
     const userId = useAuthStore.getState().user?.id;
     if (!userId) throw new Error('Sign in to access your saved fitness data.');
     return userId ? `@fitonus:pending_water:${userId}` : '@fitonus:pending_water';
+  }
+
+  private getRejectedKey(): string {
+    const userId = useAuthStore.getState().user?.id;
+    if (!userId) throw new Error('Sign in to access your saved fitness data.');
+    return `@fitonus:rejected_nutrition:${userId}`;
   }
 
   private initAutoSync() {
@@ -179,6 +212,57 @@ class NutritionOfflineSyncService {
     }
   }
 
+  // --- Rejected entries (permanent 4xx) ---
+
+  async getRejected(): Promise<RejectedNutritionLog[]> {
+    const session = captureUserSession();
+    try {
+      const raw = await AsyncStorage.getItem(this.getRejectedKey());
+      session.assertCurrent();
+      if (!raw) return [];
+      return JSON.parse(raw) as RejectedNutritionLog[];
+    } catch (error) {
+      session.assertCurrent();
+      logger.error('Failed to read rejected nutrition entries:', error);
+      return [];
+    }
+  }
+
+  /** Adds refused entries to the list (an entry already there is replaced, not duplicated). */
+  private async addRejected(entries: RejectedNutritionLog[]): Promise<void> {
+    if (entries.length === 0) return;
+    const existing = await this.getRejected();
+    const ids = new Set(entries.map((entry) => `${entry.kind}:${entry.id}`));
+    const kept = existing.filter((entry) => !ids.has(`${entry.kind}:${entry.id}`));
+    await AsyncStorage.setItem(
+      this.getRejectedKey(),
+      JSON.stringify([...kept, ...entries].slice(-MAX_REJECTED)),
+    );
+  }
+
+  /** The member has seen it: forget the entry. */
+  async dismissRejected(kind: RejectedNutritionLog['kind'], id: string): Promise<void> {
+    const session = captureUserSession();
+    const existing = await this.getRejected();
+    session.assertCurrent();
+    await AsyncStorage.setItem(
+      this.getRejectedKey(),
+      JSON.stringify(existing.filter((entry) => !(entry.kind === kind && entry.id === id))),
+    );
+    session.assertCurrent();
+  }
+
+  /** Puts a refused entry back in the queue for another attempt (and removes it from the rejected list). */
+  async retryRejected(kind: RejectedNutritionLog['kind'], id: string): Promise<void> {
+    const session = captureUserSession();
+    const entry = (await this.getRejected()).find((item) => item.kind === kind && item.id === id);
+    session.assertCurrent();
+    if (!entry) return;
+    if (entry.kind === 'meal') await this.enqueueMeal(entry.payload as LogMealInput);
+    else await this.enqueueWater(entry.payload as LogWaterInput);
+    await this.dismissRejected(kind, id);
+  }
+
   /**
    * Clears pending queues on user logout.
    */
@@ -188,6 +272,7 @@ class NutritionOfflineSyncService {
       await Promise.all([
         AsyncStorage.removeItem(this.getMealsKey()),
         AsyncStorage.removeItem(this.getWaterKey()),
+        AsyncStorage.removeItem(this.getRejectedKey()),
       ]);
       session.assertCurrent();
     } catch (error) {
@@ -210,20 +295,21 @@ class NutritionOfflineSyncService {
    * Attempt to sync all pending meals and water mutations to the backend.
    * HTTP 409 is treated as success ONLY for confirmed duplicate submissions.
    */
-  async syncAllPending(): Promise<{ syncedMeals: number; syncedWater: number; remaining: number }> {
+  async syncAllPending(): Promise<NutritionSyncResult> {
     if (!useAuthStore.getState().isAuthenticated)
-      return { syncedMeals: 0, syncedWater: 0, remaining: 0 };
+      return { syncedMeals: 0, syncedWater: 0, remaining: 0, rejected: 0 };
     const session = captureUserSession();
     if (this.isSyncing) {
       logger.info('Nutrition sync already in progress, skipping concurrent run.');
       const count = await this.getPendingCount();
       session.assertCurrent();
-      return { syncedMeals: 0, syncedWater: 0, remaining: count };
+      return { syncedMeals: 0, syncedWater: 0, remaining: count, rejected: 0 };
     }
 
     this.isSyncing = true;
     let syncedMeals = 0;
     let syncedWater = 0;
+    const refused: RejectedNutritionLog[] = [];
 
     try {
       // 1. Sync Meals
@@ -278,11 +364,17 @@ class NutritionOfflineSyncService {
             }
           }
 
-          // Permanent 4xx client errors (excluding 408/429) discard to avoid stuck queue
-          if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
-            logger.warn(
-              `Meal ${item.clientMealId} failed with unrecoverable client error ${status} (${errMsg}). Removing from queue.`,
-            );
+          // A permanent 4xx means the server refused this very entry. Keep it (in the rejected list), never drop it.
+          if (classifySyncFailure(status) === 'rejected') {
+            logger.warn(`Meal ${item.clientMealId} refused by the server (${status}); moved to rejected.`);
+            refused.push({
+              kind: 'meal',
+              id: item.clientMealId,
+              payload: item.payload,
+              rejectedAt: new Date().toISOString(),
+              status,
+              reason: rejectionReason(status, errMsg),
+            });
             continue;
           }
 
@@ -295,6 +387,10 @@ class NutritionOfflineSyncService {
         }
       }
 
+      // The refused entries are saved BEFORE the queue is rewritten: a crash in between leaves a duplicate (harmless,
+      // replaced by id), never a lost entry.
+      await this.addRejected(refused.filter((entry) => entry.kind === 'meal'));
+      session.assertCurrent();
       const mealsQueueLatest = await this.getPendingMeals();
       session.assertCurrent();
       await AsyncStorage.setItem(
@@ -340,8 +436,16 @@ class NutritionOfflineSyncService {
             continue;
           }
 
-          if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
-            logger.warn(`Water ${item.clientWaterId} failed with ${status}. Removing.`);
+          if (classifySyncFailure(status) === 'rejected') {
+            logger.warn(`Water ${item.clientWaterId} refused by the server (${status}); moved to rejected.`);
+            refused.push({
+              kind: 'water',
+              id: item.clientWaterId,
+              payload: item.payload,
+              rejectedAt: new Date().toISOString(),
+              status,
+              reason: rejectionReason(status, errMsg),
+            });
             continue;
           }
 
@@ -353,6 +457,8 @@ class NutritionOfflineSyncService {
         }
       }
 
+      await this.addRejected(refused.filter((entry) => entry.kind === 'water'));
+      session.assertCurrent();
       const waterQueueLatest = await this.getPendingWater();
       session.assertCurrent();
       await AsyncStorage.setItem(
@@ -364,12 +470,12 @@ class NutritionOfflineSyncService {
       );
       session.assertCurrent();
 
-      if (syncedMeals > 0 || syncedWater > 0) {
+      if (syncedMeals > 0 || syncedWater > 0 || refused.length > 0) {
         this.notifySyncComplete();
       }
 
       const remaining = remainingMeals.length + remainingWater.length;
-      return { syncedMeals, syncedWater, remaining };
+      return { syncedMeals, syncedWater, remaining, rejected: refused.length };
     } finally {
       this.isSyncing = false;
     }

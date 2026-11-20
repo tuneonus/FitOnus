@@ -74,6 +74,7 @@ describe('images across migrations 0021, 0022 and 0023 (code ahead of the schema
   let upToPrevious: string;
   let upToImageColumn: string;
   let upToWebpKey: string;
+  let upToExerciseImage: string;
   let adminUser: SeededUser;
   let admin: LoggedIn;
   let member: SeededUser;
@@ -163,6 +164,8 @@ describe('images across migrations 0021, 0022 and 0023 (code ahead of the schema
     upToPrevious = await migrationsUpTo(IMAGE_MIGRATION - 1, 'migrations-before-0021-');
     upToImageColumn = await migrationsUpTo(IMAGE_MIGRATION, 'migrations-through-0021-');
     upToWebpKey = await migrationsUpTo(WEBP_KEY_MIGRATION, 'migrations-through-0022-');
+    // Stage 4 stops at 0023: later migrations (the workout cover, 0024) have their own upgrade test.
+    upToExerciseImage = await migrationsUpTo(EXERCISE_IMAGE_MIGRATION, 'migrations-through-0023-');
     await runMigrations({ pool: db.pool, directory: upToPrevious });
 
     adminUser = await seedUser(db.pool, { role: 'admin' });
@@ -705,14 +708,14 @@ describe('images across migrations 0021, 0022 and 0023 (code ahead of the schema
   // ---------------------------------------------------------------------------------------------
   describe('stage 4: migration 0023 is applied to the same running app', () => {
     it('applies exactly one migration, 0023, with the history of 0001..0022 intact (checksums verified)', async () => {
-      const { applied } = await runMigrations({ pool: db.pool, directory: MIGRATIONS_DIR });
+      const { applied } = await runMigrations({ pool: db.pool, directory: upToExerciseImage });
       expect(applied).toEqual(['0023_add_exercise_image_key.sql']);
       expect(await maxVersion()).toBe(EXERCISE_IMAGE_MIGRATION);
       expect(await exerciseColumnExists()).toBe(true);
     });
 
     it('is a no-op the second time', async () => {
-      expect((await runMigrations({ pool: db.pool, directory: MIGRATIONS_DIR })).applied).toEqual([]);
+      expect((await runMigrations({ pool: db.pool, directory: upToExerciseImage })).applied).toEqual([]);
     });
 
     it('added a nullable column with no default, and rewrote no exercise: every row is byte for byte what it was', async () => {
@@ -902,7 +905,8 @@ describe('migrations 0021, 0022 and 0023 applied together on an empty database (
   it('applies all three, in order, in a single run, and ends with the notification CHECK allowing both shapes', async () => {
     const { applied } = await runMigrations({ pool: db.pool, directory: MIGRATIONS_DIR });
     expect(applied).toHaveLength((await loadMigrations(MIGRATIONS_DIR)).length);
-    const tail = applied.slice(-3);
+    // The three image migrations, in order, wherever later migrations (0024 and on) have been added after them.
+    const tail = applied.filter((name) => /^002[123]_/.test(name));
     expect(tail).toEqual([
       '0021_add_notification_campaign_image.sql',
       '0022_allow_webp_notification_image_keys.sql',
@@ -926,11 +930,11 @@ describe('migrations 0021, 0022 and 0023 applied together on an empty database (
     expect(rows[0]!.def).toContain('onusfit/exercises');
   });
 
-  it('has contiguous migration versions with no gap (0001..0023)', async () => {
+  it('has contiguous migration versions with no gap (0001 up to the newest)', async () => {
     const { rows } = await db.pool.query<{ version: number }>(
       'SELECT version FROM schema_migrations ORDER BY version',
     );
     expect(rows.map((row) => row.version)).toEqual(Array.from({ length: rows.length }, (_, i) => i + 1));
-    expect(rows.at(-1)!.version).toBe(23);
+    expect(rows.at(-1)!.version).toBe((await loadMigrations(MIGRATIONS_DIR)).length);
   });
 });

@@ -10,6 +10,7 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
 import type { MealType } from '../types/nutrition';
+import { MEAL_PHOTO_QUALITY, prepareMealPhoto } from '../utils/meal-photo-upload';
 
 export function MealPhotoScreen() {
   const { goBack, replace } = useNavigation();
@@ -18,6 +19,24 @@ export function MealPhotoScreen() {
   const { colors } = useTheme();
   const [opening, setOpening] = useState<'camera' | 'library' | null>(null);
   const openingRef = useRef(false);
+
+  /** Checks the picked photo (size, type) before anything is uploaded, then opens the analysis. */
+  const continueWithPhoto = (result: ImagePicker.ImagePickerResult) => {
+    if (result.canceled || !result.assets || result.assets.length === 0) return;
+    const asset = result.assets[0]!;
+    const photo = prepareMealPhoto(asset);
+    if (!photo.ok) {
+      Alert.alert('Photo not usable', photo.message);
+      return;
+    }
+    replace('mealAnalysis', {
+      meal,
+      imageUri: asset.uri,
+      // Already checked by prepareMealPhoto (present, within the server limit); passed on untouched as a screen param.
+      imageBase64: asset.base64 ?? '',
+      mimeType: photo.mimeType,
+    });
+  };
 
   const takePhoto = async () => {
     try {
@@ -30,23 +49,15 @@ export function MealPhotoScreen() {
         return;
       }
 
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7,
-        base64: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0]!;
-        replace('mealAnalysis', {
-          meal,
-          imageUri: asset.uri,
-          imageBase64: asset.base64 ?? '',
-          mimeType: asset.mimeType ?? 'image/jpeg',
-        });
-      }
+      continueWithPhoto(
+        await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: MEAL_PHOTO_QUALITY,
+          base64: true,
+        }),
+      );
     } catch (err: any) {
       Alert.alert('Camera Error', err?.message || 'Could not open camera.');
     }
@@ -63,23 +74,15 @@ export function MealPhotoScreen() {
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7,
-        base64: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0]!;
-        replace('mealAnalysis', {
-          meal,
-          imageUri: asset.uri,
-          imageBase64: asset.base64 ?? '',
-          mimeType: asset.mimeType ?? 'image/jpeg',
-        });
-      }
+      continueWithPhoto(
+        await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: MEAL_PHOTO_QUALITY,
+          base64: true,
+        }),
+      );
     } catch (err: any) {
       Alert.alert('Gallery Error', err?.message || 'Could not open gallery.');
     }

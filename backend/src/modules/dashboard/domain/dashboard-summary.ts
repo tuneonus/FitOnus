@@ -1,4 +1,4 @@
-import type { NutritionTargetsSource } from './nutrition-targets.js';
+import type { DailyTargetsSource } from '../../profile/index.js';
 
 export interface DailySummary {
   recoveryScore: number | null;
@@ -39,7 +39,7 @@ export interface NutritionSummary {
   fat: number;
   fatGoal: number;
   /** Where the goals came from; 'default' means generic placeholders, not the user's own targets. */
-  targetsSource?: NutritionTargetsSource;
+  targetsSource?: DailyTargetsSource;
 }
 
 export interface ActivityProgress {

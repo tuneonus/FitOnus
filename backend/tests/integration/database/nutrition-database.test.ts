@@ -518,12 +518,16 @@ describe('Nutrition Database Integration Tests (Real PostgreSQL)', () => {
       const daily = await getDailyUseCase.execute({ userId: user1.id, date: '2026-11-05' });
 
       expect(daily.date).toBe('2026-11-05');
+      // Fat and carbs come from the same split as every other screen (25% of calories as fat, carbs the remainder);
+      // this user has no weight and never set a water target, so there is no water goal to show.
       expect(daily.targets).toEqual({
         calories: 2500,
         proteinG: 160,
-        carbsG: null,
-        fatG: null,
+        carbsG: 310,
+        fatG: 69,
         waterMl: null,
+        source: 'saved',
+        waterSource: null,
       });
       expect(daily.consumed.calories).toBeGreaterThan(0);
       expect(daily.consumed.waterMl).toBeGreaterThanOrEqual(350);

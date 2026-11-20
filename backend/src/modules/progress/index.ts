@@ -27,8 +27,19 @@ export * from './interface/progress.schemas.js';
 export * from './interface/progress.controller.js';
 export * from './interface/progress.routes.js';
 
+// Progress photos (private member media)
+export * from './domain/progress-photo.js';
+export type {
+  ProgressPhotoGallery,
+  ProgressPhotoListItem,
+  ProgressPhotoUploadResult,
+  ProgressPhotoView,
+} from './application/photo-view.js';
+
 import type { SqlExecutor } from '../../database/transaction.js';
 import type { RouteGroup } from '../../shared/http/route.js';
+import type { ImageLogger } from '../../shared/images/public-image-check.js';
+import type { PrivateMedia } from '../../shared/private-media/index.js';
 import { PgWeightRepository } from './infrastructure/pg-weight-repository.js';
 import { PgMeasurementRepository } from './infrastructure/pg-measurement-repository.js';
 import { PgProgressTelemetryAdapter } from './infrastructure/pg-progress-telemetry-adapter.js';
@@ -46,6 +57,13 @@ import { GetAchievementsUseCase } from './application/use-cases/get-achievements
 import { GetProgressReportsUseCase } from './application/use-cases/get-progress-reports.js';
 import { createProgressController, type ProgressController } from './interface/progress.controller.js';
 import { createProgressRoutes } from './interface/progress.routes.js';
+import { PgProgressPhotoRepository } from './infrastructure/pg-progress-photo-repository.js';
+import { DeleteProgressPhotoUseCase } from './application/use-cases/delete-progress-photo.js';
+import { GetProgressPhotoUseCase } from './application/use-cases/get-progress-photo.js';
+import { ListProgressPhotosUseCase } from './application/use-cases/list-progress-photos.js';
+import { UploadProgressPhotoUseCase } from './application/use-cases/upload-progress-photo.js';
+import { createProgressPhotoController } from './interface/photo.controller.js';
+import { createProgressPhotoRoutes, type PhotoRouteLimiters } from './interface/photo.routes.js';
 
 export interface ProgressModule {
   routes: RouteGroup;
@@ -58,6 +76,13 @@ export interface ProgressModule {
 export interface CreateProgressModuleOptions {
   basePath?: string;
   db: SqlExecutor;
+  /** The private member-photo storage. Null/omitted when it is not configured: photo upload and listing answer 503. */
+  privateMedia?: PrivateMedia | null;
+  /** The upload budget for progress photos. Omitted in tests that do not exercise rate limiting. */
+  limiters?: PhotoRouteLimiters;
+  logger?: ImageLogger;
+  /** Replaceable clock (tests). */
+  now?: () => Date;
 }
 
 export function createProgressModule(deps: CreateProgressModuleOptions): ProgressModule {
@@ -80,8 +105,26 @@ export function createProgressModule(deps: CreateProgressModuleOptions): Progres
     getProgressReports: new GetProgressReportsUseCase(weightRepo, telemetryPort),
   });
 
+  const photos = new PgProgressPhotoRepository(deps.db);
+  const media = deps.privateMedia ?? null;
+  const photoController = createProgressPhotoController({
+    list: new ListProgressPhotosUseCase({ photos, media, logger: deps.logger }),
+    get: new GetProgressPhotoUseCase({ photos, media }),
+    upload: new UploadProgressPhotoUseCase({
+      photos,
+      media,
+      logger: deps.logger,
+      ...(deps.now ? { now: deps.now } : {}),
+    }),
+    delete: new DeleteProgressPhotoUseCase({ photos, media }),
+  });
+
   const basePath = deps.basePath ?? '/api/v1/progress';
-  const routes = createProgressRoutes(basePath, controller);
+  const progressRoutes = createProgressRoutes(basePath, controller);
+  const routes: RouteGroup = {
+    basePath: progressRoutes.basePath,
+    routes: [...progressRoutes.routes, ...createProgressPhotoRoutes(photoController, deps.limiters)],
+  };
 
   return {
     routes,

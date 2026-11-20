@@ -1,6 +1,6 @@
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type { IMealRepository, IUserProfileTargetPort, IWaterRepository } from '../ports.js';
-import { toMealView, type DailyNutritionView } from '../nutrition-view.js';
+import { toMealView, toWaterIntakeView, type DailyNutritionView } from '../nutrition-view.js';
 import { isValidCalendarDate, systemClock, todayInTimeZone, type Clock } from '../../domain/local-date.js';
 
 export interface GetDailyNutritionInput {
@@ -30,9 +30,10 @@ export class GetDailyNutritionUseCase {
       throw new AppError('bad_request', 'VALIDATION_FAILED', 'Invalid date (must be a real calendar day)');
     }
 
-    const [meals, waterMl, profileTargets] = await Promise.all([
+    const [meals, waterMl, waterEntries, profileTargets] = await Promise.all([
       this.mealRepo.listByDate(input.userId, date),
       this.waterRepo.getTotalByDate(input.userId, date),
+      this.waterRepo.listByDate(input.userId, date),
       this.targetPort.findTargetsByUserId(input.userId),
     ]);
 
@@ -59,34 +60,39 @@ export class GetDailyNutritionUseCase {
       waterMl,
     };
 
-    const hasAnyTarget =
-      profileTargets &&
-      (profileTargets.dailyCalorieTarget !== null || profileTargets.dailyProteinGrams !== null);
+    // The port already resolved every target (saved, else estimated from the profile) and never invents one:
+    // anything it does not know is null here and shows as "no goal" rather than a made-up number.
+    const hasAnyTarget = [
+      profileTargets.calories,
+      profileTargets.proteinG,
+      profileTargets.carbsG,
+      profileTargets.fatG,
+      profileTargets.waterMl,
+    ].some((target) => target !== null);
 
     const targets = hasAnyTarget
       ? {
-          calories: profileTargets.dailyCalorieTarget ?? null,
-          proteinG: profileTargets.dailyProteinGrams ?? null,
-          carbsG: null, // do not invent missing targets
-          fatG: null,
-          waterMl: null,
+          calories: profileTargets.calories,
+          proteinG: profileTargets.proteinG,
+          carbsG: profileTargets.carbsG,
+          fatG: profileTargets.fatG,
+          waterMl: profileTargets.waterMl,
+          source: profileTargets.source,
+          waterSource: profileTargets.waterSource,
         }
       : null;
 
+    const left = (target: number | null, eaten: number): number =>
+      target === null ? 0 : Math.max(0, Math.round((target - eaten) * 10) / 10);
+
     const remaining = targets
       ? {
-          calories:
-            targets.calories !== null
-              ? Math.max(0, Math.round((targets.calories - consumed.calories) * 10) / 10)
-              : 0,
-          proteinG:
-            targets.proteinG !== null
-              ? Math.max(0, Math.round((targets.proteinG - consumed.proteinG) * 10) / 10)
-              : 0,
-          carbsG: 0,
-          fatG: 0,
+          calories: left(targets.calories, consumed.calories),
+          proteinG: left(targets.proteinG, consumed.proteinG),
+          carbsG: left(targets.carbsG, consumed.carbsG),
+          fatG: left(targets.fatG, consumed.fatG),
           fiberG: 0,
-          waterMl: 0,
+          waterMl: left(targets.waterMl, consumed.waterMl),
         }
       : null;
 
@@ -96,6 +102,7 @@ export class GetDailyNutritionUseCase {
       consumed,
       remaining,
       meals: meals.map(toMealView),
+      waterEntries: waterEntries.map(toWaterIntakeView),
     };
   }
 }

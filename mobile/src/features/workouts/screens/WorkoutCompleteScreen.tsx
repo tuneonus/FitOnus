@@ -1,19 +1,82 @@
 import { premium } from '@/shared/theme/premium';
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Trophy } from 'lucide-react-native';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { SourceTag } from '../../../shared/components/ui/SourceTag';
 import { ConfirmDialog } from '../../../shared/components/ui/ConfirmDialog';
+import { AnimatedNumber } from '../../../shared/components/ui/AnimatedNumber';
+import { Reveal } from '../../../shared/components/ui/Reveal';
 import { showToast } from '../../../shared/stores/toastStore';
 import { useHasDeviceData } from '../../health-integration/store/healthStore';
 import { useWorkoutStore } from '../store/workoutStore';
 import type { WorkoutLog } from '../types/workout';
 import { useTheme } from '@/hooks/use-theme';
+import { useAnimatedColor } from '@/hooks/use-animated-color';
+import { useReduceMotion } from '@/hooks/use-reduce-motion';
+import { motion } from '@/shared/theme/motion';
 
 const feelings = ['Easy', 'Solid', 'Hard', 'Max effort'];
+
+/** The trophy swells in just after the summary has settled, so the record is the last thing to land. */
+const TROPHY_DELAY_MS = 350;
+const TROPHY_FROM_SCALE = 0.4;
+
+function PrTrophy({ color }: { color: string }) {
+  const reduceMotion = useReduceMotion();
+  const scale = useSharedValue(reduceMotion ? 1 : TROPHY_FROM_SCALE);
+  useEffect(() => {
+    scale.set(reduceMotion ? 1 : withDelay(TROPHY_DELAY_MS, withSpring(1, motion.spring.bouncy)));
+  }, [reduceMotion, scale]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+  return (
+    <Animated.View style={style}>
+      <Trophy size={22} color={color} />
+    </Animated.View>
+  );
+}
+
+/** One answer to "How did it feel?". Fill and text colours fade when it is picked or dropped. */
+function FeelButton({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  const fill = useAnimatedColor(selected ? colors.highlight : `${colors.heroInk}10`);
+  const ink = useAnimatedColor(selected ? colors.highlightInk : colors.heroInk);
+  const fillStyle = useAnimatedStyle(() => ({ backgroundColor: fill.get() }));
+  const inkStyle = useAnimatedStyle(() => ({ color: ink.get() }));
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      activeOpacity={0.7}
+      onPress={onPress}
+      style={styles.feelSlot}
+    >
+      <Animated.View style={[styles.feelBtn, fillStyle]}>
+        <Animated.Text
+          style={[styles.feelText, { fontWeight: selected ? '600' : '400' }, inkStyle]}
+        >
+          {label}
+        </Animated.Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
 
 export function WorkoutCompleteScreen() {
   const insets = useSafeAreaInsets();
@@ -65,13 +128,19 @@ export function WorkoutCompleteScreen() {
 
   const lastCompleted = finished;
 
-  const stats = [
-    { label: 'Duration', value: `${lastCompleted.durationMin}`, unit: 'min' },
-    { label: 'Volume', value: lastCompleted.volumeKg.toLocaleString(), unit: 'kg' },
-    { label: 'Sets', value: `${lastCompleted.sets}`, unit: '' },
+  // Numbers count up on arrival; `format` is what each one always read, so the final text is unchanged.
+  const stats: { label: string; value: number | null; format?: (n: number) => string; unit: string }[] = [
+    { label: 'Duration', value: lastCompleted.durationMin, unit: 'min' },
+    {
+      label: 'Volume',
+      value: lastCompleted.volumeKg,
+      format: (n) => n.toLocaleString(),
+      unit: 'kg',
+    },
+    { label: 'Sets', value: lastCompleted.sets, unit: '' },
     {
       label: 'Calories',
-      value: lastCompleted.pendingSync ? '—' : `${lastCompleted.calories}`,
+      value: lastCompleted.pendingSync ? null : lastCompleted.calories,
       unit: lastCompleted.pendingSync ? '' : 'kcal',
     },
   ];
@@ -103,23 +172,32 @@ export function WorkoutCompleteScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.eyebrow, { color: colors.highlight }]}>Workout complete</Text>
-        <Text style={[styles.heading, { color: colors.heroInk }]}>{lastCompleted.title}</Text>
+        <Reveal index={0}>
+          <Text style={[styles.eyebrow, { color: colors.highlight }]}>Workout complete</Text>
+          <Text style={[styles.heading, { color: colors.heroInk }]}>{lastCompleted.title}</Text>
+        </Reveal>
 
         {/* Stats Grid */}
-        <View style={[styles.statsGrid, { backgroundColor: `${colors.heroInk}15` }]}>
+        <Reveal
+          index={1}
+          style={[styles.statsGrid, { backgroundColor: `${colors.heroInk}15` }]}
+        >
           {stats.map((s) => (
             <View key={s.label} style={[styles.statBox, { backgroundColor: colors.hero }]}>
               <Text style={[styles.statLabel, { color: colors.heroMuted }]}>{s.label}</Text>
               <Text style={[styles.statNumber, { color: colors.heroInk }]}>
-                {s.value}
+                {s.value === null ? (
+                  '—'
+                ) : (
+                  <AnimatedNumber value={s.value} format={s.format} />
+                )}
                 <Text style={[styles.statUnit, { color: colors.heroMuted }]}> {s.unit}</Text>
               </Text>
             </View>
           ))}
-        </View>
+        </Reveal>
 
-        <View style={{ marginTop: 10 }}>
+        <Reveal index={2} style={{ marginTop: 10 }}>
           <SourceTag
             source={
               lastCompleted.caloriesSource === 'wearable'
@@ -132,28 +210,33 @@ export function WorkoutCompleteScreen() {
                   }
             }
           />
-        </View>
+        </Reveal>
 
         {/* PR or Volume notice */}
         {lastCompleted.prs > 0 ? (
-          <View style={[styles.prNotice, { backgroundColor: `${colors.highlight}20` }]}>
-            <Trophy size={22} color={colors.highlight} />
+          <Reveal
+            index={3}
+            style={[styles.prNotice, { backgroundColor: `${colors.highlight}20` }]}
+          >
+            <PrTrophy color={colors.highlight} />
             <Text style={[styles.prText, { color: colors.heroInk }]}>
               {lastCompleted.prs} personal record{lastCompleted.prs === 1 ? '' : 's'} recorded
             </Text>
-          </View>
+          </Reveal>
         ) : (
-          <View style={[styles.noPrNotice, { backgroundColor: `${colors.heroInk}10` }]}>
+          <Reveal index={3} style={[styles.noPrNotice, { backgroundColor: `${colors.heroInk}10` }]}>
             <Text style={[styles.noPrText, { color: colors.heroMuted }]}>
               Your logged sets and training volume are ready to save. Keep building your own
               progress.
             </Text>
-          </View>
+          </Reveal>
         )}
 
         {/* Exercises summary */}
-        <Text style={[styles.exercisesTitle, { color: colors.heroInk }]}>Exercises</Text>
-        <View style={styles.exercisesList}>
+        <Reveal index={4}>
+          <Text style={[styles.exercisesTitle, { color: colors.heroInk }]}>Exercises</Text>
+        </Reveal>
+        <Reveal index={4} style={styles.exercisesList}>
           {lastCompleted.exercises.map((e, idx) => (
             <View
               key={e.name}
@@ -169,44 +252,17 @@ export function WorkoutCompleteScreen() {
               <Text style={[styles.exRowBest, { color: colors.heroMuted }]}>{e.best}</Text>
             </View>
           ))}
-        </View>
+        </Reveal>
 
         {/* How did it feel? */}
-        <View style={styles.feelSection}>
+        <Reveal index={5} style={styles.feelSection}>
           <Text style={[styles.feelTitle, { color: colors.heroInk }]}>How did it feel?</Text>
           <View style={styles.feelGrid}>
-            {feelings.map((f) => {
-              const isSelected = feel === f;
-              return (
-                <TouchableOpacity
-                  key={f}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                  activeOpacity={0.7}
-                  onPress={() => setFeel(f)}
-                  style={[
-                    styles.feelBtn,
-                    {
-                      backgroundColor: isSelected ? colors.highlight : `${colors.heroInk}10`,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.feelText,
-                      {
-                        color: isSelected ? colors.highlightInk : colors.heroInk,
-                        fontWeight: isSelected ? '600' : '400',
-                      },
-                    ]}
-                  >
-                    {f}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            {feelings.map((f) => (
+              <FeelButton key={f} label={f} selected={feel === f} onPress={() => setFeel(f)} />
+            ))}
           </View>
-        </View>
+        </Reveal>
       </ScrollView>
 
       {/* Bottom Save & Discard buttons */}
@@ -351,8 +407,10 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 10,
   },
-  feelBtn: {
+  feelSlot: {
     flex: 1,
+  },
+  feelBtn: {
     minHeight: premium.layout.touch,
     borderRadius: 14,
     alignItems: 'center',

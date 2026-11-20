@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePlannedWorkout } from '@/features/workouts/hooks/use-planned-workout';
+import { WorkoutCover } from '@/features/workouts/components/workout-cover';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { CheckCircle2, Dumbbell, Play, ArrowUpRight } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
@@ -79,6 +80,8 @@ export function RecommendedWorkout({ showLibraryLink = true }: { showLibraryLink
           : {})}
       />
       <Card appearance="premium" style={styles.card}>
+        {/* A curated routine's cover, when it has one. Renders nothing (and leaves no gap) otherwise. */}
+        {!completed ? <WorkoutCover uri={plannedSession?.coverImageUrl} style={styles.cover} /> : null}
         <View style={styles.statusRow}>
           {completed ? (
             <CheckCircle2 size={18} color={colors.good} />
@@ -170,6 +173,8 @@ export function RecommendedWorkout({ showLibraryLink = true }: { showLibraryLink
 
 const styles = StyleSheet.create({
   card: { padding: 20 },
+  // Inset inside the card's padding, so the card's shadow, radius and spacing are exactly as without a cover.
+  cover: { borderRadius: premium.radius.control, marginBottom: 16 },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   title: { ...premium.type.title, marginTop: 16 },
   meta: { ...premium.type.caption, marginTop: 8 },

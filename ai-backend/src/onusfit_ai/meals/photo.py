@@ -12,6 +12,7 @@ from onusfit_ai.core.image import decode_image_base64
 from onusfit_ai.llm.gemini import MediaInput, TextGenerator
 from onusfit_ai.llm.telemetry import log_ai_call
 from onusfit_ai.meals.photo_parsing import parse_meal_photo_output
+from onusfit_ai.meals.sanitize import sanitize_photo_result
 from onusfit_ai.prompts.meal_photo import PROMPT_VERSION, build_prompt
 
 logger = logging.getLogger("onusfit_ai.meal_photo")
@@ -32,6 +33,8 @@ async def analyze_meal_photo(
         media=media,
     )
     result, outcome = parse_meal_photo_output(llm_result.text)
+    # Bound whatever the model claimed before it can reach a member (see meals/sanitize.py).
+    result = sanitize_photo_result(result)
 
     usage = llm_result.usage
     # Metadata only: the image, the notes and the model's reply are never logged.

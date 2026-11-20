@@ -46,6 +46,8 @@ export interface RateLimiters {
   notificationsAdmin: RequestHandler;
   /** Admin image uploads (exercises): CPU-heavy (decode and re-encode) and write to the public bucket. */
   adminImageUploads: RequestHandler;
+  /** Member photo uploads (avatar, progress photos): each costs an image decode and encode and writes to the private bucket. */
+  memberImageUploads: RequestHandler;
 }
 
 /**
@@ -85,6 +87,9 @@ export function createRateLimiters(config: AppConfig['rateLimit']): RateLimiters
     // Uploads are deliberate human actions, and each one costs a full image decode and encode. Its own budget, so
     // uploading pictures never uses up the notification send budget (and the reverse).
     adminImageUploads: rateLimit({ ...base, limit: 60, keyGenerator: byBearerOrIp }),
+    // A member sets a profile picture or adds a progress photo a few times a day; 30 per window is generous for that
+    // and keeps a scripted or stolen session from using the image pipeline as a free CPU (its own budget, per user).
+    memberImageUploads: rateLimit({ ...base, limit: 30, keyGenerator: byBearerOrIp }),
     aiCoach: rateLimit({
       ...base,
       limit: 30, // 30 requests per 15-minute window

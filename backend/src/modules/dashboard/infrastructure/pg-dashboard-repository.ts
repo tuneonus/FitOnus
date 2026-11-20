@@ -13,7 +13,7 @@ import type {
   RecentActivity,
   TodayWorkout,
 } from '../domain/dashboard-summary.js';
-import { deriveNutritionTargets } from '../domain/nutrition-targets.js';
+import { ageFromDateOfBirth, resolveDailyTargets } from '../../profile/index.js';
 
 interface UserProfileRow {
   id: string;
@@ -72,18 +72,6 @@ interface RecentActivityRow {
   subtitle: string;
   timestamp: Date;
   type: 'workout' | 'meal' | 'weight';
-}
-
-function calculateAge(dobStr: string | null): number | null {
-  if (!dobStr) return null;
-  const dob = new Date(dobStr);
-  const now = new Date();
-  let age = now.getFullYear() - dob.getFullYear();
-  const m = now.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) {
-    age--;
-  }
-  return age > 0 ? age : null;
 }
 
 function getLocalHour(date: Date, timezone: string): number {
@@ -283,12 +271,13 @@ export class PgDashboardRepository implements DashboardRepository {
     });
 
     // 9. Derive Goals & Targets (saved profile targets, else an estimate from real inputs, else labelled defaults)
-    const targets = deriveNutritionTargets({
+    const targets = resolveDailyTargets({
       savedCalorieTarget: userRow?.daily_calorie_target ?? null,
       savedProteinGrams: userRow?.daily_protein_grams ?? null,
+      savedWaterTargetMl: null, // the dashboard shows no water goal
       weightKg: userRow?.current_weight_kg ? Number(userRow.current_weight_kg) : null,
       heightCm: userRow?.height_cm ? Number(userRow.height_cm) : null,
-      age: calculateAge(userRow?.date_of_birth ?? null),
+      age: ageFromDateOfBirth(userRow?.date_of_birth ?? null),
       sex: userRow?.sex ?? null,
       primaryGoal: userRow?.primary_goal ?? null,
       workoutDaysPerWeek: userRow?.workout_days_per_week ?? null,

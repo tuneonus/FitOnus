@@ -11,14 +11,19 @@ import type {
   MealType,
   Nutrients,
   UpdateMealInput,
+  WaterIntakeView,
 } from '../types/nutrition';
 import { toDbMealType } from '../types/nutrition';
 import { nutritionApi } from '../api/nutrition-api';
-import { nutritionOfflineSync } from '../services/nutrition-offline-sync';
+import { nutritionOfflineSync, type RejectedNutritionLog } from '../services/nutrition-offline-sync';
+import { mapBackendMealToMealEntry, scaleFood } from '../utils/nutrition-calculator';
 import {
-  calculatePortionNutrients,
-  mapBackendMealToMealEntry,
-} from '../utils/nutrition-calculator';
+  addMealToSummary,
+  removeMealFromSummary,
+  removeWaterFromSummary,
+  withWaterTarget,
+} from '../utils/daily-summary';
+import { toMealItemPayload } from '../utils/meal-payload';
 import { generateUUID } from '../utils/uuid';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { queryClient } from '@/providers/query-provider';
@@ -56,16 +61,27 @@ export type NutritionState = {
   isRefreshing: boolean;
   error: string | null;
   pendingSyncCount: number;
+  /** Offline entries the server refused for good: kept so the member can see what was not saved. */
+  rejectedEntries: RejectedNutritionLog[];
   favorites: FoodItem[];
   recentFoods: FoodItem[];
 
   // Existing methods preserved
   addEntry: (entry: Omit<MealEntry, 'id'>) => string;
-  removeEntry: (id: string) => void;
-  restoreEntry: (entry: MealEntry) => void;
+  /** Removes one food from a meal that keeps at least one other food. Deleting the whole meal is `deleteMeal`. */
   removeItem: (entryId: string, itemId: string) => Promise<void>;
+  /** Scales one food by `factor` of its CURRENT portion (the edit sheet starts at 1× = as logged). */
   scaleItem: (entryId: string, itemId: string, factor: number) => Promise<void>;
   setPendingAnalysis: (items: FoodItem[] | null) => void;
+
+  /** Deletes a synced meal (the backend keeps it so `restoreMeal` can undo). Resolves with the removed entry. */
+  deleteMeal: (mealId: string) => Promise<MealEntry>;
+  /** Undoes `deleteMeal`: the same meal id comes back with the item snapshots it had. */
+  restoreMeal: (mealId: string) => Promise<void>;
+  /** Deletes one synced water entry. Resolves with it so the caller can offer an undo (`logWater` with its id). */
+  deleteWater: (entryId: string) => Promise<WaterIntakeView>;
+  /** Saves the member's own daily water goal in ml, or clears it (null) so the estimate from their weight applies. */
+  setWaterTarget: (targetMl: number | null) => Promise<void>;
 
   // Real-world actions
   setSelectedDate: (date: string) => void;
@@ -77,12 +93,20 @@ export type NutritionState = {
     method?: EntryMethod;
   }) => Promise<string>;
   updateMeal: (mealId: string, items: FoodItem[], notes?: string) => Promise<void>;
-  logWater: (amountMl: number) => Promise<string>;
+  /** `options.id` re-logs a known entry (the undo of `deleteWater`): same id, so it is idempotent on the server. */
+  logWater: (
+    amountMl: number,
+    options?: { id?: string; date?: string; loggedAt?: string },
+  ) => Promise<string>;
   toggleFavorite: (food: FoodItem) => Promise<boolean>;
   createCustomFood: (input: CreateCustomFoodInput) => Promise<FoodItem>;
   fetchFavorites: () => Promise<void>;
   fetchRecentFoods: () => Promise<void>;
   refreshPendingSyncCount: () => Promise<number>;
+  /** Forgets a refused entry the member has seen. */
+  dismissRejectedEntry: (kind: RejectedNutritionLog['kind'], id: string) => Promise<void>;
+  /** Puts a refused entry back in the offline queue and tries to sync it again. */
+  retryRejectedEntry: (kind: RejectedNutritionLog['kind'], id: string) => Promise<void>;
   syncPendingMutations: () => Promise<void>;
   resetStore: () => Promise<void>;
 };
@@ -99,6 +123,7 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
     isRefreshing: false,
     error: null,
     pendingSyncCount: 0,
+    rejectedEntries: [],
     favorites: [],
     recentFoods: [],
 
@@ -113,22 +138,120 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
       return id;
     },
 
-    removeEntry: () => {
-      // This backend exposes meal updates but no meal deletion endpoint.
-      throw new Error('Meal deletion is not available yet.');
-    },
-
-    restoreEntry: (entry) => {
-      void get().updateMeal(entry.id, entry.items, entry.notes ?? undefined);
-    },
-
     removeItem: async (entryId, itemId) => {
       const current = get().entries.find((entry) => entry.id === entryId);
       if (!current) return;
       const items = current.items.filter((item) => item.id !== itemId);
-      if (!items.length)
-        throw new Error('Keep at least one food in this meal. Meal deletion is not available yet.');
+      if (!items.length) throw new Error('A meal needs at least one food. Delete the meal instead.');
       await get().updateMeal(entryId, items, current.notes ?? undefined);
+    },
+
+    deleteMeal: async (mealId) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const index = get().entries.findIndex((entry) => entry.id === mealId);
+      const existing = get().entries[index];
+      if (!existing) throw new Error('This meal is no longer in your log.');
+      if (existing.isSynced === false) throw new Error('Sync this meal before deleting it.');
+      const summaryBefore = get().dailySummary;
+
+      // Optimistic: the meal and its totals disappear at once; a failed request puts them back.
+      const without = get().entries.filter((entry) => entry.id !== mealId);
+      const summary = summaryBefore ? removeMealFromSummary(summaryBefore, mealId) : summaryBefore;
+      set({ entries: without, dailySummary: summary });
+      saveCache(without, get().waterMl, summary);
+
+      try {
+        await nutritionApi.deleteMeal(mealId);
+        session.assertCurrent();
+      } catch (err: any) {
+        session.assertCurrent();
+        // 404 means it is already gone (a retried delete): the goal is reached, nothing to roll back.
+        if (err?.response?.status !== 404) {
+          const restored = [...get().entries];
+          restored.splice(Math.min(index, restored.length), 0, existing);
+          set({ entries: restored, dailySummary: summaryBefore });
+          saveCache(restored, get().waterMl, summaryBefore);
+          throw err;
+        }
+      }
+
+      get()
+        .fetchDailyNutrition(get().selectedDate, true)
+        .catch(() => {});
+      refreshFitnessQueries();
+      return existing;
+    },
+
+    restoreMeal: async (mealId) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const meal = await nutritionApi.restoreMeal(mealId);
+      session.assertCurrent();
+
+      const entry = mapBackendMealToMealEntry(meal);
+      const known = get().entries.some((candidate) => candidate.id === entry.id);
+      const entries = known
+        ? get().entries.map((candidate) => (candidate.id === entry.id ? entry : candidate))
+        : entry.date === get().selectedDate
+          ? [...get().entries, entry]
+          : get().entries;
+      const current = get().dailySummary;
+      const summary = current ? addMealToSummary(current, meal) : current;
+      set({ entries, dailySummary: summary });
+      saveCache(entries, get().waterMl, summary);
+
+      get()
+        .fetchDailyNutrition(get().selectedDate, true)
+        .catch(() => {});
+      refreshFitnessQueries();
+    },
+
+    deleteWater: async (entryId) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      const summaryBefore = get().dailySummary;
+      const waterBefore = get().waterMl;
+      const existing = summaryBefore?.waterEntries?.find((entry) => entry.id === entryId);
+      if (!summaryBefore || !existing) throw new Error('This water entry is no longer in your log.');
+
+      const summary = removeWaterFromSummary(summaryBefore, entryId);
+      const waterMl = Math.max(0, waterBefore - existing.amountMl);
+      set({ dailySummary: summary, waterMl });
+      saveCache(get().entries, waterMl, summary);
+
+      try {
+        await nutritionApi.deleteWater(entryId);
+        session.assertCurrent();
+      } catch (err: any) {
+        session.assertCurrent();
+        if (err?.response?.status !== 404) {
+          set({ dailySummary: summaryBefore, waterMl: waterBefore });
+          saveCache(get().entries, waterBefore, summaryBefore);
+          throw err;
+        }
+      }
+
+      get()
+        .fetchDailyNutrition(get().selectedDate, true)
+        .catch(() => {});
+      refreshFitnessQueries();
+      return existing;
+    },
+
+    setWaterTarget: async (targetMl) => {
+      const session = captureUserSession();
+      const set = sessionSetter(storeSet, session);
+      // Not optimistic: the backend decides what clearing falls back to (the estimate), so wait for its answer.
+      const result = await nutritionApi.setWaterTarget(targetMl);
+      session.assertCurrent();
+      const summary = get().dailySummary;
+      if (summary) {
+        const updated = withWaterTarget(summary, result);
+        set({ dailySummary: updated });
+        saveCache(get().entries, get().waterMl, updated);
+      }
+      refreshFitnessQueries();
     },
 
     scaleItem: async (entryId, itemId, factor) => {
@@ -232,23 +355,7 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
         mealType: toDbMealType(mealType),
         date,
         notes: notes ?? null,
-        items: items.map((it) => {
-          const isServerFood = it.id && UUID_REGEX.test(it.id);
-          return {
-            foodId: isServerFood ? it.id : null,
-            foodName: it.name,
-            foodBrand: it.brand ?? null,
-            servingSize: it.servingSize ?? 1,
-            servingUnit: it.servingUnit ?? 'serving',
-            servingWeightG: it.servingWeightG ?? 100,
-            servingMultiplier: it.servingMultiplier ?? 1.0,
-            calories: it.kcal,
-            proteinG: it.protein,
-            carbsG: it.carbs,
-            fatG: it.fat,
-            fiberG: it.fiber,
-          };
-        }),
+        items: items.map((item) => toMealItemPayload(item)),
       };
 
       // 3. Attempt direct API sync
@@ -304,20 +411,8 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
       if (UUID_REGEX.test(mealId)) {
         const payload: UpdateMealInput = {
           notes: notes !== undefined ? notes : existing.notes,
-          items: items.map((it) => ({
-            foodId: it.id && UUID_REGEX.test(it.id) ? it.id : null,
-            foodName: it.name,
-            foodBrand: it.brand ?? null,
-            servingSize: it.servingSize ?? 1,
-            servingUnit: it.servingUnit ?? 'serving',
-            servingWeightG: it.servingWeightG ?? 100,
-            servingMultiplier: it.servingMultiplier ?? 1.0,
-            calories: it.kcal,
-            proteinG: it.protein,
-            carbsG: it.carbs,
-            fatG: it.fat,
-            fiberG: it.fiber,
-          })),
+          // Stored items are referenced by `mealItemId` so the backend keeps their snapshots.
+          items: items.map((item) => toMealItemPayload(item, { forUpdate: true })),
         };
 
         try {
@@ -336,11 +431,13 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
       }
     },
 
-    logWater: async (amountMl) => {
+    logWater: async (amountMl, options) => {
       const session = captureUserSession();
       const set = sessionSetter(storeSet, session);
       const now = Date.now();
+      // Re-logging a known entry (the undo of a delete) is an explicit action, never a double tap.
       if (
+        !options?.id &&
         lastWaterSession?.isCurrent() &&
         now - lastWaterLogTime < 350 &&
         lastWaterLogAmount === amountMl
@@ -348,13 +445,15 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
         logger.info('Duplicate rapid water tap suppressed:', amountMl);
         return lastWaterLogId;
       }
-      lastWaterSession = session;
-      lastWaterLogTime = now;
-      lastWaterLogAmount = amountMl;
+      if (!options?.id) {
+        lastWaterSession = session;
+        lastWaterLogTime = now;
+        lastWaterLogAmount = amountMl;
+      }
 
-      const waterId = generateUUID();
-      lastWaterLogId = waterId;
-      const date = get().selectedDate || getTodayDateString();
+      const waterId = options?.id ?? generateUUID();
+      if (!options?.id) lastWaterLogId = waterId;
+      const date = options?.date ?? (get().selectedDate || getTodayDateString());
       const newTotal = get().waterMl + amountMl;
 
       // 1. Optimistic Update
@@ -365,7 +464,7 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
         id: waterId,
         date,
         amountMl,
-        loggedAt: new Date().toISOString(),
+        loggedAt: options?.loggedAt ?? new Date().toISOString(),
       };
 
       // 2. Attempt direct API sync
@@ -466,10 +565,24 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
     refreshPendingSyncCount: async () => {
       const session = captureUserSession();
       const set = sessionSetter(storeSet, session);
-      const count = await nutritionOfflineSync.getPendingCount();
+      const [count, rejectedEntries] = await Promise.all([
+        nutritionOfflineSync.getPendingCount(),
+        nutritionOfflineSync.getRejected(),
+      ]);
       if (!session.isCurrent()) return 0;
-      set({ pendingSyncCount: count });
+      set({ pendingSyncCount: count, rejectedEntries });
       return count;
+    },
+
+    dismissRejectedEntry: async (kind, id) => {
+      await nutritionOfflineSync.dismissRejected(kind, id);
+      await get().refreshPendingSyncCount();
+    },
+
+    retryRejectedEntry: async (kind, id) => {
+      await nutritionOfflineSync.retryRejected(kind, id);
+      await get().refreshPendingSyncCount();
+      await get().syncPendingMutations();
     },
 
     syncPendingMutations: async () => {
@@ -494,6 +607,7 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
         isRefreshing: false,
         error: null,
         pendingSyncCount: 0,
+        rejectedEntries: [],
         favorites: [],
         recentFoods: [],
       });
@@ -513,33 +627,8 @@ export const useNutritionStore = create<NutritionState>((storeSet, get) => {
 
 // --- Helper Functions ---
 
-export function scaleFood(item: FoodItem, factor: number): FoodItem {
-  if (item.referenceNutrients) {
-    const portion = calculatePortionNutrients(item, factor);
-    return {
-      ...item,
-      kcal: portion.kcal,
-      protein: portion.protein,
-      carbs: portion.carbs,
-      fat: portion.fat,
-      fiber: portion.fiber,
-      serving: portion.servingText,
-      servingMultiplier: factor,
-    };
-  }
-
-  const r = (n: number) => Math.round(n * factor * 10) / 10;
-  return {
-    ...item,
-    kcal: Math.round(item.kcal * factor),
-    protein: r(item.protein),
-    carbs: r(item.carbs),
-    fat: r(item.fat),
-    fiber: r(item.fiber),
-    serving: factor === 1 ? item.serving : `${factor}× ${item.serving.replace(/^[\d.]+× /, '')}`,
-    servingMultiplier: factor,
-  };
-}
+// Portion scaling lives with the other pure nutrition math; re-exported because screens import it from here.
+export { scaleFood };
 
 export function sumNutrients(items: Nutrients[]): Nutrients {
   return items.reduce(

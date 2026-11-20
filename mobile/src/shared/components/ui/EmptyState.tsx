@@ -4,6 +4,7 @@ import { Button } from './Button';
 import { useTheme } from '@/hooks/use-theme';
 import { premium } from '@/shared/theme/premium';
 import { ActionButton } from './ActionButton';
+import { Reveal } from './Reveal';
 
 export type EmptyStateProps = {
   icon: React.ComponentType<{ size?: number; color?: string }>;
@@ -31,8 +32,9 @@ export function EmptyState({
   const { colors } = useTheme();
   const textBody = body || description || '';
 
+  // It rises in as it appears (a list that finishes loading empty, a filter that matches nothing) rather than popping in.
   return (
-    <View style={[styles.container, { paddingVertical: compact ? 24 : 48 }, style]}>
+    <Reveal style={[styles.container, { paddingVertical: compact ? 24 : 48 }, style]}>
       <View style={[styles.iconBox, { backgroundColor: colors.accentSoft }]}>
         <Icon size={24} color={colors.accentStrong} />
       </View>
@@ -49,7 +51,7 @@ export function EmptyState({
           <Button title={actionLabel} onPress={onAction} style={styles.actionButton} />
         )
       ) : null}
-    </View>
+    </Reveal>
   );
 }
 

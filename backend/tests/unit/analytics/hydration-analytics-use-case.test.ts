@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetHydrationAnalyticsUseCase } from '../../../src/modules/analytics/application/use-cases/get-hydration-analytics.js';
-import type { IAnalyticsNutritionRepository } from '../../../src/modules/analytics/application/ports.js';
+import type {
+  IAnalyticsBodyRepository,
+  IAnalyticsNutritionRepository,
+  UserProfileAnalyticsGoals,
+} from '../../../src/modules/analytics/application/ports.js';
 import type { RawWaterAggregateRecord } from '../../../src/modules/analytics/domain/hydration-metrics.js';
 
 describe('GetHydrationAnalyticsUseCase', () => {
   let mockNutritionRepo: IAnalyticsNutritionRepository;
+  let mockBodyRepo: IAnalyticsBodyRepository;
   let useCase: GetHydrationAnalyticsUseCase;
 
   const userId = '11111111-1111-4111-8111-111111111111';
@@ -15,7 +20,13 @@ describe('GetHydrationAnalyticsUseCase', () => {
       getDailyWaterAggregates: vi.fn(),
     };
 
-    useCase = new GetHydrationAnalyticsUseCase(mockNutritionRepo);
+    mockBodyRepo = {
+      getWeightLogs: vi.fn(),
+      getMeasurements: vi.fn(),
+      getUserProfileGoals: vi.fn().mockResolvedValue(null),
+    };
+
+    useCase = new GetHydrationAnalyticsUseCase(mockNutritionRepo, mockBodyRepo);
   });
 
   it('throws UNAUTHENTICATED error when userId is missing', async () => {
@@ -41,6 +52,47 @@ describe('GetHydrationAnalyticsUseCase', () => {
     expect(res.adherencePct).toBe(0);
     expect(res.points).toHaveLength(7);
     expect(res.points.every((p) => p.amountMl === 0 && p.goalMet === false)).toBe(true);
+  });
+
+  const goalsWithWater = (dailyWaterTargetMl: number | null): UserProfileAnalyticsGoals => ({
+    primaryGoal: null,
+    startingWeightKg: null,
+    currentWeightKg: 80,
+    targetWeightKg: null,
+    dailyCalorieTarget: null,
+    dailyProteinGrams: null,
+    dailyWaterTargetMl,
+    workoutDaysPerWeek: null,
+  });
+
+  it("uses the member's own water goal, not a fixed 3000 ml, when no override is sent", async () => {
+    vi.mocked(mockBodyRepo.getUserProfileGoals).mockResolvedValueOnce(goalsWithWater(2800));
+    vi.mocked(mockNutritionRepo.getDailyWaterAggregates).mockResolvedValueOnce([
+      { date: '2026-10-05', totalMl: 2800 },
+      { date: '2026-10-06', totalMl: 2000 },
+    ]);
+
+    const res = await useCase.execute({ userId, range: 'W', refDate: '2026-10-07' });
+
+    expect(res.targetWaterMl).toBe(2800);
+    // One of the two logged days reached the member's 2800 ml goal; with the old fixed 3000 ml neither would have.
+    expect(res.adherencePct).toBe(50);
+  });
+
+  it('an explicit target from the caller still wins over the member\'s goal', async () => {
+    vi.mocked(mockBodyRepo.getUserProfileGoals).mockResolvedValueOnce(goalsWithWater(2800));
+    vi.mocked(mockNutritionRepo.getDailyWaterAggregates).mockResolvedValueOnce([]);
+
+    const res = await useCase.execute({ userId, range: 'W', refDate: '2026-10-07', customTargetMl: 2000 });
+
+    expect(res.targetWaterMl).toBe(2000);
+  });
+
+  it('falls back to the 3000 ml default only when the member has no goal and no weight to estimate from', async () => {
+    vi.mocked(mockBodyRepo.getUserProfileGoals).mockResolvedValueOnce(goalsWithWater(null));
+    vi.mocked(mockNutritionRepo.getDailyWaterAggregates).mockResolvedValueOnce([]);
+
+    expect((await useCase.execute({ userId, range: 'W', refDate: '2026-10-07' })).targetWaterMl).toBe(3000);
   });
 
   it('calculates average and adherence percentage using custom target override', async () => {

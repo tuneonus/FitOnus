@@ -11,6 +11,7 @@ import type {
   UpdateTemplateInput,
   WorkoutStats,
   UploadedExerciseImage,
+  UploadedTemplateCover,
 } from './types';
 
 export const workoutsApi = {
@@ -92,6 +93,20 @@ export const workoutsApi = {
       templates: res.data,
       meta: res.meta,
     };
+  },
+
+  /**
+   * Uploads one cover picture for a workout template. Same contract as `uploadExerciseImage`: the body is the raw file
+   * with a Content-Type (not JSON or multipart), the backend converts and stores it and answers with a key to save as
+   * the template's `coverImageKey`. Uploading attaches nothing by itself.
+   */
+  async uploadTemplateCover(file: Blob, contentType: string = file.type): Promise<UploadedTemplateCover> {
+    const res = await apiClient<UploadedTemplateCover>('/workouts/templates/images', {
+      method: 'POST',
+      body: file,
+      headers: { 'Content-Type': contentType },
+    });
+    return res.data;
   },
 
   async createTemplate(data: CreateTemplateInput): Promise<WorkoutTemplate> {

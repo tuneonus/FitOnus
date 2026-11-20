@@ -28,7 +28,22 @@ import { mealLabels, mealOrder } from '../constants/meals';
 import { useTheme } from '@/hooks/use-theme';
 import type { FoodItem, MealType } from '../types/nutrition';
 import { VoiceMealApi } from '../../ai-coach/services/voice-meal-api';
-import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
+import {
+  useAudioRecorder,
+  useAudioRecorderState,
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+} from 'expo-audio';
+import {
+  formatRecordingClock,
+  hasReachedRecordingLimit,
+  judgeRecording,
+  VOICE_LIMIT_NOTICE,
+  VOICE_MAX_SECONDS,
+  VOICE_TEXT_TOO_LONG_MESSAGE,
+  VOICE_TOO_SHORT_MESSAGE,
+  VOICE_TRANSCRIPT_MAX_LENGTH,
+} from '../utils/voice-recording-limit';
 import { File } from 'expo-file-system';
 
 type Phase = 'idle' | 'listening' | 'processing' | 'review' | 'error';
@@ -42,7 +57,6 @@ export function VoiceMealEntryScreen() {
 
   const { micPermission, setMicPermission } = useVoiceStore();
   const logMeal = useNutritionStore((s) => s.logMeal);
-  const removeEntry = useNutritionStore((s) => s.removeEntry);
 
   const [phase, setPhase] = useState<Phase>('idle');
   const [transcript, setTranscript] = useState('');
@@ -54,6 +68,7 @@ export function VoiceMealEntryScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(recorder, 250);
   const isRecordingRef = useRef(false);
 
   useEffect(() => {
@@ -64,6 +79,15 @@ export function VoiceMealEntryScreen() {
       }
     };
   }, [recorder]);
+
+  // Stops at the limit by itself. The latest handler is kept in a ref so the effect only reacts to the clock.
+  const stopRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => {
+    if (phase === 'listening' && hasReachedRecordingLimit(recorderState.durationMillis)) {
+      showToast({ message: VOICE_LIMIT_NOTICE });
+      void stopRef.current();
+    }
+  }, [phase, recorderState.durationMillis]);
 
   const handleStartListening = async () => {
     try {
@@ -77,7 +101,8 @@ export function VoiceMealEntryScreen() {
       setMicPermission('granted');
 
       await recorder.prepareToRecordAsync();
-      recorder.record();
+      // The native recorder also stops at the limit, in case the app is busy when the timer below would fire.
+      recorder.record({ forDuration: VOICE_MAX_SECONDS });
       isRecordingRef.current = true;
       setPhase('listening');
       setTranscript('');
@@ -92,8 +117,16 @@ export function VoiceMealEntryScreen() {
     if (!isRecordingRef.current) return;
     try {
       isRecordingRef.current = false;
-      setPhase('processing');
+      const durationMs = recorder.getStatus().durationMillis;
       await recorder.stop();
+
+      // An accidental tap records almost nothing: say so instead of paying for an AI call that cannot hear a meal.
+      if (judgeRecording(durationMs) === 'too_short') {
+        setPhase('error');
+        setErrorMessage(VOICE_TOO_SHORT_MESSAGE);
+        return;
+      }
+      setPhase('processing');
 
       const uri = recorder.uri;
       if (!uri) {
@@ -128,9 +161,19 @@ export function VoiceMealEntryScreen() {
     }
   };
 
+  // Keep the ref pointing at this render's handler (written in an effect, not during render).
+  useEffect(() => {
+    stopRef.current = handleStopListening;
+  });
+
   const handleParseManualText = async () => {
     const text = manualText.trim();
     if (!text) return;
+    if (text.length > VOICE_TRANSCRIPT_MAX_LENGTH) {
+      setPhase('error');
+      setErrorMessage(VOICE_TEXT_TOO_LONG_MESSAGE);
+      return;
+    }
 
     try {
       setErrorMessage(null);
@@ -334,7 +377,10 @@ export function VoiceMealEntryScreen() {
               )}
               {phase === 'listening' &&
                 (transcript || (
-                  <Text style={{ color: colors.muted }}>Recording… Tap stop when you’re done.</Text>
+                  <Text style={{ color: colors.muted }}>
+                    Recording… {formatRecordingClock(recorderState.durationMillis)} /{' '}
+                    {formatRecordingClock(VOICE_MAX_SECONDS * 1000)}. Tap stop when you’re done.
+                  </Text>
                 ))}
               {phase === 'idle' ? (
                 <View style={{ width: '100%', gap: 12, marginTop: 24 }}>

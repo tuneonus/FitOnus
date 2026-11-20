@@ -73,7 +73,11 @@ export type RouteName =
   | 'language'
   | 'privacy'
   | 'account'
-  | 'changePassword';
+  | 'changePassword'
+  // progress photos (private)
+  | 'progressPhotos'
+  | 'progressPhoto'
+  | 'photoComparison';
 
 export type RouteParams = Record<string, string>;
 

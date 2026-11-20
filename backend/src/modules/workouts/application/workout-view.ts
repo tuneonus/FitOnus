@@ -6,6 +6,7 @@ import {
   NO_EXERCISE_IMAGE_URLS,
 } from '../domain/exercise-image.js';
 import type { PersonalRecord } from '../domain/personal-record.js';
+import { NO_WORKOUT_COVER_URLS } from '../domain/workout-cover.js';
 import type { WorkoutPlan, WorkoutPlanExercise } from '../domain/workout-plan.js';
 import type { WorkoutSession, WorkoutSessionSet } from '../domain/workout-session.js';
 
@@ -111,13 +112,25 @@ export interface WorkoutPlanView {
   isTemplate: boolean;
   isAiGenerated: boolean;
   tags: string[];
+  /** Public URL of the template's cover image, or null (always null for a member's own routine). Additive. */
+  coverImageUrl: string | null;
+  /** Key of the cover image, or null. Round-tripped by the admin editor; the member app does not use it. */
+  coverImageKey: string | null;
   exercisesCount: number;
   exercises?: WorkoutPlanExerciseView[];
   createdAt: string;
   updatedAt: string;
 }
 
-export function toWorkoutPlanView(plan: WorkoutPlan, includeExercises = false): WorkoutPlanView {
+/**
+ * One place that turns a stored plan into its API shape, for members and the admin console alike. `resolveCoverUrl`
+ * is the trusted-origin URL builder for covers; a key that is not a canonical workout key resolves to nothing.
+ */
+export function toWorkoutPlanView(
+  plan: WorkoutPlan,
+  includeExercises = false,
+  resolveCoverUrl: PublicImageUrlResolver = NO_WORKOUT_COVER_URLS,
+): WorkoutPlanView {
   return {
     id: plan.id,
     userId: plan.userId,
@@ -129,6 +142,8 @@ export function toWorkoutPlanView(plan: WorkoutPlan, includeExercises = false): 
     isTemplate: plan.isTemplate,
     isAiGenerated: plan.isAiGenerated,
     tags: [...plan.tags],
+    coverImageUrl: resolveCoverUrl(plan.coverImageKey),
+    coverImageKey: plan.coverImageKey,
     exercisesCount: plan.exercises.length,
     ...(includeExercises ? { exercises: plan.exercises.map(toWorkoutPlanExerciseView) } : {}),
     createdAt: plan.createdAt.toISOString(),

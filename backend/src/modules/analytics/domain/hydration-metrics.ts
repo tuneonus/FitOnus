@@ -5,6 +5,12 @@
  * daily water tracking, and goal adherence rates.
  */
 
+/**
+ * The water target used only when nothing is known about the member (no saved target and no weight to estimate from).
+ * Every member who has either gets their own goal instead (see `getUserProfileGoals`).
+ */
+export const DEFAULT_WATER_TARGET_ML = 3000;
+
 export interface RawWaterAggregateRecord {
   date: string; // YYYY-MM-DD
   totalMl: number;
@@ -51,13 +57,13 @@ export function calculateHydrationAverages(entries: readonly RawWaterAggregateRe
  */
 export function calculateHydrationAdherence(
   entries: readonly RawWaterAggregateRecord[],
-  targetWaterMl: number = 3000,
+  targetWaterMl: number = DEFAULT_WATER_TARGET_ML,
 ): {
   adherencePct: number;
   metGoalDays: number;
   loggedDaysCount: number;
 } {
-  const target = targetWaterMl > 0 ? targetWaterMl : 3000;
+  const target = targetWaterMl > 0 ? targetWaterMl : DEFAULT_WATER_TARGET_ML;
   const loggedEntries = entries.filter((e) => e.totalMl > 0);
   const loggedDaysCount = loggedEntries.length;
 
@@ -77,10 +83,10 @@ export function calculateHydrationAdherence(
 export function buildDailyHydrationTrends(
   entries: readonly RawWaterAggregateRecord[],
   dateSeries: readonly string[],
-  targetWaterMl: number = 3000,
+  targetWaterMl: number = DEFAULT_WATER_TARGET_ML,
   weekdayLabels?: Record<string, string>,
 ): HydrationPoint[] {
-  const target = targetWaterMl > 0 ? targetWaterMl : 3000;
+  const target = targetWaterMl > 0 ? targetWaterMl : DEFAULT_WATER_TARGET_ML;
   const map = new Map<string, number>();
   for (const e of entries) {
     map.set(e.date, e.totalMl);
@@ -104,10 +110,10 @@ export function buildDailyHydrationTrends(
 export function summarizeHydrationAnalytics(
   entries: readonly RawWaterAggregateRecord[],
   dateSeries: readonly string[],
-  targetWaterMl: number = 3000,
+  targetWaterMl: number = DEFAULT_WATER_TARGET_ML,
   weekdayLabels?: Record<string, string>,
 ): HydrationAnalyticsSummary {
-  const target = targetWaterMl > 0 ? targetWaterMl : 3000;
+  const target = targetWaterMl > 0 ? targetWaterMl : DEFAULT_WATER_TARGET_ML;
   const { avgWaterMl, loggedDaysCount } = calculateHydrationAverages(entries);
   const { adherencePct } = calculateHydrationAdherence(entries, target);
   const points = buildDailyHydrationTrends(entries, dateSeries, target, weekdayLabels);

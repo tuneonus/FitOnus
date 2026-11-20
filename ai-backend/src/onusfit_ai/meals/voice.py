@@ -12,6 +12,7 @@ from onusfit_ai.core.audio import decode_audio_base64
 from onusfit_ai.llm.gemini import MediaInput, TextGenerator
 from onusfit_ai.llm.telemetry import log_ai_call
 from onusfit_ai.meals.parsing import parse_voice_meal_output
+from onusfit_ai.meals.sanitize import sanitize_voice_result
 from onusfit_ai.prompts.voice_meal import PROMPT_VERSION, build_prompt
 
 logger = logging.getLogger("onusfit_ai.voice_meal")
@@ -37,6 +38,8 @@ async def parse_voice_meal(
         media=media,
     )
     result, outcome = parse_voice_meal_output(llm_result.text, request.transcript)
+    # Bound whatever the model claimed before it can reach a member (see meals/sanitize.py).
+    result = sanitize_voice_result(result)
 
     usage = llm_result.usage
     # Metadata only: transcripts, audio and the reply are never logged.

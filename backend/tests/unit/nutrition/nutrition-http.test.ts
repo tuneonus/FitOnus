@@ -88,6 +88,7 @@ describe('Nutrition Member HTTP API', () => {
         carbsG: 0.72,
         fatG: 9.51,
         fiberG: 0,
+        isEstimated: false,
       },
     ],
     createdAt: new Date().toISOString(),
@@ -108,9 +109,11 @@ describe('Nutrition Member HTTP API', () => {
     targets: {
       calories: 2200,
       proteinG: 150,
-      carbsG: null,
-      fatG: null,
-      waterMl: null,
+      carbsG: 250,
+      fatG: 61,
+      waterMl: 2500,
+      source: 'saved',
+      waterSource: 'estimated',
     },
     consumed: {
       calories: 143,
@@ -129,6 +132,7 @@ describe('Nutrition Member HTTP API', () => {
       waterMl: 0,
     },
     meals: [sampleMealView],
+    waterEntries: [],
   };
 
   const sampleAnalyticsView: NutritionAnalyticsView = {
@@ -163,7 +167,13 @@ describe('Nutrition Member HTTP API', () => {
       logMeal: { execute: vi.fn().mockResolvedValue({ meal: sampleMealView, created: true }) } as any,
       updateMeal: { execute: vi.fn().mockResolvedValue(sampleMealView) } as any,
       getMeal: { execute: vi.fn().mockResolvedValue(sampleMealView) } as any,
+      deleteMeal: { execute: vi.fn().mockResolvedValue({ id: mealId, alreadyDeleted: false }) } as any,
+      restoreMeal: { execute: vi.fn().mockResolvedValue({ meal: sampleMealView, restored: true }) } as any,
       logWater: { execute: vi.fn().mockResolvedValue({ entry: sampleWaterView, created: true }) } as any,
+      deleteWater: { execute: vi.fn().mockResolvedValue({ id: waterId }) } as any,
+      setWaterTarget: {
+        execute: vi.fn().mockResolvedValue({ targetMl: 2600, source: 'saved' }),
+      } as any,
       getNutritionAnalytics: { execute: vi.fn().mockResolvedValue(sampleAnalyticsView) } as any,
       manageFoodFavorites: {
         listFavorites: vi.fn().mockResolvedValue({ foods: [sampleFoodView], total: 1, page: 1, limit: 20 }),

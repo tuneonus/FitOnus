@@ -3,7 +3,8 @@ import { randomBytes } from 'node:crypto';
 /**
  * The storage policy for every image this backend writes to the PUBLIC media bucket.
  *
- * - One root prefix, `onusfit/`, then one folder per feature: `onusfit/notifications/`, `onusfit/exercises/`.
+ * - One root prefix, `onusfit/`, then one folder per feature: `onusfit/notifications/`, `onusfit/exercises/` and
+ *   `onusfit/workouts/` (the cover of a system workout template).
  * - Every stored image is a WebP named by 128 random bits: `onusfit/<feature>/<32 hex>.webp`. The name says nothing
  *   about the file or its owner, can be neither guessed nor chosen by a client, and is never reused.
  * - Anything a feature needs in another format is a *derivative* stored next to the canonical image under a name
@@ -16,7 +17,7 @@ import { randomBytes } from 'node:crypto';
 
 export const IMAGE_KEY_ROOT = 'onusfit';
 
-export const PUBLIC_IMAGE_FEATURES = ['notifications', 'exercises'] as const;
+export const PUBLIC_IMAGE_FEATURES = ['notifications', 'exercises', 'workouts'] as const;
 export type PublicImageFeature = (typeof PUBLIC_IMAGE_FEATURES)[number];
 
 export const isPublicImageFeature = (value: unknown): value is PublicImageFeature =>
@@ -96,6 +97,9 @@ export const FEATURE_PROFILES: Readonly<Record<PublicImageFeature, FeatureImageP
     ],
   },
   exercises: { maxEdge: 1600, webpQuality: 80, derivatives: [] },
+  // The cover of a system workout template, drawn across the full width of a phone card. Scaled down, never cropped:
+  // the app decides how to crop it for each place it is shown.
+  workouts: { maxEdge: 1600, webpQuality: 80, derivatives: [] },
 };
 
 export const DERIVATIVE_FORMAT: Readonly<

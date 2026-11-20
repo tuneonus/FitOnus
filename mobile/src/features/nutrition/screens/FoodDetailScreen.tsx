@@ -32,8 +32,7 @@ export function FoodDetailScreen() {
   const source = params.source;
 
   const { popTo } = useNavigation();
-  const { logMeal, removeEntry, toggleFavorite, favorites, recentFoods, dailySummary } =
-    useNutritionStore();
+  const { logMeal, toggleFavorite, favorites, recentFoods, dailySummary } = useNutritionStore();
   const selectedDate = useNutritionStore((state) => state.selectedDate);
   const targets = dailySummary?.date === selectedDate ? dailySummary.targets : null;
 

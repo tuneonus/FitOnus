@@ -8,6 +8,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Button } from '../../../shared/components/ui/Button';
 import { showToast } from '../../../shared/stores/toastStore';
 import { useWorkoutStore } from '../store/workoutStore';
+import { WorkoutCover } from '../components/workout-cover';
 import { useTheme } from '@/hooks/use-theme';
 
 export function WorkoutPlanScreen() {
@@ -76,6 +77,8 @@ export function WorkoutPlanScreen() {
       }
     >
       <View style={styles.headerArea}>
+        {/* A curated routine's cover, when it has one. Renders nothing (and leaves no gap) otherwise. */}
+        <WorkoutCover uri={plannedSession.coverImageUrl} style={styles.cover} />
         <View
           style={[styles.statsGrid, { backgroundColor: colors.surface, borderColor: colors.line }]}
         >
@@ -177,6 +180,9 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     gap: 12,
+  },
+  cover: {
+    borderRadius: premium.radius.card,
   },
   statsGrid: {
     flexDirection: 'row',

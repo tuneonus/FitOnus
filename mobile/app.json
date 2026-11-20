@@ -59,6 +59,12 @@
       "expo-status-bar",
       "expo-secure-store",
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "OnusFit uses the photos you choose for your profile picture and progress photos. They are stored privately and only you can see them."
+        }
+      ],
       "expo-camera",
       "expo-audio",
       [

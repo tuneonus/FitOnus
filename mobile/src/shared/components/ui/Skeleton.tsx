@@ -1,7 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Animated, StyleSheet, ViewStyle } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, ViewStyle } from 'react-native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTheme } from '@/hooks/use-theme';
-import { useReducedMotion } from 'react-native-reanimated';
+import { useReduceMotion } from '@/hooks/use-reduce-motion';
 
 export type SkeletonProps = {
   width?: number | string;
@@ -11,6 +20,13 @@ export type SkeletonProps = {
   style?: ViewStyle;
 };
 
+/** The pulse this placeholder has always had: breathing between these opacities, 800 ms each way. */
+const PULSE_LOW = 0.4;
+const PULSE_HIGH = 0.85;
+const PULSE_MS = 800;
+/** Reduced motion: no pulse, a steady in-between opacity. */
+const STEADY = 0.7;
+
 export function Skeleton({
   width = '100%',
   height = 20,
@@ -19,32 +35,26 @@ export function Skeleton({
   style,
 }: SkeletonProps) {
   const { colors } = useTheme();
-  const reducedMotion = useReducedMotion();
+  // Follows the system setting live, so switching Reduce Motion on stops every placeholder at once.
+  const reduceMotion = useReduceMotion();
   const effectiveRadius = radius !== undefined ? radius : borderRadius;
-  const [opacityAnim] = useState(() => new Animated.Value(0.4));
+  const opacity = useSharedValue(reduceMotion ? STEADY : PULSE_LOW);
 
   useEffect(() => {
-    if (reducedMotion) {
-      opacityAnim.setValue(0.7);
+    if (reduceMotion) {
+      cancelAnimation(opacity);
+      opacity.set(STEADY);
       return;
     }
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacityAnim, {
-          toValue: 0.85,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0.4,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]),
+    const timing = { duration: PULSE_MS, easing: Easing.inOut(Easing.ease) };
+    opacity.set(PULSE_LOW);
+    opacity.set(
+      withRepeat(withSequence(withTiming(PULSE_HIGH, timing), withTiming(PULSE_LOW, timing)), -1),
     );
-    pulse.start();
-    return () => pulse.stop();
-  }, [opacityAnim, reducedMotion]);
+    return () => cancelAnimation(opacity);
+  }, [opacity, reduceMotion]);
+
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
 
   return (
     <Animated.View
@@ -55,8 +65,8 @@ export function Skeleton({
           height: height as any,
           borderRadius: effectiveRadius,
           backgroundColor: colors.surface2,
-          opacity: opacityAnim,
         },
+        pulseStyle,
         style,
       ]}
     />

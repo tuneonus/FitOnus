@@ -1,5 +1,5 @@
 import type { UploadedImageRef } from '../media/image-upload';
-import type { Exercise } from './types';
+import type { Exercise, WorkoutTemplate } from './types';
 
 /**
  * Pure rules behind the exercise image fields, kept free of React so they can be tested directly.
@@ -81,4 +81,23 @@ export function imageSourceNote(source: ExerciseImageSource): string {
     case 'none':
       return 'This exercise has no image yet: the app shows an icon.';
   }
+}
+
+/**
+ * The cover a template editor starts with, or null. A template has only an uploaded cover (no external-address
+ * fallback). When the media domain is not configured the API reports the key but no URL, and the editor then says
+ * the preview is unavailable instead of showing a broken picture.
+ */
+export function initialTemplateCover(
+  template: Pick<WorkoutTemplate, 'coverImageKey' | 'coverImageUrl'> | null,
+): UploadedImageRef | null {
+  if (!template?.coverImageKey) return null;
+  return { key: template.coverImageKey, url: template.coverImageUrl ?? null };
+}
+
+/** What the member app does with the cover, so an admin knows what saving (or removing) it will change. */
+export function coverNote(cover: UploadedImageRef | null): string {
+  return cover
+    ? 'Members see this cover on the routine card and at the top of the routine. Removing it brings back the plain card.'
+    : 'No cover: members see the plain routine card, exactly as before.';
 }

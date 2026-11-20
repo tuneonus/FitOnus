@@ -94,12 +94,14 @@ The architecture proposal and roadmap describe planned work. They do not indicat
 - [database.md](../../backend/docs/database.md)
 - [deployment.md](../../backend/docs/deployment.md)
 - [design/analytics.md](../../backend/docs/design/analytics.md)
+- [design/nutrition.md](../../backend/docs/design/nutrition.md)
 - [design/onboarding.md](../../backend/docs/design/onboarding.md)
 - [design/settings.md](../../backend/docs/design/settings.md)
 - [design/workouts.md](../../backend/docs/design/workouts.md)
 - [development.md](../../backend/docs/development.md)
-- [media.md](../../backend/docs/media.md): public images (notifications, exercises), the storage policy, replacement and deletion rules, and the route-specific body limits for base64 AI routes
+- [media.md](../../backend/docs/media.md): public images (notifications, exercises, workout template covers), the storage policy, replacement and deletion rules, the image-key registry, why meal photos are never stored, and the route-specific body limits for base64 AI routes
 - [new-module-guide.md](../../backend/docs/new-module-guide.md)
+- [private-media.md](../../backend/docs/private-media.md): private member pictures (profile picture, progress photos): the separate private bucket and its credentials, signed-URL reads, ownership rules, the deletion queue and worker, the 50-photo limit, and how to test without real storage
 - [notifications.md](../../backend/docs/notifications.md)
 
 ## Mobile
@@ -107,6 +109,7 @@ The architecture proposal and roadmap describe planned work. They do not indicat
 - [Mobile README](../../mobile/README.md)
 - [EXPO_GO.md](../../mobile/docs/EXPO_GO.md)
 - [push-notifications.md](../../mobile/docs/push-notifications.md)
+- [private-photos.md](../../mobile/docs/private-photos.md): profile picture and progress photos on the phone: signed URLs, image-cache keys and sign-out clearing, upload, picker configuration, and the live screens
 - [Notification integration patches](../../mobile/docs/notification-integration-patches/)
 
 ## Admin

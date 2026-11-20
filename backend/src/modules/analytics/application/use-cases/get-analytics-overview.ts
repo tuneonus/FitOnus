@@ -16,7 +16,7 @@ import {
 } from '../../domain/analytics-period.js';
 import { calculateWorkoutConsistency } from '../../domain/workout-metrics.js';
 import { summarizeNutritionAnalytics } from '../../domain/nutrition-metrics.js';
-import { summarizeHydrationAnalytics } from '../../domain/hydration-metrics.js';
+import { DEFAULT_WATER_TARGET_ML, summarizeHydrationAnalytics } from '../../domain/hydration-metrics.js';
 import { calculateWeightVelocity, calculateGoalWeightProgress } from '../../domain/body-analytics-metrics.js';
 import { calculateMetricComparison, type PeriodComparisonItem } from '../../domain/overview-metrics.js';
 import type {
@@ -116,8 +116,10 @@ export class GetAnalyticsOverviewUseCase {
     const currWater = water.filter((w) => w.date >= currStartStr && w.date <= currEndStr);
     const prevWater = water.filter((w) => w.date >= prevStartStr && w.date <= prevEndStr);
 
-    const currHyd = summarizeHydrationAnalytics(currWater, currDateSeries, 3000);
-    const prevHyd = summarizeHydrationAnalytics(prevWater, prevDateSeries, 3000);
+    // The member's own water goal (saved, else the 35 ml/kg estimate); the old fixed 3000 ml only when nothing is known.
+    const waterTargetMl = profileGoals?.dailyWaterTargetMl ?? DEFAULT_WATER_TARGET_ML;
+    const currHyd = summarizeHydrationAnalytics(currWater, currDateSeries, waterTargetMl);
+    const prevHyd = summarizeHydrationAnalytics(prevWater, prevDateSeries, waterTargetMl);
 
     // 6. Body composition aggregation
     const currWeights = weights.filter((w) => {

@@ -25,21 +25,12 @@ export function PrivacyScreen() {
   const { navigate } = useNavigation();
 
   const privacyAnalytics = useSettingsStore((s) => s.privacyAnalytics);
-  const privacyPhotoRetention = useSettingsStore((s) => s.privacyPhotoRetention);
   const privacyCoachSharing = useSettingsStore((s) => s.privacyCoachSharing);
   const setPrivacy = useSettingsStore((s) => s.setPrivacy);
   const updateSettings = useUpdateSettings();
 
-  const handleToggle = async (
-    key: 'privacyAnalytics' | 'privacyPhotoRetention' | 'privacyCoachSharing',
-    nextVal: boolean,
-  ) => {
-    const prevVal =
-      key === 'privacyAnalytics'
-        ? privacyAnalytics
-        : key === 'privacyPhotoRetention'
-        ? privacyPhotoRetention
-        : privacyCoachSharing;
+  const handleToggle = async (key: 'privacyAnalytics' | 'privacyCoachSharing', nextVal: boolean) => {
+    const prevVal = key === 'privacyAnalytics' ? privacyAnalytics : privacyCoachSharing;
 
     setPrivacy({ [key]: nextVal });
 
@@ -51,18 +42,16 @@ export function PrivacyScreen() {
     }
   };
 
+  // There is deliberately no "Keep meal photos" switch here. Meal photos are never stored: a photo is sent to the AI
+  // analysis and discarded, whatever this setting says, so a switch that implies otherwise would be misleading. The
+  // stored preference (`privacyPhotoRetention`, default on) and its server column are kept untouched, so nothing is
+  // lost if photo retention is ever built (it would need a private bucket first; see backend/docs/media.md).
   const rows: {
-    key: 'privacyPhotoRetention' | 'privacyAnalytics' | 'privacyCoachSharing';
+    key: 'privacyAnalytics' | 'privacyCoachSharing';
     title: string;
     sub: string;
     checked: boolean;
   }[] = [
-    {
-      key: 'privacyPhotoRetention',
-      title: 'Keep meal photos',
-      sub: 'Otherwise deleted right after analysis',
-      checked: privacyPhotoRetention,
-    },
     {
       key: 'privacyAnalytics',
       title: 'App usage analytics',

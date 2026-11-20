@@ -56,6 +56,12 @@ export interface WorkoutPlanProps {
   isTemplate: boolean;
   isAiGenerated: boolean;
   tags: string[];
+  /**
+   * Key of the cover image in the public media bucket (`onusfit/workouts/<32 hex>.webp`), or null. Only a system
+   * template can have one. Required, not optional, so that every place that rebuilds a plan has to say what happens
+   * to the cover (forgetting would silently remove it).
+   */
+  coverImageKey: string | null;
   exercises?: WorkoutPlanExercise[];
   createdAt: Date;
   updatedAt: Date;
@@ -73,6 +79,7 @@ export class WorkoutPlan {
   readonly isTemplate: boolean;
   readonly isAiGenerated: boolean;
   readonly tags: readonly string[];
+  readonly coverImageKey: string | null;
   readonly exercises: readonly WorkoutPlanExercise[];
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -89,6 +96,7 @@ export class WorkoutPlan {
     this.isTemplate = props.isTemplate;
     this.isAiGenerated = props.isAiGenerated;
     this.tags = Object.freeze([...props.tags]);
+    this.coverImageKey = props.coverImageKey;
     this.exercises = Object.freeze([...(props.exercises ?? [])]);
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;

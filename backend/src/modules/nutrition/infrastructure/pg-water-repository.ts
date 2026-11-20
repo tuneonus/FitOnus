@@ -71,6 +71,11 @@ export class PgWaterRepository implements IWaterRepository {
     return { entry: toDomain(res.rows[0]!), created: true };
   }
 
+  async delete(id: string, userId: string): Promise<boolean> {
+    const res = await this.db.query(`DELETE FROM water_intake WHERE id = $1 AND user_id = $2`, [id, userId]);
+    return (res.rowCount ?? 0) > 0;
+  }
+
   async listByDate(userId: string, date: string): Promise<WaterIntake[]> {
     const res = await this.db.query<WaterRow>(
       `SELECT * FROM water_intake WHERE user_id = $1 AND date = $2 ORDER BY logged_at ASC`,

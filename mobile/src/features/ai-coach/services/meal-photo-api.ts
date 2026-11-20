@@ -1,5 +1,9 @@
 import { apiClient } from '@/services/api-client';
 import type { FoodItem, MealType } from '@/features/nutrition/types/nutrition';
+import {
+  mapDetectedFoodItem,
+  type DetectedFoodItemDto,
+} from '@/features/nutrition/utils/detected-food';
 
 export interface AnalyzeMealPhotoParams {
   image: string; // base64 string
@@ -8,10 +12,11 @@ export interface AnalyzeMealPhotoParams {
   notes?: string | undefined;
 }
 
-export interface MealPhotoAnalysisResult {
+/** The backend's reply: items carry the model's high/medium/low word, not a number. */
+export interface MealPhotoBackendResponse {
   isFood: boolean;
   summary: string;
-  items: FoodItem[];
+  items: DetectedFoodItemDto[];
   overallConfidence: number;
   totalKcal: number;
   totalProteinGrams: number;
@@ -22,11 +27,20 @@ export interface MealPhotoAnalysisResult {
   analyzedAt: string;
 }
 
+/** What the screens use: items already mapped to `FoodItem` (numeric confidence, estimate flag set). */
+export interface MealPhotoAnalysisResult extends Omit<MealPhotoBackendResponse, 'items'> {
+  items: FoodItem[];
+}
+
+export function mapMealPhotoResponse(data: MealPhotoBackendResponse): MealPhotoAnalysisResult {
+  return { ...data, items: (data.items ?? []).map(mapDetectedFoodItem) };
+}
+
 export const MealPhotoApi = {
   analyzeMealPhoto: async (params: AnalyzeMealPhotoParams): Promise<MealPhotoAnalysisResult> => {
     const response = await apiClient.post<{
       success: boolean;
-      data: MealPhotoAnalysisResult;
+      data: MealPhotoBackendResponse;
       message?: string;
     }>(
       '/nutrition/meal-photo/analyze',
@@ -45,8 +59,6 @@ export const MealPhotoApi = {
       throw new Error('Invalid response received from meal photo analysis service.');
     }
 
-    return response.data.data;
+    return mapMealPhotoResponse(response.data.data);
   },
 };
-
-

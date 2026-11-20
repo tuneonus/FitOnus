@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react-native';
 import { useNavigation } from '@/app/navigation/NavigationContext';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useProfile } from '@/features/profile/hooks/use-profile';
+import { MemberAvatar } from '@/features/profile/components/member-avatar';
 import { useTheme } from '@/hooks/use-theme';
 import { premium } from '@/shared/theme/premium';
 
@@ -42,7 +43,10 @@ export function HomeHeader() {
             { backgroundColor: colors.hero, opacity: pressed ? 0.6 : 1 },
           ]}
         >
-          <Text style={[premium.type.label, { color: colors.heroInk }]}>{initials}</Text>
+          <MemberAvatar
+            size={48}
+            fallback={<Text style={[premium.type.label, { color: colors.heroInk }]}>{initials}</Text>}
+          />
         </Pressable>
         <View style={styles.brand}>
           <Text style={[styles.greeting, { color: colors.muted }]}>

@@ -39,7 +39,9 @@ import { IdempotencyService } from './shared/idempotency/idempotency.js';
 import { PgIdempotencyStore } from './shared/idempotency/pg-idempotency-store.js';
 import { ImageProcessor } from './shared/images/image-processor.js';
 import { LibheifDecoder } from './shared/images/libheif-decoder.js';
+import { createPrivateMedia, type PrivateMedia } from './shared/private-media/index.js';
 import type { PublicObjectStore } from './shared/storage/object-store.js';
+import type { PrivateObjectStore } from './shared/storage/private-object-store.js';
 import { R2ObjectStore } from './shared/storage/r2-object-store.js';
 import type { Logger } from './shared/logging/logger.js';
 import { Argon2PasswordHasher } from './shared/security/argon2-password-hasher.js';
@@ -56,6 +58,8 @@ export interface Container {
   lifecycle: { isShuttingDown: () => boolean; beginShutdown: () => void };
   appSettings?: AppSettingsModule;
   notifications?: NotificationsModule;
+  /** The private member-photo storage and its deletion worker; null when R2_PRIVATE_* is not configured. */
+  privateMedia?: PrivateMedia | null;
 }
 
 export interface ContainerOverrides {
@@ -63,6 +67,8 @@ export interface ContainerOverrides {
   pushSender?: PushSender | null;
   /** Replaces the R2 image store (tests inject a fake so no test ever reaches real storage). */
   imageStore?: PublicObjectStore | null;
+  /** Replaces the private member-photo store (tests inject an in-memory one so no test ever reaches real storage). */
+  privateStore?: PrivateObjectStore | null;
 }
 
 /**
@@ -132,10 +138,25 @@ export function createContainer(
     checkReady: () => database.ping(READINESS_TIMEOUT_MS),
     isShuttingDown: lifecycle.isShuttingDown,
   });
+  // One decode/validate pipeline for every image the backend accepts, public or private. HEIC is decoded only when
+  // enabled. The private member-photo storage (avatars, progress photos) is separate from the public media bucket:
+  // its own bucket and token, no public address, and a deletion queue worked by the purger. Null when not configured.
+  const imageProcessor = new ImageProcessor({ heic: config.media.heicEnabled ? new LibheifDecoder() : null });
+  const privateMedia = createPrivateMedia({
+    config: config.media.privateMedia,
+    db: database,
+    intake: imageProcessor,
+    ...(overrides.privateStore !== undefined ? { store: overrides.privateStore } : {}),
+    ...(logger ? { logger } : {}),
+  });
+  const memberImageLimiters = { memberImageUploads: rateLimiters.memberImageUploads };
   const profile = createProfileModule({
     basePath: `${API_PREFIX}/profile`,
     db: database,
     uow,
+    privateMedia,
+    limiters: memberImageLimiters,
+    ...(logger ? { logger } : {}),
   });
   const admin = createAdminModule({
     basePath: `${API_PREFIX}/admin`,
@@ -163,11 +184,12 @@ export function createContainer(
           })
         : null;
   // One image processor and one store for every image the backend puts in the public media bucket (notifications,
-  // exercises). HEIC is decoded only when enabled. Tests inject a fake store, so no test can reach real storage.
+  // exercises, workout template covers). HEIC is decoded only when enabled. Tests inject a fake store, so no test
+  // can reach real storage.
   const publicImages = {
     store: imageStore,
     publicBaseUrl: r2?.publicBaseUrl ?? null,
-    processor: new ImageProcessor({ heic: config.media.heicEnabled ? new LibheifDecoder() : null }),
+    processor: imageProcessor,
   };
   const workouts = createWorkoutsModule({
     memberBasePath: `${API_PREFIX}/workouts`,
@@ -231,6 +253,9 @@ export function createContainer(
   const progress = createProgressModule({
     basePath: `${API_PREFIX}/progress`,
     db: database,
+    privateMedia,
+    limiters: memberImageLimiters,
+    ...(logger ? { logger } : {}),
   });
   const goals = createGoalsModule({
     goalsBasePath: `${API_PREFIX}/goals`,
@@ -350,5 +375,6 @@ export function createContainer(
     lifecycle,
     appSettings,
     notifications,
+    privateMedia,
   };
 }

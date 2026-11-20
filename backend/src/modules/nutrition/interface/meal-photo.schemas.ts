@@ -1,4 +1,15 @@
 import { z } from 'zod';
+import { AI_ESTIMATE_LIMITS } from '../domain/nutrition-limits.js';
+
+/**
+ * A short label a member's app sends as a hint to the AI (meal type, language): words, digits, spaces and a little
+ * punctuation. It goes into a prompt, so free text with quotes, brackets or line breaks is refused here (the Python
+ * service also flattens whatever it receives).
+ */
+export const aiHintSchema = z
+  .string()
+  .max(AI_ESTIMATE_LIMITS.hintLength)
+  .regex(/^[\p{L}\p{M}\p{N} _.,'-]*$/u, 'Use letters, numbers and spaces only');
 
 export const detectedFoodItemSchema = z.object({
   id: z.string(),
@@ -35,7 +46,7 @@ export const analyzeMealPhotoRequest = {
   body: z.object({
     image: z.string().min(1, 'Image data is required'),
     mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/heic']).default('image/jpeg'),
-    mealType: z.string().optional(),
-    notes: z.string().max(250).optional(),
+    mealType: aiHintSchema.optional(),
+    notes: z.string().max(AI_ESTIMATE_LIMITS.notesLength).optional(),
   }),
 };

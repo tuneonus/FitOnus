@@ -83,18 +83,24 @@ describe('nutrition use cases: implicit "today" is the user local day', () => {
       create: vi.fn(async (meal: Meal) => ({ meal, created: true })),
       update: vi.fn(),
       softDelete: vi.fn(),
+      restore: vi.fn(),
       getMostLoggedFoods: vi.fn().mockResolvedValue([]),
       countLoggedDays: vi.fn(),
     };
     waterRepo = {
       findById: vi.fn().mockResolvedValue(null),
       create: vi.fn(async (entry) => ({ entry, created: true })),
-      listByDate: vi.fn(),
+      delete: vi.fn(),
+      listByDate: vi.fn().mockResolvedValue([]),
       getTotalByDate: vi.fn().mockResolvedValue(0),
       getTotalDateRange: vi.fn(),
     };
     foodRepo = { findById: vi.fn() } as unknown as IFoodRepository;
-    targetPort = { findTargetsByUserId: vi.fn().mockResolvedValue(null) };
+    targetPort = {
+      findTargetsByUserId: vi.fn().mockResolvedValue(
+        { source: null, calories: null, proteinG: null, carbsG: null, fatG: null, waterMl: null, waterSource: null },
+      ),
+    };
     uow = { run: vi.fn(async (work) => work()) };
   });
 

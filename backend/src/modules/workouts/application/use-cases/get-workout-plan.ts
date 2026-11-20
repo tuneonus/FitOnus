@@ -1,9 +1,14 @@
 import { AppError } from '../../../../shared/errors/app-error.js';
+import type { PublicImageUrlResolver } from '../../../../shared/images/public-image-url.js';
+import { NO_WORKOUT_COVER_URLS } from '../../domain/workout-cover.js';
 import type { IWorkoutPlanRepository } from '../ports.js';
 import { toWorkoutPlanView, type WorkoutPlanView } from '../workout-view.js';
 
 export class GetWorkoutPlanUseCase {
-  constructor(private readonly workoutRepo: IWorkoutPlanRepository) {}
+  constructor(
+    private readonly workoutRepo: IWorkoutPlanRepository,
+    private readonly resolveCoverUrl: PublicImageUrlResolver = NO_WORKOUT_COVER_URLS,
+  ) {}
 
   async execute(userId: string, planId: string): Promise<WorkoutPlanView> {
     const plan = await this.workoutRepo.findById(planId);
@@ -16,6 +21,6 @@ export class GetWorkoutPlanUseCase {
       throw new AppError('forbidden', 'FORBIDDEN', 'You do not have access to this workout plan.');
     }
 
-    return toWorkoutPlanView(plan, true);
+    return toWorkoutPlanView(plan, true, this.resolveCoverUrl);
   }
 }

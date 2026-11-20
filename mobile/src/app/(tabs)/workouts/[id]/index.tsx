@@ -9,6 +9,7 @@ import { Spacing, BorderRadius } from '@/constants/theme';
 import { WorkoutDetail } from '@/features/workouts/types/workout';
 import { WorkoutService } from '@/features/workouts/services/workout-service';
 import { Loading } from '@/components/ui/loading';
+import { WorkoutCover } from '@/features/workouts/components/workout-cover';
 import { Clock, Target, Dumbbell } from 'lucide-react-native';
 
 export default function WorkoutDetailScreen() {
@@ -52,6 +53,8 @@ export default function WorkoutDetailScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* The routine's cover, when it has one. Nothing is rendered (and no space left) when it does not. */}
+        <WorkoutCover uri={workout.coverImageUrl} style={styles.cover} />
         <Text variant="bodyLarge" style={{ color: colors.textSecondary, marginBottom: Spacing.xl }}>
           {workout.description}
         </Text>
@@ -128,6 +131,11 @@ export default function WorkoutDetailScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     padding: Spacing.md,
+  },
+  cover: {
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    marginBottom: Spacing.lg,
   },
   metricsRow: {
     flexDirection: 'row',

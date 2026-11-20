@@ -11,18 +11,13 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Pause,
-  Play,
-  Plus,
-  SkipForward,
-  Dumbbell,
-} from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Plus, SkipForward, Dumbbell } from 'lucide-react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useNavigation } from '../../../app/navigation/NavigationContext';
 import { FeatureScreen } from '@/shared/components/ui/FeatureScreen';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { Reveal } from '@/shared/components/ui/Reveal';
+import { useAnimatedColor } from '@/hooks/use-animated-color';
 
 import { Button } from '../../../shared/components/ui/Button';
 import { ConfirmDialog } from '../../../shared/components/ui/ConfirmDialog';
@@ -30,10 +25,40 @@ import { useWorkoutStore } from '../store/workoutStore';
 import { useRestTimer } from '../hooks/useRestTimer';
 import { SetRow } from '../components/SetRow';
 import { RestTimer } from '../components/RestTimer';
+import { ElapsedTimer, PauseButton } from '../components/SessionClock';
 import { useTheme } from '@/hooks/use-theme';
 
 const fmt = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+/** One segment of the exercise strip. Its colour fades when the exercise becomes current, complete or skipped. */
+function StripBar({
+  color,
+  accessibilityLabel,
+  selected,
+  onPress,
+}: {
+  color: string;
+  accessibilityLabel: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const fill = useAnimatedColor(color);
+  const fillStyle = useAnimatedStyle(() => ({ backgroundColor: fill.get() }));
+  return (
+    <TouchableOpacity
+      hitSlop={{ top: 8, bottom: 8 }}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ selected }}
+      activeOpacity={0.7}
+      onPress={onPress}
+      style={styles.stripSlot}
+    >
+      <Animated.View style={[styles.stripBar, fillStyle]} />
+    </TouchableOpacity>
+  );
+}
 
 export function ActiveWorkoutScreen() {
   const insets = useSafeAreaInsets();
@@ -112,24 +137,10 @@ export function ActiveWorkoutScreen() {
           <Text style={[styles.timerSub, { color: colors.muted }]}>
             {plannedSession?.title ?? 'Active Session'}
           </Text>
-          <Text style={[styles.timerDigits, { color: paused ? colors.warn : colors.ink }]}>
-            {fmt(elapsedSec)}
-          </Text>
+          <ElapsedTimer text={fmt(elapsedSec)} paused={paused} style={styles.timerDigits} />
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={paused ? 'Resume workout timer' : 'Pause workout timer'}
-          onPress={store.togglePause}
-          style={[styles.pauseBtn, { backgroundColor: paused ? colors.accent : colors.hero }]}
-        >
-          {paused ? (
-            <Play size={18} color={colors.accentInk} fill={colors.accentInk} />
-          ) : (
-            <Pause size={18} color={colors.heroInk} fill={colors.heroInk} />
-          )}
-        </TouchableOpacity>
+        <PauseButton paused={paused} onPress={store.togglePause} style={styles.pauseBtn} />
       </View>
 
       {/* Exercise Indicator Strip */}
@@ -137,38 +148,31 @@ export function ActiveWorkoutScreen() {
         {active.map((e, i) => {
           const complete = e.sets.every((s) => s.done);
           return (
-            <TouchableOpacity
-              hitSlop={{ top: 8, bottom: 8 }}
+            <StripBar
               key={e.exerciseId}
-              accessibilityRole="button"
               accessibilityLabel={`Go to exercise ${i + 1}: ${getExerciseById(e.exerciseId).name}`}
-              accessibilityState={{ selected: i === currentIndex }}
-              activeOpacity={0.7}
+              selected={i === currentIndex}
               onPress={() => store.setCurrentIndex(i)}
-              style={[
-                styles.stripBar,
-                {
-                  backgroundColor:
-                    i === currentIndex
-                      ? colors.accentStrong
-                      : complete
-                        ? colors.good
-                        : e.skipped
-                          ? `${colors.ink}15`
-                          : `${colors.ink}30`,
-                },
-              ]}
+              color={
+                i === currentIndex
+                  ? colors.accentStrong
+                  : complete
+                    ? colors.good
+                    : e.skipped
+                      ? `${colors.ink}15`
+                      : `${colors.ink}30`
+              }
             />
           );
         })}
       </View>
 
       {paused && (
-        <View style={[styles.pausedBanner, { backgroundColor: `${colors.warn}20` }]}>
+        <Reveal exit style={[styles.pausedBanner, { backgroundColor: `${colors.warn}20` }]}>
           <Text style={[styles.pausedText, { color: colors.ink }]}>
             Paused — timer stopped. Tap play to resume.
           </Text>
-        </View>
+        </Reveal>
       )}
 
       {/* Main Exercise Content */}
@@ -360,13 +364,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 8,
   },
-  stripBar: {
+  stripSlot: {
     flexGrow: 1,
     flexBasis: 40,
     minWidth: 40,
+    marginVertical: 9,
+  },
+  stripBar: {
     height: 6,
     borderRadius: 3,
-    marginVertical: 9,
   },
   pausedBanner: {
     marginHorizontal: 16,

@@ -32,7 +32,8 @@ export interface ImageUploadFieldProps {
 }
 
 /**
- * Optional image for a record: choose, preview, replace or remove. Used by notifications and exercises.
+ * Optional image for a record: choose, preview, replace or remove. Used by notifications, exercises and workout
+ * template covers.
  *
  * The file goes to the backend, which checks it, converts it and stores it; this component only ever holds the
  * returned key and public URL. No storage credential exists in the browser. Choosing a file never changes the record

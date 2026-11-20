@@ -67,10 +67,28 @@ function main(): void {
     );
   }
 
+  // Only the bucket name is logged (not a secret); the access key and secret never are.
+  if (!config.media.privateMedia) {
+    logger.warn(
+      'R2_PRIVATE_* not configured: profile pictures and progress photos are unavailable (the app shows "not available")',
+    );
+  } else {
+    logger.info(
+      {
+        privateBucket: config.media.privateMedia.bucket,
+        urlTtlSeconds: config.media.privateMedia.urlTtlSeconds,
+        purgeEnabled: config.media.privateMedia.purgeEnabled,
+      },
+      'Private member-photo storage configured (Cloudflare R2)',
+    );
+  }
+
   const pool = createPool(config.database, logger);
   const container = createContainer(config, pool, logger);
   const app = createApp({ config, logger, container });
   if (config.notifications.dispatcher.enabled) container.notifications?.dispatcher?.start();
+  // Removes the private photos that members deleted (and those of deleted accounts) from the private bucket.
+  if (container.privateMedia?.purgeEnabled) container.privateMedia.purger.start();
   const server = http.createServer(app);
   server.requestTimeout = 30_000;
   server.headersTimeout = 20_000;
@@ -91,7 +109,10 @@ function main(): void {
     forceExit.unref();
 
     // Stop scheduling new sends immediately; in-flight ones finish before the pool closes.
-    const dispatcherStopped = container.notifications?.dispatcher?.stop() ?? Promise.resolve();
+    const dispatcherStopped = Promise.all([
+      container.notifications?.dispatcher?.stop() ?? Promise.resolve(),
+      container.privateMedia?.purger.stop() ?? Promise.resolve(),
+    ]);
 
     server.close((error) => {
       dispatcherStopped

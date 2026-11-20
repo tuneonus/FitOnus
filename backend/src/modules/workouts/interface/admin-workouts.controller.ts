@@ -11,6 +11,7 @@ import type { AdminManageTemplateUseCase } from '../application/use-cases/admin-
 import type { GetWorkoutStatsUseCase, WorkoutStatsView } from '../application/use-cases/get-workout-stats.js';
 import type { ListExercisesUseCase } from '../application/use-cases/list-exercises.js';
 import type { UploadExerciseImageUseCase } from '../application/use-cases/upload-exercise-image.js';
+import type { UploadWorkoutCoverUseCase } from '../application/use-cases/upload-workout-cover.js';
 import type { ExerciseView, WorkoutPlanView } from '../application/workout-view.js';
 import {
   createAdminTemplateRequest,
@@ -27,6 +28,7 @@ export interface WorkoutAdminUseCases {
   listExercises: ListExercisesUseCase;
   manageExercise: AdminManageExerciseUseCase;
   uploadExerciseImage: UploadExerciseImageUseCase;
+  uploadWorkoutCover: UploadWorkoutCoverUseCase;
   manageTemplate: AdminManageTemplateUseCase;
   getStats: GetWorkoutStatsUseCase;
 }
@@ -60,6 +62,20 @@ export function createWorkoutAdminController(useCases: WorkoutAdminUseCases) {
     uploadImage: async (req: Request): Promise<RouteResult<UploadedPublicImage>> => {
       const actor = requireActor(req);
       const data = await useCases.uploadExerciseImage.execute(
+        { adminId: actor.userId, ipAddress: req.ip, userAgent: req.get('user-agent') },
+        {
+          contentType: req.get('content-type'),
+          declaredLength: parseContentLength(req.get('content-length')),
+          readBody: () => readBodyUpTo(req, IMAGE_UPLOAD_MAX_BYTES),
+        },
+      );
+      return { data, status: 201, headers: ADMIN_NO_CACHE_HEADERS, message: 'Image uploaded' };
+    },
+
+    /** Same raw-body contract as `uploadImage`, for a workout template's cover. */
+    uploadTemplateCover: async (req: Request): Promise<RouteResult<UploadedPublicImage>> => {
+      const actor = requireActor(req);
+      const data = await useCases.uploadWorkoutCover.execute(
         { adminId: actor.userId, ipAddress: req.ip, userAgent: req.get('user-agent') },
         {
           contentType: req.get('content-type'),

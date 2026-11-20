@@ -95,6 +95,7 @@ describe('GetWorkoutAnalyticsUseCase', () => {
       targetWeightKg: 75,
       dailyCalorieTarget: 2600,
       dailyProteinGrams: 160,
+      dailyWaterTargetMl: null,
       workoutDaysPerWeek: 4, // Target 4 sessions
     });
 

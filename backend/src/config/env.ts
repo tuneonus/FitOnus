@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parsePrivateMediaConfig, type PrivateMediaConfig } from '../shared/private-media/private-media-config.js';
 
 /** Thrown when configuration is invalid. `issues` name keys and rules, never values. */
 export class ConfigError extends Error {
@@ -150,6 +151,11 @@ export type MediaConfig = {
     publicBaseUrl: string;
     timeoutMs: number;
   } | null;
+  /**
+   * Null when the private member-photo bucket is not configured: avatar and progress-photo routes answer 503 and
+   * nothing else is affected. Parsed from the `R2_PRIVATE_*` variables (see shared/private-media/private-media-config.ts).
+   */
+  privateMedia: PrivateMediaConfig | null;
 };
 
 export type AppConfig = {
@@ -401,12 +407,15 @@ function publicMediaOrigin(raw: string): string | null {
 }
 
 /**
- * Reads the R2 settings. Either none of the five are set (feature off) or all of them are, and valid. Issues name
+ * Reads the R2 settings. Either none of the four public-bucket variables are set (feature off; the account id is
+ * shared with the private bucket and does not count) or all five are, and valid. Issues name
  * the variable and the rule only: the access key, the secret and the URL are never echoed.
  */
 function parseR2Config(parsed: z.output<typeof appSchema>, issues: string[]): MediaConfig['r2'] {
   const value = (key: (typeof R2_KEYS)[number]): string => parsed[key]?.trim() ?? '';
-  if (R2_KEYS.every((key) => !value(key))) return null;
+  // R2_ACCOUNT_ID is shared with the private member-photo bucket (R2_PRIVATE_*), so on its own it does not mean the
+  // public bucket is being set up: a deployment may configure only private media. Any of the other four does.
+  if (R2_KEYS.every((key) => key === 'R2_ACCOUNT_ID' || !value(key))) return null;
 
   const missing = R2_KEYS.filter((key) => !value(key));
   if (missing.length > 0) {
@@ -470,6 +479,13 @@ export function loadConfig(env: Env = process.env): AppConfig {
   const issues = [...corsIssues(parsed.CORS_ORIGINS), ...emailIssues(parsed), ...aiBackendIssues(parsed)];
   const serviceAccount = parseServiceAccount(parsed, issues);
   const r2 = parseR2Config(parsed, issues);
+  // The private member-photo bucket reads its own R2_PRIVATE_* variables and is checked against the public bucket's
+  // settings so the two can never be the same bucket or the same token. Its issues name variables, never values.
+  const privateMedia = parsePrivateMediaConfig(env, {
+    timeoutMs: parsed.R2_REQUEST_TIMEOUT_MS,
+    publicBucket: r2 ? { bucket: r2.bucket, accessKeyId: r2.accessKeyId } : null,
+  });
+  issues.push(...privateMedia.issues);
   const dispatchSecret = parsed.NOTIFICATIONS_DISPATCH_SECRET?.trim();
   if (dispatchSecret && dispatchSecret.length < 32) {
     issues.push('NOTIFICATIONS_DISPATCH_SECRET: must be at least 32 characters');
@@ -513,7 +529,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
     },
     email: toEmailConfig(parsed),
     notifications: toNotificationsConfig(parsed, serviceAccount),
-    media: { r2, heicEnabled: parsed.IMAGE_HEIC_ENABLED },
+    media: { r2, heicEnabled: parsed.IMAGE_HEIC_ENABLED, privateMedia: privateMedia.config },
     rateLimit: {
       windowMs: parsed.RATE_LIMIT_WINDOW_MS,
       max: parsed.RATE_LIMIT_MAX,

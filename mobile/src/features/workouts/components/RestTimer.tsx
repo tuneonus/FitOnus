@@ -4,6 +4,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { premium } from '@/shared/theme/premium';
 import { ActionButton } from '@/shared/components/ui/ActionButton';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
+import { Reveal } from '@/shared/components/ui/Reveal';
+
+/** The rest clock ticks once a second, so the bar takes a second to cover each step. */
+const REST_TICK_MS = 1000;
 
 type Props = {
   remaining: number;
@@ -12,11 +16,15 @@ type Props = {
   onAdd: () => void;
   onSkip: () => void;
 };
-/** In-flow rest controls never cover the session completion action. */
+/**
+ * In-flow rest controls never cover the session completion action. The card rises in when a set starts the rest and
+ * fades out when the rest ends or is skipped; its bar starts full and drains at a constant speed, so the once-a-second
+ * updates read as one continuous glide rather than steps.
+ */
 export function RestTimer({ remaining, total, nextLabel, onAdd, onSkip }: Props) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.hero }]}>
+    <Reveal exit style={[styles.card, { backgroundColor: colors.hero }]}>
       <View style={styles.row}>
         <View style={styles.copy}>
           <Text style={[premium.type.caption, { color: colors.heroMuted }]}>
@@ -35,6 +43,9 @@ export function RestTimer({ remaining, total, nextLabel, onAdd, onSkip }: Props)
         height={3}
         color={colors.highlight}
         trackColor="rgba(255,255,255,0.12)"
+        animateOnMount={false}
+        linear
+        tweenMs={REST_TICK_MS}
       />
       <View style={styles.row}>
         <ActionButton
@@ -45,7 +56,7 @@ export function RestTimer({ remaining, total, nextLabel, onAdd, onSkip }: Props)
         />
         <ActionButton title="Skip rest" onPress={onSkip} style={styles.copy} />
       </View>
-    </View>
+    </Reveal>
   );
 }
 const styles = StyleSheet.create({

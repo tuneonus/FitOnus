@@ -7,19 +7,26 @@ request, checked quota and picked the models; this service only turns a photo in
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from onusfit_ai.contracts._base import ContractModel
 from onusfit_ai.contracts.common import DetectedFoodItem, ImageInput, ModelSelection, Usage
+from onusfit_ai.core.text import clean_prompt_text
+from onusfit_ai.meals.limits import MAX_HINT_LENGTH, MAX_NOTES_LENGTH
 
 
 class AnalyzeMealPhotoRequest(ContractModel):
     image: ImageInput
-    # Node's public API does not cap meal type; these bounds only keep the prompt a sane size.
-    meal_type: str | None = Field(default=None, max_length=200)
-    notes: str | None = Field(default=None, max_length=250)
+    meal_type: str | None = Field(default=None, max_length=MAX_HINT_LENGTH)
+    notes: str | None = Field(default=None, max_length=MAX_NOTES_LENGTH)
     model: ModelSelection
     deadline_ms: int = Field(ge=1000, le=30000)
+
+    # Member-written text goes between double quotes in the prompt: one line, no stray quotes.
+    @field_validator("meal_type", "notes")
+    @classmethod
+    def _prompt_safe(cls, value: str | None) -> str | None:
+        return clean_prompt_text(value)
 
 
 class MealPhotoResult(ContractModel):

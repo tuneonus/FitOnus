@@ -15,10 +15,13 @@ type FoodItemSheetProps = {
   onClose: () => void;
 };
 
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
 export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
   const { colors } = useTheme();
-  const { scaleItem, removeItem, updateMeal } = useNutritionStore();
+  const { scaleItem, removeItem, updateMeal, deleteMeal, restoreMeal } = useNutritionStore();
   const [factor, setFactor] = useState(1);
+  const [busy, setBusy] = useState(false);
 
   const close = () => {
     setFactor(1);
@@ -34,6 +37,59 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
   }
 
   const { entry, item } = target;
+  const isOnlyFood = entry.items.length <= 1;
+  const editable = entry.isSynced !== false;
+  const currentMultiplier = item.servingMultiplier ?? 1;
+
+  const run = async (work: () => Promise<void>, failure: string) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await work();
+    } catch {
+      showToast({ tone: 'error', message: failure });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteWholeMeal = () =>
+    run(async () => {
+      await deleteMeal(entry.id);
+      showToast({
+        message: 'Meal deleted',
+        actionLabel: 'Undo',
+        onAction: () => {
+          void restoreMeal(entry.id).catch(() =>
+            showToast({ tone: 'error', message: 'Could not restore the meal.' }),
+          );
+        },
+      });
+      close();
+    }, 'Could not delete this meal. Please try again.');
+
+  const removeFood = () =>
+    run(async () => {
+      await removeItem(entry.id, item.id);
+      showToast({
+        message: `${item.name} removed`,
+        actionLabel: 'Undo',
+        onAction: () => {
+          // Puts the foods back as they were: the others by their stored ids, the removed one as a new line.
+          void updateMeal(entry.id, entry.items, entry.notes ?? undefined).catch(() =>
+            showToast({ tone: 'error', message: 'Could not restore the food.' }),
+          );
+        },
+      });
+      close();
+    }, 'Could not update this meal. Please try again.');
+
+  const savePortion = () =>
+    run(async () => {
+      await scaleItem(entry.id, item.id, factor);
+      showToast({ message: 'Portion updated' });
+      close();
+    }, 'Could not update this portion. Please try again.');
 
   return (
     <BottomSheet
@@ -48,24 +104,10 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
             variant="danger"
             size="lg"
             icon={Trash2}
-            title="Remove"
-            disabled={entry.items.length <= 1 || !entry.isSynced}
-            onPress={async () => {
-              try {
-                await removeItem(entry.id, item.id);
-                showToast({
-                  message: `${item.name} removed`,
-                  actionLabel: 'Undo',
-                  onAction: () => {
-                    void updateMeal(entry.id, entry.items, entry.notes ?? undefined).catch(() =>
-                      showToast({ tone: 'error', message: 'Could not restore the food.' }),
-                    );
-                  },
-                });
-                close();
-              } catch {
-                showToast({ tone: 'error', message: 'Could not update this meal. Please try again.' });
-              }
+            title={isOnlyFood ? 'Delete meal' : 'Remove'}
+            disabled={!editable || busy}
+            onPress={() => {
+              void (isOnlyFood ? deleteWholeMeal() : removeFood());
             }}
           />
           <Button
@@ -73,28 +115,21 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
             size="lg"
             title="Save"
             style={{ flex: 1 }}
-            disabled={factor === 1 || !entry.isSynced}
-            onPress={async () => {
-              try {
-                await scaleItem(entry.id, item.id, factor);
-                showToast({ message: 'Portion updated' });
-                close();
-              } catch {
-                showToast({ tone: 'error', message: 'Could not update this portion. Please try again.' });
-              }
+            disabled={factor === 1 || !editable || busy}
+            onPress={() => {
+              void savePortion();
             }}
           />
         </View>
       }
     >
       <View style={styles.sheetContent}>
-        {entry.items.length <= 1 ? (
-          <Text style={{ color: colors.muted }}>Meal deletion is not available yet.</Text>
-        ) : null}
-        {!entry.isSynced ? (
+        {!editable ? (
           <Text style={{ color: colors.muted }}>Sync this meal before editing.</Text>
         ) : null}
-        <Text style={[styles.portionLabel, { color: colors.muted }]}>Portion</Text>
+        <Text style={[styles.portionLabel, { color: colors.muted }]}>
+          Portion · change it relative to what you logged
+        </Text>
         <View style={{ marginTop: 8 }}>
           <Stepper
             appearance="premium"
@@ -108,6 +143,14 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
             unit="×"
           />
         </View>
+        <Text
+          accessibilityLiveRegion="polite"
+          style={[styles.portionLabel, { color: colors.muted, marginTop: 8 }]}
+        >
+          {factor === 1
+            ? `Logged at ${currentMultiplier}× of the base serving.`
+            : `${currentMultiplier}× becomes ${round2(currentMultiplier * factor)}× of the base serving.`}
+        </Text>
 
         <View style={[styles.macrosGrid, { backgroundColor: colors.surface2 }]}>
           {[
@@ -122,6 +165,20 @@ export function FoodItemSheet({ target, onClose }: FoodItemSheetProps) {
             </View>
           ))}
         </View>
+
+        {!isOnlyFood && editable ? (
+          <View style={{ marginTop: 16 }}>
+            <Button
+              appearance="premium"
+              variant="ghost"
+              title="Delete whole meal"
+              disabled={busy}
+              onPress={() => {
+                void deleteWholeMeal();
+              }}
+            />
+          </View>
+        ) : null}
       </View>
     </BottomSheet>
   );

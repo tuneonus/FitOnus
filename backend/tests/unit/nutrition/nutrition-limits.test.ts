@@ -337,12 +337,14 @@ describe('use cases refuse values no column can hold (clean 422, never a raw num
       create: vi.fn(async (meal: Meal) => ({ meal, created: true })),
       update: vi.fn(async (_id: string, _u: string, meal: Meal) => meal),
       softDelete: vi.fn(),
+      restore: vi.fn(),
       getMostLoggedFoods: vi.fn(),
       countLoggedDays: vi.fn(),
     };
     waterRepo = {
       findById: vi.fn().mockResolvedValue(null),
       create: vi.fn(async (entry) => ({ entry, created: true })),
+      delete: vi.fn(),
       listByDate: vi.fn(),
       getTotalByDate: vi.fn(),
       getTotalDateRange: vi.fn(),

@@ -8,8 +8,14 @@ import {
   TextStyle,
   View,
 } from 'react-native';
+import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { premium } from '@/shared/theme/premium';
+import { motion } from '@/shared/theme/motion';
+import { motionEase } from '@/shared/theme/motion-animations';
 import { useTheme } from '@/hooks/use-theme';
+import { useReduceMotion } from '@/hooks/use-reduce-motion';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'inverse';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -89,13 +95,40 @@ export function Button({
 
   const radius = size === 'lg' ? 18 : size === 'sm' ? 12 : premium.radius.control + 2;
 
+  // The pressed look (a 0.98 scale and 0.86 opacity) is the one this button always had; it now eases in and out
+  // instead of snapping. With reduced motion the scale is dropped and the dimming happens at once.
+  const reduceMotion = useReduceMotion();
+  const press = useSharedValue(0);
+  const pressedScale = reduceMotion ? 1 : motion.press.scale;
+  const pressedOpacity = motion.press.opacity;
+  const pressAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: disabled ? 0.45 : interpolate(press.get(), [0, 1], [1, pressedOpacity]),
+    transform: [{ scale: interpolate(press.get(), [0, 1], [1, pressedScale]) }],
+  }));
+
   return (
-    <Pressable
+    <AnimatedPressable
       disabled={disabled || loading}
       onPress={onPress}
+      onPressIn={() => {
+        press.set(
+          withTiming(1, {
+            duration: reduceMotion ? 0 : motion.duration.press,
+            easing: motionEase,
+          }),
+        );
+      }}
+      onPressOut={() => {
+        press.set(
+          withTiming(0, {
+            duration: reduceMotion ? 0 : motion.duration.settle,
+            easing: motionEase,
+          }),
+        );
+      }}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      style={({ pressed }) => [
+      style={[
         styles.button,
         {
           minHeight: appearance === 'premium' ? Math.max(premium.layout.touch, height) : height,
@@ -105,10 +138,9 @@ export function Button({
           borderColor,
           borderWidth,
           borderRadius: radius,
-          opacity: disabled ? 0.45 : pressed ? 0.86 : 1,
-          transform: [{ scale: pressed && !disabled ? 0.98 : 1 }],
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
+        pressAnimatedStyle,
         fullWidth && { width: '100%' },
         style,
       ]}
@@ -158,7 +190,7 @@ export function Button({
           ) : null}
         </View>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

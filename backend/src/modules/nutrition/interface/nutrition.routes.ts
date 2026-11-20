@@ -7,6 +7,10 @@ import {
   createCustomFoodRequest,
   dailyNutritionViewSchema,
   deleteFavoriteResultSchema,
+  deleteMealRequest,
+  deleteMealResultSchema,
+  deleteWaterRequest,
+  deleteWaterResultSchema,
   favoriteResultSchema,
   foodViewSchema,
   getDailyNutritionRequest,
@@ -21,9 +25,12 @@ import {
   mealViewSchema,
   nutritionAnalyticsViewSchema,
   removeFavoriteRequest,
+  restoreMealRequest,
   searchFoodsRequest,
+  setWaterTargetRequest,
   updateMealRequest,
   waterIntakeViewSchema,
+  waterTargetViewSchema,
 } from './nutrition.schemas.js';
 import {
   analyzeMealPhotoRequest,
@@ -215,6 +222,49 @@ export function createNutritionMemberRoutes(
         handler: controller.getMeal,
       }),
 
+      // 9a. Delete Meal (soft delete, idempotent)
+      defineRoute({
+        method: 'delete',
+        path: '/meals/:id',
+        summary: 'Delete a meal entry (idempotent, undoable)',
+        description:
+          'Marks the meal deleted; it disappears from daily summaries, history, analytics and streaks. ' +
+          'Its id and item snapshots are kept so POST /meals/:id/restore can bring it back exactly. ' +
+          'Deleting an already-deleted meal succeeds and is flagged with Idempotent-Replayed.',
+        tags,
+        access: { kind: 'authenticated' },
+        request: deleteMealRequest,
+        response: {
+          status: 200,
+          description: 'Meal deleted',
+          message: 'Meal deleted successfully',
+          schema: deleteMealResultSchema,
+        },
+        errorStatuses: [403, 404],
+        handler: controller.deleteMeal,
+      }),
+
+      // 9b. Restore Meal (undo of delete, idempotent)
+      defineRoute({
+        method: 'post',
+        path: '/meals/:id/restore',
+        summary: 'Restore a deleted meal entry (idempotent)',
+        description:
+          'Undoes DELETE /meals/:id: the same meal returns with the same id and the item snapshots it had. ' +
+          'Restoring a meal that is not deleted returns it unchanged, flagged with Idempotent-Replayed.',
+        tags,
+        access: { kind: 'authenticated' },
+        request: restoreMealRequest,
+        response: {
+          status: 200,
+          description: 'Restored meal',
+          message: 'Meal restored successfully',
+          schema: mealViewSchema,
+        },
+        errorStatuses: [403, 404],
+        handler: controller.restoreMeal,
+      }),
+
       // 10. Log Water Intake
       defineRoute({
         method: 'post',
@@ -232,6 +282,47 @@ export function createNutritionMemberRoutes(
         },
         errorStatuses: [400, 409],
         handler: controller.logWater,
+      }),
+
+      // 10a. Delete a water entry
+      defineRoute({
+        method: 'delete',
+        path: '/water/:id',
+        summary: 'Delete one water entry',
+        description:
+          'Removes a single hydration entry. The undo is POST /water with the same id (idempotent per id).',
+        tags,
+        access: { kind: 'authenticated' },
+        request: deleteWaterRequest,
+        response: {
+          status: 200,
+          description: 'Water entry deleted',
+          message: 'Water entry deleted successfully',
+          schema: deleteWaterResultSchema,
+        },
+        errorStatuses: [403, 404],
+        handler: controller.deleteWater,
+      }),
+
+      // 10b. Set or clear the daily water target
+      defineRoute({
+        method: 'put',
+        path: '/water-target',
+        summary: 'Set or clear the daily water target',
+        description:
+          'Saves the member\'s own daily water target in ml (500-8000). null clears it, so the 35 ml/kg estimate from ' +
+          'their weight applies again. Replies with the target now in effect.',
+        tags,
+        access: { kind: 'authenticated' },
+        request: setWaterTargetRequest,
+        response: {
+          status: 200,
+          description: 'The water target now in effect',
+          message: 'Water target saved successfully',
+          schema: waterTargetViewSchema,
+        },
+        errorStatuses: [400],
+        handler: controller.setWaterTarget,
       }),
 
       // 11. Nutrition Analytics

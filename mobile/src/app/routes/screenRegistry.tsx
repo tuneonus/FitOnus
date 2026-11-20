@@ -65,6 +65,9 @@ import { LanguageScreen } from '@/features/settings/screens/LanguageScreen';
 import { PrivacyScreen } from '@/features/settings/screens/PrivacyScreen';
 import { AccountScreen } from '@/features/settings/screens/AccountScreen';
 import { ChangePasswordScreen } from '@/features/settings/screens/ChangePasswordScreen';
+import { ProgressPhotosScreen } from '@/features/progress/screens/ProgressPhotosScreen';
+import { ProgressPhotoViewerScreen } from '@/features/progress/screens/ProgressPhotoViewerScreen';
+import { PhotoComparisonScreen } from '@/features/progress/screens/PhotoComparisonScreen';
 
 /**
  * Single source of truth registering all 61 screens mapped to RouteName.
@@ -152,6 +155,11 @@ export const registry: Record<RouteName, React.ComponentType> = {
   privacy: PrivacyScreen,
   account: AccountScreen,
   changePassword: ChangePasswordScreen,
+
+  // Progress photos (private)
+  progressPhotos: ProgressPhotosScreen,
+  progressPhoto: ProgressPhotoViewerScreen,
+  photoComparison: PhotoComparisonScreen,
 };
 
 export function RouteScreen({ name }: { name: RouteName }) {

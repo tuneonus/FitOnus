@@ -1,5 +1,6 @@
 import { apiClient } from '@/services/api-client';
 import type { FoodItem } from '@/features/nutrition/types/nutrition';
+import { mapDetectedFoodItem } from '@/features/nutrition/utils/detected-food';
 
 export interface VoiceDetectedFoodItem {
   id: string;
@@ -67,22 +68,7 @@ export const VoiceMealApi = {
     }
 
     const data = response.data.data;
-    const items: FoodItem[] = (data.items || []).map((item) => ({
-      id: item.id,
-      name: item.name,
-      brand: item.brand,
-      serving: item.serving,
-      servingSize: item.servingSize,
-      servingUnit: item.servingUnit,
-      servingWeightG: item.servingWeightG,
-      kcal: item.kcal,
-      protein: item.protein,
-      carbs: item.carbs,
-      fat: item.fat,
-      fiber: item.fiber || 0,
-      estimated: true,
-      confidence: item.confidence === 'high' ? 0.95 : item.confidence === 'medium' ? 0.8 : 0.6,
-    }));
+    const items: FoodItem[] = (data.items || []).map(mapDetectedFoodItem);
 
     return {
       transcript: data.transcript,

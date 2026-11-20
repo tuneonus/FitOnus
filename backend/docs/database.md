@@ -78,8 +78,31 @@ Idempotency prevents double execution of the _same request_. It does not replace
 | `auth_sessions`     | auth             | FK to `users`; keyed refresh-token hash (unique); revocation reason whitelist; partial index on active sessions           |
 | `idempotency_keys`  | shared           | PK (scope, operation, key); completion consistency check; expiry index                                                    |
 | `schema_migrations` | migration runner | History and checksums                                                                                                     |
+| `member_avatars`    | profile          | One row per user (0026): private object key pinned to the owner by a `CHECK`; replacing or deleting queues the old files   |
+| `progress_photos`   | progress         | Many rows per user (0027): same key `CHECK`, `taken_on` date, tag whitelist, 50-per-member limit enforced by a trigger     |
+| `private_media_deletions` | shared     | Durable queue (0025) of private objects to remove from storage; filled by triggers (including cascades), drained by a worker |
+| `user_nutrition_settings` | nutrition  | At most one row per user (0028): the member's own daily water target (500-8000 ml, `NULL` = use the estimate); cascades with the account |
 
 Modules own their tables; another module reads them only through the owner's public API.
+
+**Media keys.** A column that refers to a picture in the public media bucket (`notification_campaigns.image_key`,
+`exercises.image_key`, `workouts.cover_image_key`) holds the object **key**, never a URL, is nullable text with no
+default, and has a `CHECK` that pins its shape to its feature's folder (`onusfit/<feature>/<32 hex>.webp`; the cover
+column additionally allows a key only on a system template). Every such column is listed in
+`src/shared/images/image-key-columns.ts`, and a test fails when the database has one that is not. Which objects are still
+referenced is therefore answered by reading those columns, never by a constraint. See [media.md](media.md).
+
+**Private member pictures** (`member_avatars`, `progress_photos`) are different: the row is the only record of a private
+object, a database trigger queues the old files in `private_media_deletions` in the same transaction as the change
+(cascades from `users` included), and a worker deletes them from the private bucket. See
+[private-media.md](private-media.md). Migrations `0025` to `0027` must be applied in order and before the code that uses
+them is deployed; they only add tables, triggers and functions.
+
+**Nutrition settings** (`user_nutrition_settings`, migration `0028`) is one new table and touches nothing existing; a member
+with no row simply has no saved water target and gets the estimate from their weight. The code that reads it
+(`GET /nutrition/daily`, `PUT /nutrition/water-target`, the analytics goals) needs the table, so apply `0028` before
+deploying. Versions must stay contiguous (a test enforces it), so a future provenance migration is `0029` or later. See
+[design/nutrition.md](design/nutrition.md).
 
 ## Least privilege
 

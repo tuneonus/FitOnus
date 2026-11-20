@@ -1,6 +1,6 @@
 /**
  * Choosing and uploading an image in the admin console, for every feature that lets an admin attach one
- * (notifications, exercises). Pure rules, free of React and of the network, so they can be tested directly.
+ * (notifications, exercises, workout template covers). Pure rules, free of React and of the network, so they can be tested directly.
  *
  * The backend decides what is accepted: it inspects the real content and converts every upload to an optimized WebP
  * with all metadata removed. The rules here only give instant feedback for the common mistakes (wrong kind of file,
@@ -82,6 +82,8 @@ export const NOTIFICATION_UNCONFIGURED_ADVICE =
   'Image uploads are not set up on this server yet. You can still send this notification without an image.';
 export const EXERCISE_UNCONFIGURED_ADVICE =
   'Image uploads are not set up on this server yet. You can still save this exercise with an image address instead.';
+export const TEMPLATE_COVER_UNCONFIGURED_ADVICE =
+  'Image uploads are not set up on this server yet. You can still save this routine without a cover.';
 
 /**
  * Turns a failed upload into a sentence an admin can act on. Matches on the backend's stable error codes; for the

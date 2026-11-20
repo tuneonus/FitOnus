@@ -21,6 +21,7 @@ function createApp() {
     consumed: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, waterMl: 0 },
     remaining: null,
     meals: [],
+    waterEntries: [],
   };
   const analytics = {
     range: 'week',

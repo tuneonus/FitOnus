@@ -4,6 +4,7 @@ import { callPythonAi, pythonUsageSchema, requireGateUserId } from '../../../sha
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
 import type { Logger } from '../../../shared/logging/logger.js';
 import type { MealPhotoAnalyzer } from '../application/ports.js';
+import { pythonDetectedFoodItemsSchema, pythonTotals } from './python-detected-food.js';
 import type { DetectedFoodItem, MealPhotoAnalysisResult } from '../domain/meal-photo.types.js';
 
 /** Token scope Python requires for this endpoint. */
@@ -19,38 +20,20 @@ const MIN_DEADLINE_MS = 1_000;
 /** Same wording the app has always received when image analysis fails. */
 export const MEAL_PHOTO_UNAVAILABLE_MESSAGE = 'Unable to analyze meal image right now. Please try again.';
 
-const confidence = z.enum(['high', 'medium', 'low']);
-/** Python's reply, validated before anything is trusted. Mirrors ai-backend/contracts/meal_photo.py. */
+/** Python's reply, validated and bounded before anything is trusted. Mirrors ai-backend/contracts/meal_photo.py. */
 const pythonMealPhotoResponseSchema = z.object({
   outcome: z.enum(['ok', 'no_food', 'parse_failed']),
   result: z.object({
     isFood: z.boolean(),
-    summary: z.string(),
-    items: z.array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        brand: z.string().nullish(),
-        serving: z.string(),
-        servingWeightG: z.number().nullish(),
-        servingUnit: z.string().nullish(),
-        servingSize: z.number().nullish(),
-        kcal: z.number(),
-        protein: z.number(),
-        carbs: z.number(),
-        fat: z.number(),
-        fiber: z.number().nullish(),
-        confidence,
-        isAiEstimated: z.boolean(),
-      }),
-    ),
-    overallConfidence: z.number(),
-    totalKcal: z.number(),
-    totalProteinGrams: z.number(),
-    totalCarbsGrams: z.number(),
-    totalFatGrams: z.number(),
-    totalFiberGrams: z.number(),
-    unclearReason: z.string().nullish(),
+    summary: z.string().max(300),
+    items: pythonDetectedFoodItemsSchema,
+    overallConfidence: z.number().min(0).max(1),
+    totalKcal: pythonTotals.kcal,
+    totalProteinGrams: pythonTotals.macroG,
+    totalCarbsGrams: pythonTotals.macroG,
+    totalFatGrams: pythonTotals.macroG,
+    totalFiberGrams: pythonTotals.fiberG,
+    unclearReason: z.string().max(300).nullish(),
     analyzedAt: z.string(),
   }),
   usage: pythonUsageSchema,

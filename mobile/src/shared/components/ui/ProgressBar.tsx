@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, type LayoutChangeEvent } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useTheme } from '@/hooks/use-theme';
+import { useTween } from '@/hooks/use-tween';
+import { progressOffset } from '@/shared/theme/motion';
 
 export type ProgressBarProps = {
   value?: number | undefined; // 0 to 1 (or value / max if max provided)
@@ -11,6 +14,14 @@ export type ProgressBarProps = {
   height?: number | undefined;
   style?: ViewStyle | undefined;
   accessibilityLabel?: string | undefined;
+  /** Ease the fill toward each new value instead of jumping. Default true. */
+  animated?: boolean | undefined;
+  /** Grow from empty the first time it appears. Default true; turn off for a bar that starts full (a draining timer). */
+  animateOnMount?: boolean | undefined;
+  /** Length of one move of the fill. Default 400 ms. */
+  tweenMs?: number | undefined;
+  /** Move at constant speed: a bar updated once a second can then glide continuously instead of stepping. */
+  linear?: boolean | undefined;
 };
 
 export function ProgressBar({
@@ -22,6 +33,10 @@ export function ProgressBar({
   height = 8,
   style,
   accessibilityLabel,
+  animated = true,
+  animateOnMount = true,
+  tweenMs,
+  linear = false,
 }: ProgressBarProps) {
   const { colors } = useTheme();
 
@@ -31,6 +46,22 @@ export function ProgressBar({
   const fillColor = color ?? colors.accentStrong;
   const bgTrack = trackColor ?? colors.surface2;
 
+  // The fill is a full-width bar slid along the clipped track with a transform (cheap, runs on the UI thread),
+  // not a width that changes every frame. It stays hidden until the track has been measured, so it never flashes full.
+  const shown = useTween(clamped, {
+    durationMs: animated ? tweenMs : 0,
+    linear,
+    fromZero: animated && animateOnMount,
+  });
+  const trackWidth = useSharedValue(0);
+  const fillStyle = useAnimatedStyle(() => ({
+    opacity: trackWidth.get() > 0 ? 1 : 0,
+    transform: [{ translateX: progressOffset(shown.get(), trackWidth.get()) }],
+  }));
+  const onLayout = (event: LayoutChangeEvent) => {
+    trackWidth.set(event.nativeEvent.layout.width);
+  };
+
   return (
     <View
       accessible={Boolean(accessibilityLabel)}
@@ -39,6 +70,7 @@ export function ProgressBar({
       accessibilityValue={
         accessibilityLabel ? { min: 0, max: 100, now: Math.round(clamped * 100) } : undefined
       }
+      onLayout={onLayout}
       style={[
         styles.track,
         {
@@ -49,15 +81,15 @@ export function ProgressBar({
         style,
       ]}
     >
-      <View
+      <Animated.View
         style={[
           styles.fill,
           {
-            width: `${clamped * 100}%`,
             height,
             borderRadius: height / 2,
             backgroundColor: fillColor,
           },
+          fillStyle,
         ]}
       />
     </View>
@@ -73,5 +105,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
+    width: '100%',
   },
 });

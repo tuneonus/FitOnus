@@ -78,6 +78,7 @@ export class UpdateWorkoutPlanUseCase {
       isTemplate: existing.isTemplate,
       isAiGenerated: existing.isAiGenerated,
       tags: input.tags ?? [...existing.tags],
+      coverImageKey: existing.coverImageKey,
       exercises: [...updatedExercises],
       createdAt: existing.createdAt,
       updatedAt: new Date(),

@@ -79,6 +79,8 @@ export class CreateWorkoutPlanUseCase {
       isTemplate: false,
       isAiGenerated: false,
       tags: input.tags ?? [],
+      // A member's own routine never has a cover: the public media bucket holds admin-authored artwork only.
+      coverImageKey: null,
       exercises: planExercises,
       createdAt: now,
       updatedAt: now,

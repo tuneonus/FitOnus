@@ -2,10 +2,13 @@ import { AppError } from '../../../../shared/errors/app-error.js';
 import type { UnitOfWork } from '../../../../shared/application/unit-of-work.js';
 import type { IFoodRepository, IMealRepository } from '../ports.js';
 import { toMealView, type MealView } from '../nutrition-view.js';
-import { buildMealItem, type LogMealItemInput } from '../meal-item-builder.js';
+import { buildMealItem } from '../meal-item-builder.js';
+import { reuseStoredItem, type UpdateMealItemInput } from '../meal-item-snapshot.js';
 import { Meal, type MealItem, type MealType } from '../../domain/meal.js';
 import { isValidCalendarDate } from '../../domain/local-date.js';
 import { MEAL_LIMITS, assertMealWithinLimits } from '../../domain/nutrition-limits.js';
+
+export type { UpdateMealItemInput };
 
 export interface UpdateMealInput {
   id: string;
@@ -13,7 +16,11 @@ export interface UpdateMealInput {
   mealType?: MealType | 'snacks';
   date?: string;
   notes?: string | null;
-  items?: LogMealItemInput[];
+  /**
+   * The meal's full item list after the edit. A line with `mealItemId` edits that stored item (its snapshot is
+   * kept, only the portion may change); a line without it is a new item.
+   */
+  items?: UpdateMealItemInput[];
 }
 
 function normalizeMealType(type: string): MealType {
@@ -71,8 +78,19 @@ export class UpdateMealUseCase {
 
       const rebuilt: MealItem[] = [];
       const now = new Date();
+      const storedById = new Map(existing.items.map((stored) => [stored.id, stored]));
+      // A stored item can be claimed once per request: two lines with one id would insert the same primary key twice.
+      const claimed = new Set<string>();
 
       for (const item of input.items) {
+        const stored =
+          item.mealItemId && !claimed.has(item.mealItemId) ? storedById.get(item.mealItemId) : undefined;
+        const kept = stored ? reuseStoredItem(stored, item) : null;
+        if (kept) {
+          claimed.add(kept.id);
+          rebuilt.push(kept);
+          continue;
+        }
         rebuilt.push(
           await buildMealItem({
             item,

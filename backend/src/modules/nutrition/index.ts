@@ -13,6 +13,11 @@ export * from './application/use-cases/create-custom-food.js';
 export * from './application/use-cases/log-meal.js';
 export * from './application/use-cases/update-meal.js';
 export * from './application/use-cases/get-meal.js';
+export * from './application/use-cases/delete-meal.js';
+export * from './application/use-cases/restore-meal.js';
+export * from './application/use-cases/delete-water.js';
+export * from './application/use-cases/set-water-target.js';
+export * from './application/meal-item-snapshot.js';
 export * from './application/use-cases/get-daily-nutrition.js';
 export * from './application/use-cases/log-water.js';
 export * from './application/use-cases/get-nutrition-analytics.js';
@@ -27,6 +32,7 @@ export * from './infrastructure/pg-meal-repository.js';
 export * from './infrastructure/pg-water-repository.js';
 export * from './infrastructure/pg-favorite-repository.js';
 export * from './infrastructure/pg-user-profile-target-adapter.js';
+export * from './infrastructure/pg-nutrition-settings-repository.js';
 export * from './infrastructure/nutrition-audit-logger.js';
 export * from './infrastructure/python-meal-photo-service.js';
 export * from './infrastructure/python-voice-meal-service.js';
@@ -54,6 +60,10 @@ import { CreateCustomFoodUseCase } from './application/use-cases/create-custom-f
 import { LogMealUseCase } from './application/use-cases/log-meal.js';
 import { UpdateMealUseCase } from './application/use-cases/update-meal.js';
 import { GetMealUseCase } from './application/use-cases/get-meal.js';
+import { DeleteMealUseCase } from './application/use-cases/delete-meal.js';
+import { RestoreMealUseCase } from './application/use-cases/restore-meal.js';
+import { DeleteWaterUseCase } from './application/use-cases/delete-water.js';
+import { SetWaterTargetUseCase } from './application/use-cases/set-water-target.js';
 import { LogWaterUseCase } from './application/use-cases/log-water.js';
 import { GetNutritionAnalyticsUseCase } from './application/use-cases/get-nutrition-analytics.js';
 import { ManageFoodFavoritesUseCase } from './application/use-cases/manage-food-favorites.js';
@@ -64,6 +74,7 @@ import { PgMealRepository } from './infrastructure/pg-meal-repository.js';
 import { PgWaterRepository } from './infrastructure/pg-water-repository.js';
 import { PgFavoriteRepository } from './infrastructure/pg-favorite-repository.js';
 import { PgUserProfileTargetAdapter } from './infrastructure/pg-user-profile-target-adapter.js';
+import { PgNutritionSettingsRepository } from './infrastructure/pg-nutrition-settings-repository.js';
 import { PgNutritionAuditLogger } from './infrastructure/nutrition-audit-logger.js';
 import { createNutritionMemberController } from './interface/nutrition.controller.js';
 import { createNutritionMemberRoutes } from './interface/nutrition.routes.js';
@@ -101,6 +112,7 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
   const waterRepo = new PgWaterRepository(deps.db);
   const favoriteRepo = new PgFavoriteRepository(deps.db);
   const targetAdapter = new PgUserProfileTargetAdapter(deps.db);
+  const settingsRepo = new PgNutritionSettingsRepository(deps.db);
   const auditLogger = new PgNutritionAuditLogger(deps.db);
 
   const analyzeMealPhotoUseCase = deps.mealPhotoAnalyzer
@@ -119,7 +131,11 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
     logMeal: new LogMealUseCase(mealRepo, foodRepo, deps.uow),
     updateMeal: new UpdateMealUseCase(mealRepo, foodRepo, deps.uow),
     getMeal: new GetMealUseCase(mealRepo),
+    deleteMeal: new DeleteMealUseCase(mealRepo),
+    restoreMeal: new RestoreMealUseCase(mealRepo),
     logWater: new LogWaterUseCase(waterRepo),
+    deleteWater: new DeleteWaterUseCase(waterRepo),
+    setWaterTarget: new SetWaterTargetUseCase(settingsRepo, targetAdapter),
     getNutritionAnalytics: new GetNutritionAnalyticsUseCase(mealRepo, targetAdapter),
     manageFoodFavorites: new ManageFoodFavoritesUseCase(favoriteRepo, foodRepo),
     analyzeMealPhoto: analyzeMealPhotoUseCase,

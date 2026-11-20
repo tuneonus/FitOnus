@@ -32,13 +32,17 @@ const issuesOf = (env: Record<string, string>): readonly string[] => {
 
 describe('R2 media configuration', () => {
   it('is off when nothing is set, so text-only notifications work exactly as before', () => {
-    expect(loadConfig(base).media).toEqual({ r2: null, heicEnabled: true });
+    expect(loadConfig(base).media).toEqual({ r2: null, heicEnabled: true, privateMedia: null });
     expect(loadConfig(base).media.r2).toBeNull();
   });
 
   it('treats blank values as unset', () => {
     const blank = Object.fromEntries(Object.keys(r2).map((key) => [key, '  ']));
-    expect(loadConfig({ ...base, ...blank }).media).toEqual({ r2: null, heicEnabled: true });
+    expect(loadConfig({ ...base, ...blank }).media).toEqual({
+      r2: null,
+      heicEnabled: true,
+      privateMedia: null,
+    });
   });
 
   describe('IMAGE_HEIC_ENABLED (independent of R2: it only decides which uploads are decoded)', () => {
@@ -54,6 +58,7 @@ describe('R2 media configuration', () => {
       expect(loadConfig({ ...base, IMAGE_HEIC_ENABLED: 'false' }).media).toEqual({
         r2: null,
         heicEnabled: false,
+        privateMedia: null,
       });
     });
 
@@ -93,6 +98,12 @@ describe('R2 media configuration', () => {
 
   it('accepts a custom request timeout', () => {
     expect(loadConfig({ ...base, ...r2, R2_REQUEST_TIMEOUT_MS: '3000' }).media.r2?.timeoutMs).toBe(3_000);
+  });
+
+  it('does not treat the shared account id alone as a public-bucket setup (private media may be the only R2 use)', () => {
+    const config = loadConfig({ ...base, R2_ACCOUNT_ID: r2.R2_ACCOUNT_ID });
+    expect(config.media.r2).toBeNull();
+    expect(issuesOf({ ...base, R2_ACCOUNT_ID: r2.R2_ACCOUNT_ID })).toEqual([]);
   });
 
   describe('all-or-nothing', () => {

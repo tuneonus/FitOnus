@@ -269,17 +269,21 @@ describe('Analytics PostgreSQL Repositories', () => {
       expect(res[0]!.muscleMassKg).toBeNull();
     });
 
-    it('retrieves user profile goals or null when profile does not exist', async () => {
+    it('retrieves user profile goals or null when the user does not exist', async () => {
       mockDb.query.mockResolvedValueOnce({
         rows: [
           {
             primary_goal: 'lose',
+            sex: 'male',
+            date_of_birth: null,
+            height_cm: null,
             starting_weight_kg: '90.0',
             current_weight_kg: '82.5',
             target_weight_kg: '78.0',
             daily_calorie_target: 2200,
             daily_protein_grams: 175,
             workout_days_per_week: 4,
+            water_target_ml: null,
           },
         ],
         rowCount: 1,
@@ -288,8 +292,10 @@ describe('Analytics PostgreSQL Repositories', () => {
       const goals = await repo.getUserProfileGoals(userId);
 
       const [sql, params] = mockDb.query.mock.calls[0] as [string, unknown[]];
-      expect(sql).toContain('FROM user_profiles');
-      expect(sql).toContain('user_id = $1');
+      expect(sql).toContain('FROM users u');
+      expect(sql).toContain('LEFT JOIN user_profiles p');
+      expect(sql).toContain('LEFT JOIN user_nutrition_settings s');
+      expect(sql).toContain('u.id = $1');
       expect(params).toEqual([userId]);
 
       expect(goals).toEqual({
@@ -299,6 +305,8 @@ describe('Analytics PostgreSQL Repositories', () => {
         targetWeightKg: 78.0,
         dailyCalorieTarget: 2200,
         dailyProteinGrams: 175,
+        // No saved water target: the 35 ml/kg estimate from the 82.5 kg profile weight (2887.5 -> 2900).
+        dailyWaterTargetMl: 2900,
         workoutDaysPerWeek: 4,
       });
 

@@ -1,8 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import Svg, { Path, Line as SvgLine, Circle, G, Rect } from 'react-native-svg';
+import Animated from 'react-native-reanimated';
 import type { ChartPoint } from '../../types/health';
 import { useTheme } from '@/hooks/use-theme';
+import { polylineLength } from './chart-motion';
+import { useLineDraw } from './use-line-draw';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedG = Animated.createAnimatedComponent(G);
 
 export type Band = { lower: number; upper: number };
 
@@ -62,14 +68,21 @@ export function LineChart({
   const getY = (v: number) =>
     padT + (1 - (v - min) / Math.max(1, max - min)) * (height - padT - padB);
 
-  const mainPath = useMemo(() => {
-    return points
-      .map(
-        (p, i) =>
-          `${i === 0 ? 'M' : 'L'} ${getX(i).toFixed(1)} ${getY(p.value).toFixed(1)}`
-      )
-      .join(' ');
-  }, [points, min, max, height]);
+  const mainLine = useMemo(() => {
+    return {
+      d: points
+        .map(
+          (p, i) =>
+            `${i === 0 ? 'M' : 'L'} ${getX(i).toFixed(1)} ${getY(p.value).toFixed(1)}`
+        )
+        .join(' '),
+      length: polylineLength(points.map((p, i) => ({ x: getX(i), y: getY(p.value) }))),
+    };
+  }, [points, min, max, height, all.length]);
+  const mainPath = mainLine.d;
+
+  // The line draws on from its first point, then the dots and any projection fade in behind it.
+  const { dash, lineProps, lateFadeProps } = useLineDraw(mainPath, mainLine.length);
 
   const projStart = Math.max(0, points.length - 1);
   const projPath = useMemo(() => {
@@ -129,9 +142,11 @@ export function LineChart({
 
           {/* Main solid line */}
           {mainPath ? (
-            <Path
+            <AnimatedPath
               d={mainPath}
               stroke={stroke}
+              strokeDasharray={dash}
+              animatedProps={lineProps}
               strokeWidth={2.5}
               fill="transparent"
               strokeLinecap="round"
@@ -141,33 +156,36 @@ export function LineChart({
 
           {/* Projection dashed line */}
           {projPath ? (
-            <Path
+            <AnimatedPath
               d={projPath}
               stroke={colors.accentStrong}
               strokeDasharray="4 4"
               strokeWidth={2}
               fill="transparent"
+              animatedProps={lateFadeProps}
             />
           ) : null}
 
           {/* Data Points */}
-          {points.map((p, i) => {
-            const isSel = i === selected;
-            const cx = getX(i);
-            const cy = getY(p.value);
-            return (
-              <G key={`pt-${i}`}>
-                <Circle
-                  cx={cx}
-                  cy={cy}
-                  r={isSel ? 5.5 : 3.5}
-                  fill={isSel ? colors.accentStrong : dot}
-                  stroke={colors.surface}
-                  strokeWidth={isSel ? 2 : 1}
-                />
-              </G>
-            );
-          })}
+          <AnimatedG animatedProps={lateFadeProps}>
+            {points.map((p, i) => {
+              const isSel = i === selected;
+              const cx = getX(i);
+              const cy = getY(p.value);
+              return (
+                <G key={`pt-${i}`}>
+                  <Circle
+                    cx={cx}
+                    cy={cy}
+                    r={isSel ? 5.5 : 3.5}
+                    fill={isSel ? colors.accentStrong : dot}
+                    stroke={colors.surface}
+                    strokeWidth={isSel ? 2 : 1}
+                  />
+                </G>
+              );
+            })}
+          </AnimatedG>
         </Svg>
       </View>
 

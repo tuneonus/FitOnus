@@ -1,14 +1,18 @@
 import { premium } from '@/shared/theme/premium';
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { CheckCircle, AlertTriangle, Info } from 'lucide-react-native';
 import { useToastStore } from '../../stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
+import { useReduceMotion } from '@/hooks/use-reduce-motion';
+import { dropIn, layoutMotion, liftOut } from '@/shared/theme/motion-animations';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function ToastHost({ raised = false }: { raised?: boolean }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const reduceMotion = useReduceMotion();
   const { toasts, dismiss } = useToastStore();
   const toast = toasts[toasts.length - 1];
 
@@ -30,8 +34,12 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
       ? (colors.sky || colors.accent)
       : (colors.good || colors.accent);
 
+  // Keyed by id so a replacement toast plays its own entrance while the old one plays its exit. The exit runs
+  // after the store has already removed the toast, which is why this is a layout animation and not local state.
   return (
-    <View
+    <Animated.View
+      key={toast.id}
+      {...layoutMotion(reduceMotion, { entering: dropIn(), exiting: liftOut() })}
       style={[
         styles.container,
         {
@@ -60,7 +68,7 @@ export function ToastHost({ raised = false }: { raised?: boolean }) {
           <Text style={[styles.actionLabel, { color: colors.accentStrong }]}>{toast.actionLabel}</Text>
         </TouchableOpacity>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 

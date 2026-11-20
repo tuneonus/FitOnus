@@ -92,6 +92,9 @@ export interface UploadedExerciseImage {
   source: { format: 'jpeg' | 'png' | 'webp' | 'heic'; bytes: number; width: number; height: number };
 }
 
+/** What the template cover upload endpoint returns: the same shape as an exercise image upload. */
+export type UploadedTemplateCover = UploadedExerciseImage;
+
 export interface WorkoutTemplateExercise {
   id: string;
   exerciseId: string;
@@ -116,6 +119,10 @@ export interface WorkoutTemplate {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   estimatedDurationMinutes: number | null;
   tags: string[];
+  /** Public URL of the template's cover image, or null. Absent from a backend that predates covers. */
+  coverImageUrl?: string | null;
+  /** Key of the cover image, or null. Absent from a backend that predates covers. */
+  coverImageKey?: string | null;
   exerciseCount: number;
   exercises: WorkoutTemplateExercise[];
   createdAt: string;
@@ -143,6 +150,8 @@ export interface CreateTemplateInput {
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   estimatedDurationMinutes?: number | null;
   tags?: string[];
+  /** Key returned by the template cover upload; null = no cover. */
+  coverImageKey?: string | null;
   exercises: TemplateExerciseInput[];
 }
 
@@ -152,6 +161,8 @@ export interface UpdateTemplateInput {
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   estimatedDurationMinutes?: number | null;
   tags?: string[];
+  /** Key returned by the template cover upload; null removes the cover. Omitted = unchanged. */
+  coverImageKey?: string | null;
   exercises?: TemplateExerciseInput[];
 }
 

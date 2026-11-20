@@ -1,10 +1,11 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { workoutApi } from '@/features/workouts/api/workout-api';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import {
   Award,
   Brain,
+  Camera,
   Dumbbell,
   HeartPulse,
   Settings,
@@ -27,6 +28,8 @@ import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { fitnessGoals } from '../../onboarding/constants/options';
 import { useTheme } from '@/hooks/use-theme';
 import { useProfile } from '../hooks/use-profile';
+import { AvatarEditorSheet } from '../components/avatar-editor-sheet';
+import { MemberAvatar } from '../components/member-avatar';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { formatWeight, formatHeight } from '@/shared/utils/unit-conversion';
 import { WEARABLES_ENABLED } from '@/shared/constants/featureFlags';
@@ -53,6 +56,7 @@ export function ProfileScreen() {
       .fetchMemories()
       .catch(() => {});
   }, []);
+  const [avatarSheetOpen, setAvatarSheetOpen] = React.useState(false);
   const p = useProfileSetupStore();
   const activeGoals = useGoalsStore((s) => s.goals.filter((g) => g.status === 'active').length);
   const { connection, platform, watchConnected } = useHealthStore();
@@ -110,9 +114,23 @@ export function ProfileScreen() {
     >
       {/* User Card */}
       <View style={styles.userSection}>
-        <View style={[styles.avatarCircle, { backgroundColor: colors.ink }]}>
-          <Text style={[styles.avatarText, { color: colors.bg }]}>{initials}</Text>
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Change your profile picture"
+          onPress={() => setAvatarSheetOpen(true)}
+          style={({ pressed }) => [
+            styles.avatarCircle,
+            { backgroundColor: colors.ink, opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <MemberAvatar
+            size={80}
+            fallback={<Text style={[styles.avatarText, { color: colors.bg }]}>{initials}</Text>}
+          />
+          <View style={[styles.avatarBadge, { backgroundColor: colors.accentStrong, borderColor: colors.bg }]}>
+            <Camera size={12} color={colors.bg} />
+          </View>
+        </Pressable>
         <Text style={[styles.userName, { color: colors.ink }]}>{displayName}</Text>
         <Text style={[styles.userMeta, { color: colors.muted }]}>
           {user?.email ? `${user.email} · ` : ''}
@@ -178,6 +196,12 @@ export function ProfileScreen() {
           value={`${activeGoals} active`}
           onPress={() => navigate('goals')}
         />
+        <ListRow
+          icon={Camera}
+          title="Progress photos"
+          subtitle="Private · only you can see them"
+          onPress={() => navigate('progressPhotos')}
+        />
         <ListRow icon={Award} title="Challenges & Badges" onPress={() => navigate('challenges')} />
       </ListGroup>
 
@@ -215,6 +239,8 @@ export function ProfileScreen() {
       <ListGroup>
         <ListRow icon={Settings} title="Settings" onPress={() => navigate('settings')} />
       </ListGroup>
+
+      <AvatarEditorSheet open={avatarSheetOpen} onClose={() => setAvatarSheetOpen(false)} />
     </Screen>
   );
 }
@@ -239,6 +265,17 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 26,
     fontWeight: '700',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   userName: {
     fontSize: 24,

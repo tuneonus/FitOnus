@@ -32,6 +32,10 @@ import { useNutritionStore } from '../store/nutritionStore';
 import { mealLabels, mealOrder } from '../constants/meals';
 import { AddFoodSheet } from '../components/AddFoodSheet';
 import { FoodItemSheet } from '../components/FoodItemSheet';
+import { describeWaterGoal } from '../utils/water-goal';
+import { RejectedEntriesSheet } from '../components/RejectedEntriesSheet';
+import { WaterGoalSheet } from '../components/WaterGoalSheet';
+import { WaterLogSheet } from '../components/WaterLogSheet';
 import type { FoodItem, MealEntry, MealType } from '../types/nutrition';
 
 /** Equal-width shortcut tile for one way of logging food. */
@@ -83,6 +87,7 @@ export function NutritionScreen() {
     isRefreshing,
     error,
     pendingSyncCount,
+    rejectedEntries,
     fetchDailyNutrition,
     logWater,
     syncPendingMutations,
@@ -91,6 +96,9 @@ export function NutritionScreen() {
   const [addMeal, setAddMeal] = useState<MealType | null>(null);
   const [editing, setEditing] = useState<{ entry: MealEntry; item: FoodItem } | null>(null);
   const [waterBusy, setWaterBusy] = useState<number | null>(null);
+  const [waterLogOpen, setWaterLogOpen] = useState(false);
+  const [waterGoalOpen, setWaterGoalOpen] = useState(false);
+  const [rejectedOpen, setRejectedOpen] = useState(false);
   const waterLock = useRef(false);
   const [syncing, setSyncing] = useState(false);
   useEffect(() => {
@@ -139,6 +147,8 @@ export function NutritionScreen() {
     }
   };
   const visibleEntries = entries.filter((entry) => !entry.date || entry.date === selectedDate);
+  // Only entries the server already has can be deleted; ones still queued offline are not listed.
+  const waterEntries = dailySummary?.date === selectedDate ? (dailySummary.waterEntries ?? []) : [];
   return (
     <FeatureScreen
       title="Nutrition"
@@ -186,6 +196,15 @@ export function NutritionScreen() {
             }}
           />
         ) : null}
+        {rejectedEntries.length > 0 ? (
+          <StatusBanner
+            tone="error"
+            title={`${rejectedEntries.length} ${rejectedEntries.length === 1 ? 'entry' : 'entries'} couldn’t be saved`}
+            body="The server turned them down. Nothing was deleted."
+            actionLabel="Review"
+            onAction={() => setRejectedOpen(true)}
+          />
+        ) : null}
         {isLoading && !day.available ? (
           <HomeSkeleton />
         ) : (
@@ -217,9 +236,12 @@ export function NutritionScreen() {
                 : (day.waterMl / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })}
               <Text style={[premium.type.label, { color: colors.muted }]}>
                 {day.goals.waterMl === null
-                  ? ' L · Goal unavailable'
+                  ? ' L · No goal set'
                   : ` / ${day.goals.waterMl / 1000} L`}
               </Text>
+            </Text>
+            <Text style={[premium.type.caption, { color: colors.muted }]}>
+              {describeWaterGoal(dailySummary?.date === selectedDate ? dailySummary.targets : null)}
             </Text>
             <ProgressBar
               value={progressRatio(day.waterMl, day.goals.waterMl)}
@@ -242,6 +264,20 @@ export function NutritionScreen() {
                 />
               ))}
             </View>
+            <Button
+              title={day.goals.waterMl === null ? 'Set water goal' : 'Change water goal'}
+              size="sm"
+              variant="ghost"
+              onPress={() => setWaterGoalOpen(true)}
+            />
+            {waterEntries.length > 0 ? (
+              <Button
+                title={`Water log · ${waterEntries.length} ${waterEntries.length === 1 ? 'entry' : 'entries'}`}
+                size="sm"
+                variant="ghost"
+                onPress={() => setWaterLogOpen(true)}
+              />
+            ) : null}
           </Card>
         </View>
         <View style={styles.meals}>
@@ -349,6 +385,21 @@ export function NutritionScreen() {
         onClose={() => setAddMeal(null)}
       />
       <FoodItemSheet target={editing} onClose={() => setEditing(null)} />
+      <RejectedEntriesSheet
+        open={rejectedOpen}
+        entries={rejectedEntries}
+        onClose={() => setRejectedOpen(false)}
+      />
+      <WaterGoalSheet
+        open={waterGoalOpen}
+        targets={dailySummary?.date === selectedDate ? dailySummary.targets : null}
+        onClose={() => setWaterGoalOpen(false)}
+      />
+      <WaterLogSheet
+        open={waterLogOpen}
+        entries={waterEntries}
+        onClose={() => setWaterLogOpen(false)}
+      />
     </FeatureScreen>
   );
 }

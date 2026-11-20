@@ -20,6 +20,7 @@ import { ListPersonalRecordsUseCase } from './application/use-cases/list-persona
 import { ListWorkoutPlansUseCase } from './application/use-cases/list-workout-plans.js';
 import { ListWorkoutSessionsUseCase } from './application/use-cases/list-workout-sessions.js';
 import { UploadExerciseImageUseCase } from './application/use-cases/upload-exercise-image.js';
+import { UploadWorkoutCoverUseCase } from './application/use-cases/upload-workout-cover.js';
 import { LogWorkoutSessionUseCase } from './application/use-cases/log-workout-session.js';
 import { UpdateWorkoutPlanUseCase } from './application/use-cases/update-workout-plan.js';
 import { PgExerciseRepository } from './infrastructure/pg-exercise-repository.js';
@@ -58,8 +59,9 @@ export function createWorkoutsModule(deps: {
   uow: UnitOfWork;
   idempotency?: IdempotencyService;
   /**
-   * Exercise images. `store` null (R2 not configured) turns uploads off; exercises without an uploaded image are
-   * unaffected. `publicBaseUrl` is the trusted origin every uploaded image URL is built from.
+   * Exercise images and workout template covers. `store` null (R2 not configured) turns uploads off; exercises and
+   * templates without an uploaded image are unaffected. `publicBaseUrl` is the trusted origin every uploaded image
+   * URL is built from.
    */
   images?: {
     store: PublicObjectStore | null;
@@ -78,19 +80,23 @@ export function createWorkoutsModule(deps: {
 
   // Uploaded exercise images: the URL is only ever built from the trusted media origin and a canonical key.
   const resolveImageUrl = createFeatureImageUrlResolver(deps.images?.publicBaseUrl ?? null, 'exercises');
+  // Uploaded template covers: a separate resolver, because a cover's key belongs to the `workouts` folder, and an
+  // exercise key (or any other feature's) must never resolve to a cover URL, or the other way round.
+  const resolveCoverUrl = createFeatureImageUrlResolver(deps.images?.publicBaseUrl ?? null, 'workouts');
   const imageProcessor = deps.images?.processor;
   const imageDeps = {
     store: deps.images?.store ?? null,
     resolveUrl: resolveImageUrl,
     logger: deps.logger,
   };
+  const coverDeps = { ...imageDeps, resolveUrl: resolveCoverUrl };
 
   // Member use cases
   const memberController = createWorkoutMemberController({
     listExercises: new ListExercisesUseCase(exerciseRepo, resolveImageUrl),
     getExercise: new GetExerciseUseCase(exerciseRepo, resolveImageUrl),
-    listWorkoutPlans: new ListWorkoutPlansUseCase(workoutRepo),
-    getWorkoutPlan: new GetWorkoutPlanUseCase(workoutRepo),
+    listWorkoutPlans: new ListWorkoutPlansUseCase(workoutRepo, resolveCoverUrl),
+    getWorkoutPlan: new GetWorkoutPlanUseCase(workoutRepo, resolveCoverUrl),
     createWorkoutPlan: new CreateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
     updateWorkoutPlan: new UpdateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
     deleteWorkoutPlan: new DeleteWorkoutPlanUseCase(workoutRepo),
@@ -109,7 +115,12 @@ export function createWorkoutsModule(deps: {
       process: imageProcessor ? (bytes) => imageProcessor.process(bytes, 'exercises') : null,
       audit: auditLogger,
     }),
-    manageTemplate: new AdminManageTemplateUseCase(workoutRepo, exerciseRepo, auditLogger),
+    uploadWorkoutCover: new UploadWorkoutCoverUseCase({
+      ...coverDeps,
+      process: imageProcessor ? (bytes) => imageProcessor.process(bytes, 'workouts') : null,
+      audit: auditLogger,
+    }),
+    manageTemplate: new AdminManageTemplateUseCase(workoutRepo, exerciseRepo, auditLogger, coverDeps),
     getStats: new GetWorkoutStatsUseCase(exerciseRepo, workoutRepo, sessionRepo),
   });
 

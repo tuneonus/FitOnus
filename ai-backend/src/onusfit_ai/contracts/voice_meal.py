@@ -7,7 +7,7 @@ quota and picked the models; this service only turns a transcript and/or audio c
 
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from onusfit_ai.contracts._base import ContractModel
 from onusfit_ai.contracts.common import (
@@ -17,15 +17,23 @@ from onusfit_ai.contracts.common import (
     ModelSelection,
     Usage,
 )
+from onusfit_ai.core.text import clean_prompt_text
+from onusfit_ai.meals.limits import MAX_HINT_LENGTH, MAX_TRANSCRIPT_LENGTH
 
 
 class ParseVoiceMealRequest(ContractModel):
-    transcript: str | None = Field(default=None, max_length=2000)
+    transcript: str | None = Field(default=None, max_length=MAX_TRANSCRIPT_LENGTH)
     audio: AudioInput | None = None
-    lang: str | None = Field(default=None, max_length=50)
-    meal_type: str | None = Field(default=None, max_length=50)
+    lang: str | None = Field(default=None, max_length=MAX_HINT_LENGTH)
+    meal_type: str | None = Field(default=None, max_length=MAX_HINT_LENGTH)
     model: ModelSelection
     deadline_ms: int = Field(ge=1000, le=30000)
+
+    # Member-written text goes between double quotes in the prompt: one line, no stray quotes.
+    @field_validator("transcript", "lang", "meal_type")
+    @classmethod
+    def _prompt_safe(cls, value: str | None) -> str | None:
+        return clean_prompt_text(value)
 
     @model_validator(mode="after")
     def _needs_transcript_or_audio(self) -> "ParseVoiceMealRequest":

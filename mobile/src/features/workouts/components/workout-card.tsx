@@ -5,6 +5,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { Spacing, BorderRadius } from '@/constants/theme';
 import { WorkoutTemplate } from '../types/workout';
 import { Clock, Dumbbell, Sparkles, ChevronRight } from 'lucide-react-native';
+import { WorkoutCover } from './workout-cover';
 
 interface WorkoutCardProps {
   workout: WorkoutTemplate;
@@ -19,6 +20,8 @@ export const WorkoutCard = ({ workout, onPress }: WorkoutCardProps) => {
       style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
       onPress={onPress}
     >
+      {/* Curated routines can have a cover. It bleeds to the card's edges; with none, the card is unchanged. */}
+      <WorkoutCover uri={workout.coverImageUrl} style={styles.cover} />
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           {workout.isAiGenerated && (
@@ -73,6 +76,14 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
+    marginBottom: Spacing.md,
+    // Clips the cover to the card's rounded corners. Nothing else in the card reaches its edge.
+    overflow: 'hidden',
+  },
+  cover: {
+    // Cancels the card's padding so the picture spans the full width and sits against the top edge.
+    marginHorizontal: -Spacing.md,
+    marginTop: -Spacing.md,
     marginBottom: Spacing.md,
   },
   header: {

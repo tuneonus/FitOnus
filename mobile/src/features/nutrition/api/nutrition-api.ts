@@ -10,6 +10,7 @@ import type {
   NutritionAnalyticsView,
   UpdateMealInput,
   WaterIntakeView,
+  WaterTargetView,
 } from '../types/nutrition';
 import { mapBackendFoodToFoodItem } from '../utils/nutrition-calculator';
 import { logger } from '@/utils/logger';
@@ -113,6 +114,38 @@ export const nutritionApi = {
    */
   async getMeal(id: string): Promise<BackendMealView> {
     const res = await apiClient.get(`/nutrition/meals/${id}`);
+    return res.data?.data;
+  },
+
+  /**
+   * Delete a meal. The backend keeps it (soft delete) so `restoreMeal` can undo this. Idempotent: deleting a
+   * meal that is already deleted succeeds too.
+   */
+  async deleteMeal(id: string): Promise<void> {
+    await apiClient.delete(`/nutrition/meals/${id}`);
+  },
+
+  /**
+   * Undo `deleteMeal`: the same meal (same id, same item snapshots) comes back. Idempotent.
+   */
+  async restoreMeal(id: string): Promise<BackendMealView> {
+    const res = await apiClient.post(`/nutrition/meals/${id}/restore`);
+    return res.data?.data;
+  },
+
+  /**
+   * Delete one water entry. The undo is logging it again with the same id (`logWater`).
+   */
+  async deleteWater(id: string): Promise<void> {
+    await apiClient.delete(`/nutrition/water/${id}`);
+  },
+
+  /**
+   * Save the member's own daily water goal in ml, or clear it (null) so the estimate from their weight applies again.
+   * Answers with the goal now in effect.
+   */
+  async setWaterTarget(targetMl: number | null): Promise<WaterTargetView> {
+    const res = await apiClient.put('/nutrition/water-target', { targetMl });
     return res.data?.data;
   },
 

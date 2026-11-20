@@ -95,8 +95,9 @@ function toMealDomain(row: MealRow, items: MealItem[] = []): Meal {
 export class PgMealRepository implements IMealRepository {
   constructor(private readonly db: SqlExecutor) {}
 
-  async findById(id: string, userId?: string): Promise<Meal | null> {
-    const conditions = ['id = $1', 'deleted_at IS NULL'];
+  async findById(id: string, userId?: string, includeDeleted = false): Promise<Meal | null> {
+    const conditions = ['id = $1'];
+    if (!includeDeleted) conditions.push('deleted_at IS NULL');
     const values: unknown[] = [id];
 
     if (userId) {
@@ -320,6 +321,14 @@ export class PgMealRepository implements IMealRepository {
   async softDelete(id: string, userId: string): Promise<boolean> {
     const res = await this.db.query(
       `UPDATE meals SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`,
+      [id, userId],
+    );
+    return (res.rowCount ?? 0) > 0;
+  }
+
+  async restore(id: string, userId: string): Promise<boolean> {
+    const res = await this.db.query(
+      `UPDATE meals SET deleted_at = NULL, updated_at = NOW() WHERE id = $1 AND user_id = $2 AND deleted_at IS NOT NULL`,
       [id, userId],
     );
     return (res.rowCount ?? 0) > 0;

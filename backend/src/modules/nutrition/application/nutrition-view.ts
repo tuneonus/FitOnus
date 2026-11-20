@@ -1,5 +1,5 @@
 import type { Food, FoodDataSource, VerificationStatus } from '../domain/food.js';
-import type { Meal, MealItem, MealType } from '../domain/meal.js';
+import { isAiEstimateBrand, type Meal, type MealItem, type MealType } from '../domain/meal.js';
 import type { WaterIntake } from '../domain/water.js';
 import type { CalculatedNutrients } from '../domain/nutrition-calculator.js';
 
@@ -97,6 +97,8 @@ export interface MealItemView {
   carbsG: number;
   fatG: number;
   fiberG: number;
+  /** True for values an AI parser estimated (photo or voice), so clients can keep labelling them after a refresh. */
+  isEstimated: boolean;
 }
 
 export function toMealItemView(item: MealItem): MealItemView {
@@ -115,6 +117,7 @@ export function toMealItemView(item: MealItem): MealItemView {
     carbsG: item.carbsG,
     fatG: item.fatG,
     fiberG: item.fiberG,
+    isEstimated: isAiEstimateBrand(item.foodBrand),
   };
 }
 
@@ -180,6 +183,10 @@ export interface DailyNutritionView {
     carbsG: number | null;
     fatG: number | null;
     waterMl: number | null;
+    /** Where the calorie/macro targets came from: the member's saved targets or an estimate from their profile. */
+    source: 'saved' | 'estimated' | null;
+    /** Where the water target came from: the member's own, or 35 ml/kg of their weight as a starting estimate. */
+    waterSource: 'saved' | 'estimated' | null;
   } | null;
   consumed: {
     calories: number;
@@ -198,6 +205,8 @@ export interface DailyNutritionView {
     waterMl: number;
   } | null;
   meals: MealView[];
+  /** The individual water entries of the day (oldest first), so a single entry can be deleted. */
+  waterEntries: WaterIntakeView[];
 }
 
 export interface MacroSplitView {

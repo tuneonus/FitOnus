@@ -92,6 +92,8 @@ describe('Seed UUID RFC 4122 v4 Compliance', () => {
       isTemplate: true,
       isAiGenerated: false,
       tags: ['push', 'chest', 'starter'],
+      coverImageUrl: null,
+      coverImageKey: null,
       exercisesCount: 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

@@ -105,6 +105,15 @@ describe('conversion to WebP', () => {
       FEATURE_PROFILES.notifications.maxEdge,
     );
     expect((await processor.process(big, 'exercises')).width).toBe(FEATURE_PROFILES.exercises.maxEdge);
+    expect((await processor.process(big, 'workouts')).width).toBe(FEATURE_PROFILES.workouts.maxEdge);
+  });
+
+  it('turns a workout cover into one WebP with no derivative', async () => {
+    const result = await processor.process(await realJpeg({ width: 3000, height: 1688 }), 'workouts');
+    expect(result.feature).toBe('workouts');
+    expect(result.canonical.contentType).toBe('image/webp');
+    expect(result.derivatives).toEqual([]);
+    expect([result.width, result.height]).toEqual([1600, 900]);
   });
 
   it('makes a real photograph smaller, not bigger', async () => {

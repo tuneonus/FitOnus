@@ -91,6 +91,7 @@ export const mealItemViewSchema = z.object({
   carbsG: z.number().nonnegative(),
   fatG: z.number().nonnegative(),
   fiberG: z.number().nonnegative(),
+  isEstimated: z.boolean(),
 });
 
 export const mealViewSchema = z.object({
@@ -124,6 +125,8 @@ export const dailyNutritionTargetsSchema = z.object({
   carbsG: z.number().nullable(),
   fatG: z.number().nullable(),
   waterMl: z.number().nullable(),
+  source: z.enum(['saved', 'estimated']).nullable(),
+  waterSource: z.enum(['saved', 'estimated']).nullable(),
 });
 
 export const dailyNutritionConsumedSchema = z.object({
@@ -150,6 +153,7 @@ export const dailyNutritionViewSchema = z.object({
   consumed: dailyNutritionConsumedSchema,
   remaining: dailyNutritionRemainingSchema.nullable(),
   meals: z.array(mealViewSchema),
+  waterEntries: z.array(waterIntakeViewSchema),
 });
 
 export const dailyTrendPointSchema = z.object({
@@ -193,6 +197,22 @@ export const favoriteResultSchema = z.object({
 
 export const deleteFavoriteResultSchema = z.object({
   success: z.boolean(),
+});
+
+export const deleteMealResultSchema = z.object({
+  id: z.string().uuid(),
+  deleted: z.literal(true),
+});
+
+/** The daily water target in effect after a change: the member's own, or the 35 ml/kg estimate once they clear it. */
+export const waterTargetViewSchema = z.object({
+  targetMl: z.number().int().nullable(),
+  source: z.enum(['saved', 'estimated']).nullable(),
+});
+
+export const deleteWaterResultSchema = z.object({
+  id: z.string().uuid(),
+  deleted: z.literal(true),
 });
 
 // --- Request Schemas ---
@@ -271,6 +291,14 @@ export const logMealItemInputSchema = z.object({
   fiberG: boundedNumber(MEAL_ITEM_LIMITS.macroG).optional(),
 });
 
+/**
+ * A meal-edit line: a logged item plus, for items already stored in the meal, `mealItemId`. A line with
+ * `mealItemId` keeps that item's stored snapshot and may only change its portion (see `reuseStoredItem`).
+ */
+export const updateMealItemInputSchema = logMealItemInputSchema.extend({
+  mealItemId: z.string().uuid().optional(),
+});
+
 export const logMealRequest = {
   query: timezoneOnlyQuery,
   body: z.object({
@@ -294,13 +322,29 @@ export const updateMealRequest = {
     mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'snacks']).optional(),
     date: calendarDate().optional(),
     notes: z.string().trim().max(500).nullable().optional(),
-    items: z.array(logMealItemInputSchema).min(1).max(MEAL_LIMITS.maxItems).optional(),
+    items: z.array(updateMealItemInputSchema).min(1).max(MEAL_LIMITS.maxItems).optional(),
   }),
 };
 
 export const getMealRequest = {
   params: z.object({
     id: z.string().uuid(),
+  }),
+};
+
+export const deleteMealRequest = getMealRequest;
+export const restoreMealRequest = getMealRequest;
+
+export const deleteWaterRequest = {
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+};
+
+export const setWaterTargetRequest = {
+  body: z.object({
+    // null clears the member's own target, so the estimate from their weight applies again.
+    targetMl: z.number().int().min(WATER_LIMITS.targetMl.min).max(WATER_LIMITS.targetMl.max).nullable(),
   }),
 };
 

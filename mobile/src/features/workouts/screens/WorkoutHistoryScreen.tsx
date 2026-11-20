@@ -10,6 +10,7 @@ import { MetricDisplay } from '@/shared/components/ui/MetricDisplay';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { Reveal } from '@/shared/components/ui/Reveal';
 import { useTheme } from '@/hooks/use-theme';
 import { premium } from '@/shared/theme/premium';
 import { useWorkoutStore } from '../store/workoutStore';
@@ -74,15 +75,15 @@ export function WorkoutHistoryScreen() {
           <>
             {saved.length ? (
               <>
-                <View style={[styles.metrics, { borderColor: colors.line }]}>
+                <Reveal index={0} style={[styles.metrics, { borderColor: colors.line }]}>
                   <MetricDisplay label="Loaded sessions" value={String(saved.length)} />
                   <MetricDisplay
                     label="Time in this list"
                     value={saved.reduce((sum, log) => sum + log.durationMin, 0).toLocaleString()}
                     unit="min"
                   />
-                </View>
-                <View>
+                </Reveal>
+                <Reveal index={1}>
                   <SectionHeader appearance="premium" title="Recent sessions" />
                   {saved.map((log) => (
                     <ActionRow
@@ -93,7 +94,7 @@ export function WorkoutHistoryScreen() {
                       onPress={() => navigate('workoutHistoryDetail', { id: log.id })}
                     />
                   ))}
-                </View>
+                </Reveal>
               </>
             ) : !query.isError ? (
               <EmptyState

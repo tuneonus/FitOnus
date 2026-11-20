@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import type { ChartPoint } from '../../types/health';
 import { useTheme } from '@/hooks/use-theme';
+import { useAnimatedColor } from '@/hooks/use-animated-color';
+import { useTween } from '@/hooks/use-tween';
+import { motion } from '@/shared/theme/motion';
+import { barGrowDelay } from './chart-motion';
 
 export type BarChartProps = {
   data: ChartPoint[];
@@ -15,6 +20,37 @@ export type BarChartProps = {
   formatValue?: ((value: number) => string) | undefined;
   style?: ViewStyle | undefined;
 };
+
+/**
+ * One bar. It rises from the baseline (a clipped slot, with the bar sliding up into it, so the rounded corners are never
+ * squashed), each a little after the one before it, and again if its height changes. Picking a bar fades its colour.
+ */
+function GrowingBar({
+  index,
+  barHeight,
+  color,
+}: {
+  index: number;
+  barHeight: number;
+  color: string;
+}) {
+  const grown = useTween(1, {
+    durationMs: motion.duration.chart,
+    fromZero: true,
+    restartKey: Math.round(barHeight * 10),
+    delayMs: barGrowDelay(index),
+  });
+  const fill = useAnimatedColor(color);
+  const barStyle = useAnimatedStyle(() => ({
+    backgroundColor: fill.get(),
+    transform: [{ translateY: (1 - grown.get()) * barHeight }],
+  }));
+  return (
+    <View style={[styles.slot, { height: barHeight }]}>
+      <Animated.View style={[styles.bar, { height: barHeight }, barStyle]} />
+    </View>
+  );
+}
 
 export function BarChart({
   data,
@@ -73,14 +109,10 @@ export function BarChart({
               onPress={() => setSelected(i)}
               style={styles.barColumn}
             >
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    height: barHeight,
-                    backgroundColor: isSelected ? activeColor : inactiveColor,
-                  },
-                ]}
+              <GrowingBar
+                index={i}
+                barHeight={barHeight}
+                color={isSelected ? activeColor : inactiveColor}
               />
             </TouchableOpacity>
           );
@@ -147,6 +179,10 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'flex-end',
     alignItems: 'center',
+  },
+  slot: {
+    width: '100%',
+    overflow: 'hidden',
   },
   bar: {
     width: '100%',

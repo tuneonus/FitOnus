@@ -3,6 +3,7 @@ import { idempotencyHeadersSchema } from '../../../shared/http/schemas.js';
 import { uploadedPublicImageSchema } from '../../../shared/images/public-image-schema.js';
 import { EXERCISE_DIFFICULTIES } from '../domain/exercise.js';
 import { EXTERNAL_URL_MAX_LENGTH, isExerciseImageKey, isHttpUrl } from '../domain/exercise-image.js';
+import { isWorkoutCoverKey } from '../domain/workout-cover.js';
 import { PR_RECORD_TYPES } from '../domain/personal-record.js';
 import { CALORIE_SOURCES } from '../domain/workout-session.js';
 
@@ -57,6 +58,9 @@ export const workoutPlanSummarySchema = z.object({
   isTemplate: z.boolean(),
   isAiGenerated: z.boolean(),
   tags: z.array(z.string()),
+  // Additive: the public URL of a system template's cover image (null for everything else), and its key.
+  coverImageUrl: z.string().nullable(),
+  coverImageKey: z.string().nullable(),
   exercisesCount: z.number().int().nonnegative(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -267,6 +271,16 @@ const exerciseImageKeySchema = z
 
 export const uploadedExerciseImageSchema = uploadedPublicImageSchema;
 
+/**
+ * The key the template cover upload endpoint returned, never a URL: there is no field through which an external
+ * address can enter as a cover (a `coverImageKey` that is not exactly `onusfit/workouts/<32 hex>.webp` is refused).
+ */
+const workoutCoverKeySchema = z
+  .string()
+  .refine(isWorkoutCoverKey, 'Must be an image key returned by the workout template cover upload endpoint');
+
+export const uploadedWorkoutCoverSchema = uploadedPublicImageSchema;
+
 export const createExerciseAdminRequest = {
   body: z.object({
     name: z.string().trim().min(1).max(120),
@@ -326,6 +340,7 @@ export const createAdminTemplateRequest = {
     estimatedDurationMinutes: z.number().int().positive().default(45),
     difficulty: z.enum(EXERCISE_DIFFICULTIES).default('intermediate'),
     tags: z.array(z.string().trim()).default([]),
+    coverImageKey: workoutCoverKeySchema.nullable().optional(),
     exercises: z.array(planExerciseInputSchema).min(1),
   }),
 };
@@ -339,6 +354,8 @@ export const updateAdminTemplateRequest = {
     estimatedDurationMinutes: z.number().int().positive().optional(),
     difficulty: z.enum(EXERCISE_DIFFICULTIES).optional(),
     tags: z.array(z.string().trim()).optional(),
+    // Omitted = unchanged; null = remove the cover.
+    coverImageKey: workoutCoverKeySchema.nullable().optional(),
     exercises: z.array(planExerciseInputSchema).min(1).optional(),
   }),
 };

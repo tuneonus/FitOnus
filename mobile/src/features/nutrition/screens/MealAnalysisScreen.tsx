@@ -27,6 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import { nutritionApi } from '../api/nutrition-api';
 import { TextField } from '@/shared/components/ui/TextField';
 import { mealLabels, mealOrder } from '../constants/meals';
+import { LOW_CONFIDENCE_THRESHOLD } from '../utils/detected-food';
 import type { FoodItem, MealType } from '../types/nutrition';
 
 type Row = { base: FoodItem; factor: number };
@@ -43,7 +44,7 @@ export function MealAnalysisScreen() {
   const mealParam = params.meal ?? 'lunch';
 
   const offline = useHealthStore((s) => s.status === 'offline');
-  const { logMeal, removeEntry } = useNutritionStore();
+  const { logMeal } = useNutritionStore();
   const saveLock = useRef(false);
   const [addingFood, setAddingFood] = useState(false);
   const [missingQuery, setMissingQuery] = useState('');
@@ -244,7 +245,8 @@ export function MealAnalysisScreen() {
           <View style={styles.itemsList}>
             {rows.map((r, i) => {
               const scaled = items[i]!;
-              const low = (r.base.confidence ?? 1) < 0.7;
+              // `confidence` is a 0..1 score (the photo API maps the model's high/medium/low).
+              const low = (r.base.confidence ?? 1) < LOW_CONFIDENCE_THRESHOLD;
 
               return (
                 <View

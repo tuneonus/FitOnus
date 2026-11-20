@@ -21,6 +21,8 @@ export interface UserProfileAnalyticsGoals {
   targetWeightKg: number | null;
   dailyCalorieTarget: number | null;
   dailyProteinGrams: number | null;
+  /** The member's own daily water target, else the 35 ml/kg estimate from their weight, else null. */
+  dailyWaterTargetMl: number | null;
   workoutDaysPerWeek: number | null;
 }
 

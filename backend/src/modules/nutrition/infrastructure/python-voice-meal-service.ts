@@ -6,6 +6,8 @@ import type { Logger } from '../../../shared/logging/logger.js';
 import type { VoiceMealParser } from '../application/ports.js';
 import type { DetectedFoodItem } from '../domain/meal-photo.types.js';
 import type { VoiceMealParseResult } from '../domain/voice-meal.types.js';
+import { AI_ESTIMATE_LIMITS } from '../domain/nutrition-limits.js';
+import { pythonConfidence, pythonDetectedFoodItemsSchema, pythonTotals } from './python-detected-food.js';
 
 /** Token scope Python requires for this endpoint. */
 export const VOICE_MEAL_SCOPE = 'ai:meals:voice';
@@ -19,38 +21,20 @@ const MIN_DEADLINE_MS = 1_000;
 
 export const VOICE_MEAL_UNAVAILABLE_MESSAGE = 'Voice meal parsing is temporarily unavailable. Please try again shortly.';
 
-const confidence = z.enum(['high', 'medium', 'low']);
-/** Python's reply, validated before anything is trusted. Mirrors ai-backend/contracts/voice_meal.py. */
+/** Python's reply, validated and bounded before anything is trusted. Mirrors ai-backend/contracts/voice_meal.py. */
 const pythonVoiceResponseSchema = z.object({
   outcome: z.enum(['ok', 'no_food', 'parse_failed']),
   result: z.object({
-    transcript: z.string(),
-    detectedLanguage: z.string(),
-    items: z.array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        brand: z.string().nullish(),
-        serving: z.string(),
-        servingWeightG: z.number().nullish(),
-        servingUnit: z.string().nullish(),
-        servingSize: z.number().nullish(),
-        kcal: z.number(),
-        protein: z.number(),
-        carbs: z.number(),
-        fat: z.number(),
-        fiber: z.number().nullish(),
-        confidence,
-        isAiEstimated: z.boolean(),
-      }),
-    ),
-    confidence,
-    totalKcal: z.number(),
-    totalProteinGrams: z.number(),
-    totalCarbsGrams: z.number(),
-    totalFatGrams: z.number(),
-    totalFiberGrams: z.number().nullish(),
-    unclearReason: z.string().nullish(),
+    transcript: z.string().max(AI_ESTIMATE_LIMITS.transcriptLength),
+    detectedLanguage: z.string().max(AI_ESTIMATE_LIMITS.hintLength),
+    items: pythonDetectedFoodItemsSchema,
+    confidence: pythonConfidence,
+    totalKcal: pythonTotals.kcal,
+    totalProteinGrams: pythonTotals.macroG,
+    totalCarbsGrams: pythonTotals.macroG,
+    totalFatGrams: pythonTotals.macroG,
+    totalFiberGrams: pythonTotals.fiberG.nullish(),
+    unclearReason: z.string().max(300).nullish(),
     parsedAt: z.string(),
   }),
   usage: pythonUsageSchema,

@@ -70,7 +70,8 @@ export function buildHomeNutrition({
     fat: target(source?.targets?.fatG),
     waterMl: target(source?.targets?.waterMl),
   };
-  // Water entries are append-only. Keep observed optimistic additions visible during refetch.
+  // Keep observed optimistic additions visible during refetch. A deletion updates the cached summary and this
+  // local total together (nutritionStore.deleteWater), so the larger of the two is still the right one.
   const localWater =
     selectedDate === date && (cachedSummary?.date === date || waterMl > 0) ? waterMl : null;
   const water = source ? Math.max(source.consumed.waterMl, localWater ?? 0) : localWater;

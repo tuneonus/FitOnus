@@ -79,9 +79,9 @@ Setup (DEV, no new credentials needed if you reuse the existing key file):
 
 Android push notifications can carry one picture (FCM `android.notification.image`, shown as the expanded "big picture"). iOS is out of scope: the image is set on the Android block only and iOS devices receive the text as before.
 
-**Storage policy.** Every image the backend writes to the public bucket follows one policy (`src/shared/images`, `src/shared/storage`), described for all features in [media.md](media.md) (notifications and exercises share the same uploader, processor and store):
+**Storage policy.** Every image the backend writes to the public bucket follows one policy (`src/shared/images`, `src/shared/storage`), described for all features in [media.md](media.md) (notifications, exercises and workout template covers share the same uploader, processor and store):
 
-* one root prefix, `onusfit/`, then one folder per feature (`onusfit/notifications/` and `onusfit/exercises/`);
+* one root prefix, `onusfit/`, then one folder per feature (`onusfit/notifications/`, `onusfit/exercises/` and `onusfit/workouts/`);
 * every stored image is an optimized **WebP**, named by 128 random bits: `onusfit/<feature>/<32 hex>.webp`;
 * the bucket is public, so the list of features is closed and holds only admin-authored content. **Private member images (meal photos, progress photos, avatars) are never stored in this bucket**, and nothing in the image code can be pointed at them;
 * objects written before this policy are never moved, rewritten or deleted.

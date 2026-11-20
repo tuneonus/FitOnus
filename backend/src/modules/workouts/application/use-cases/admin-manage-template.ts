@@ -1,6 +1,13 @@
 import crypto from 'node:crypto';
 import { AppError } from '../../../../shared/errors/app-error.js';
+import {
+  assertImageObjectsExist,
+  assertImageStorageConfigured,
+  type ImageStorageDeps,
+} from '../../../../shared/images/public-image-check.js';
+import type { PublicImageUrlResolver } from '../../../../shared/images/public-image-url.js';
 import type { ExerciseDifficulty } from '../../domain/exercise.js';
+import { NO_WORKOUT_COVER_URLS } from '../../domain/workout-cover.js';
 import { WorkoutPlan, WorkoutPlanExercise } from '../../domain/workout-plan.js';
 import type { IExerciseRepository, IWorkoutAuditLogger, IWorkoutPlanRepository } from '../ports.js';
 import { toWorkoutPlanView, type WorkoutPlanView } from '../workout-view.js';
@@ -14,6 +21,8 @@ export interface CreateTemplateAdminInput {
   estimatedDurationMinutes?: number;
   difficulty?: ExerciseDifficulty;
   tags?: string[];
+  /** Key returned by the template cover upload endpoint. */
+  coverImageKey?: string | null;
   exercises: CreateWorkoutPlanExerciseInput[];
   ipAddress?: string;
   userAgent?: string;
@@ -28,17 +37,42 @@ export interface UpdateTemplateAdminInput {
   estimatedDurationMinutes?: number;
   difficulty?: ExerciseDifficulty;
   tags?: string[];
+  /** Omitted = unchanged; null = remove the cover; a key = the new cover (the old object is left in storage). */
+  coverImageKey?: string | null;
   exercises?: CreateWorkoutPlanExerciseInput[];
   ipAddress?: string;
   userAgent?: string;
 }
+
+/** Cover support for saving a template. Omitted = uploads are off: any request carrying a cover key is refused. */
+export type TemplateCoverDeps = ImageStorageDeps;
 
 export class AdminManageTemplateUseCase {
   constructor(
     private readonly workoutRepo: IWorkoutPlanRepository,
     private readonly exerciseRepo: IExerciseRepository,
     private readonly auditLogger: IWorkoutAuditLogger,
+    private readonly images?: TemplateCoverDeps,
   ) {}
+
+  private get resolveCoverUrl(): PublicImageUrlResolver {
+    return this.images?.resolveUrl ?? NO_WORKOUT_COVER_URLS;
+  }
+
+  /**
+   * A cover is only worth saving when storage is configured and the object is really there. Saving a template is the
+   * final step (there are no drafts), so the existence check runs here, before anything is written. The key's shape
+   * is already pinned by the request schema (`onusfit/workouts/<hex>.webp`) and again by the database.
+   */
+  private async assertCoverSaveable(key: string): Promise<void> {
+    const storage: ImageStorageDeps = {
+      store: this.images?.store ?? null,
+      resolveUrl: this.resolveCoverUrl,
+      logger: this.images?.logger,
+    };
+    assertImageStorageConfigured(storage, key, 'a workout template');
+    await assertImageObjectsExist(storage, [key], 'workout cover');
+  }
 
   async list(
     page = 1,
@@ -57,7 +91,7 @@ export class AdminManageTemplateUseCase {
 
     const { templates, total } = await this.workoutRepo.listSystemTemplates(offset, safeLimit, search);
     return {
-      templates: templates.map((t) => toWorkoutPlanView(t, true)),
+      templates: templates.map((t) => toWorkoutPlanView(t, true, this.resolveCoverUrl)),
       total,
       page: safePage,
       limit: safeLimit,
@@ -66,6 +100,9 @@ export class AdminManageTemplateUseCase {
   }
 
   async create(input: CreateTemplateAdminInput): Promise<WorkoutPlanView> {
+    const coverImageKey = input.coverImageKey ?? null;
+    if (coverImageKey !== null) await this.assertCoverSaveable(coverImageKey);
+
     for (const exInput of input.exercises) {
       const exercise = await this.exerciseRepo.findById(exInput.exerciseId);
       if (!exercise || exercise.deletedAt !== null) {
@@ -109,6 +146,7 @@ export class AdminManageTemplateUseCase {
       isTemplate: true,
       isAiGenerated: false,
       tags: input.tags ?? [],
+      coverImageKey,
       exercises: planExercises,
       createdAt: now,
       updatedAt: now,
@@ -120,19 +158,26 @@ export class AdminManageTemplateUseCase {
     await this.auditLogger.logAction(
       input.adminId,
       'workout.template.create',
-      { templateId: created.id, name: created.name },
+      { templateId: created.id, name: created.name, hasCover: created.coverImageKey !== null },
       null,
       input.ipAddress,
       input.userAgent,
     );
 
-    return toWorkoutPlanView(created, true);
+    return toWorkoutPlanView(created, true, this.resolveCoverUrl);
   }
 
   async update(input: UpdateTemplateAdminInput): Promise<WorkoutPlanView> {
     const existing = await this.workoutRepo.findById(input.templateId);
     if (!existing || existing.deletedAt !== null || !existing.isTemplate) {
       throw new AppError('not_found', 'NOT_FOUND', 'System workout template not found.');
+    }
+
+    // Only a key that is new to this template is checked against storage: editing the text of a template that
+    // already has a cover never depends on R2 being reachable.
+    const newCover = input.coverImageKey;
+    if (typeof newCover === 'string' && newCover !== existing.coverImageKey) {
+      await this.assertCoverSaveable(newCover);
     }
 
     let updatedExercises = existing.exercises;
@@ -179,6 +224,8 @@ export class AdminManageTemplateUseCase {
       isTemplate: true,
       isAiGenerated: existing.isAiGenerated,
       tags: input.tags ?? [...existing.tags],
+      // Replacing or removing a cover only changes the reference: the previous object stays in storage.
+      coverImageKey: input.coverImageKey !== undefined ? input.coverImageKey : existing.coverImageKey,
       exercises: [...updatedExercises],
       createdAt: existing.createdAt,
       updatedAt: new Date(),
@@ -193,13 +240,18 @@ export class AdminManageTemplateUseCase {
     await this.auditLogger.logAction(
       input.adminId,
       'workout.template.update',
-      { templateId: saved.id, name: saved.name },
+      {
+        templateId: saved.id,
+        name: saved.name,
+        hasCover: saved.coverImageKey !== null,
+        coverChanged: saved.coverImageKey !== existing.coverImageKey,
+      },
       null,
       input.ipAddress,
       input.userAgent,
     );
 
-    return toWorkoutPlanView(saved, true);
+    return toWorkoutPlanView(saved, true, this.resolveCoverUrl);
   }
 
   async delete(adminId: string, templateId: string, ipAddress?: string, userAgent?: string): Promise<void> {
