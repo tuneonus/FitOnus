@@ -14,7 +14,10 @@ export interface ExerciseProps {
   category: string;
   difficulty: ExerciseDifficulty;
   isCompound: boolean;
+  /** External address an admin typed (http or https). */
   imageUrl: string | null;
+  /** Key of an image an admin uploaded (`onusfit/exercises/<hex>.webp`); takes precedence over `imageUrl`. */
+  imageKey?: string | null;
   videoUrl: string | null;
   createdBy: string | null;
   isSystem: boolean;
@@ -37,6 +40,7 @@ export class Exercise {
   readonly difficulty: ExerciseDifficulty;
   readonly isCompound: boolean;
   readonly imageUrl: string | null;
+  readonly imageKey: string | null;
   readonly videoUrl: string | null;
   readonly createdBy: string | null;
   readonly isSystem: boolean;
@@ -58,6 +62,7 @@ export class Exercise {
     this.difficulty = props.difficulty;
     this.isCompound = props.isCompound;
     this.imageUrl = props.imageUrl;
+    this.imageKey = props.imageKey ?? null;
     this.videoUrl = props.videoUrl;
     this.createdBy = props.createdBy;
     this.isSystem = props.isSystem;

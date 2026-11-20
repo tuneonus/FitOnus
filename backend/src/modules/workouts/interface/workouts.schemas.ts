@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { idempotencyHeadersSchema } from '../../../shared/http/schemas.js';
+import { uploadedPublicImageSchema } from '../../../shared/images/public-image-schema.js';
 import { EXERCISE_DIFFICULTIES } from '../domain/exercise.js';
+import { EXTERNAL_URL_MAX_LENGTH, isExerciseImageKey, isHttpUrl } from '../domain/exercise-image.js';
 import { PR_RECORD_TYPES } from '../domain/personal-record.js';
 import { CALORIE_SOURCES } from '../domain/workout-session.js';
 
@@ -19,7 +21,10 @@ export const exerciseViewSchema = z.object({
   category: z.string(),
   difficulty: z.enum(EXERCISE_DIFFICULTIES),
   isCompound: z.boolean(),
+  // The picture to show: the uploaded image when there is one, otherwise the external URL (unchanged for the app).
   imageUrl: z.string().nullable(),
+  imageKey: z.string().nullable(),
+  externalImageUrl: z.string().nullable(),
   videoUrl: z.string().nullable(),
   isSystem: z.boolean(),
   createdAt: z.string().datetime(),
@@ -239,6 +244,29 @@ export const listPersonalRecordsRequest = {
 
 // --- Admin Request Schemas ---
 
+/**
+ * An external address typed by an admin: an absolute http or https URL and nothing else. `javascript:`, `data:`,
+ * `file:`, `ftp:` and relative or protocol-relative addresses are refused (they would be shown in the app and in the
+ * admin console). https is preferred (a release Android build will not load cleartext http images), but http is still
+ * accepted so addresses saved before this rule stay valid.
+ */
+const externalUrlSchema = z
+  .string()
+  .trim()
+  .max(EXTERNAL_URL_MAX_LENGTH, `Must be at most ${EXTERNAL_URL_MAX_LENGTH} characters.`)
+  .refine(isHttpUrl, 'Must be an http or https URL.');
+
+/**
+ * The key the exercise image upload endpoint returned, never a URL: there is no field through which an external
+ * address can enter as an uploaded image (an `imageKey` that is not exactly `onusfit/exercises/<32 hex>.webp` is
+ * refused, as are keys of other features).
+ */
+const exerciseImageKeySchema = z
+  .string()
+  .refine(isExerciseImageKey, 'Must be an image key returned by the exercise image upload endpoint');
+
+export const uploadedExerciseImageSchema = uploadedPublicImageSchema;
+
 export const createExerciseAdminRequest = {
   body: z.object({
     name: z.string().trim().min(1).max(120),
@@ -252,8 +280,9 @@ export const createExerciseAdminRequest = {
     category: z.string().trim().min(1).max(50),
     difficulty: z.enum(EXERCISE_DIFFICULTIES),
     isCompound: z.boolean().default(false),
-    imageUrl: z.string().url().nullable().optional(),
-    videoUrl: z.string().url().nullable().optional(),
+    imageUrl: externalUrlSchema.nullable().optional(),
+    imageKey: exerciseImageKeySchema.nullable().optional(),
+    videoUrl: externalUrlSchema.nullable().optional(),
   }),
 };
 
@@ -271,8 +300,9 @@ export const updateExerciseAdminRequest = {
     category: z.string().trim().min(1).max(50).optional(),
     difficulty: z.enum(EXERCISE_DIFFICULTIES).optional(),
     isCompound: z.boolean().optional(),
-    imageUrl: z.string().url().nullable().optional(),
-    videoUrl: z.string().url().nullable().optional(),
+    imageUrl: externalUrlSchema.nullable().optional(),
+    imageKey: exerciseImageKeySchema.nullable().optional(),
+    videoUrl: externalUrlSchema.nullable().optional(),
   }),
 };
 

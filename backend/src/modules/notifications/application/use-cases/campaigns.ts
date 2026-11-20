@@ -22,13 +22,21 @@ import {
   type ServerCategory,
 } from '../../domain/notification-policy.js';
 import { normalizeAudience } from '../../domain/audience.js';
+import { NO_IMAGE_URLS, requiredObjectKeys } from '../../domain/notification-image.js';
+import {
+  assertImageObjectsExist,
+  assertImageStorageConfigured,
+} from '../../../../shared/images/public-image-check.js';
 import type {
   AdminAuditPort,
   AudiencePreview,
   CampaignContent,
+  CampaignRecord,
   CampaignRepository,
   DeliveryRecord,
+  NotificationImages,
 } from '../ports.js';
+import type { DispatcherLogger } from '../services/notification-dispatcher.js';
 import { toCampaignView, type CampaignView } from '../views.js';
 
 export type LaunchMode = 'draft' | 'send_now' | 'schedule';
@@ -38,6 +46,8 @@ export interface CampaignInput {
   body: string;
   category: ServerCategory;
   destination: string | null;
+  /** Key returned by the image upload endpoint. Omitted or null = a text-only notification. */
+  imageKey?: string | null;
   audience: { type: Audience['type']; userIds?: string[]; filter?: Audience['filter'] };
 }
 
@@ -55,16 +65,52 @@ interface Deps {
   isPushAvailable: () => boolean;
   /** Wakes the dispatcher so a "send now" does not wait for the next poll. */
   onLaunched: () => void;
+  /** Image support. Omitted = images are off: any request carrying an image key is refused. */
+  images?: NotificationImages;
+  logger?: DispatcherLogger;
   now?: () => Date;
 }
+
+/** One place that turns a stored campaign into its API shape, so every response derives image URLs the same way. */
+const present = (
+  deps: Pick<Deps, 'images'>,
+  campaign: CampaignRecord,
+  deliveries: Parameters<typeof toCampaignView>[1] = null,
+): CampaignView => toCampaignView(campaign, deliveries, deps.images?.resolveUrl ?? NO_IMAGE_URLS);
 
 const toContent = (input: CampaignInput): CampaignContent => ({
   title: input.title.trim(),
   body: input.body.trim(),
   category: input.category,
   destination: input.destination,
+  imageKey: input.imageKey ?? null,
   audience: normalizeAudience(input.audience),
 });
+
+/**
+ * An image key is only meaningful when storage is configured and, once the notification is about to go out, when
+ * the object is really there. Drafts skip the existence check: saving must stay cheap and the key came straight
+ * from the upload endpoint. The key's shape is already pinned by the request schema (the canonical
+ * `onusfit/notifications/<hex>.webp` or the legacy `notifications/<hex>.jpg|png`), so there is no way to reference
+ * anything outside this system's own uploads.
+ */
+async function assertImageUsable(
+  deps: Pick<Deps, 'images' | 'logger'>,
+  key: string | null,
+  verifyExists: boolean,
+): Promise<void> {
+  if (key === null) return;
+  const storage = {
+    store: deps.images?.store ?? null,
+    resolveUrl: deps.images?.resolveUrl ?? NO_IMAGE_URLS,
+    logger: deps.logger,
+  };
+  assertImageStorageConfigured(storage, key, 'a notification');
+  if (!verifyExists) return;
+  // Every object the notification needs, not just the one the key names: a canonical image is useless without the
+  // JPEG that goes to FCM, so a pair that was only half written is refused here rather than sent without a picture.
+  await assertImageObjectsExist(storage, requiredObjectKeys(key), 'notification');
+}
 
 function resolveSchedule(
   mode: Exclude<LaunchMode, 'draft'>,
@@ -119,6 +165,8 @@ async function assertLaunchable(
       'No active users match this audience and their notification preferences.',
     );
   }
+  // Last, because it is the only check that leaves this server: do not call out for a request that would fail anyway.
+  await assertImageUsable(deps, content.imageKey, true);
   return preview;
 }
 
@@ -138,6 +186,7 @@ export class CreateCampaignUseCase {
 
     const create = async (complete?: CompleteIdempotentWork<CampaignView>): Promise<CampaignView> => {
       if (input.mode !== 'draft') await assertLaunchable(this.deps, content, input.confirmBulk === true);
+      else await assertImageUsable(this.deps, content.imageKey, false);
       const view = await this.deps.uow.run(async () => {
         const campaign = await this.deps.campaigns.insert({
           ...content,
@@ -154,12 +203,13 @@ export class CreateCampaignUseCase {
             category: content.category,
             audienceType: content.audience.type,
             audienceUsers: content.audience.userIds.length,
+            hasImage: content.imageKey !== null,
             scheduledAt: scheduledAt?.toISOString() ?? null,
           },
           ipAddress: meta.ip ?? null,
           userAgent: meta.userAgent ?? null,
         });
-        const created = toCampaignView(campaign);
+        const created = present(this.deps, campaign);
         await complete?.(created);
         return created;
       });
@@ -168,10 +218,14 @@ export class CreateCampaignUseCase {
     };
 
     if (!idempotencyKey) return { value: await create(), replayed: false };
+    // A text-only request fingerprints exactly as it did before images existed, so a retry that straddles a deploy
+    // still replays instead of being refused as a reused key. The image takes part only when there is one.
+    const { imageKey, ...textContent } = content;
     return this.deps.idempotency.execute(
       { scope: actor.userId, operation: 'notifications.campaign.create', key: idempotencyKey },
       {
-        ...content,
+        ...textContent,
+        ...(imageKey ? { imageKey } : {}),
         mode: input.mode,
         scheduledAt: scheduledAt && input.mode === 'schedule' ? scheduledAt.toISOString() : null,
         confirmBulk: input.confirmBulk === true,
@@ -192,16 +246,22 @@ export class UpdateCampaignUseCase {
   ): Promise<CampaignView> {
     assertPermission(actor, 'notifications:send');
     const content = toContent(input);
+    await assertImageUsable(this.deps, content.imageKey, false);
     const updated = await this.deps.campaigns.updateDraft(id, content, input.version);
     if (!updated) throw await this.explainRefusal(id, 'edited');
     await this.deps.audit.recordAuditLog({
       adminId: actor.userId,
       action: 'notification.update',
-      details: { campaignId: id, category: content.category, audienceType: content.audience.type },
+      details: {
+        campaignId: id,
+        category: content.category,
+        audienceType: content.audience.type,
+        hasImage: content.imageKey !== null,
+      },
       ipAddress: meta.ip ?? null,
       userAgent: meta.userAgent ?? null,
     });
-    return toCampaignView(updated);
+    return present(this.deps, updated);
   }
 
   private async explainRefusal(id: string, verb: string): Promise<AppError> {
@@ -264,12 +324,13 @@ export class SendCampaignUseCase {
             campaignId: id,
             category: draft.category,
             audienceType: draft.audience.type,
+            hasImage: draft.imageKey !== null,
             scheduledAt: scheduledAt.toISOString(),
           },
           ipAddress: meta.ip ?? null,
           userAgent: meta.userAgent ?? null,
         });
-        const created = toCampaignView(scheduled);
+        const created = present(this.deps, scheduled);
         await complete?.(created);
         return created;
       });
@@ -308,12 +369,12 @@ export class CancelCampaignUseCase {
       ipAddress: meta.ip ?? null,
       userAgent: meta.userAgent ?? null,
     });
-    return toCampaignView(cancelled);
+    return present(this.deps, cancelled);
   }
 }
 
 export class PreviewCampaignUseCase {
-  constructor(private readonly deps: Pick<Deps, 'campaigns' | 'isPushAvailable'>) {}
+  constructor(private readonly deps: Pick<Deps, 'campaigns' | 'isPushAvailable' | 'images' | 'logger'>) {}
 
   async execute(
     actor: Actor,
@@ -322,10 +383,18 @@ export class PreviewCampaignUseCase {
     audience: AudiencePreview;
     requiresConfirmation: boolean;
     pushAvailable: boolean;
-    push: { title: string; body: string; category: ServerCategory; destination: string | null };
+    push: {
+      title: string;
+      body: string;
+      category: ServerCategory;
+      destination: string | null;
+      imageUrl: string | null;
+    };
   }> {
     assertPermission(actor, 'notifications:read');
     const content = toContent(input);
+    // Fail here, on the review step, rather than after the admin has pressed Send.
+    await assertImageUsable(this.deps, content.imageKey, true);
     const audience = await this.deps.campaigns.previewAudience(content.audience, content.category);
     return {
       audience,
@@ -336,24 +405,26 @@ export class PreviewCampaignUseCase {
         body: content.body,
         category: content.category,
         destination: content.destination,
+        // The preview shows what the phone will receive (the push JPEG), not the stored WebP.
+        imageUrl: (this.deps.images?.resolvePushUrl ?? NO_IMAGE_URLS)(content.imageKey),
       },
     };
   }
 }
 
 export class GetCampaignUseCase {
-  constructor(private readonly deps: Pick<Deps, 'campaigns'>) {}
+  constructor(private readonly deps: Pick<Deps, 'campaigns' | 'images'>) {}
 
   async execute(actor: Actor, id: string): Promise<CampaignView> {
     assertPermission(actor, 'notifications:read');
     const campaign = await this.deps.campaigns.findById(id);
     if (!campaign) throw notFound('NOT_FOUND', 'Notification not found.');
-    return toCampaignView(campaign, await this.deps.campaigns.deliveryCounts(id));
+    return present(this.deps, campaign, await this.deps.campaigns.deliveryCounts(id));
   }
 }
 
 export class ListCampaignsUseCase {
-  constructor(private readonly deps: Pick<Deps, 'campaigns'>) {}
+  constructor(private readonly deps: Pick<Deps, 'campaigns' | 'images'>) {}
 
   async execute(
     actor: Actor,
@@ -362,7 +433,7 @@ export class ListCampaignsUseCase {
     assertPermission(actor, 'notifications:read');
     const page = await this.deps.campaigns.list(query);
     return {
-      items: page.items.map((campaign) => toCampaignView(campaign)),
+      items: page.items.map((campaign) => present(this.deps, campaign)),
       meta: toPaginationMeta(query, page.total),
     };
   }

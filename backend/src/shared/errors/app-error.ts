@@ -11,6 +11,7 @@ export type ErrorKind =
   | 'method_not_allowed'
   | 'conflict'
   | 'payload_too_large'
+  | 'unsupported_media_type'
   | 'unprocessable'
   | 'rate_limited'
   | 'unavailable'
@@ -52,6 +53,11 @@ export type ErrorCode =
   | 'BULK_CONFIRMATION_REQUIRED'
   | 'NO_ELIGIBLE_RECIPIENTS'
   | 'PUSH_NOT_CONFIGURED'
+  | 'UNSUPPORTED_MEDIA_TYPE'
+  | 'INVALID_IMAGE'
+  | 'IMAGE_NOT_FOUND'
+  | 'IMAGE_STORAGE_NOT_CONFIGURED'
+  | 'IMAGE_STORAGE_UNAVAILABLE'
   | 'SERVICE_UNAVAILABLE'
   | 'INTERNAL_ERROR';
 

@@ -55,6 +55,18 @@ function main(): void {
     }
   }
 
+  // Only the bucket name and public origin are logged (neither is a secret); the access keys never are.
+  if (!config.media.r2) {
+    logger.warn(
+      'R2_* not configured: notification images cannot be uploaded (text notifications are unaffected)',
+    );
+  } else {
+    logger.info(
+      { r2Bucket: config.media.r2.bucket, mediaOrigin: config.media.r2.publicBaseUrl },
+      'Notification image storage configured (Cloudflare R2)',
+    );
+  }
+
   const pool = createPool(config.database, logger);
   const container = createContainer(config, pool, logger);
   const app = createApp({ config, logger, container });

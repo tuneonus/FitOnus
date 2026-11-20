@@ -108,3 +108,51 @@ describe('push notification configuration', () => {
     ).toHaveLength(40);
   });
 });
+
+/**
+ * How to run a server that cannot send a real push. Two things here are easy to get wrong and both were met in
+ * practice, so they are pinned: the dispatcher flag does not control whether sending is possible, and push
+ * credentials can arrive through either of two variables.
+ */
+describe('making a server unable to send', () => {
+  const encoded = Buffer.from(JSON.stringify(account)).toString('base64');
+
+  it('NOTIFICATIONS_DISPATCHER_ENABLED=false does not remove push: credentials alone decide whether sending is possible', () => {
+    const config = loadConfig({
+      ...base,
+      FCM_SERVICE_ACCOUNT_BASE64: encoded,
+      NOTIFICATIONS_DISPATCHER_ENABLED: 'false',
+    });
+    expect(config.notifications.dispatcher.enabled).toBe(false);
+    expect(config.notifications.fcm).not.toBeNull();
+  });
+
+  it('blanking FCM_SERVICE_ACCOUNT_JSON does not turn push off while FCM_SERVICE_ACCOUNT_BASE64 is still set', () => {
+    const config = loadConfig({ ...base, FCM_SERVICE_ACCOUNT_JSON: '', FCM_SERVICE_ACCOUNT_BASE64: encoded });
+    expect(config.notifications.fcm).not.toBeNull();
+  });
+
+  it('blanking the other one has the same limit: either variable alone keeps push on', () => {
+    const config = loadConfig({
+      ...base,
+      FCM_SERVICE_ACCOUNT_JSON: JSON.stringify(account),
+      FCM_SERVICE_ACCOUNT_BASE64: '',
+    });
+    expect(config.notifications.fcm).not.toBeNull();
+  });
+
+  it('push is off only when BOTH are empty', () => {
+    expect(
+      loadConfig({ ...base, FCM_SERVICE_ACCOUNT_JSON: '', FCM_SERVICE_ACCOUNT_BASE64: '' }).notifications.fcm,
+    ).toBeNull();
+    expect(
+      loadConfig({ ...base, FCM_SERVICE_ACCOUNT_JSON: '  ', FCM_SERVICE_ACCOUNT_BASE64: '  ' }).notifications
+        .fcm,
+    ).toBeNull();
+  });
+
+  it('FCM_DRY_RUN=true keeps the credentials but asks the provider to validate only', () => {
+    const config = loadConfig({ ...base, FCM_SERVICE_ACCOUNT_BASE64: encoded, FCM_DRY_RUN: 'true' });
+    expect(config.notifications.fcm?.dryRun).toBe(true);
+  });
+});

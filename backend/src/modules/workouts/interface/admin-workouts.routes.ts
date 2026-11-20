@@ -1,3 +1,4 @@
+import type { RequestHandler } from 'express';
 import { z } from 'zod';
 import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
 import type { WorkoutAdminController } from './admin-workouts.controller.js';
@@ -11,13 +12,23 @@ import {
   listExercisesRequest,
   updateAdminTemplateRequest,
   updateExerciseAdminRequest,
+  uploadedExerciseImageSchema,
   workoutPlanDetailSchema,
   workoutStatsSchema,
 } from './workouts.schemas.js';
 
 const tags = ['Admin Workouts'];
 
-export function createWorkoutAdminRoutes(basePath: string, controller: WorkoutAdminController): RouteGroup {
+export interface WorkoutAdminRateLimiters {
+  /** Image uploads: each one decodes and re-encodes a picture and writes to the public bucket. */
+  adminImageUploads: RequestHandler;
+}
+
+export function createWorkoutAdminRoutes(
+  basePath: string,
+  controller: WorkoutAdminController,
+  limiters?: WorkoutAdminRateLimiters,
+): RouteGroup {
   return {
     basePath,
     routes: [
@@ -39,6 +50,32 @@ export function createWorkoutAdminRoutes(basePath: string, controller: WorkoutAd
         },
         errorStatuses: [401, 403],
         handler: controller.listExercises,
+      }),
+
+      // 0b. Upload an exercise picture
+      defineRoute({
+        method: 'post',
+        path: '/exercises/images',
+        summary: 'Admin Upload Exercise Image',
+        description:
+          'The request body is the raw image file, not JSON or multipart: send Content-Type image/jpeg, image/png, ' +
+          'image/webp or image/heic. At most 10 MB, 8192 px on a side and 40 megapixels (HEIC: 16). The file content ' +
+          'is inspected, so the declared type alone is not trusted. The image is converted to an optimized WebP (at ' +
+          'most 1600 px on the long side) with all metadata (EXIF, GPS) removed and stored in the public media bucket ' +
+          'under onusfit/exercises/ with a random name. Returns the imageKey to send when creating or updating an ' +
+          'exercise, and its public imageUrl. Uploading attaches nothing by itself. Answers 503 when R2 is not ' +
+          'configured. Only for admin-authored artwork: the bucket is public.',
+        tags,
+        access: { kind: 'permission', permission: 'admin:access' },
+        middleware: limiters ? [limiters.adminImageUploads] : [],
+        response: {
+          status: 201,
+          description: 'Stored image',
+          message: 'Image uploaded',
+          schema: uploadedExerciseImageSchema,
+        },
+        errorStatuses: [400, 401, 403, 413, 415, 422, 503],
+        handler: controller.uploadImage,
       }),
 
       // 1. Create System Exercise

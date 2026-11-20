@@ -37,6 +37,10 @@ import { createAppSettingsModule, type AppSettingsModule } from './modules/app-s
 import type { RouteGroup } from './shared/http/route.js';
 import { IdempotencyService } from './shared/idempotency/idempotency.js';
 import { PgIdempotencyStore } from './shared/idempotency/pg-idempotency-store.js';
+import { ImageProcessor } from './shared/images/image-processor.js';
+import { LibheifDecoder } from './shared/images/libheif-decoder.js';
+import type { PublicObjectStore } from './shared/storage/object-store.js';
+import { R2ObjectStore } from './shared/storage/r2-object-store.js';
 import type { Logger } from './shared/logging/logger.js';
 import { Argon2PasswordHasher } from './shared/security/argon2-password-hasher.js';
 import { HmacKeyedHasher } from './shared/security/hmac-keyed-hasher.js';
@@ -57,6 +61,8 @@ export interface Container {
 export interface ContainerOverrides {
   /** Replaces the push provider (tests inject a fake; production builds it from FCM_* configuration). */
   pushSender?: PushSender | null;
+  /** Replaces the R2 image store (tests inject a fake so no test ever reaches real storage). */
+  imageStore?: PublicObjectStore | null;
 }
 
 /**
@@ -143,12 +149,35 @@ export function createContainer(
     limiters: rateLimiters,
     isProduction: config.isProduction,
   });
+  const r2 = config.media.r2;
+  const imageStore: PublicObjectStore | null =
+    overrides.imageStore !== undefined
+      ? overrides.imageStore
+      : r2
+        ? new R2ObjectStore({
+            accountId: r2.accountId,
+            accessKeyId: r2.accessKeyId,
+            secretAccessKey: r2.secretAccessKey,
+            bucket: r2.bucket,
+            timeoutMs: r2.timeoutMs,
+          })
+        : null;
+  // One image processor and one store for every image the backend puts in the public media bucket (notifications,
+  // exercises). HEIC is decoded only when enabled. Tests inject a fake store, so no test can reach real storage.
+  const publicImages = {
+    store: imageStore,
+    publicBaseUrl: r2?.publicBaseUrl ?? null,
+    processor: new ImageProcessor({ heic: config.media.heicEnabled ? new LibheifDecoder() : null }),
+  };
   const workouts = createWorkoutsModule({
     memberBasePath: `${API_PREFIX}/workouts`,
     adminBasePath: `${API_PREFIX}/admin/workouts`,
     db: database,
     uow,
     idempotency,
+    images: publicImages,
+    limiters: { adminImageUploads: rateLimiters.adminImageUploads },
+    logger,
   });
   const appSettings = createAppSettingsModule({
     adminBasePath: `${API_PREFIX}/admin/application-settings`,
@@ -284,6 +313,7 @@ export function createContainer(
       maxAttempts: config.notifications.dispatcher.maxAttempts,
       pollIntervalMs: config.notifications.dispatcher.pollIntervalMs,
     },
+    images: publicImages,
     logger,
   });
 

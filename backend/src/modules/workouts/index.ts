@@ -1,7 +1,12 @@
+import type { RequestHandler } from 'express';
 import type { SqlExecutor } from '../../database/transaction.js';
 import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import type { IdempotencyService } from '../../shared/idempotency/idempotency.js';
+import type { ImageLogger } from '../../shared/images/public-image-check.js';
+import type { ImageProcessor } from '../../shared/images/image-processor.js';
+import { createFeatureImageUrlResolver } from '../../shared/images/public-image-url.js';
+import type { PublicObjectStore } from '../../shared/storage/object-store.js';
 import { AdminManageExerciseUseCase } from './application/use-cases/admin-manage-exercise.js';
 import { AdminManageTemplateUseCase } from './application/use-cases/admin-manage-template.js';
 import { CreateWorkoutPlanUseCase } from './application/use-cases/create-workout-plan.js';
@@ -14,6 +19,7 @@ import { ListExercisesUseCase } from './application/use-cases/list-exercises.js'
 import { ListPersonalRecordsUseCase } from './application/use-cases/list-personal-records.js';
 import { ListWorkoutPlansUseCase } from './application/use-cases/list-workout-plans.js';
 import { ListWorkoutSessionsUseCase } from './application/use-cases/list-workout-sessions.js';
+import { UploadExerciseImageUseCase } from './application/use-cases/upload-exercise-image.js';
 import { LogWorkoutSessionUseCase } from './application/use-cases/log-workout-session.js';
 import { UpdateWorkoutPlanUseCase } from './application/use-cases/update-workout-plan.js';
 import { PgExerciseRepository } from './infrastructure/pg-exercise-repository.js';
@@ -51,6 +57,18 @@ export function createWorkoutsModule(deps: {
   db: SqlExecutor;
   uow: UnitOfWork;
   idempotency?: IdempotencyService;
+  /**
+   * Exercise images. `store` null (R2 not configured) turns uploads off; exercises without an uploaded image are
+   * unaffected. `publicBaseUrl` is the trusted origin every uploaded image URL is built from.
+   */
+  images?: {
+    store: PublicObjectStore | null;
+    publicBaseUrl: string | null;
+    /** Validates and converts uploads. Null/omitted turns uploads off. */
+    processor?: Pick<ImageProcessor, 'process'> | null;
+  };
+  limiters?: { adminImageUploads: RequestHandler };
+  logger?: ImageLogger | undefined;
 }): WorkoutsModule {
   const exerciseRepo = new PgExerciseRepository(deps.db);
   const workoutRepo = new PgWorkoutPlanRepository(deps.db);
@@ -58,10 +76,19 @@ export function createWorkoutsModule(deps: {
   const prRepo = new PgPersonalRecordRepository(deps.db);
   const auditLogger = new PgWorkoutAuditLogger(deps.db);
 
+  // Uploaded exercise images: the URL is only ever built from the trusted media origin and a canonical key.
+  const resolveImageUrl = createFeatureImageUrlResolver(deps.images?.publicBaseUrl ?? null, 'exercises');
+  const imageProcessor = deps.images?.processor;
+  const imageDeps = {
+    store: deps.images?.store ?? null,
+    resolveUrl: resolveImageUrl,
+    logger: deps.logger,
+  };
+
   // Member use cases
   const memberController = createWorkoutMemberController({
-    listExercises: new ListExercisesUseCase(exerciseRepo),
-    getExercise: new GetExerciseUseCase(exerciseRepo),
+    listExercises: new ListExercisesUseCase(exerciseRepo, resolveImageUrl),
+    getExercise: new GetExerciseUseCase(exerciseRepo, resolveImageUrl),
     listWorkoutPlans: new ListWorkoutPlansUseCase(workoutRepo),
     getWorkoutPlan: new GetWorkoutPlanUseCase(workoutRepo),
     createWorkoutPlan: new CreateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
@@ -75,15 +102,20 @@ export function createWorkoutsModule(deps: {
 
   // Admin use cases
   const adminController = createWorkoutAdminController({
-    listExercises: new ListExercisesUseCase(exerciseRepo),
-    manageExercise: new AdminManageExerciseUseCase(exerciseRepo, auditLogger),
+    listExercises: new ListExercisesUseCase(exerciseRepo, resolveImageUrl),
+    manageExercise: new AdminManageExerciseUseCase(exerciseRepo, auditLogger, imageDeps),
+    uploadExerciseImage: new UploadExerciseImageUseCase({
+      ...imageDeps,
+      process: imageProcessor ? (bytes) => imageProcessor.process(bytes, 'exercises') : null,
+      audit: auditLogger,
+    }),
     manageTemplate: new AdminManageTemplateUseCase(workoutRepo, exerciseRepo, auditLogger),
     getStats: new GetWorkoutStatsUseCase(exerciseRepo, workoutRepo, sessionRepo),
   });
 
   return {
     memberRoutes: createWorkoutMemberRoutes(deps.memberBasePath, memberController),
-    adminRoutes: createWorkoutAdminRoutes(deps.adminBasePath, adminController),
+    adminRoutes: createWorkoutAdminRoutes(deps.adminBasePath, adminController, deps.limiters),
     exerciseRepo,
     workoutRepo,
     sessionRepo,

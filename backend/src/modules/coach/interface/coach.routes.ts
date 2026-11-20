@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
 import { z } from 'zod';
+import { AUDIO_BODY_LIMIT } from '../../../shared/ai/body-limits.js';
 import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
 import type { CoachController } from './coach.controller.js';
 import {
@@ -194,6 +195,8 @@ export function createCoachRoutes(
         tags: ['Coach'],
         access: { kind: 'authenticated' },
         middleware: authMiddleware,
+        // Recorded speech travels as base64 inside the JSON: at most 15 MiB of text (MAX_AUDIO_BASE64_CHARS).
+        bodyLimit: AUDIO_BODY_LIMIT,
         request: {
           body: transcribeAudioSchema,
         },

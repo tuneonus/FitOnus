@@ -16,6 +16,8 @@ interface ExerciseRow {
   difficulty: ExerciseDifficulty;
   is_compound: boolean;
   image_url: string | null;
+  /** Absent (not null) while migration 0023 has not been applied: `SELECT *` has no such column. */
+  image_key?: string | null;
   video_url: string | null;
   created_by: string | null;
   is_system: boolean;
@@ -52,6 +54,9 @@ function toDomain(row: ExerciseRow): Exercise {
     difficulty: row.difficulty,
     isCompound: row.is_compound,
     imageUrl: row.image_url,
+    // NULL (every exercise made before uploads existed) and an absent column both mean "no uploaded image", so reads
+    // keep working while the schema is behind. Writes name the column, so they need migration 0023.
+    imageKey: row.image_key ?? null,
     videoUrl: row.video_url,
     createdBy: row.created_by,
     isSystem: row.is_system,
@@ -141,13 +146,13 @@ export class PgExerciseRepository implements IExerciseRepository {
         id, name, description, instructions, tips, common_mistakes,
         primary_muscles, secondary_muscles, equipment, category, difficulty,
         is_compound, image_url, video_url, created_by, is_system,
-        created_at, updated_at, deleted_at
+        created_at, updated_at, deleted_at, image_key
       )
       VALUES (
         $1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb,
         $7, $8, $9, $10, $11,
         $12, $13, $14, $15, $16,
-        $17, $18, $19
+        $17, $18, $19, $20
       )
       RETURNING *
       `,
@@ -171,6 +176,7 @@ export class PgExerciseRepository implements IExerciseRepository {
         exercise.createdAt,
         exercise.updatedAt,
         exercise.deletedAt,
+        exercise.imageKey,
       ],
     );
 
@@ -195,6 +201,7 @@ export class PgExerciseRepository implements IExerciseRepository {
       difficulty: patch.difficulty ?? existing.difficulty,
       isCompound: patch.isCompound !== undefined ? patch.isCompound : existing.isCompound,
       imageUrl: patch.imageUrl !== undefined ? patch.imageUrl : existing.imageUrl,
+      imageKey: patch.imageKey !== undefined ? patch.imageKey : existing.imageKey,
       videoUrl: patch.videoUrl !== undefined ? patch.videoUrl : existing.videoUrl,
       createdBy: existing.createdBy,
       isSystem: existing.isSystem,
@@ -221,7 +228,8 @@ export class PgExerciseRepository implements IExerciseRepository {
         image_url = $13,
         video_url = $14,
         updated_at = $15,
-        deleted_at = $16
+        deleted_at = $16,
+        image_key = $17
       WHERE id = $1
       RETURNING *
       `,
@@ -242,6 +250,7 @@ export class PgExerciseRepository implements IExerciseRepository {
         updated.videoUrl,
         updated.updatedAt,
         updated.deletedAt,
+        updated.imageKey,
       ],
     );
 

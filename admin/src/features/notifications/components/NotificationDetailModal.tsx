@@ -165,7 +165,12 @@ function Detail({
           </dl>
           <p className="text-sm text-ink-100" aria-live="polite">{outcomeSummary(campaign)}</p>
         </div>
-        <PushPreview title={campaign.title} body={campaign.body} destination={campaign.destination} />
+        <PushPreview
+          title={campaign.title}
+          body={campaign.body}
+          destination={campaign.destination}
+          imageUrl={campaign.imageUrl}
+        />
       </div>
 
       {b && counts && counts.total > 0 && (

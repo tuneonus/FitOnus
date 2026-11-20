@@ -1,4 +1,10 @@
+import type { PublicImageUrlResolver } from '../../../shared/images/public-image-url.js';
 import type { Exercise, ExerciseDifficulty } from '../domain/exercise.js';
+import {
+  displayableExternalUrl,
+  effectiveImageUrl,
+  NO_EXERCISE_IMAGE_URLS,
+} from '../domain/exercise-image.js';
 import type { PersonalRecord } from '../domain/personal-record.js';
 import type { WorkoutPlan, WorkoutPlanExercise } from '../domain/workout-plan.js';
 import type { WorkoutSession, WorkoutSessionSet } from '../domain/workout-session.js';
@@ -16,14 +22,29 @@ export interface ExerciseView {
   category: string;
   difficulty: ExerciseDifficulty;
   isCompound: boolean;
+  /**
+   * The image to show: the uploaded one when there is one, otherwise the external URL. This is the field the mobile
+   * app has always read, so its meaning ("the picture to display") and its type do not change.
+   */
   imageUrl: string | null;
+  /** Key of the uploaded image, or null. Round-tripped by the admin editor. */
+  imageKey: string | null;
+  /** The external address an admin typed (http or https), or null. The admin editor's fallback field. */
+  externalImageUrl: string | null;
   videoUrl: string | null;
   isSystem: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export function toExerciseView(exercise: Exercise): ExerciseView {
+/**
+ * One place that turns a stored exercise into its API shape, for the member app and the admin console alike, so every
+ * response derives the image the same way. `resolveKeyUrl` is the trusted-origin URL builder for uploaded images.
+ */
+export function toExerciseView(
+  exercise: Exercise,
+  resolveKeyUrl: PublicImageUrlResolver = NO_EXERCISE_IMAGE_URLS,
+): ExerciseView {
   return {
     id: exercise.id,
     name: exercise.name,
@@ -37,8 +58,11 @@ export function toExerciseView(exercise: Exercise): ExerciseView {
     category: exercise.category,
     difficulty: exercise.difficulty,
     isCompound: exercise.isCompound,
-    imageUrl: exercise.imageUrl,
-    videoUrl: exercise.videoUrl,
+    imageUrl: effectiveImageUrl(exercise, resolveKeyUrl),
+    imageKey: exercise.imageKey,
+    externalImageUrl: displayableExternalUrl(exercise.imageUrl),
+    // A value saved before the http/https rule existed is never passed on.
+    videoUrl: displayableExternalUrl(exercise.videoUrl),
     isSystem: exercise.isSystem,
     createdAt: exercise.createdAt.toISOString(),
     updatedAt: exercise.updatedAt.toISOString(),

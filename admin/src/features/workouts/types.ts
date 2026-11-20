@@ -14,7 +14,12 @@ export interface Exercise {
   tips: string[];
   commonMistakes?: string[];
   videoUrl: string | null;
+  /** The picture to show: the uploaded image when there is one, otherwise the external address. */
   imageUrl: string | null;
+  /** Key of the uploaded image, or null. Absent from a backend that predates uploads. */
+  imageKey?: string | null;
+  /** The external address an admin typed (http or https), or null. Absent from a backend that predates uploads. */
+  externalImageUrl?: string | null;
   isSystem: boolean;
   isCustom?: boolean;
   userId?: string | null;
@@ -47,7 +52,10 @@ export interface CreateExerciseInput {
   tips?: string[];
   commonMistakes?: string[];
   videoUrl?: string | null;
+  /** External address (http or https). */
   imageUrl?: string | null;
+  /** Key returned by the exercise image upload; null = no uploaded image. */
+  imageKey?: string | null;
 }
 
 export interface UpdateExerciseInput {
@@ -64,7 +72,24 @@ export interface UpdateExerciseInput {
   tips?: string[];
   commonMistakes?: string[];
   videoUrl?: string | null;
+  /** External address (http or https). */
   imageUrl?: string | null;
+  /** Key returned by the exercise image upload; null removes the uploaded image. Omitted = unchanged. */
+  imageKey?: string | null;
+}
+
+/** What the exercise image upload endpoint returns for an accepted image. */
+export interface UploadedExerciseImage {
+  imageKey: string;
+  /** Public URL of the stored image. */
+  imageUrl: string;
+  /** Whatever was uploaded, the stored image is an optimized WebP with no metadata. */
+  contentType: 'image/webp';
+  sizeBytes: number;
+  width: number;
+  height: number;
+  /** What was uploaded, before conversion. */
+  source: { format: 'jpeg' | 'png' | 'webp' | 'heic'; bytes: number; width: number; height: number };
 }
 
 export interface WorkoutTemplateExercise {

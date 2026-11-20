@@ -31,7 +31,8 @@ export async function apiClient<T>(
 ): Promise<ApiResponse<T>> {
   const headers = new Headers(options.headers || {});
 
-  headers.set('Content-Type', 'application/json');
+  // JSON unless the caller chose a type (a file upload sends the file's own type and the raw bytes).
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   headers.set('Accept', 'application/json');
   headers.set('X-Panel-Id', 'fitonus-admin');
   headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');

@@ -4,6 +4,7 @@ import type {
   DeliveryCounts,
   ServerCategory,
 } from '../domain/notification-policy.js';
+import type { ImageUrlResolver } from '../domain/notification-image.js';
 import type { CampaignRecord } from './ports.js';
 
 export interface CampaignView {
@@ -12,6 +13,10 @@ export interface CampaignView {
   body: string;
   category: ServerCategory;
   destination: string | null;
+  /** Object key of the attached image, or null. Round-tripped by the admin editor. */
+  imageKey: string | null;
+  /** Public URL derived from the key and the trusted media origin. Null when there is no image. */
+  imageUrl: string | null;
   audience: Audience;
   status: CampaignStatus;
   scheduledAt: string | null;
@@ -30,13 +35,16 @@ export interface CampaignView {
 
 export const toCampaignView = (
   campaign: CampaignRecord,
-  deliveries: DeliveryCounts | null = null,
+  deliveries: DeliveryCounts | null,
+  resolveImageUrl: ImageUrlResolver,
 ): CampaignView => ({
   id: campaign.id,
   title: campaign.title,
   body: campaign.body,
   category: campaign.category,
   destination: campaign.destination,
+  imageKey: campaign.imageKey,
+  imageUrl: resolveImageUrl(campaign.imageKey),
   audience: campaign.audience,
   status: campaign.status,
   scheduledAt: campaign.scheduledAt?.toISOString() ?? null,

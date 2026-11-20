@@ -2,11 +2,15 @@ import type { Request } from 'express';
 import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
 import { ADMIN_NO_CACHE_HEADERS } from '../../admin/interface/admin.controller.js';
+import { parseContentLength, readBodyUpTo } from '../../../shared/http/read-upload-body.js';
 import type { RouteResult } from '../../../shared/http/route.js';
+import { IMAGE_UPLOAD_MAX_BYTES } from '../../../shared/images/image-policy.js';
+import type { UploadedPublicImage } from '../../../shared/images/public-image-upload.js';
 import type { AdminManageExerciseUseCase } from '../application/use-cases/admin-manage-exercise.js';
 import type { AdminManageTemplateUseCase } from '../application/use-cases/admin-manage-template.js';
 import type { GetWorkoutStatsUseCase, WorkoutStatsView } from '../application/use-cases/get-workout-stats.js';
 import type { ListExercisesUseCase } from '../application/use-cases/list-exercises.js';
+import type { UploadExerciseImageUseCase } from '../application/use-cases/upload-exercise-image.js';
 import type { ExerciseView, WorkoutPlanView } from '../application/workout-view.js';
 import {
   createAdminTemplateRequest,
@@ -22,6 +26,7 @@ import {
 export interface WorkoutAdminUseCases {
   listExercises: ListExercisesUseCase;
   manageExercise: AdminManageExerciseUseCase;
+  uploadExerciseImage: UploadExerciseImageUseCase;
   manageTemplate: AdminManageTemplateUseCase;
   getStats: GetWorkoutStatsUseCase;
 }
@@ -45,6 +50,24 @@ export function createWorkoutAdminController(useCases: WorkoutAdminUseCases) {
         },
         message: 'Exercises retrieved successfully',
       };
+    },
+
+    /**
+     * The body is the raw image (`Content-Type: image/jpeg|png|webp|heic`). It is read here, inside the handler, which
+     * the route chain only reaches after authentication and the `admin:access` check: a caller who is not allowed to
+     * upload never makes the server buffer a byte.
+     */
+    uploadImage: async (req: Request): Promise<RouteResult<UploadedPublicImage>> => {
+      const actor = requireActor(req);
+      const data = await useCases.uploadExerciseImage.execute(
+        { adminId: actor.userId, ipAddress: req.ip, userAgent: req.get('user-agent') },
+        {
+          contentType: req.get('content-type'),
+          declaredLength: parseContentLength(req.get('content-length')),
+          readBody: () => readBodyUpTo(req, IMAGE_UPLOAD_MAX_BYTES),
+        },
+      );
+      return { data, status: 201, headers: ADMIN_NO_CACHE_HEADERS, message: 'Image uploaded' };
     },
 
     createExercise: async (req: Request): Promise<RouteResult<ExerciseView>> => {

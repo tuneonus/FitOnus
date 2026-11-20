@@ -4,7 +4,9 @@ import {
   idParamsSchema,
   paginationQuerySchema,
 } from '../../../shared/http/schemas.js';
+import { uploadedPublicImageSchema } from '../../../shared/images/public-image-schema.js';
 import { MAX_AUDIENCE_USERS } from '../domain/audience.js';
+import { NOTIFICATION_IMAGE_KEY_PATTERN } from '../domain/notification-image.js';
 import {
   AUDIENCE_TYPES,
   CAMPAIGN_STATUSES,
@@ -150,6 +152,14 @@ const campaignContentShape = {
   category: z.enum(SERVER_CATEGORIES),
   // A closed key list, never a route or URL: the app decides what each key opens.
   destination: z.enum(NOTIFICATION_DESTINATIONS).nullable().default(null),
+  // The key the upload endpoint returned, never a URL: there is no field through which an external address can
+  // enter (these schemas are strict, so an `imageUrl` property is rejected as an unknown key). Both the current
+  // `onusfit/notifications/<hex>.webp` and the legacy `notifications/<hex>.jpg|png` shapes are accepted.
+  imageKey: z
+    .string()
+    .regex(NOTIFICATION_IMAGE_KEY_PATTERN, 'Must be an image key returned by the image upload endpoint')
+    .nullable()
+    .default(null),
   audience: audienceSchema,
 };
 
@@ -217,6 +227,8 @@ export const campaignViewSchema = z.object({
   body: z.string(),
   category: z.enum(SERVER_CATEGORIES),
   destination: z.string().nullable(),
+  imageKey: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   audience: z.object({
     type: z.enum(AUDIENCE_TYPES),
     userIds: z.array(z.string()),
@@ -257,8 +269,12 @@ export const previewSchema = z.object({
     body: z.string(),
     category: z.enum(SERVER_CATEGORIES),
     destination: z.string().nullable(),
+    imageUrl: z.string().nullable(),
   }),
 });
+
+/** Shared with every other public image upload (see shared/images). */
+export const uploadedImageSchema = uploadedPublicImageSchema;
 
 export const deliveryRecordSchema = z.object({
   id: z.uuid(),

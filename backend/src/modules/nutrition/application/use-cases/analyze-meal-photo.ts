@@ -1,4 +1,5 @@
 import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
+import { MAX_IMAGE_BASE64_CHARS } from '../../../../shared/ai/body-limits.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type {
   MealPhotoAnalysisInput,
@@ -21,8 +22,8 @@ export class AnalyzeMealPhotoUseCase {
       throw new AppError('validation', 'VALIDATION_FAILED', 'Image data is required.');
     }
 
-    // Limit image payload to max ~10MB base64
-    if (input.imageBase64.length > 10 * 1024 * 1024) {
+    // Limit image payload to max ~10MB base64 (the route's request body limit is derived from this same cap)
+    if (input.imageBase64.length > MAX_IMAGE_BASE64_CHARS) {
       throw new AppError('payload_too_large', 'PAYLOAD_TOO_LARGE', 'Image size exceeds the 10MB limit.');
     }
 

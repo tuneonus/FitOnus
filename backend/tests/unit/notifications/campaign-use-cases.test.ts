@@ -41,6 +41,7 @@ const record = (overrides: Partial<CampaignRecord> = {}): CampaignRecord => ({
   body: 'Something happened',
   category: 'announcements',
   destination: 'home',
+  imageKey: null,
   audience: { type: 'users', userIds: ['8f4b3a64-1d1c-4c3e-8e69-5d3d2f9c7a01'], filter: {} },
   createdBy: 'a-1',
   status: 'draft',
@@ -278,6 +279,8 @@ describe('PreviewCampaignUseCase', () => {
       body: 'Something happened',
       category: 'announcements',
       destination: 'home',
+      // Additive field: null for a text-only notification.
+      imageUrl: null,
     });
   });
 });

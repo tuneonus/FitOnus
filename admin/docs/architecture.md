@@ -8,6 +8,7 @@ The admin application uses Next.js App Router and TypeScript. Its package manife
 | `src/features/` | Feature-specific views, hooks, API calls, and types |
 | `src/components/` | Shared layout, controls, and design components |
 | `src/features/auth/` | Login, account settings, and authentication context |
+| `src/features/media/` | Shared image upload field, thumbnail and file rules (used by notifications and exercises) |
 | `src/lib/api-client.ts` | Backend URL, bearer token header, timeout, and response handling |
 | `src/lib/token-storage.ts` | Browser token persistence adapter |
 | `src/lib/error-normalizer.ts` | User-facing API error messages |

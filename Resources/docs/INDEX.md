@@ -98,6 +98,7 @@ The architecture proposal and roadmap describe planned work. They do not indicat
 - [design/settings.md](../../backend/docs/design/settings.md)
 - [design/workouts.md](../../backend/docs/design/workouts.md)
 - [development.md](../../backend/docs/development.md)
+- [media.md](../../backend/docs/media.md): public images (notifications, exercises), the storage policy, replacement and deletion rules, and the route-specific body limits for base64 AI routes
 - [new-module-guide.md](../../backend/docs/new-module-guide.md)
 - [notifications.md](../../backend/docs/notifications.md)
 

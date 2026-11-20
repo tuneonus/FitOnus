@@ -1,6 +1,7 @@
-import { Router, type Request, type RequestHandler, type Response } from 'express';
+import express, { Router, type Request, type RequestHandler, type Response } from 'express';
 import type { z } from 'zod';
 import { requirePermission } from '../../middleware/authorize.js';
+import { bindRequestCorrelation } from '../../middleware/request-context.js';
 import { validate, type RequestSchemas } from '../../middleware/validate.js';
 import type { Permission } from '../auth/permissions.js';
 import { AppError } from '../errors/app-error.js';
@@ -36,6 +37,15 @@ export interface RouteSpec<T> {
   request?: RequestSchemas;
   /** Runs before authentication (e.g. rate limiters). */
   middleware?: readonly RequestHandler[];
+  /**
+   * A larger JSON body limit for this route only (e.g. "11mb" for a route that carries a base64 photo or audio clip).
+   *
+   * The body is read AFTER authentication and the permission check, so a caller who is not allowed to use the route
+   * never makes the server buffer a large body; the application-wide JSON parser (small limit, see `BODY_LIMIT`)
+   * skips exactly the routes that declare this, which `largeBodyRouteKeys` collects from these same specs. Every other
+   * route keeps the small limit, so this is the only place a bigger limit is granted.
+   */
+  bodyLimit?: string;
   response: {
     status: number;
     description: string;
@@ -58,6 +68,32 @@ export interface RouteGroup {
   /** Full mount path, e.g. "/api/v1/users". */
   basePath: string;
   routes: readonly AnyRouteSpec[];
+}
+
+/**
+ * The identity of a request for body-limit purposes: method and path, with the case and trailing slashes Express
+ * ignores when it matches routes ignored here too, so a request cannot reach a route by a spelling this does not know.
+ */
+export const requestRouteKey = (method: string, path: string): string =>
+  `${method.toUpperCase()} ${path.toLowerCase().replace(/\/+$/, '')}`;
+
+/**
+ * The routes that declare their own `bodyLimit`, as `requestRouteKey`s. The application-wide JSON parser skips these
+ * (their own parser runs after authentication instead). Derived from the specs, never listed by hand, and only
+ * parameter-free paths can match (a route with `:id` and a big body is not supported).
+ */
+export function largeBodyRouteKeys(groups: readonly RouteGroup[]): ReadonlySet<string> {
+  const keys = new Set<string>();
+  for (const group of groups) {
+    for (const spec of group.routes) {
+      if (!spec.bodyLimit) continue;
+      if (spec.path.includes(':') || spec.path.includes('*')) {
+        throw new Error(`Route ${group.basePath}${spec.path}: bodyLimit needs a path without parameters`);
+      }
+      keys.add(requestRouteKey(spec.method, `${group.basePath}${spec.path === '/' ? '' : spec.path}`));
+    }
+  }
+  return keys;
 }
 
 function respond(spec: AnyRouteSpec): RequestHandler {
@@ -86,6 +122,12 @@ export function buildRouter(routes: readonly AnyRouteSpec[], deps: { authenticat
     const chain: RequestHandler[] = [...(spec.middleware ?? [])];
     if (spec.access.kind !== 'public') chain.push(deps.authenticate);
     if (spec.access.kind === 'permission') chain.push(requirePermission(spec.access.permission));
+    if (spec.bodyLimit) {
+      chain.push(express.json({ limit: spec.bodyLimit, strict: true }));
+      // Body parsers resume the request from stream callbacks, which can drop the async context that carries the
+      // correlation id (see bindRequestCorrelation), so it is bound again after this parser.
+      chain.push(bindRequestCorrelation);
+    }
     if (spec.request) chain.push(validate(spec.request));
     chain.push(respond(spec));
     router[spec.method](spec.path, ...chain);

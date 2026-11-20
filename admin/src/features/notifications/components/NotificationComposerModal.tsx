@@ -30,6 +30,7 @@ import {
 import { composerFromTemplate, type NotificationTemplate } from '../templates';
 import type { AudienceType, NotificationCampaign, NotificationPreview } from '../types';
 import { NOTIFICATION_DESTINATIONS, SERVER_CATEGORIES } from '../types';
+import { NotificationImageField } from './NotificationImageField';
 import { PushPreview } from './PushPreview';
 import { UserPicker } from './UserPicker';
 
@@ -96,6 +97,8 @@ function Composer({
     draft?.scheduledAt ? isoToLocalInput(draft.scheduledAt) : '',
   );
   const [busy, setBusy] = useState<'draft' | 'preview' | 'send' | null>(null);
+  // True while an image is uploading: saving or reviewing then would leave the picture out of the notification.
+  const [imageBusy, setImageBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   // The draft's latest known version, so repeated saves don't trip optimistic locking.
@@ -122,7 +125,7 @@ function Composer({
   const saveDraft = async () => {
     const found = validateComposer(form);
     setErrors(found);
-    if (Object.keys(found).length > 0 || busy) return;
+    if (Object.keys(found).length > 0 || busy || imageBusy) return;
     // Creating a draft has no idempotency key, so a double click would otherwise save it twice.
     await flight.run(async () => {
       setBusy('draft');
@@ -147,7 +150,7 @@ function Composer({
   const goToReview = async () => {
     const found = validateComposer(form);
     setErrors(found);
-    if (Object.keys(found).length > 0 || busy) return;
+    if (Object.keys(found).length > 0 || busy || imageBusy) return;
     setBusy('preview');
     setFormError(null);
     try {
@@ -324,11 +327,22 @@ function Composer({
                   <p className="field-hint">Only screens inside the app can be chosen.</p>
                 </div>
               </div>
+
+              <NotificationImageField
+                value={form.image}
+                onChange={(image) => patch({ image })}
+                onBusyChange={setImageBusy}
+              />
             </div>
 
             <div className="space-y-2 lg:pt-5">
               <p className="eyebrow">Preview</p>
-              <PushPreview title={content.title} body={content.body} destination={content.destination} />
+              <PushPreview
+                title={content.title}
+                body={content.body}
+                destination={content.destination}
+                imageUrl={form.image?.url ?? null}
+              />
             </div>
           </div>
 
@@ -417,11 +431,16 @@ function Composer({
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy !== null}>
               Cancel
             </button>
-            <button type="button" className="btn btn-secondary" onClick={() => void saveDraft()} disabled={busy !== null}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => void saveDraft()}
+              disabled={busy !== null || imageBusy}
+            >
               {busy === 'draft' && <Loader2 className="h-4 w-4 animate-spin" />}
               Save draft
             </button>
-            <button type="submit" className="btn btn-primary" disabled={busy !== null}>
+            <button type="submit" className="btn btn-primary" disabled={busy !== null || imageBusy}>
               {busy === 'preview' && <Loader2 className="h-4 w-4 animate-spin" />}
               Review &amp; send
             </button>
@@ -491,7 +510,12 @@ function Composer({
 
               <div className="space-y-2">
                 <p className="eyebrow">Preview</p>
-                <PushPreview title={preview.push.title} body={preview.push.body} destination={preview.push.destination} />
+                <PushPreview
+                  title={preview.push.title}
+                  body={preview.push.body}
+                  destination={preview.push.destination}
+                  imageUrl={preview.push.imageUrl}
+                />
                 <p className="field-hint">Category: {CATEGORY_LABELS[preview.push.category]}</p>
               </div>
             </div>

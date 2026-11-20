@@ -27,6 +27,7 @@ import {
   updatedCountSchema,
   updateCampaignRequest,
   updatePreferencesRequest,
+  uploadedImageSchema,
   upsertDeviceRequest,
 } from './notifications.schemas.js';
 
@@ -306,6 +307,30 @@ export function createNotificationsAdminRoutes(
           schema: previewSchema,
         },
         handler: controller.previewCampaign,
+      }),
+      defineRoute({
+        method: 'post',
+        path: '/images',
+        summary: 'Admin upload an image for a notification',
+        description:
+          'The request body is the raw image file, not JSON or multipart: send Content-Type image/jpeg, image/png, ' +
+          'image/webp or image/heic. At most 10 MB, 8192 px on a side and 40 megapixels (HEIC: 16). The file content ' +
+          'is inspected, so the declared type alone is not trusted. The image is converted to an optimized WebP with ' +
+          'all metadata (EXIF, GPS) removed and stored in the public media bucket under onusfit/notifications/ with a ' +
+          'random name, together with a JPEG copy that is what FCM receives. Returns the imageKey to put in a ' +
+          'notification and its public imageUrl. Answers 503 when R2 is not configured. Only for admin-authored ' +
+          "artwork: the bucket is public, so never upload a member's photo.",
+        tags: adminTags,
+        access: { kind: 'permission', permission: 'notifications:send' },
+        middleware: [admin],
+        response: {
+          status: 201,
+          description: 'Stored image',
+          message: 'Image uploaded',
+          schema: uploadedImageSchema,
+        },
+        errorStatuses: [400, 413, 415, 422, 503],
+        handler: controller.uploadImage,
       }),
       defineRoute({
         method: 'get',

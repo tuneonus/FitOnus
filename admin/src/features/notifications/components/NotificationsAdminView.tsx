@@ -14,6 +14,7 @@ import { NOTIFICATION_TEMPLATES, type NotificationTemplate } from '../templates'
 import type { CampaignStatus, NotificationCampaign } from '../types';
 import { NotificationComposerModal } from './NotificationComposerModal';
 import { NotificationDetailModal } from './NotificationDetailModal';
+import { NotificationThumbnail } from './NotificationThumbnail';
 import { NotificationTemplatePicker } from './NotificationTemplatePicker';
 
 const STATUS_FILTERS: { value: CampaignStatus | ''; label: string }[] = [
@@ -128,9 +129,14 @@ export function NotificationsAdminView() {
                   {list.items.map((item) => (
                     <tr key={item.id}>
                       <td className="pl-5">
-                        <p className="max-w-xs truncate font-medium text-white">{item.title}</p>
-                        <p className="max-w-xs truncate text-xs text-ink-400">{item.body}</p>
-                        <p className="text-[11px] text-ink-500">{CATEGORY_LABELS[item.category]}</p>
+                        <div className="flex items-center gap-3">
+                          {item.imageUrl && <NotificationThumbnail imageUrl={item.imageUrl} />}
+                          <div className="min-w-0">
+                            <p className="max-w-xs truncate font-medium text-white">{item.title}</p>
+                            <p className="max-w-xs truncate text-xs text-ink-400">{item.body}</p>
+                            <p className="text-[11px] text-ink-500">{CATEGORY_LABELS[item.category]}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="text-xs text-ink-200">{audienceSummary(item.audience)}</td>
                       <td>

@@ -18,6 +18,21 @@ export const BODY_MAX = 500;
 export const MAX_AUDIENCE_USERS = 1000;
 /** Matches the backend: more than this many hand-picked users counts as a bulk send. */
 export const BULK_USER_THRESHOLD = 25;
+// The image rules are shared with every other feature that lets an admin attach a picture (see features/media).
+// Re-exported here so the notification screens and their tests keep one import path.
+export {
+  IMAGE_ACCEPT,
+  IMAGE_ACCEPTED_TYPES,
+  IMAGE_FORMATS_LABEL,
+  IMAGE_MAX_BYTES,
+  canPreviewInBrowser,
+  describeImageUploadFailure,
+  formatFileSize,
+  resolveImageType,
+  uploadImageFile as uploadComposerImage,
+  validateImageFile,
+  type ImageUploadOutcome,
+} from '../media/image-upload';
 export const MIN_SCHEDULE_LEAD_MS = 30_000;
 export const MAX_SCHEDULE_HORIZON_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -146,11 +161,20 @@ export function audienceSummary(audience: Audience): string {
   return `Segment (${parts.join('; ') || 'no filters'})`;
 }
 
+/** An uploaded image attached to the composer. Only `key` is ever sent to the API; `url` is for showing it. */
+export interface ComposerImage {
+  key: string;
+  /** Public URL, or null when the server could not derive one (media domain not configured). */
+  url: string | null;
+}
+
 export interface ComposerState {
   title: string;
   body: string;
   category: NotificationCategory;
   destination: NotificationDestination | '';
+  /** Optional. Null = a text-only notification. */
+  image: ComposerImage | null;
   audienceType: AudienceType;
   userIds: string[];
   goals: string[];
@@ -164,6 +188,7 @@ export const emptyComposer = (): ComposerState => ({
   body: '',
   category: 'announcements',
   destination: '',
+  image: null,
   audienceType: 'users',
   userIds: [],
   goals: [],
@@ -178,6 +203,7 @@ export function composerFromCampaign(campaign: NotificationCampaign): ComposerSt
     body: campaign.body,
     category: campaign.category,
     destination: campaign.destination ?? '',
+    image: campaign.imageKey ? { key: campaign.imageKey, url: campaign.imageUrl } : null,
     audienceType: audience.type,
     userIds: [...audience.userIds],
     goals: audience.filter.primaryGoal ?? [],
@@ -204,6 +230,7 @@ export function toContent(state: ComposerState): NotificationContent {
     body: state.body.trim(),
     category: state.category,
     destination: state.destination || null,
+    imageKey: state.image?.key ?? null,
     audience: {
       type: state.audienceType,
       userIds: state.audienceType === 'users' ? state.userIds : [],
@@ -371,6 +398,22 @@ export function describeSendFailure(error: unknown): SendFailure {
       return {
         outcomeUnknown: false,
         message: 'No active users match this audience and their notification preferences. Nothing was sent.',
+      };
+    // The image is checked before anything is queued, so for all three nothing was sent.
+    case 'IMAGE_NOT_FOUND':
+      return {
+        outcomeUnknown: false,
+        message: 'The image for this notification could not be found, so nothing was sent. Remove it or upload it again.',
+      };
+    case 'IMAGE_STORAGE_NOT_CONFIGURED':
+      return {
+        outcomeUnknown: false,
+        message: 'Image uploads are not set up on this server, so nothing was sent. Remove the image to send text only.',
+      };
+    case 'IMAGE_STORAGE_UNAVAILABLE':
+      return {
+        outcomeUnknown: false,
+        message: 'The image could not be checked right now, so nothing was sent. Try again in a moment.',
       };
     default:
       if (typeof status === 'number' && status >= 500) {

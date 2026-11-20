@@ -13,6 +13,10 @@ import {
   NotificationDispatcher,
 } from '../../../src/modules/notifications/application/services/notification-dispatcher.js';
 import {
+  createImageUrlResolver,
+  createPushImageUrlResolver,
+} from '../../../src/modules/notifications/domain/notification-image.js';
+import {
   DEFAULT_RETRY_POLICY,
   type DeliveryCounts,
   type DeliveryStatus,
@@ -24,6 +28,7 @@ const campaign = (overrides: Partial<CampaignRecord> = {}): CampaignRecord => ({
   body: 'There',
   category: 'announcements',
   destination: 'home',
+  imageKey: null,
   audience: { type: 'all', userIds: [], filter: {} },
   createdBy: null,
   status: 'sending',
@@ -73,6 +78,7 @@ class FakeRepo implements DispatchRepository {
         body: 'There',
         category: 'announcements',
         destination: 'home',
+        imageKey: null,
       },
     });
   }
@@ -409,5 +415,133 @@ describe('NotificationDispatcher', () => {
     repo.claimDueCampaigns.mockRejectedValueOnce(new Error('db down'));
     const summary = await make(repo, new ScriptedSender(() => accepted)).runOnce();
     expect(summary.campaigns).toBe(0);
+  });
+});
+
+describe('NotificationDispatcher: images', () => {
+  const ORIGIN = 'https://media.example.test';
+  const KEY = 'notifications/0123456789abcdef0123456789abcdef.png';
+  const options = { ...DEFAULT_DISPATCHER_OPTIONS, retry: DEFAULT_RETRY_POLICY };
+
+  /** Repo with `count` pending deliveries; the first `withImage` of them belong to a campaign that has an image. */
+  const repoWith = (count: number, withImage: number, key: string | null = KEY) => {
+    const repo = new FakeRepo();
+    repo.campaigns = [campaign()];
+    for (let i = 0; i < count; i += 1) repo.addDelivery(`d${i}`);
+    repo.deliveries.slice(0, withImage).forEach((d) => {
+      d.job.imageKey = key;
+    });
+    return repo;
+  };
+
+  it('hands the sender the public URL built from the stored key and the trusted media origin', async () => {
+    const repo = repoWith(1, 1);
+    const sender = new ScriptedSender(() => accepted);
+    await new NotificationDispatcher(
+      { repo, sender, imageUrl: createImageUrlResolver(ORIGIN) },
+      options,
+    ).runOnce();
+    expect(sender.sent[0]!.imageUrl).toBe(`${ORIGIN}/${KEY}`);
+  });
+
+  it('gives every recipient of the campaign the same image', async () => {
+    const repo = repoWith(3, 3);
+    const sender = new ScriptedSender(() => accepted);
+    await new NotificationDispatcher(
+      { repo, sender, imageUrl: createImageUrlResolver(ORIGIN) },
+      options,
+    ).runOnce();
+    expect(sender.sent.map((m) => m.imageUrl)).toEqual(Array(3).fill(`${ORIGIN}/${KEY}`));
+  });
+
+  it('keeps the image out of the data payload (only the FCM image field carries it)', async () => {
+    const repo = repoWith(1, 1);
+    const sender = new ScriptedSender(() => accepted);
+    await new NotificationDispatcher(
+      { repo, sender, imageUrl: createImageUrlResolver(ORIGIN) },
+      options,
+    ).runOnce();
+    expect(sender.sent[0]!.data).toEqual({
+      notificationId: 'n-d0',
+      category: 'announcements',
+      destination: 'home',
+    });
+  });
+
+  it('sends a text-only campaign with no image property at all', async () => {
+    const repo = repoWith(1, 0);
+    const sender = new ScriptedSender(() => accepted);
+    await new NotificationDispatcher(
+      { repo, sender, imageUrl: createImageUrlResolver(ORIGIN) },
+      options,
+    ).runOnce();
+    expect(sender.sent[0]).not.toHaveProperty('imageUrl');
+  });
+
+  it('degrades to text-only when no media origin is configured', async () => {
+    const repo = repoWith(1, 1);
+    const sender = new ScriptedSender(() => accepted);
+    await new NotificationDispatcher(
+      { repo, sender, imageUrl: createImageUrlResolver(null) },
+      options,
+    ).runOnce();
+    expect(sender.sent[0]).not.toHaveProperty('imageUrl');
+    expect(sender.sent).toHaveLength(1); // the notification still goes out
+  });
+
+  it('degrades to text-only when the dispatcher was built without image support', async () => {
+    const repo = repoWith(1, 1);
+    const sender = new ScriptedSender(() => accepted);
+    await new NotificationDispatcher({ repo, sender }, options).runOnce();
+    expect(sender.sent[0]).not.toHaveProperty('imageUrl');
+  });
+
+  it.each(['https://evil.example/pixel.png', 'notifications/../x.png', ''])(
+    'never forwards a stored value that is not a well-formed key (%j), even from a hand-edited row',
+    async (tampered) => {
+      const repo = repoWith(1, 1, tampered);
+      const sender = new ScriptedSender(() => accepted);
+      await new NotificationDispatcher(
+        { repo, sender, imageUrl: createImageUrlResolver(ORIGIN) },
+        options,
+      ).runOnce();
+      expect(sender.sent[0]).not.toHaveProperty('imageUrl');
+    },
+  );
+
+  describe('with the push resolver the application wires in (FCM gets JPEG or PNG, never WebP)', () => {
+    const CANONICAL = 'onusfit/notifications/0123456789abcdef0123456789abcdef.webp';
+    const push = createPushImageUrlResolver(ORIGIN);
+
+    it('sends the JPEG derivative of a canonical image', async () => {
+      const repo = repoWith(2, 2, CANONICAL);
+      const sender = new ScriptedSender(() => accepted);
+      await new NotificationDispatcher({ repo, sender, imageUrl: push }, options).runOnce();
+      expect(sender.sent.map((m) => m.imageUrl)).toEqual(
+        Array(2).fill(`${ORIGIN}/onusfit/notifications/0123456789abcdef0123456789abcdef.push.jpg`),
+      );
+      expect(sender.sent.every((m) => !m.imageUrl?.endsWith('.webp'))).toBe(true);
+    });
+
+    it('still sends a legacy image at its original URL, unchanged', async () => {
+      const repo = repoWith(1, 1, KEY);
+      const sender = new ScriptedSender(() => accepted);
+      await new NotificationDispatcher({ repo, sender, imageUrl: push }, options).runOnce();
+      expect(sender.sent[0]!.imageUrl).toBe(`${ORIGIN}/${KEY}`);
+    });
+
+    it('sends text only for a campaign without an image, and for a malformed stored value', async () => {
+      for (const key of [
+        null,
+        'https://evil.example/x.webp',
+        'onusfit/exercises/0123456789abcdef0123456789abcdef.webp',
+      ]) {
+        const repo = repoWith(1, 1, key);
+        const sender = new ScriptedSender(() => accepted);
+        await new NotificationDispatcher({ repo, sender, imageUrl: push }, options).runOnce();
+        expect(sender.sent[0]).not.toHaveProperty('imageUrl');
+        expect(sender.sent).toHaveLength(1);
+      }
+    });
   });
 });

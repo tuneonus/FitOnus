@@ -10,6 +10,7 @@ import type {
   NotificationPreview,
   SendNotificationInput,
   UpdateNotificationInput,
+  UploadedNotificationImage,
 } from './types';
 
 type Meta = ApiResponse<unknown>['meta'];
@@ -73,6 +74,20 @@ export const notificationsApi = {
     const res = await apiClient<NotificationPreview>('/notifications/preview', {
       method: 'POST',
       body: JSON.stringify(content),
+    });
+    return res.data;
+  },
+
+  /**
+   * Uploads one image. The body is the raw file with a Content-Type (not JSON or multipart), which is what the
+   * endpoint expects. The type defaults to the file's own; the composer passes the resolved one because a browser
+   * reports no type at all for a HEIC photo. R2 credentials never come near the browser: the backend stores the file.
+   */
+  async uploadImage(file: Blob, contentType: string = file.type): Promise<UploadedNotificationImage> {
+    const res = await apiClient<UploadedNotificationImage>('/notifications/images', {
+      method: 'POST',
+      body: file,
+      headers: { 'Content-Type': contentType },
     });
     return res.data;
   },

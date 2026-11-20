@@ -2,6 +2,19 @@
 
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
+import { ImageThumbnail } from '../../media/components/ImageThumbnail';
+import { ImageUploadField } from '../../media/components/ImageUploadField';
+import { EXERCISE_UNCONFIGURED_ADVICE, type UploadedImageRef } from '../../media/image-upload';
+import { workoutsApi } from '../api';
+import {
+  externalUrlProblem,
+  externalUrlWarning,
+  imageSource,
+  imageSourceNote,
+  initialExternalImageUrl,
+  initialUploadedImage,
+  isHttpUrl,
+} from '../image-logic';
 import type { Exercise, CreateExerciseInput, UpdateExerciseInput } from '../types';
 
 interface ExerciseModalProps {
@@ -42,22 +55,21 @@ function ExerciseForm({
     exercise?.commonMistakes?.join('\n') || ''
   );
   const [videoUrl, setVideoUrl] = useState(exercise?.videoUrl || '');
-  const [imageUrl, setImageUrl] = useState(exercise?.imageUrl || '');
+  // The external address that was typed (not the picture that is displayed, which may be the uploaded one).
+  const [imageUrl, setImageUrl] = useState(initialExternalImageUrl(exercise));
+  // The picture an admin uploaded. It wins over the external address; removing it brings the address back.
+  const [image, setImage] = useState<UploadedImageRef | null>(initialUploadedImage(exercise));
+  const [imageBusy, setImageBusy] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isValidUrl = (url: string) => {
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  };
+  const imageUrlWarning = externalUrlWarning(imageUrl);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // A picture is still being uploaded: saving now would save the exercise without it.
+    if (imageBusy) return;
     if (!name.trim()) {
       setError('Exercise name is required.');
       return;
@@ -83,13 +95,15 @@ function ExerciseForm({
       return;
     }
 
-    if (videoUrl.trim() && !isValidUrl(videoUrl.trim())) {
-      setError('Video URL must be a valid http or https URL.');
+    const videoProblem = externalUrlProblem(videoUrl, 'Video URL');
+    if (videoProblem) {
+      setError(videoProblem);
       return;
     }
 
-    if (imageUrl.trim() && !isValidUrl(imageUrl.trim())) {
-      setError('Image URL must be a valid http or https URL.');
+    const imageProblem = externalUrlProblem(imageUrl, 'Image URL');
+    if (imageProblem) {
+      setError(imageProblem);
       return;
     }
 
@@ -127,6 +141,8 @@ function ExerciseForm({
         commonMistakes: parsedMistakes,
         videoUrl: videoUrl.trim() || null,
         imageUrl: imageUrl.trim() || null,
+        // The key of the uploaded picture, or null for none (which also removes a previous upload).
+        imageKey: image?.key ?? null,
       };
 
       await onSubmit(payload);
@@ -320,34 +336,59 @@ function ExerciseForm({
         </div>
       </div>
 
-      {/* Row 5: Media URLs (Optional) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="exercisemodal-field-11" className="field-label">
-            Video Demonstration URL (optional)
-          </label>
-          <input
-            id="exercisemodal-field-11"
-            type="url"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://..."
-            className="input"
-          />
-        </div>
+      {/* Row 5: Image (uploaded or external) and video (optional) */}
+      <div className="space-y-4">
+        <ImageUploadField
+          value={image}
+          onChange={setImage}
+          onBusyChange={setImageBusy}
+          disabled={isSubmitting}
+          upload={workoutsApi.uploadExerciseImage}
+          unconfiguredAdvice={EXERCISE_UNCONFIGURED_ADVICE}
+          label="Exercise image"
+          previewAlt="Preview of the exercise image"
+          hint="Resized to at most 1600 px and shown in the app's exercise library. Uploaded images are public: only use pictures that anyone may see."
+        />
 
-        <div>
-          <label htmlFor="exercisemodal-field-12" className="field-label">
-            Thumbnail / Image URL (optional)
-          </label>
-          <input
-            id="exercisemodal-field-12"
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-            className="input"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="exercisemodal-field-12" className="field-label">
+              Image address (optional)
+            </label>
+            <div className="flex items-start gap-3">
+              <input
+                id="exercisemodal-field-12"
+                type="url"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://..."
+                className="input"
+              />
+              {isHttpUrl(imageUrl.trim()) && (
+                <ImageThumbnail key={imageUrl.trim()} imageUrl={imageUrl.trim()} sizeClass="h-10 w-10" sizes="2.5rem" />
+              )}
+            </div>
+            <p className="field-hint">{imageSourceNote(imageSource(image, imageUrl))}</p>
+            {imageUrlWarning && (
+              <div role="status" className="alert alert-warning mt-2">
+                {imageUrlWarning}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="exercisemodal-field-11" className="field-label">
+              Video Demonstration URL (optional)
+            </label>
+            <input
+              id="exercisemodal-field-11"
+              type="url"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://..."
+              className="input"
+            />
+          </div>
         </div>
       </div>
 
@@ -363,10 +404,10 @@ function ExerciseForm({
         </button>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || imageBusy}
           className="btn btn-primary"
         >
-          {isSubmitting ? 'Saving…' : isEditing ? 'Update Exercise' : 'Create Exercise'}
+          {isSubmitting ? 'Saving…' : imageBusy ? 'Uploading image…' : isEditing ? 'Update Exercise' : 'Create Exercise'}
         </button>
       </div>
     </form>

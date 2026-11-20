@@ -1,4 +1,8 @@
+import type { AcceptedFormat } from '../../../shared/images/image-format.js';
+import type { ProcessedImage } from '../../../shared/images/image-processor.js';
 import type { Page } from '../../../shared/pagination/pagination.js';
+import type { PublicObjectStore } from '../../../shared/storage/object-store.js';
+import type { ImageUrlResolver } from '../domain/notification-image.js';
 import type {
   Audience,
   CampaignStatus,
@@ -18,6 +22,11 @@ export interface PushMessage {
   /** FCM data values must be strings. */
   data: Record<string, string>;
   channelId: string;
+  /**
+   * Public https URL of an image to show in the Android notification. Always built from the trusted media origin,
+   * never taken from a request. Omitted for a text-only notification.
+   */
+  imageUrl?: string;
 }
 
 export type PushSendResult =
@@ -114,6 +123,11 @@ export interface CampaignContent {
   body: string;
   category: ServerCategory;
   destination: string | null;
+  /**
+   * Object key of the attached image, or null for a text-only notification. New uploads are
+   * `onusfit/notifications/<hex>.webp`; keys written before the image policy (`notifications/<hex>.jpg|png`) stay valid.
+   */
+  imageKey: string | null;
   audience: Audience;
 }
 
@@ -164,6 +178,8 @@ export interface DeliveryJob {
   body: string;
   category: ServerCategory;
   destination: string | null;
+  /** The campaign's image key; the dispatcher turns it into a public URL. */
+  imageKey: string | null;
 }
 
 export type DeliveryOutcome =
@@ -225,6 +241,47 @@ export interface DispatchRepository {
   finish(campaignId: string, status: CampaignStatus, lastError: string | null): Promise<void>;
   /** Gives the lease back so another tick can pick the campaign up (deliveries waiting for a retry). */
   releaseLease(campaignId: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------- images
+
+/**
+ * Where uploaded notification images live. This is a PUBLIC bucket: whatever is written here can be read by
+ * anyone who has the URL, so only admin-authored artwork goes in, never a member's photo. The same store serves every
+ * feature that keeps a public image (see `shared/storage/object-store.ts`).
+ */
+export type NotificationImageStore = PublicObjectStore;
+
+/**
+ * Turns an uploaded file into the images to store: validates it, converts it to an optimized WebP without metadata,
+ * and makes the JPEG that goes to FCM. Throws `ImageRejectedError` for a file it will not accept.
+ */
+export interface NotificationImageProcessor {
+  process(bytes: Uint8Array): Promise<ProcessedImage>;
+}
+
+/** Image support for the use cases: where to store files, and how a key becomes a public URL. */
+export interface NotificationImages {
+  /** Null when R2 is not configured. */
+  store: NotificationImageStore | null;
+  /** Public URL of the stored image, for showing it. */
+  resolveUrl: ImageUrlResolver;
+  /** The URL FCM is given: the JPEG derivative of a canonical image, or a legacy image as it always was. */
+  resolvePushUrl: ImageUrlResolver;
+}
+
+export interface UploadedImageView {
+  /** What the notification stores. */
+  imageKey: string;
+  /** Public URL of the stored WebP. */
+  imageUrl: string;
+  contentType: 'image/webp';
+  /** Size of the stored WebP. */
+  sizeBytes: number;
+  width: number;
+  height: number;
+  /** What was uploaded, before conversion. */
+  source: { format: AcceptedFormat; bytes: number; width: number; height: number };
 }
 
 export interface AdminAuditPort {

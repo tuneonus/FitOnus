@@ -83,7 +83,9 @@ Codes are stable: clients may branch on them. Add new codes; never rename existi
 
 ## Request rules
 
-- JSON only; bodies over `BODY_LIMIT` (default 100 kB) are rejected.
+- JSON only; bodies over `BODY_LIMIT` (default 100 kB) are rejected. Two kinds of route are the exception, each on its own terms: the
+  AI routes that carry a photo or an audio clip as base64 declare a bigger `bodyLimit` of their own (read after
+  authentication), and the image upload routes take the raw file (up to 10 MiB). See [media.md](media.md).
 - Request bodies are **strict**: unknown fields are a 400 (prevents mass assignment).
 - Query strings use the simple parser (no nested objects).
 - Responses are parsed through their response schema before sending, so fields that are not declared (such as

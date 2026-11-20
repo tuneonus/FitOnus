@@ -13,7 +13,8 @@ export type AuditAction =
   | 'notification.create'
   | 'notification.update'
   | 'notification.schedule'
-  | 'notification.cancel';
+  | 'notification.cancel'
+  | 'notification.image_upload';
 
 export interface AdminAuditLog {
   id: string;

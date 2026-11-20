@@ -151,6 +151,9 @@ export class FcmHttpV1Sender implements PushSender {
                 channel_id: message.channelId,
                 notification_priority: 'PRIORITY_HIGH',
                 sound: 'default',
+                // Android "big picture". Set on the Android block only (not the cross-platform `notification.image`),
+                // so iOS is untouched: it needs an app extension that is out of scope. A text-only message has no key.
+                ...(message.imageUrl ? { image: message.imageUrl } : {}),
               },
             },
           },

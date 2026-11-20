@@ -11,6 +11,7 @@ import type {
   InboxNotificationView,
   NotificationPreferencesView,
   AudiencePreview,
+  UploadedImageView,
 } from '../application/ports.js';
 import type { DispatchSummary } from '../application/services/notification-dispatcher.js';
 import type {
@@ -36,7 +37,10 @@ import type {
   RemoveDeviceUseCase,
   UpdatePreferencesUseCase,
 } from '../application/use-cases/member-notifications.js';
+import type { UploadNotificationImageUseCase } from '../application/use-cases/upload-image.js';
+import { IMAGE_UPLOAD_MAX_BYTES } from '../../../shared/images/image-policy.js';
 import type { ServerCategory } from '../domain/notification-policy.js';
+import { parseContentLength, readBodyUpTo } from '../../../shared/http/read-upload-body.js';
 import {
   campaignIdRequest,
   createCampaignRequest,
@@ -72,6 +76,7 @@ export interface NotificationsUseCases {
   getCampaign: GetCampaignUseCase;
   listCampaigns: ListCampaignsUseCase;
   listDeliveries: ListDeliveriesUseCase;
+  uploadImage: UploadNotificationImageUseCase;
 }
 
 const clientMeta = (req: Request) => ({ ip: req.ip ?? null, userAgent: req.get('user-agent') ?? null });
@@ -242,7 +247,13 @@ export function createNotificationsController(useCases: NotificationsUseCases) {
         audience: AudiencePreview;
         requiresConfirmation: boolean;
         pushAvailable: boolean;
-        push: { title: string; body: string; category: ServerCategory; destination: string | null };
+        push: {
+          title: string;
+          body: string;
+          category: ServerCategory;
+          destination: string | null;
+          imageUrl: string | null;
+        };
       }>
     > => {
       const { body } = getValidated(req, previewCampaignRequest);
@@ -251,6 +262,24 @@ export function createNotificationsController(useCases: NotificationsUseCases) {
         message: 'Notification preview generated',
       };
     },
+
+    /**
+     * The body is the raw image (`Content-Type: image/jpeg|png|webp|heic`). It is read here, inside the handler, which the
+     * route chain only reaches after authentication and the `notifications:send` check: a caller who is not allowed
+     * to upload never makes the server buffer a byte.
+     */
+    uploadImage: async (req: Request): Promise<RouteResult<UploadedImageView>> => ({
+      data: await useCases.uploadImage.execute(
+        requireActor(req),
+        {
+          contentType: req.get('content-type'),
+          declaredLength: parseContentLength(req.get('content-length')),
+          readBody: () => readBodyUpTo(req, IMAGE_UPLOAD_MAX_BYTES),
+        },
+        clientMeta(req),
+      ),
+      message: 'Image uploaded',
+    }),
 
     listDeliveries: async (req: Request): Promise<RouteResult<DeliveryRecord[]>> => {
       const { params, query } = getValidated(req, listDeliveriesRequest);

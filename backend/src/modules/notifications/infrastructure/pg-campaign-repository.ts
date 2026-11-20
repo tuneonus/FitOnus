@@ -28,6 +28,7 @@ interface CampaignRow {
   body: string;
   category: ServerCategory;
   destination: string | null;
+  image_key: string | null;
   audience_type: Audience['type'];
   audience_user_ids: string[];
   audience_filter: AudienceFilter;
@@ -52,6 +53,11 @@ const toCampaign = (row: CampaignRow): CampaignRecord => ({
   body: row.body,
   category: row.category,
   destination: row.destination,
+  // Nullable at the boundary: NULL (every campaign made before images existed) and an absent column both mean "no
+  // image". `pg` omits a column the table does not have, which would otherwise leak `undefined` past this type into
+  // the response and fail its validation. This keeps reads honest; it does not replace migration 0021, which every
+  // write (and the dispatcher) still needs.
+  imageKey: row.image_key ?? null,
   audience: { type: row.audience_type, userIds: row.audience_user_ids, filter: row.audience_filter ?? {} },
   status: row.status,
   scheduledAt: row.scheduled_at,
@@ -139,8 +145,8 @@ export class PgCampaignRepository implements CampaignRepository {
   ): Promise<CampaignRecord> {
     const { rows } = await this.db.query<CampaignRow>(
       `INSERT INTO notification_campaigns
-         (created_by, title, body, category, destination, audience_type, audience_user_ids, audience_filter, status, scheduled_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7::uuid[], $8::jsonb, $9, $10) RETURNING *`,
+         (created_by, title, body, category, destination, audience_type, audience_user_ids, audience_filter, status, scheduled_at, image_key)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::uuid[], $8::jsonb, $9, $10, $11) RETURNING *`,
       [
         input.createdBy,
         input.title,
@@ -152,6 +158,7 @@ export class PgCampaignRepository implements CampaignRepository {
         JSON.stringify(input.audience.filter),
         input.status,
         input.scheduledAt,
+        input.imageKey,
       ],
     );
     return toCampaign(rows[0]!);
@@ -188,7 +195,7 @@ export class PgCampaignRepository implements CampaignRepository {
     const { rows } = await this.db.query<CampaignRow>(
       `UPDATE notification_campaigns SET
          title = $3, body = $4, category = $5, destination = $6,
-         audience_type = $7, audience_user_ids = $8::uuid[], audience_filter = $9::jsonb,
+         audience_type = $7, audience_user_ids = $8::uuid[], audience_filter = $9::jsonb, image_key = $10,
          version = version + 1, updated_at = now()
        WHERE id = $1 AND status = 'draft' AND version = $2 RETURNING *`,
       [
@@ -201,6 +208,7 @@ export class PgCampaignRepository implements CampaignRepository {
         content.audience.type,
         content.audience.userIds,
         JSON.stringify(content.audience.filter),
+        content.imageKey,
       ],
     );
     return rows[0] ? toCampaign(rows[0]) : null;
@@ -405,6 +413,7 @@ export class PgDispatchRepository implements DispatchRepository {
       body: string;
       category: ServerCategory;
       destination: string | null;
+      image_key: string | null;
     }>(
       `WITH due AS (
          SELECT id FROM notification_deliveries
@@ -421,9 +430,10 @@ export class PgDispatchRepository implements DispatchRepository {
          RETURNING d.id, d.notification_id, d.campaign_id, d.attempts, d.device_id
        )
        SELECT c.id, c.notification_id, c.campaign_id, c.attempts, c.device_id, dev.push_token AS token,
-              n.title, n.body, n.category, n.destination
+              n.title, n.body, n.category, n.destination, camp.image_key
          FROM claimed c
          JOIN notifications n ON n.id = c.notification_id
+         LEFT JOIN notification_campaigns camp ON camp.id = c.campaign_id
          LEFT JOIN user_push_devices dev ON dev.id = c.device_id AND dev.status = 'active'`,
       [campaignId, limit, seconds(leaseMs)],
     );
@@ -438,6 +448,7 @@ export class PgDispatchRepository implements DispatchRepository {
       body: row.body,
       category: row.category,
       destination: row.destination,
+      imageKey: row.image_key ?? null,
     }));
   }
 

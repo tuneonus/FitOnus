@@ -96,6 +96,18 @@ const appSchema = databaseSchema.extend({
   NOTIFICATIONS_MAX_ATTEMPTS: integer(4, 1, 10),
   // Enables POST /api/v1/internal/notifications/dispatch for an external scheduler. Unset = endpoint disabled.
   NOTIFICATIONS_DISPATCH_SECRET: z.string().optional(),
+  // Cloudflare R2 public media bucket (notification images). All five must be set together, or none: unset keeps
+  // image uploads off and notifications work exactly as before (text only).
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET: z.string().optional(),
+  R2_PUBLIC_BASE_URL: z.string().optional(),
+  R2_REQUEST_TIMEOUT_MS: integer(10_000, 1_000, 60_000),
+  // HEIC photos (iPhones) are decoded with libheif compiled to WebAssembly, because Sharp's prebuilt binaries cannot
+  // decode HEVC. libheif-js is LGPL-3.0 and decoding HEVC can carry patent-licensing obligations for a commercial
+  // service, so it can be switched off: HEIC uploads are then refused and JPEG, PNG and WebP still work.
+  IMAGE_HEIC_ENABLED: booleanString('true'),
 });
 
 export type DatabaseConfig = {
@@ -122,6 +134,22 @@ export type NotificationsConfig = {
   } | null;
   dispatcher: { enabled: boolean; pollIntervalMs: number; maxAttempts: number };
   dispatchSecret: string | undefined;
+};
+
+export type MediaConfig = {
+  /** Whether HEIC uploads are decoded. JPEG, PNG and WebP are always accepted. */
+  heicEnabled: boolean;
+  /** Null when R2 is not configured: notification images cannot be uploaded, text notifications are unaffected. */
+  r2: {
+    accountId: string;
+    accessKeyId: string;
+    /** Never logged, never returned from any endpoint, never exposed to the admin front end. */
+    secretAccessKey: string;
+    bucket: string;
+    /** Trusted public origin (no trailing slash) that serves the bucket, e.g. https://media.example.org. */
+    publicBaseUrl: string;
+    timeoutMs: number;
+  } | null;
 };
 
 export type AppConfig = {
@@ -156,6 +184,7 @@ export type AppConfig = {
   /** Outbound e-mail. `none` means no delivery channel is configured, so password reset stays disabled. */
   email: EmailConfig;
   notifications: NotificationsConfig;
+  media: MediaConfig;
   rateLimit: { windowMs: number; max: number; authMax: number };
   idempotency: { ttlSeconds: number; leaseSeconds: number };
 };
@@ -341,6 +370,82 @@ function toNotificationsConfig(
   };
 }
 
+const R2_KEYS = [
+  'R2_ACCOUNT_ID',
+  'R2_ACCESS_KEY_ID',
+  'R2_SECRET_ACCESS_KEY',
+  'R2_BUCKET',
+  'R2_PUBLIC_BASE_URL',
+] as const;
+
+/**
+ * The origin to build public image URLs from, or null when `raw` is not acceptable. https only (FCM refuses
+ * plain-http images); a bare origin, so a URL is always `<origin>/<object key>`; and not the private S3 API host,
+ * which needs signed requests and cannot be opened by a phone.
+ */
+function publicMediaOrigin(raw: string): string | null {
+  try {
+    const url = new URL(raw);
+    const bareOrigin =
+      url.protocol === 'https:' &&
+      !url.username &&
+      !url.password &&
+      url.pathname === '/' &&
+      !url.search &&
+      !url.hash &&
+      !url.hostname.endsWith('.r2.cloudflarestorage.com');
+    return bareOrigin ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reads the R2 settings. Either none of the five are set (feature off) or all of them are, and valid. Issues name
+ * the variable and the rule only: the access key, the secret and the URL are never echoed.
+ */
+function parseR2Config(parsed: z.output<typeof appSchema>, issues: string[]): MediaConfig['r2'] {
+  const value = (key: (typeof R2_KEYS)[number]): string => parsed[key]?.trim() ?? '';
+  if (R2_KEYS.every((key) => !value(key))) return null;
+
+  const missing = R2_KEYS.filter((key) => !value(key));
+  if (missing.length > 0) {
+    for (const key of missing) {
+      issues.push(`${key}: required when any R2_* variable is set (set all five together, or none)`);
+    }
+    return null;
+  }
+
+  const before = issues.length;
+  if (!/^[0-9a-f]{32}$/i.test(value('R2_ACCOUNT_ID'))) {
+    issues.push('R2_ACCOUNT_ID: must be the 32-character Cloudflare account id');
+  }
+  for (const key of ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY'] as const) {
+    if (/\s/.test(value(key))) issues.push(`${key}: must not contain whitespace`);
+  }
+  if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(value('R2_BUCKET'))) {
+    issues.push('R2_BUCKET: must be a bucket name (3-63 lowercase letters, digits or hyphens)');
+  }
+
+  const origin = publicMediaOrigin(value('R2_PUBLIC_BASE_URL'));
+  if (!origin) {
+    issues.push(
+      'R2_PUBLIC_BASE_URL: must be the public https origin of the bucket, e.g. https://media.example.org ' +
+        '(no path, query or credentials, and not the r2.cloudflarestorage.com API host)',
+    );
+  }
+  if (issues.length > before || !origin) return null;
+
+  return {
+    accountId: value('R2_ACCOUNT_ID'),
+    accessKeyId: value('R2_ACCESS_KEY_ID'),
+    secretAccessKey: value('R2_SECRET_ACCESS_KEY'),
+    bucket: value('R2_BUCKET'),
+    publicBaseUrl: origin,
+    timeoutMs: parsed.R2_REQUEST_TIMEOUT_MS,
+  };
+}
+
 const toDatabaseConfig = (parsed: z.output<typeof databaseSchema>): DatabaseConfig => ({
   url: parsed.DATABASE_URL,
   poolMax: parsed.DATABASE_POOL_MAX,
@@ -364,6 +469,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
 
   const issues = [...corsIssues(parsed.CORS_ORIGINS), ...emailIssues(parsed), ...aiBackendIssues(parsed)];
   const serviceAccount = parseServiceAccount(parsed, issues);
+  const r2 = parseR2Config(parsed, issues);
   const dispatchSecret = parsed.NOTIFICATIONS_DISPATCH_SECRET?.trim();
   if (dispatchSecret && dispatchSecret.length < 32) {
     issues.push('NOTIFICATIONS_DISPATCH_SECRET: must be at least 32 characters');
@@ -407,6 +513,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
     },
     email: toEmailConfig(parsed),
     notifications: toNotificationsConfig(parsed, serviceAccount),
+    media: { r2, heicEnabled: parsed.IMAGE_HEIC_ENABLED },
     rateLimit: {
       windowMs: parsed.RATE_LIMIT_WINDOW_MS,
       max: parsed.RATE_LIMIT_MAX,

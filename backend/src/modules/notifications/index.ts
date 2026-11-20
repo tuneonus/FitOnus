@@ -18,6 +18,7 @@ import {
   SendCampaignUseCase,
   UpdateCampaignUseCase,
 } from './application/use-cases/campaigns.js';
+import { UploadNotificationImageUseCase } from './application/use-cases/upload-image.js';
 import {
   ConfirmReceivedUseCase,
   DeleteNotificationUseCase,
@@ -31,7 +32,15 @@ import {
   RemoveDeviceUseCase,
   UpdatePreferencesUseCase,
 } from './application/use-cases/member-notifications.js';
-import type { AdminAuditPort, PushSender } from './application/ports.js';
+import type {
+  AdminAuditPort,
+  NotificationImageProcessor,
+  NotificationImageStore,
+  NotificationImages,
+  PushSender,
+} from './application/ports.js';
+import type { ImageProcessor } from '../../shared/images/image-processor.js';
+import { createImageUrlResolver, createPushImageUrlResolver } from './domain/notification-image.js';
 import { DEFAULT_RETRY_POLICY } from './domain/notification-policy.js';
 import { PgCampaignRepository, PgDispatchRepository } from './infrastructure/pg-campaign-repository.js';
 import {
@@ -48,7 +57,7 @@ import {
 } from './interface/notifications.routes.js';
 
 export { FcmHttpV1Sender, classifyFcmError } from './infrastructure/fcm-push-sender.js';
-export type { PushMessage, PushSender, PushSendResult } from './application/ports.js';
+export type { NotificationImageStore, PushMessage, PushSender, PushSendResult } from './application/ports.js';
 export { NotificationDispatcher } from './application/services/notification-dispatcher.js';
 
 export interface NotificationsModule {
@@ -73,6 +82,16 @@ export interface NotificationsModuleDeps {
   dispatchSecret?: string | undefined;
   dispatcher?: { maxAttempts?: number; pollIntervalMs?: number } & Partial<DispatcherOptions>;
   logger?: DispatcherLogger | undefined;
+  /**
+   * Notification images. `store` null (R2 not configured) turns uploads off; campaigns without an image are
+   * unaffected. `publicBaseUrl` is the trusted origin every image URL is built from.
+   */
+  images?: {
+    store: NotificationImageStore | null;
+    publicBaseUrl: string | null;
+    /** Validates and converts uploads. Null/omitted turns uploads off. */
+    processor?: Pick<ImageProcessor, 'process'> | null;
+  };
 }
 
 export function createNotificationsModule(deps: NotificationsModuleDeps): NotificationsModule {
@@ -90,9 +109,25 @@ export function createNotificationsModule(deps: NotificationsModuleDeps): Notifi
       maxAttempts: deps.dispatcher?.maxAttempts ?? DEFAULT_RETRY_POLICY.maxAttempts,
     },
   };
+  const mediaBase = deps.images?.publicBaseUrl ?? null;
+  const images: NotificationImages = {
+    store: deps.images?.store ?? null,
+    resolveUrl: createImageUrlResolver(mediaBase),
+    resolvePushUrl: createPushImageUrlResolver(mediaBase),
+  };
+  const imageProcessor = deps.images?.processor;
+  const notificationImageProcessor: NotificationImageProcessor | null = imageProcessor
+    ? { process: (bytes) => imageProcessor.process(bytes, 'notifications') }
+    : null;
   const dispatcher = deps.sender
     ? new NotificationDispatcher(
-        { repo: dispatchRepo, sender: deps.sender, ...(deps.logger ? { logger: deps.logger } : {}) },
+        {
+          repo: dispatchRepo,
+          sender: deps.sender,
+          // FCM gets the push URL (the JPEG derivative of a new image; a legacy image at its original URL).
+          imageUrl: images.resolvePushUrl,
+          ...(deps.logger ? { logger: deps.logger } : {}),
+        },
         options,
       )
     : null;
@@ -104,6 +139,8 @@ export function createNotificationsModule(deps: NotificationsModuleDeps): Notifi
     idempotency: deps.idempotency,
     isPushAvailable: () => deps.sender !== null,
     onLaunched: () => dispatcher?.kick(),
+    images,
+    ...(deps.logger ? { logger: deps.logger } : {}),
   };
 
   const controller = createNotificationsController({
@@ -126,6 +163,12 @@ export function createNotificationsModule(deps: NotificationsModuleDeps): Notifi
     getCampaign: new GetCampaignUseCase(campaignDeps),
     listCampaigns: new ListCampaignsUseCase(campaignDeps),
     listDeliveries: new ListDeliveriesUseCase(campaignDeps),
+    uploadImage: new UploadNotificationImageUseCase({
+      images,
+      processor: notificationImageProcessor,
+      audit: deps.auditLogger,
+      ...(deps.logger ? { logger: deps.logger } : {}),
+    }),
   });
 
   return {

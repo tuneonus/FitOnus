@@ -6,7 +6,7 @@ import { API_PREFIX, type Container } from './container.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { bindRequestCorrelation, requestContext } from './middleware/request-context.js';
 import { buildOpenApiDocument } from './shared/http/openapi.js';
-import { buildRouter } from './shared/http/route.js';
+import { buildRouter, largeBodyRouteKeys, requestRouteKey } from './shared/http/route.js';
 import type { Logger } from './shared/logging/logger.js';
 import './shared/types/express.js';
 
@@ -51,7 +51,14 @@ export function createApp(deps: { config: AppConfig; logger: Logger; container: 
   app.use(requestContext(logger));
   app.use(helmet());
   app.use(corsMiddleware(config.http.corsOrigins));
-  app.use(express.json({ limit: config.http.bodyLimit, strict: true }));
+  // The small application-wide limit. The few routes that carry a photo or an audio clip declare their own larger
+  // `bodyLimit` and parse it after authentication (shared/http/route.ts), so they are skipped here: a big body is
+  // never read from a caller who has not signed in.
+  const jsonBody = express.json({ limit: config.http.bodyLimit, strict: true });
+  const largeBodyRoutes = largeBodyRouteKeys(container.routeGroups);
+  app.use((req, res, next) =>
+    largeBodyRoutes.has(requestRouteKey(req.method, req.path)) ? next() : jsonBody(req, res, next),
+  );
   // After body parsing as a precaution (see bindRequestCorrelation): lets the AI client forward the request id.
   app.use(bindRequestCorrelation);
   app.use(container.rateLimiters.global);

@@ -1,3 +1,4 @@
+import { NO_IMAGE_URLS, type ImageUrlResolver } from '../../domain/notification-image.js';
 import { finalCampaignStatus, nextRetryDelayMs, type RetryPolicy } from '../../domain/notification-policy.js';
 import type { CampaignRecord, DeliveryJob, DispatchRepository, PushSender } from '../ports.js';
 
@@ -66,6 +67,8 @@ export class NotificationDispatcher {
       sender: PushSender;
       logger?: DispatcherLogger;
       now?: () => number;
+      /** Turns a campaign's image key into its public URL. Omitted = images are never attached. */
+      imageUrl?: ImageUrlResolver;
     },
     private readonly options: DispatcherOptions,
   ) {}
@@ -213,6 +216,9 @@ export class NotificationDispatcher {
       return;
     }
 
+    // The URL is built here from the stored key and the trusted media origin: nothing from a request reaches FCM.
+    const imageUrl = (this.deps.imageUrl ?? NO_IMAGE_URLS)(job.imageKey);
+
     let result;
     try {
       result = await sender.send({
@@ -225,6 +231,7 @@ export class NotificationDispatcher {
           ...(job.destination ? { destination: job.destination } : {}),
         },
         channelId: 'remote-updates',
+        ...(imageUrl ? { imageUrl } : {}),
       });
     } catch {
       result = { kind: 'retryable', code: 'SENDER_ERROR' } as const;

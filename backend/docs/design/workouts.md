@@ -639,14 +639,21 @@ z.object({
 Protected by `authenticate`, `requirePermission('admin:access')`, and `X-Panel-Id: fitonus-admin`.
 
 #### 1. `POST /api/v1/admin/workouts/exercises`
-- **Payload:** Exercise details (name, muscle groups, equipment, category, difficulty, instructions, cues, etc.)
+- **Payload:** Exercise details (name, muscle groups, equipment, category, difficulty, instructions, cues, etc.), plus an optional `imageKey` (from the image upload below), an external `imageUrl` and a `videoUrl` (http or https only).
 - **Audit Action Logged:** `workout.exercise.create`
 - **Response `201 Created`:** Created `Exercise` object.
 
+#### 1b. `POST /api/v1/admin/workouts/exercises/images`
+- **Body:** the raw image (`Content-Type: image/jpeg|png|webp|heic`), at most 10 MiB. Not JSON or multipart.
+- **Effect:** the file is decoded, stripped of all metadata, scaled to at most 1600 px and stored as one WebP under `onusfit/exercises/` in the public bucket. It attaches nothing: the admin saves the exercise with the returned `imageKey`.
+- **Audit Action Logged:** `workout.exercise.image_upload`
+- **Response `201 Created`:** `{ imageKey, imageUrl, contentType: 'image/webp', sizeBytes, width, height, source }`.
+- Rules, errors and the picture precedence (uploaded wins, else the external address) are in [../media.md](../media.md). Migration `0023` adds `exercises.image_key`; `image_url` and `video_url` are untouched.
+
 #### 2. `PUT /api/v1/admin/workouts/exercises/:id`
-- **Payload:** Updated exercise fields
+- **Payload:** Updated exercise fields. `imageKey` omitted = unchanged, `null` = remove the uploaded image.
 - **Audit Action Logged:** `workout.exercise.update`
-- **Response `200 OK`:** Updated `Exercise` object.
+- **Response `200 OK`:** Updated `Exercise` object. Its `imageUrl` is the picture to display (the uploaded image, else the external address), `imageKey` the uploaded key and `externalImageUrl` the stored address.
 
 #### 3. `DELETE /api/v1/admin/workouts/exercises/:id`
 - **Audit Action Logged:** `workout.exercise.delete` (Soft-delete via `deleted_at = NOW()`)
@@ -817,15 +824,22 @@ admin/src/features/workouts/
 │   ├── useExercises.ts          # Pagination, filters, search
 │   ├── useWorkoutTemplates.ts   # System templates CRUD
 │   └── useWorkoutStats.ts       # Platform volume statistics
+├── image-logic.ts               # Pure rules for the exercise image fields (http/https, what the editor starts from)
 ├── components/
-│   ├── ExercisesTable.tsx       # Paginated catalog table
+│   ├── ExercisesTable.tsx       # Paginated catalog table (thumbnail of the stored image)
 │   ├── ExerciseFilterBar.tsx    # Muscle, equipment, search
-│   ├── ExerciseModal.tsx        # Add / Edit exercise modal
+│   ├── ExerciseModal.tsx        # Add / Edit exercise modal (image upload, preview, removal)
 │   ├── WorkoutTemplatesTable.tsx# Curated templates manager (CRUD)
 │   ├── WorkoutTemplateModal.tsx # Add / Edit template modal
 │   └── WorkoutsAdminView.tsx    # Master feature container
 └── index.ts
 ```
+
+The image upload field, its file rules and the thumbnail are shared with notifications: `admin/src/features/media/`.
+
+### 7.4 Known follow-ups (not part of the image work, recorded so they are not lost)
+
+- **Mobile reads exercise fields the backend does not send.** `mobile/src/features/workouts/api/workout-api.ts` maps `ex.primaryMuscle`, `ex.slug` and `ex.isCustom`, but the exercise view (`exerciseViewSchema`) has `primaryMuscles` (an array) and `isSystem`, and no `slug`, `primaryMuscle` or `isCustom`. The effect is a degraded library on the phone (the muscle falls back to "Full body", custom exercises are not recognised). Needs a decision on which side changes, then the mobile mapping or the contract adjusted, with a contract test. Left untouched on purpose: it is unrelated to images and `imageUrl` is mapped correctly.
 
 ---
 

@@ -54,6 +54,7 @@ POST /api/v1/users  Authorization: Bearer …  Idempotency-Key: …
  │ request-context   request id (reuses a safe X-Request-Id), req.log, one log line with duration
  │ helmet, cors      security headers; CORS allowlist from CORS_ORIGINS
  │ express.json      body limit (BODY_LIMIT); malformed JSON → 400 INVALID_JSON; too big → 413
+ │                   (skipped for the few routes that declare their own `bodyLimit`; see media.md)
  │ global limiter    per-IP budget
  │ route spec        access: { kind: 'permission', permission: 'users:create' }
  │  ├ authenticate   verify JWT → load session + account from PostgreSQL → req.actor (401/403)

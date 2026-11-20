@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { ImageThumbnail } from '../../media/components/ImageThumbnail';
 import type { Exercise } from '../types';
 import type { PaginationMeta } from '@/types';
 
@@ -89,9 +90,20 @@ export function ExercisesTable({
                   <tr key={ex.id}>
                     <td className="pl-5">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="avatar h-9 w-9 text-ink-300">
-                          <Dumbbell className="h-4 w-4" />
-                        </span>
+                        {ex.imageUrl ? (
+                          // The picture the app shows: the uploaded WebP when there is one, otherwise the external
+                          // address. There is no smaller copy, so the browser scales the stored image down.
+                          <ImageThumbnail
+                            imageUrl={ex.imageUrl}
+                            sizeClass="h-9 w-9"
+                            sizes="2.25rem"
+                            fallback={<Dumbbell className="h-4 w-4 text-ink-500" aria-hidden="true" />}
+                          />
+                        ) : (
+                          <span className="avatar h-9 w-9 text-ink-300">
+                            <Dumbbell className="h-4 w-4" />
+                          </span>
+                        )}
                         <div className="min-w-0">
                           <p className="max-w-[280px] truncate font-medium text-white">{ex.name}</p>
                           <p className="max-w-[280px] truncate text-xs text-ink-400">

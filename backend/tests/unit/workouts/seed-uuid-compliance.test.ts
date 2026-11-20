@@ -67,6 +67,8 @@ describe('Seed UUID RFC 4122 v4 Compliance', () => {
       difficulty: 'intermediate',
       isCompound: true,
       imageUrl: null,
+      imageKey: null,
+      externalImageUrl: null,
       videoUrl: null,
       isSystem: true,
       createdAt: new Date().toISOString(),

@@ -36,6 +36,8 @@ describe('Admin Exercise Library — Phase 3 Contract & Verification Tests', () 
     commonMistakes: ['Flaring elbows out at 90 degrees', 'Bouncing the bar off the ribcage'],
     videoUrl: 'https://cdn.fitonus.com/videos/bench-press.mp4',
     imageUrl: 'https://cdn.fitonus.com/images/bench-press.webp',
+    imageKey: null,
+    externalImageUrl: 'https://cdn.fitonus.com/images/bench-press.webp',
     isSystem: true,
     isCustom: false,
     userId: null,

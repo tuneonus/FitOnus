@@ -10,6 +10,7 @@ import type {
   CreateTemplateInput,
   UpdateTemplateInput,
   WorkoutStats,
+  UploadedExerciseImage,
 } from './types';
 
 export const workoutsApi = {
@@ -49,6 +50,21 @@ export const workoutsApi = {
     const res = await apiClient<Exercise>(`/workouts/exercises/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+    return res.data;
+  },
+
+  /**
+   * Uploads one picture for an exercise. The body is the raw file with a Content-Type (not JSON or multipart), which is
+   * what the endpoint expects; the type defaults to the file's own and the form passes the resolved one because a
+   * browser reports no type at all for a HEIC photo. The backend converts and stores it and answers with a key to save
+   * on the exercise: uploading attaches nothing by itself. Storage credentials never come near the browser.
+   */
+  async uploadExerciseImage(file: Blob, contentType: string = file.type): Promise<UploadedExerciseImage> {
+    const res = await apiClient<UploadedExerciseImage>('/workouts/exercises/images', {
+      method: 'POST',
+      body: file,
+      headers: { 'Content-Type': contentType },
     });
     return res.data;
   },

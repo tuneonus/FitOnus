@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AUDIO_BODY_LIMIT, MEAL_PHOTO_BODY_LIMIT } from '../../../shared/ai/body-limits.js';
 import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
 import type { NutritionMemberController } from './nutrition.controller.js';
 import {
@@ -317,6 +318,10 @@ export function createNutritionMemberRoutes(
           'Detects foods on plate, estimates portion weights, calories, and macronutrients with AI estimate flagging.',
         tags,
         access: { kind: 'authenticated' },
+        // The photo travels as base64 inside the JSON: at most 10 MiB of base64 text (AnalyzeMealPhotoUseCase), plus a
+        // small envelope (mime type, meal type, notes of at most 250 characters). 11 MiB covers the largest valid
+        // request with margin and nothing more; every other route keeps the small global limit.
+        bodyLimit: MEAL_PHOTO_BODY_LIMIT,
         request: analyzeMealPhotoRequest,
         response: {
           status: 200,
@@ -336,6 +341,9 @@ export function createNutritionMemberRoutes(
           'Transcribes audio or processes text, detecting food items, portion quantities, and macronutrients in English, Tamil, and Tanglish.',
         tags,
         access: { kind: 'authenticated' },
+        // Spoken audio travels as base64 inside the JSON: at most 15 MiB of base64 text (MAX_AUDIO_BASE64_CHARS) plus a
+        // small envelope. Text-only requests are tiny and simply use none of it.
+        bodyLimit: AUDIO_BODY_LIMIT,
         request: parseVoiceMealRequest,
         response: {
           status: 200,
