@@ -68,6 +68,7 @@ export class PythonAiError extends Error {
       /** Python's machine-readable error code, e.g. `PROVIDER_RATE_LIMITED`. */
       code?: string;
       retryAfterSeconds?: number;
+      usage?: unknown;
     },
   ) {
     super(message);
@@ -115,12 +116,14 @@ export interface AiUsageRecorder {
     userId: string | null;
     feature: GeminiFeature;
     model: string;
+    status?: 'success' | 'failed';
     isFallback: boolean;
     inputTokens: number;
     outputTokens: number;
     cachedTokens: number;
     totalTokens: number;
     durationMs: number;
+    errorCategory?: string | null;
   }): Promise<void>;
 }
 
@@ -149,6 +152,7 @@ function errorFromResponse(status: number, payload: unknown): PythonAiError {
   const message =
     typeof error?.message === 'string' ? error.message.slice(0, SAFE_MESSAGE_MAX) : `AI backend returned HTTP ${status}`;
   const retryAfterSeconds = typeof error?.retryAfterSeconds === 'number' ? error.retryAfterSeconds : undefined;
+  const usage = typeof error?.usage === 'object' && error?.usage !== null ? error.usage : undefined;
   // If Python did not say, assume Gemini may have been called: the safe choice for billing.
   const dispatched = typeof error?.dispatched === 'boolean' ? error.dispatched : status >= 500;
   const info = {
@@ -156,6 +160,7 @@ function errorFromResponse(status: number, payload: unknown): PythonAiError {
     status,
     ...(code ? { code } : {}),
     ...(retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
+    ...(usage !== undefined ? { usage } : {}),
   };
 
   switch (code) {

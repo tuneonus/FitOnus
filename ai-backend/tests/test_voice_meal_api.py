@@ -183,7 +183,10 @@ def test_missing_token_is_rejected(client: TestClient) -> None:
     assert client.post(URL, json=body()).status_code == 401
 
 
-def test_unusable_model_reply_is_flagged_not_hidden(client: TestClient, voice_llm: FakeLlm) -> None:
+def test_unusable_model_reply_is_flagged_not_hidden(
+    client: TestClient, voice_llm: FakeLlm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AI_VOICE_MEAL_STRUCTURED_OUTPUTS", "false")
     voice_llm.text = "Sure! That is about 300 kcal."
     data = client.post(URL, json=body(), headers=auth()).json()
     assert data["outcome"] == "parse_failed"
@@ -195,6 +198,19 @@ def test_unusable_model_reply_is_flagged_not_hidden(client: TestClient, voice_ll
     assert (
         data["result"]["transcript"] == "two dosa and sambar"
     )  # falls back to what the user typed
+
+
+def test_unusable_model_reply_in_structured_mode_raises_503(
+    client: TestClient, voice_llm: FakeLlm
+) -> None:
+    voice_llm.text = "Sure! That is about 300 kcal."
+    response = client.post(URL, json=body(), headers=auth())
+    assert response.status_code == 503
+    error = response.json()["error"]
+    assert error["code"] == "PROVIDER_ERROR"
+    assert error["dispatched"] is True
+    assert "usage" in error
+    assert error["usage"]["totalTokens"] == 125
 
 
 def test_no_food_reply_is_flagged(client: TestClient, voice_llm: FakeLlm) -> None:

@@ -12,6 +12,7 @@ from typing import Any
 import jwt
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 from onusfit_ai.main import create_app
 from onusfit_ai.shared.auth import replay_cache
@@ -64,9 +65,13 @@ class FakeLlm:
         self,
         text: str = '{"text":"Hello!","followUps":["Next?"],"sources":["Profile"],"medicalNote":false}',
         error: Exception | None = None,
+        parsed: Any | None = None,
+        finish_reason: str | None = None,
     ) -> None:
         self.text = text
         self.error = error
+        self.parsed = parsed
+        self.finish_reason = finish_reason
         self.calls: list[dict[str, Any]] = []
 
     async def generate_text(
@@ -77,6 +82,7 @@ class FakeLlm:
         fallback_model: str | None,
         deadline_s: float,
         media: MediaInput | None = None,
+        schema: type[BaseModel] | None = None,
     ) -> LlmResult:
         self.calls.append(
             {
@@ -85,12 +91,25 @@ class FakeLlm:
                 "fallback": fallback_model,
                 "deadline_s": deadline_s,
                 "media": media,
+                "schema": schema,
             }
         )
         if self.error:
             raise self.error
+
+        parsed_val = self.parsed
+        if parsed_val is None and schema is not None and self.text:
+            try:
+                data = json.loads(self.text)
+                if isinstance(data, dict):
+                    parsed_val = schema.model_validate(data)
+            except Exception:
+                parsed_val = None
+
         return LlmResult(
             text=self.text,
+            parsed=parsed_val,
+            finish_reason=self.finish_reason,
             usage=LlmUsage(
                 model=primary_model,
                 is_fallback=False,

@@ -114,8 +114,12 @@ def test_the_complete_user_context_is_accepted_and_used(
         assert response.status_code == 200, case["name"]
 
 
-def test_an_unusable_reply_is_reported_not_invented(client: TestClient, insights: FakeLlm) -> None:
+def test_an_unusable_reply_is_reported_in_legacy_mode(
+    client: TestClient, insights: FakeLlm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AI_COACH_INSIGHTS_STRUCTURED_OUTPUTS", "false")
     insights.text = "Great job! Keep going."
+    insights.parsed = None
     response = client.post(URL, json=body(), headers=auth())
     assert response.status_code == 200
     data = response.json()
@@ -123,9 +127,23 @@ def test_an_unusable_reply_is_reported_not_invented(client: TestClient, insights
     assert data["usage"]["totalTokens"] == 125  # the model call still happened and is reported
 
 
-def test_an_empty_insight_list_is_unusable(client: TestClient, insights: FakeLlm) -> None:
+def test_an_empty_insight_list_is_unusable_in_legacy_mode(
+    client: TestClient, insights: FakeLlm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AI_COACH_INSIGHTS_STRUCTURED_OUTPUTS", "false")
     insights.text = json.dumps({"greeting": "Hi", "insights": []})
+    insights.parsed = None
     assert client.post(URL, json=body(), headers=auth()).json()["outcome"] == "unusable"
+
+
+def test_an_unusable_reply_is_rejected_in_structured_mode(
+    client: TestClient, insights: FakeLlm
+) -> None:
+    insights.text = "Great job! Keep going."
+    insights.parsed = None
+    response = client.post(URL, json=body(), headers=auth())
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "PROVIDER_ERROR"
 
 
 @pytest.mark.parametrize(

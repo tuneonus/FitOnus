@@ -86,6 +86,16 @@ def register_error_handlers(app: FastAPI) -> None:
         }
         if exc.retry_after_seconds is not None:
             body["retryAfterSeconds"] = exc.retry_after_seconds
+        if exc.usage is not None:
+            body["usage"] = {
+                "model": exc.usage.model,
+                "isFallback": exc.usage.is_fallback,
+                "inputTokens": exc.usage.input_tokens,
+                "outputTokens": exc.usage.output_tokens,
+                "cachedTokens": exc.usage.cached_tokens,
+                "totalTokens": exc.usage.total_tokens,
+                "durationMs": exc.usage.duration_ms,
+            }
         return JSONResponse(status_code=status_code, content={"error": body})
 
     @app.exception_handler(AiError)

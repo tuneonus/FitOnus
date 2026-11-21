@@ -86,26 +86,46 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
 
     const parsed = call.schema.safeParse(raw);
     if (!parsed.success) {
+      const rawUsage =
+        raw && typeof raw === 'object' && 'usage' in raw ? (raw as Record<string, unknown>).usage : undefined;
       throw new PythonAiError('invalid_response', 'AI backend response did not match the contract.', {
         dispatched: true,
+        usage: rawUsage,
       });
     }
     const { usage, outcome } = parsed.data;
 
-    call.usageRecorder
-      ?.recordExternalUsage({
-        requestId: call.requestId,
-        userId: call.userId,
-        feature: call.feature,
-        model: usage.model,
-        isFallback: usage.isFallback,
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
-        cachedTokens: usage.cachedTokens,
-        totalTokens: usage.totalTokens,
-        durationMs: usage.durationMs,
-      })
-      .catch(() => undefined);
+    // Isolated, awaited usage persistence for successful provider call
+    if (call.usageRecorder && usage) {
+      try {
+        await call.usageRecorder.recordExternalUsage({
+          requestId: call.requestId,
+          userId: call.userId,
+          feature: call.feature,
+          model: usage.model,
+          status: 'success',
+          isFallback: usage.isFallback,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          cachedTokens: usage.cachedTokens,
+          totalTokens: usage.totalTokens,
+          durationMs: usage.durationMs,
+          errorCategory: usage.isFallback ? 'FALLBACK_SUCCESS' : null,
+        });
+      } catch (ledgerError) {
+        call.logger?.error(
+          {
+            event: 'ledger_persistence_failed',
+            ...ids,
+            feature: call.feature,
+            error: ledgerError instanceof Error ? ledgerError.message : String(ledgerError),
+            status: 'success',
+          },
+          'Failed to persist Gemini usage event to database',
+        );
+      }
+    }
+
     call.logger?.info(
       aiCallCompletedFields({ ids, feature: call.feature, endpoint: call.path, outcome, usage, durationMs: elapsedMs() }),
       `${call.label} served`,
@@ -120,6 +140,42 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
 
     // If Gemini may have been called, the quota unit stays consumed; otherwise the gate refunds it.
     if (failure.dispatched) markAiRequestDispatched();
+
+    // Isolated, awaited usage persistence for failed provider call if usage was returned
+    if (call.usageRecorder && failure.info.usage) {
+      const usageParse = pythonUsageSchema.safeParse(failure.info.usage);
+      if (usageParse.success) {
+        const u = usageParse.data;
+        try {
+          await call.usageRecorder.recordExternalUsage({
+            requestId: call.requestId,
+            userId: call.userId,
+            feature: call.feature,
+            model: u.model,
+            status: 'failed',
+            isFallback: u.isFallback,
+            inputTokens: u.inputTokens,
+            outputTokens: u.outputTokens,
+            cachedTokens: u.cachedTokens,
+            totalTokens: u.totalTokens,
+            durationMs: u.durationMs,
+            errorCategory: failure.info.code || failure.kind,
+          });
+        } catch (ledgerError) {
+          call.logger?.error(
+            {
+              event: 'ledger_persistence_failed',
+              ...ids,
+              feature: call.feature,
+              error: ledgerError instanceof Error ? ledgerError.message : String(ledgerError),
+              status: 'failed',
+            },
+            'Failed to persist failed Gemini usage event to database',
+          );
+        }
+      }
+    }
+
     call.logger?.error(
       aiCallFailedFields({ ids, feature: call.feature, endpoint: call.path, error: failure, durationMs: elapsedMs() }),
       `${call.label} failed`,

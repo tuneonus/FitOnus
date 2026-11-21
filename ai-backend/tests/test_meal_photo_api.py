@@ -236,8 +236,9 @@ def test_other_endpoints_do_not_accept_a_photo_token(client: TestClient, vision:
 
 
 def test_malformed_gemini_reply_is_flagged_and_keeps_the_known_not_formatted_result(
-    client: TestClient, vision: FakeLlm
+    client: TestClient, vision: FakeLlm, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("AI_PHOTO_MEAL_STRUCTURED_OUTPUTS", "false")
     vision.text = "Sorry, I cannot tell."
     response = client.post(URL, json=body(), headers=auth())
     assert response.status_code == 200
@@ -246,6 +247,19 @@ def test_malformed_gemini_reply_is_flagged_and_keeps_the_known_not_formatted_res
     assert data["result"]["isFood"] is False
     assert data["result"]["summary"] == "Unable to parse food analysis"
     assert data["result"]["items"] == [] and data["result"]["totalKcal"] == 0
+
+
+def test_malformed_gemini_reply_in_structured_mode_raises_503(
+    client: TestClient, vision: FakeLlm
+) -> None:
+    vision.text = "Sorry, I cannot tell."
+    response = client.post(URL, json=body(), headers=auth())
+    assert response.status_code == 503
+    error = response.json()["error"]
+    assert error["code"] == "PROVIDER_ERROR"
+    assert error["dispatched"] is True
+    assert "usage" in error
+    assert error["usage"]["totalTokens"] == 125
 
 
 def test_a_photo_without_food_is_a_normal_answer(client: TestClient, vision: FakeLlm) -> None:

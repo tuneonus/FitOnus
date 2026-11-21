@@ -6,7 +6,9 @@ layers can depend on it without dragging Gemini or HTTP along. The only real imp
 """
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
+
+from pydantic import BaseModel
 
 
 @dataclass(frozen=True)
@@ -25,6 +27,8 @@ class LlmUsage:
 class LlmResult:
     text: str
     usage: LlmUsage
+    parsed: Any | None = None
+    finish_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -33,6 +37,29 @@ class MediaInput:
 
     mime_type: str
     data: bytes
+
+
+class LlmServiceError(Exception):
+    """Raised when LLM generation fails or response violates safety/limits.
+
+    Pure infrastructure/adapter exception containing no HTTP status codes or web framework types.
+    """
+
+    def __init__(
+        self,
+        *,
+        code: str,
+        message: str,
+        retry_after_seconds: int | None = None,
+        dispatched: bool = False,
+        usage: LlmUsage | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.retry_after_seconds = retry_after_seconds
+        self.dispatched = dispatched
+        self.usage = usage
 
 
 class TextGenerator(Protocol):
@@ -46,4 +73,5 @@ class TextGenerator(Protocol):
         fallback_model: str | None,
         deadline_s: float,
         media: MediaInput | None = None,
+        schema: type[BaseModel] | None = None,
     ) -> LlmResult: ...

@@ -130,12 +130,14 @@ export class GeminiRuntimeService {
     userId: string | null;
     feature: GeminiFeature;
     model: string;
+    status?: 'success' | 'failed';
     isFallback: boolean;
     inputTokens: number;
     outputTokens: number;
     cachedTokens: number;
     totalTokens: number;
     durationMs: number;
+    errorCategory?: string | null;
   }): Promise<void> {
     await this.ensureFreshConfig().catch(() => undefined); // pricing is optional; defaults apply
     await this.config.repo.recordGeminiUsage({
@@ -143,7 +145,7 @@ export class GeminiRuntimeService {
       userId: event.userId,
       feature: event.feature,
       model: event.model,
-      status: 'success',
+      status: event.status ?? 'success',
       inputTokens: event.inputTokens,
       outputTokens: event.outputTokens,
       cachedTokens: event.cachedTokens,
@@ -155,7 +157,7 @@ export class GeminiRuntimeService {
         event.cachedTokens,
       ),
       durationMs: event.durationMs,
-      errorCategory: event.isFallback ? 'FALLBACK_SUCCESS' : null,
+      errorCategory: event.errorCategory ?? (event.isFallback ? 'FALLBACK_SUCCESS' : null),
       providerRequestId: null,
     });
   }

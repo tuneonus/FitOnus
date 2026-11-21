@@ -18,6 +18,7 @@ from typing import Any
 
 from google import genai
 from google.genai import types
+from pydantic import BaseModel
 
 from onusfit_ai.shared.llm.errors import (
     ClassifiedError,
@@ -77,6 +78,7 @@ class GeminiClient:
         fallback_model: str | None,
         deadline_s: float,
         media: MediaInput | None = None,
+        schema: type[BaseModel] | None = None,
     ) -> LlmResult:
         """Execute text generation with deadline enforcement, cooldown tracking, and fallback.
 
@@ -86,6 +88,7 @@ class GeminiClient:
         3. Enforces total deadline budget; attempts are clamped to GEMINI_ATTEMPT_TIMEOUT_S.
         4. If primary fails with retryable error, tries fallback before deadline expires.
         5. Records model failures into cooldown tracker (circuit breaker).
+        6. When schema is supplied, configures response_schema and response_mime_type.
         """
         sdk = (
             self._sdk_client()
@@ -134,7 +137,12 @@ class GeminiClient:
             attempt_started = self._clock()
             try:
                 response = await self._call(
-                    sdk, model, prompt, min(remaining, self._attempt_timeout_s), media
+                    sdk,
+                    model,
+                    prompt,
+                    min(remaining, self._attempt_timeout_s),
+                    media,
+                    schema=schema,
                 )
             except Exception as exc:  # noqa: BLE001 - every SDK/network failure is classified below
                 last = classify_gemini_error(exc)
@@ -162,22 +170,59 @@ class GeminiClient:
                 continue
 
             self._cooldown.record_success(model)
+
+            candidate = response.candidates[0] if getattr(response, "candidates", None) else None
+            raw_finish = getattr(candidate, "finish_reason", None)
+            finish_reason_name: str | None = None
+            if raw_finish is not None:
+                finish_reason_name = (
+                    raw_finish.name
+                    if hasattr(raw_finish, "name")
+                    else str(raw_finish)
+                )
+
+            parsed_obj = getattr(response, "parsed", None)
+            resp_text = (getattr(response, "text", None) or "").strip()
+
+            if parsed_obj is None and schema is not None and resp_text:
+                try:
+                    import json
+                    from onusfit_ai.shared.utils.js_compat import strip_code_fences
+                    data = json.loads(strip_code_fences(resp_text))
+                    if isinstance(data, dict):
+                        parsed_obj = schema.model_validate(data)
+                except Exception:
+                    parsed_obj = None
+
             return LlmResult(
-                text=(response.text or "").strip(),
+                text=resp_text,
                 usage=_usage_from(response, model, is_fallback, self._clock() - attempt_started),
+                parsed=parsed_obj,
+                finish_reason=finish_reason_name,
             )
 
         raise _to_llm_error(last, attempts_made=attempts)
 
     async def _call(
-        self, sdk: Any, model: str, prompt: str, timeout_s: float, media: MediaInput | None = None
+        self,
+        sdk: Any,
+        model: str,
+        prompt: str,
+        timeout_s: float,
+        media: MediaInput | None = None,
+        schema: type[BaseModel] | None = None,
     ) -> Any:
-        config = types.GenerateContentConfig(
-            http_options=types.HttpOptions(
+        config_kwargs: dict[str, Any] = {
+            "http_options": types.HttpOptions(
                 timeout=int(timeout_s * 1000),
                 retry_options=types.HttpRetryOptions(attempts=1),  # 1 = no SDK-level retries
             )
-        )
+        }
+        if schema is not None:
+            config_kwargs["response_mime_type"] = "application/json"
+            config_kwargs["response_schema"] = schema
+        config = types.GenerateContentConfig(**config_kwargs)
+
         # Same content order as the former Node client: the clip first, then the prompt.
         contents: Any = (
             [types.Part.from_bytes(data=media.data, mime_type=media.mime_type), prompt]

@@ -6,9 +6,11 @@ from onusfit_ai.features.speech.application.contracts import (
     TranscribeResult,
 )
 from onusfit_ai.features.speech.application.parsing import parse_transcription
+from onusfit_ai.features.speech.application.schemas import GeminiTranscribeOutput
 from onusfit_ai.features.speech.application.transcribe import transcribe_audio
 
 __all__ = [
+    "GeminiTranscribeOutput",
     "TranscribeRequest",
     "TranscribeResponse",
     "TranscribeResult",

@@ -319,7 +319,7 @@ describe('callPythonAi observability', () => {
       expect(context.dispatched).toBe(false);
     });
 
-    it('still writes exactly one usage-ledger row on success, none on failure, and a ledger failure never fails the call', async () => {
+    it('still writes exactly one usage-ledger row on success, none on failure without usage, and a ledger failure never fails the call', async () => {
       await call();
       expect(recorder.recordExternalUsage).toHaveBeenCalledTimes(1);
       expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
@@ -328,17 +328,72 @@ describe('callPythonAi observability', () => {
           userId: USER,
           feature: 'coach_chat',
           totalTokens: 1050,
+          status: 'success',
         }),
       );
 
       recorder.recordExternalUsage.mockClear();
       recorder.recordExternalUsage.mockRejectedValue(new Error('db down'));
       await expect(call()).resolves.toMatchObject({ outcome: 'ok' });
+      expect(capture.events('ledger_persistence_failed')).toHaveLength(1);
 
       recorder.recordExternalUsage.mockClear();
       server.respond((_r, res) => json(res, 503, pythonError('PROVIDER_UNAVAILABLE', 'busy')));
       await failure(call());
       expect(recorder.recordExternalUsage).not.toHaveBeenCalled();
+    });
+
+    it('records failed usage when Python returns a 503 with usage attached', async () => {
+      const failedUsage = {
+        model: 'gemini-3.5-flash-lite',
+        isFallback: false,
+        inputTokens: 500,
+        outputTokens: 50,
+        cachedTokens: 0,
+        thinkingTokens: 10,
+        totalTokens: 560,
+        durationMs: 780,
+      };
+      server.respond((_r, res) =>
+        json(res, 503, pythonError('PROVIDER_ERROR', 'safety blocked', { usage: failedUsage })),
+      );
+
+      await failure(call());
+      expect(recorder.recordExternalUsage).toHaveBeenCalledTimes(1);
+      expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestId: AI_REQUEST_ID,
+          userId: USER,
+          feature: 'coach_chat',
+          totalTokens: 560,
+          status: 'failed',
+          errorCategory: 'PROVIDER_ERROR',
+        }),
+      );
+    });
+
+    it('logs ledger_persistence_failed when recording failed usage fails in the database without masking the provider error', async () => {
+      const failedUsage = {
+        model: 'gemini-3.5-flash-lite',
+        isFallback: false,
+        inputTokens: 500,
+        outputTokens: 50,
+        cachedTokens: 0,
+        thinkingTokens: 10,
+        totalTokens: 560,
+        durationMs: 780,
+      };
+      recorder.recordExternalUsage.mockRejectedValue(new Error('db connection lost'));
+      server.respond((_r, res) =>
+        json(res, 503, pythonError('PROVIDER_ERROR', 'token limit exceeded', { usage: failedUsage })),
+      );
+
+      const err = await failure(call());
+      expect(err).toBeInstanceOf(AppError);
+      expect(recorder.recordExternalUsage).toHaveBeenCalledTimes(1);
+      const ledgerFails = capture.events('ledger_persistence_failed');
+      expect(ledgerFails).toHaveLength(1);
+      expect(ledgerFails[0]).toMatchObject({ status: 'failed', error: 'db connection lost' });
     });
 
     it('works with no logger at all', async () => {

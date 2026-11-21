@@ -42,11 +42,24 @@ def test_success_returns_camel_case_contract(client: TestClient, fake_llm: FakeL
     assert "CURRENT USER INQUIRY:\nInnaiku leg workout" in fake_llm.calls[0]["prompt"]
 
 
-def test_unstructured_model_reply_is_flagged(client: TestClient, fake_llm: FakeLlm) -> None:
+def test_unstructured_model_reply_is_flagged_in_legacy_mode(
+    client: TestClient, fake_llm: FakeLlm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AI_COACH_CHAT_STRUCTURED_OUTPUTS", "false")
     fake_llm.text = "plain prose reply"
     body = client.post(URL, json=load_request("sparse"), headers=auth()).json()
     assert body["outcome"] == "unstructured"
     assert body["result"]["text"] == "plain prose reply"
+
+
+def test_unstructured_model_reply_is_rejected_in_structured_mode(
+    client: TestClient, fake_llm: FakeLlm
+) -> None:
+    fake_llm.text = "plain prose reply"
+    fake_llm.parsed = None
+    response = client.post(URL, json=load_request("sparse"), headers=auth())
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "PROVIDER_ERROR"
 
 
 # Audit M5 (approved): the prompt never asks for `blocks`, but the mobile app renders them and an "action"

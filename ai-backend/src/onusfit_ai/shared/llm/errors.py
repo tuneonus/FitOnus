@@ -15,6 +15,8 @@ from typing import Any, Literal
 
 import httpx
 
+from onusfit_ai.shared.llm.ports import LlmServiceError
+
 ErrorKind = Literal[
     "AUTH_ERROR",
     "MODEL_NOT_FOUND",
@@ -154,25 +156,4 @@ class ModelCooldown:
 
     def record_success(self, model: str) -> None:
         self._until.pop(model, None)
-
-
-class LlmServiceError(Exception):
-    """Raised by LLM adapters when generation fails.
-
-    Pure infrastructure/adapter exception containing no HTTP status codes or web framework types.
-    """
-
-    def __init__(
-        self,
-        *,
-        code: str,
-        message: str,
-        retry_after_seconds: int | None = None,
-        dispatched: bool = False,
-    ) -> None:
-        super().__init__(message)
-        self.code = code
-        self.message = message
-        self.retry_after_seconds = retry_after_seconds
-        self.dispatched = dispatched
 
