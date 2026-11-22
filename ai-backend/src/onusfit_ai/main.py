@@ -8,6 +8,7 @@ from fastapi import FastAPI
 
 from onusfit_ai import __version__
 from onusfit_ai.features.coach.presentation import router as coach_router
+from onusfit_ai.features.knowledge.presentation import router as knowledge_router
 from onusfit_ai.features.meals.presentation import router as meals_router
 from onusfit_ai.features.speech.presentation import router as speech_router
 from onusfit_ai.shared.config import Settings, configuration_problems, get_settings, is_production
@@ -98,6 +99,7 @@ def create_app() -> FastAPI:
     app.include_router(coach_router)
     app.include_router(meals_router)
     app.include_router(speech_router)
+    app.include_router(knowledge_router)
     return app
 
 

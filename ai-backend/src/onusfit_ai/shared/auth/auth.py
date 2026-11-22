@@ -10,16 +10,50 @@ Token claims (HS256): iss, aud, sub (user id), iat, exp, jti (unique id), scope,
 
 import threading
 import time
+import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import jwt
 from fastapi import Depends, Header
 
 from onusfit_ai.shared.config.config import MIN_SERVICE_SECRET_LENGTH, Settings, get_settings
+from onusfit_ai.shared.contracts.tools import (
+    TOOL_JWT_AUDIENCE,
+    TOOL_JWT_ISSUER,
+    TOOL_JWT_SCOPE,
+    TOOL_JWT_TTL_SECONDS,
+)
 from onusfit_ai.shared.errors.errors import AiError
 
 _CLOCK_SKEW_SECONDS = 5
 _MAX_TOKEN_LIFETIME_SECONDS = 60
+
+
+def mint_internal_tool_token(
+    secret: str,
+    user_id: str,
+    request_id: str,
+    *,
+    issuer: str = TOOL_JWT_ISSUER,
+    audience: str = TOOL_JWT_AUDIENCE,
+    scope: str = TOOL_JWT_SCOPE,
+    ttl_seconds: int = TOOL_JWT_TTL_SECONDS,
+    clock: Callable[[], float] = time.time,
+) -> str:
+    """Mint a short-lived HS256 service token for internal Node API tool calls."""
+    now = clock()
+    payload = {
+        "iss": issuer,
+        "aud": audience,
+        "sub": user_id,
+        "scope": scope,
+        "rid": request_id,
+        "jti": str(uuid.uuid4()),
+        "iat": int(now),
+        "exp": int(now + ttl_seconds),
+    }
+    return jwt.encode(payload, secret, algorithm="HS256")
 
 
 @dataclass(frozen=True)

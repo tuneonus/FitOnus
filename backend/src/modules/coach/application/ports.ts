@@ -20,12 +20,22 @@ export interface UserContextRepository {
   getUserFitnessContext(userId: string, timezone?: string): Promise<UserFitnessContext>;
 }
 
+export interface KnowledgeContextPayloadItem {
+  documentSlug: string;
+  documentTitle: string;
+  category: string;
+  chunkIndex: number;
+  content: string;
+  citation: string;
+}
+
 export interface CoachChatService {
   generateCoachResponse(
     message: string,
     context: UserFitnessContext,
     history?: ChatMessageTurn[],
     memories?: string[],
+    knowledge?: KnowledgeContextPayloadItem[],
   ): Promise<CoachResponse>;
 }
 

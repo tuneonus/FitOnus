@@ -16,7 +16,7 @@ from onusfit_ai.features.speech.application.transcribe import (
     transcribe_audio,
 )
 from onusfit_ai.shared.llm.gemini import GeminiClient
-from onusfit_ai.shared.llm.ports import LlmResult, LlmServiceError, LlmUsage, MediaInput
+from onusfit_ai.shared.llm.ports import LlmServiceError
 
 URL = "/internal/v1/ai/speech/transcribe"
 MODEL = {"primary": "gemini-primary", "fallback": "gemini-backup"}
@@ -72,7 +72,9 @@ def test_tanglish_structured_transcription(client: TestClient, fake_llm: FakeLlm
     fake_llm.parsed = GeminiTranscribeOutput(
         transcript="inniku leg workout mudichiten", detected_language="tanglish"
     )
-    fake_llm.text = '{"transcript": "inniku leg workout mudichiten", "detectedLanguage": "tanglish"}'
+    fake_llm.text = (
+        '{"transcript": "inniku leg workout mudichiten", "detectedLanguage": "tanglish"}'
+    )
 
     response = client.post(URL, json=body(), headers=auth())
 
@@ -193,11 +195,7 @@ async def test_gemini_client_passes_schema_and_mime_type() -> None:
 
     class FakeSdk:
         def __init__(self) -> None:
-            self.aio = SimpleNamespace(
-                models=SimpleNamespace(
-                    generate_content=self._generate
-                )
-            )
+            self.aio = SimpleNamespace(models=SimpleNamespace(generate_content=self._generate))
 
         async def _generate(self, *, model: str, contents: Any, config: Any) -> Any:
             configs_received.append(config)
@@ -241,16 +239,13 @@ async def test_gemini_client_passes_schema_to_fallback_model() -> None:
 
     class FakeSdkFallback:
         def __init__(self) -> None:
-            self.aio = SimpleNamespace(
-                models=SimpleNamespace(
-                    generate_content=self._generate
-                )
-            )
+            self.aio = SimpleNamespace(models=SimpleNamespace(generate_content=self._generate))
 
         async def _generate(self, *, model: str, contents: Any, config: Any) -> Any:
             calls.append((model, config))
             if model == "primary-model":
                 from google.genai import errors as genai_errors
+
                 raise genai_errors.ServerError(
                     503, {"error": {"code": 503, "message": "busy", "status": "UNAVAILABLE"}}
                 )

@@ -13,9 +13,15 @@ class GeminiTranscribeOutput(BaseModel):
 
     transcript: str = Field(
         default="",
-        description="Exact transcription of the spoken words. Preserves Tamil script or Tanglish phonetics exactly as spoken.",
+        description=(
+            "Exact transcription of the spoken words. "
+            "Preserves Tamil script or Tanglish phonetics exactly as spoken."
+        ),
     )
     detected_language: Literal["en", "ta", "tanglish"] = Field(
         default="en",
-        description="Language detected: 'en' for English, 'ta' for Tamil script, 'tanglish' for Tamil in Latin letters.",
+        description=(
+            "Language detected: 'en' for English, 'ta' for Tamil script, "
+            "'tanglish' for Tamil in Latin letters."
+        ),
     )

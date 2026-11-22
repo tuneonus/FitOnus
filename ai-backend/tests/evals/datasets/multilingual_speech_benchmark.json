@@ -1,0 +1,329 @@
+[
+  {
+    "case_id": "LANG_001",
+    "category": "speech_transcribe",
+    "description": "Pure Tamil script audio transcript test.",
+    "language": "ta",
+    "input_payload": {
+      "audioSample": "ta_audio_sample_01",
+      "expectedLanguage": "ta"
+    },
+    "expected_outcome": "ok",
+    "expected_safety_disclaimers": [],
+    "forbidden_terms": [],
+    "ground_truth_source": "Curated Tamil fitness speech corpus (Madurai / Chennai dialect)",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "\u0b87\u0ba9\u0bcd\u0bb1\u0bc8\u0baf \u0b89\u0b9f\u0bb1\u0bcd\u0baa\u0baf\u0bbf\u0bb1\u0bcd\u0b9a\u0bbf \u0bae\u0bc1\u0b9f\u0bbf\u0ba8\u0bcd\u0ba4\u0ba4\u0bc1",
+      "detectedLanguage": "ta",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_002",
+    "category": "speech_transcribe",
+    "description": "Tanglish meal description with numbers: rendu chapati, oru cup dal.",
+    "language": "tanglish",
+    "input_payload": {
+      "audioSample": "tanglish_meal_01",
+      "expectedLanguage": "tanglish"
+    },
+    "expected_outcome": "ok",
+    "expected_safety_disclaimers": [],
+    "forbidden_terms": [],
+    "ground_truth_source": "Curated Tanglish conversational audio corpus",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "rendu chapati oru cup dal",
+      "detectedLanguage": "tanglish",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_003",
+    "category": "multilingual_dialect",
+    "description": "Spelling variant 1: 'dosai' vs 'dosa' vs 'thosai'.",
+    "language": "tanglish",
+    "input_payload": {
+      "transcript": "oru dosai with coconut chutney"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Dosa",
+        "serving_weight_g": 80.0,
+        "serving_unit": "piece",
+        "serving_size": 1.0,
+        "calories": 135.0,
+        "protein_g": 3.0,
+        "carbs_g": 22.0,
+        "fat_g": 3.8,
+        "fiber_g": 1.0
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 Code B002 (Phonetic spelling invariance)",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "oru dosai with coconut chutney",
+      "detectedLanguage": "tanglish",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_004",
+    "category": "multilingual_dialect",
+    "description": "Spelling variant 2: 'thosai' transliteration common in diaspora.",
+    "language": "tanglish",
+    "input_payload": {
+      "transcript": "two thosai with sambar"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Dosa",
+        "serving_weight_g": 160.0,
+        "serving_unit": "piece",
+        "serving_size": 2.0,
+        "calories": 270.0,
+        "protein_g": 6.0,
+        "carbs_g": 44.0,
+        "fat_g": 7.6,
+        "fiber_g": 2.0
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 Code B002",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "two thosai with sambar",
+      "detectedLanguage": "tanglish",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_005",
+    "category": "multilingual_dialect",
+    "description": "Indian English colloquialism: 'curd' instead of 'yogurt'.",
+    "language": "en",
+    "input_payload": {
+      "transcript": "one cup curd with sugar"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Curd",
+        "serving_weight_g": 150.0,
+        "serving_unit": "cup",
+        "serving_size": 1.0,
+        "calories": 120.0,
+        "protein_g": 5.0,
+        "carbs_g": 9.0,
+        "fat_g": 6.0,
+        "fiber_g": 0.0
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 Code E001",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "one cup curd with sugar",
+      "detectedLanguage": "en",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_006",
+    "category": "multilingual_dialect",
+    "description": "Tamil quantity words: '\u0b92\u0ba9\u0bcd\u0bb1\u0bc1' (one), '\u0b87\u0bb0\u0ba3\u0bcd\u0b9f\u0bc1' (two), '\u0bae\u0bc2\u0ba9\u0bcd\u0bb1\u0bc1' (three).",
+    "language": "ta",
+    "input_payload": {
+      "transcript": "\u0bae\u0bc2\u0ba9\u0bcd\u0bb1\u0bc1 \u0bb5\u0bc7\u0b95\u0bb5\u0bc8\u0ba4\u0bcd\u0ba4 \u0bae\u0bc1\u0b9f\u0bcd\u0b9f\u0bc8\u0b95\u0bb3\u0bcd"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Boiled Egg",
+        "serving_weight_g": 150.0,
+        "serving_unit": "egg",
+        "serving_size": 3.0,
+        "calories": 216.0,
+        "protein_g": 18.6,
+        "carbs_g": 1.6,
+        "fat_g": 14.4,
+        "fiber_g": 0.0
+      }
+    ],
+    "ground_truth_source": "USDA FDC ID 173424 with Tamil lexical extraction",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "\u0bae\u0bc2\u0ba9\u0bcd\u0bb1\u0bc1 \u0bb5\u0bc7\u0b95\u0bb5\u0bc8\u0ba4\u0bcd\u0ba4 \u0bae\u0bc1\u0b9f\u0bcd\u0b9f\u0bc8\u0b95\u0bb3\u0bcd",
+      "detectedLanguage": "ta",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_007",
+    "category": "multilingual_dialect",
+    "description": "Tanglish quantity words: 'oru' (one), 'rendu' (two), 'moonu' (three), 'naalu' (four).",
+    "language": "tanglish",
+    "input_payload": {
+      "transcript": "moonu idli oru vada"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Idli",
+        "serving_weight_g": 150.0,
+        "serving_unit": "piece",
+        "serving_size": 3.0,
+        "calories": 195.0,
+        "protein_g": 6.0,
+        "carbs_g": 39.0,
+        "fat_g": 0.8,
+        "fiber_g": 2.2
+      },
+      {
+        "name": "Medu Vada",
+        "serving_weight_g": 45.0,
+        "serving_unit": "piece",
+        "serving_size": 1.0,
+        "calories": 120.0,
+        "protein_g": 3.4,
+        "carbs_g": 12.0,
+        "fat_g": 6.8,
+        "fiber_g": 1.6
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 Code B005 & B009",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "moonu idli oru vada",
+      "detectedLanguage": "tanglish",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_008",
+    "category": "speech_transcribe",
+    "description": "Indian English fitness query: 'gym workout chest and biceps'.",
+    "language": "en",
+    "input_payload": {
+      "audioSample": "en_in_gym_01",
+      "expectedLanguage": "en"
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Curated Indian English fitness speech corpus",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "gym workout chest and biceps",
+      "detectedLanguage": "en",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_009",
+    "category": "multilingual_dialect",
+    "description": "Tamil script mixed with English: '2 \u0ba4\u0bcb\u0b9a\u0bc8 with \u0b9a\u0bbe\u0bae\u0bcd\u0baa\u0bbe\u0bb0\u0bcd'.",
+    "language": "mixed",
+    "input_payload": {
+      "transcript": "2 \u0ba4\u0bcb\u0b9a\u0bc8 with \u0b9a\u0bbe\u0bae\u0bcd\u0baa\u0bbe\u0bb0\u0bcd"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Dosa",
+        "serving_weight_g": 160.0,
+        "serving_unit": "piece",
+        "serving_size": 2.0,
+        "calories": 270.0,
+        "protein_g": 6.0,
+        "carbs_g": 44.0,
+        "fat_g": 7.6,
+        "fiber_g": 2.0
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 Code B002",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "2 \u0ba4\u0bcb\u0b9a\u0bc8 with \u0b9a\u0bbe\u0bae\u0bcd\u0baa\u0bbe\u0bb0\u0bcd",
+      "detectedLanguage": "mixed",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_010",
+    "category": "multilingual_dialect",
+    "description": "Colloquial Tanglish measure: 'konjam' (a little / small portion).",
+    "language": "tanglish",
+    "input_payload": {
+      "transcript": "konjam rice with rasam"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Rice",
+        "serving_weight_g": 100.0,
+        "serving_unit": "cup",
+        "serving_size": 0.5,
+        "calories": 130.0,
+        "protein_g": 2.6,
+        "carbs_g": 28.0,
+        "fat_g": 0.3,
+        "fiber_g": 0.4
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 Code A001",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "konjam rice with rasam",
+      "detectedLanguage": "tanglish",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_011",
+    "category": "multilingual_dialect",
+    "description": "Colloquial Tanglish measure: 'nariya' (a lot / large portion).",
+    "language": "tanglish",
+    "input_payload": {
+      "transcript": "nariya chicken breast and salad"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Chicken Breast",
+        "serving_weight_g": 250.0,
+        "serving_unit": "fillet",
+        "serving_size": 1.5,
+        "calories": 412.0,
+        "protein_g": 77.5,
+        "carbs_g": 0.0,
+        "fat_g": 9.0,
+        "fiber_g": 0.0
+      }
+    ],
+    "ground_truth_source": "USDA FDC ID 171077",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "nariya chicken breast and salad",
+      "detectedLanguage": "tanglish",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "LANG_012",
+    "category": "speech_transcribe",
+    "description": "Tamil script motivational inquiry.",
+    "language": "ta",
+    "input_payload": {
+      "audioSample": "ta_coach_inquiry_01",
+      "expectedLanguage": "ta"
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Curated Tamil fitness speech corpus",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "transcript": "\u0b87\u0ba9\u0bcd\u0bb1\u0bc8\u0baf \u0b89\u0b9f\u0bb1\u0bcd\u0baa\u0baf\u0bbf\u0bb1\u0bcd\u0b9a\u0bbf \u0bae\u0bc1\u0b9f\u0bbf\u0ba8\u0bcd\u0ba4\u0ba4\u0bc1",
+      "detectedLanguage": "ta",
+      "confidence": "high"
+    }
+  }
+]

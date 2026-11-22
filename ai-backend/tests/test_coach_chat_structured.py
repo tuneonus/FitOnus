@@ -7,8 +7,6 @@ model failover, and zero-downtime rollback.
 
 import asyncio
 import json
-from types import SimpleNamespace
-from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,8 +18,7 @@ from onusfit_ai.features.coach.application.chat import (
 )
 from onusfit_ai.features.coach.application.schemas import GeminiCoachReplyOutput
 from onusfit_ai.features.coach.domain.chat import CoachChatRequest
-from onusfit_ai.shared.llm.gemini import GeminiClient
-from onusfit_ai.shared.llm.ports import LlmResult, LlmServiceError, LlmUsage
+from onusfit_ai.shared.llm.ports import LlmServiceError
 
 URL = "/internal/v1/ai/coach/chat"
 
@@ -248,7 +245,9 @@ def test_rollback_toggle_disables_structured_schema(
     monkeypatch.setenv("AI_COACH_CHAT_STRUCTURED_OUTPUTS", "false")
     assert not is_coach_chat_structured_output_enabled()
 
-    fake_llm.text = '{"text":"Legacy parsed text","followUps":["Q1"],"sources":["Profile"],"medicalNote":false}'
+    fake_llm.text = (
+        '{"text":"Legacy parsed text","followUps":["Q1"],"sources":["Profile"],"medicalNote":false}'
+    )
     fake_llm.parsed = None
 
     response = client.post(URL, json=load_request("sparse"), headers=auth())

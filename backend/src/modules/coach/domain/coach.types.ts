@@ -148,6 +148,14 @@ export type Block =
     }
   | { type: 'link'; label: string; description: string; route: string; params?: Record<string, string> };
 
+export interface GroundedCitation {
+  documentSlug: string;
+  documentTitle: string;
+  category?: string | undefined;
+  chunkIndex?: number | undefined;
+  citation?: string | undefined;
+}
+
 export interface CoachResponse {
   text: string;
   blocks?: Block[];
@@ -156,6 +164,7 @@ export interface CoachResponse {
   toolCalls?: string[];
   medicalNote?: boolean;
   memoryUsed?: string;
+  citations?: GroundedCitation[];
 }
 
 export interface ChatMessageTurn {

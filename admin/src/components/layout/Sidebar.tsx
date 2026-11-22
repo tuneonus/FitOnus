@@ -14,6 +14,7 @@ import {
   Bell,
   Sliders,
   X,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { BrandMark } from '@/components/ui/BrandMark';
@@ -36,6 +37,7 @@ export const NAVIGATION_GROUPS = [
       { name: 'Nutrition', href: '/nutrition', icon: Utensils },
       { name: 'Challenges', href: '/challenges', icon: Trophy },
       { name: 'Notifications', href: '/notifications', icon: Bell },
+      { name: 'Knowledge Base', href: '/knowledge', icon: BookOpen },
     ],
   },
   {

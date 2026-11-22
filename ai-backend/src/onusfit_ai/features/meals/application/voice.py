@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 from onusfit_ai.features.meals.application.parsing import (
     NO_FOOD_REASON,
+    VoiceMealOutcome,
     _empty_result,
     now_iso,
     one_decimal,
@@ -84,7 +85,7 @@ async def parse_voice_meal(
 
     # 3. Resolve result and outcome
     result: VoiceMealResult
-    outcome: str
+    outcome: VoiceMealOutcome
 
     if use_structured:
         parsed_output: GeminiVoiceMealOutput | None = None
@@ -146,8 +147,14 @@ async def parse_voice_meal(
                         if item.portion_description and item.portion_description.strip()
                         else f"{item.serving_weight_g or 100:g}g"
                     ),
-                    serving_weight_g=item.serving_weight_g if item.serving_weight_g is not None else 100.0,
-                    serving_unit=item.serving_unit.strip() if item.serving_unit and item.serving_unit.strip() else "serving",
+                    serving_weight_g=(
+                        item.serving_weight_g if item.serving_weight_g is not None else 100.0
+                    ),
+                    serving_unit=(
+                        item.serving_unit.strip()
+                        if item.serving_unit and item.serving_unit.strip()
+                        else "serving"
+                    ),
                     serving_size=item.serving_size if item.serving_size is not None else 1.0,
                     kcal=max(0, js_round(item.calories)),
                     protein=max(0.0, one_decimal(item.protein_g)),

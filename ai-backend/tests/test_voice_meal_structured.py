@@ -24,7 +24,6 @@ from onusfit_ai.features.meals.application.schemas import (
     GeminiVoiceMealOutput,
     is_voice_meal_structured_output_enabled,
 )
-from onusfit_ai.shared.llm.ports import LlmResult, LlmUsage
 
 URL = "/internal/v1/ai/meals/parse-voice"
 MODEL = {"primary": "gemini-primary", "fallback": "gemini-backup"}
@@ -436,4 +435,3 @@ def test_telemetry_privacy(
     assert "SECRET-USER-TRANSCRIPT" not in logs
     assert "SECRET-INPUT-TRANSCRIPT" not in logs
     assert "SECRET-AUDIO-BYTES" not in logs
-

@@ -36,11 +36,11 @@ class GeminiDetectedFoodItemOutput(BaseModel):
         default=None, description="Serving unit e.g. piece, cup, bowl, slice"
     )
     serving_size: float | None = Field(default=None, description="Portion count e.g. 1, 2, 0.5")
-    calories: float = Field(ge=0, description="Estimated energy in kcal")
-    protein_g: float = Field(ge=0, description="Protein in grams")
-    carbs_g: float = Field(ge=0, description="Carbohydrates in grams")
-    fat_g: float = Field(ge=0, description="Fat in grams")
-    fiber_g: float | None = Field(default=None, ge=0, description="Dietary fiber in grams")
+    calories: float = Field(default=0.0, ge=0, description="Estimated energy in kcal")
+    protein_g: float = Field(default=0.0, description="Protein in grams")
+    carbs_g: float = Field(default=0.0, description="Carbohydrates in grams")
+    fat_g: float = Field(default=0.0, description="Fat in grams")
+    fiber_g: float | None = Field(default=None, description="Dietary fiber in grams")
     confidence: Literal["high", "medium", "low"] = "medium"
 
 
@@ -67,8 +67,10 @@ class GeminiPhotoMealOutput(BaseModel):
         populate_by_name=True,
     )
 
-    is_food: bool = Field(description="Whether the image contains recognizable food or beverage")
-    summary: str = Field(description="Short 1-sentence summary of the meal")
+    is_food: bool = Field(
+        default=True, description="Whether the image contains recognizable food or beverage"
+    )
+    summary: str = Field(default="", description="Short 1-sentence summary of the meal")
     confidence: Literal["high", "medium", "low"] = "medium"
     unclear_reason: str | None = None
     items: list[GeminiDetectedFoodItemOutput] = Field(default_factory=list)

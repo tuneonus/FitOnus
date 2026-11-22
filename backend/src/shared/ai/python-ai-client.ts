@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { SignJWT } from 'jose';
+import { z } from 'zod';
 import { AppError } from '../errors/app-error.js';
 import { isSafeCorrelationId } from '../logging/request-correlation.js';
 import type { GeminiFeature } from './gemini-feature.js';
@@ -258,4 +259,68 @@ export class PythonAiClient {
     }
     return payload;
   }
+
+  /** Calls the embedding endpoint on the Python AI backend (`POST /internal/v1/ai/embed`). */
+  async embed(params: PythonAiEmbedParams): Promise<PythonAiEmbedResult> {
+    const payload = await this.postJson({
+      path: '/internal/v1/ai/embed',
+      scope: 'ai:embed',
+      userId: params.userId,
+      requestId: params.requestId,
+      correlationId: params.correlationId,
+      timeoutMs: params.timeoutMs ?? 15_000,
+      body: {
+        texts: params.texts,
+        ...(params.taskType ? { taskType: params.taskType } : {}),
+        ...(params.title ? { title: params.title } : {}),
+        dimensions: params.dimensions ?? 768,
+      },
+    });
+
+    const parsed = pythonAiEmbedResultSchema.safeParse(payload);
+    if (!parsed.success) {
+      throw new PythonAiError('invalid_response', 'AI backend returned an invalid embed response.', {
+        dispatched: true,
+      });
+    }
+    return parsed.data;
+  }
 }
+
+export interface PythonAiEmbedParams {
+  userId: string;
+  requestId: string;
+  texts: string[];
+  taskType?:
+    | 'RETRIEVAL_QUERY'
+    | 'RETRIEVAL_DOCUMENT'
+    | 'SEMANTIC_SIMILARITY'
+    | 'CLASSIFICATION'
+    | 'CLUSTERING'
+    | (string & {})
+    | undefined;
+  title?: string | undefined;
+  dimensions?: number | undefined;
+  correlationId?: string | undefined;
+  timeoutMs?: number | undefined;
+}
+
+export const pythonAiEmbedResultSchema = z.object({
+  outcome: z.string(),
+  embeddings: z.array(z.array(z.number())),
+  dimensions: z.number().int().positive(),
+  count: z.number().int().nonnegative(),
+  usage: z.object({
+    model: z.string(),
+    isFallback: z.boolean(),
+    inputTokens: z.number().int().nonnegative(),
+    outputTokens: z.number().int().nonnegative(),
+    cachedTokens: z.number().int().nonnegative(),
+    thinkingTokens: z.number().int().nonnegative(),
+    totalTokens: z.number().int().nonnegative(),
+    durationMs: z.number().int().nonnegative(),
+  }),
+  traceId: z.string(),
+});
+
+export type PythonAiEmbedResult = z.infer<typeof pythonAiEmbedResultSchema>;

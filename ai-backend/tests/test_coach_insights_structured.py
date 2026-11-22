@@ -235,9 +235,7 @@ def test_valid_json_text_fallback_when_parsed_missing(
 
 
 # 9. Malformed JSON rejection in structured mode
-def test_malformed_json_rejected_in_structured_mode(
-    client: TestClient, fake_llm: FakeLlm
-) -> None:
+def test_malformed_json_rejected_in_structured_mode(client: TestClient, fake_llm: FakeLlm) -> None:
     fake_llm.parsed = None
     fake_llm.text = "Here are your insights: you did great! Not in JSON format."
     response = client.post(URL, json=body(), headers=auth())
@@ -273,9 +271,7 @@ def test_invalid_field_types_rejected(client: TestClient, fake_llm: FakeLlm) -> 
 
 
 # 11. Empty response rejection in structured mode
-def test_empty_response_rejected_in_structured_mode(
-    client: TestClient, fake_llm: FakeLlm
-) -> None:
+def test_empty_response_rejected_in_structured_mode(client: TestClient, fake_llm: FakeLlm) -> None:
     fake_llm.parsed = None
     fake_llm.text = ""
     response = client.post(URL, json=body(), headers=auth())
@@ -398,9 +394,7 @@ def test_correlation_trace_id_preserved(client: TestClient, fake_llm: FakeLlm) -
         recommendation=None,
         insights=[sample_insight_item()],
     )
-    response = client.post(
-        URL, json=body(), headers=auth() | {"X-Request-Id": "trace-corr-777"}
-    )
+    response = client.post(URL, json=body(), headers=auth() | {"X-Request-Id": "trace-corr-777"})
     assert response.status_code == 200
     assert response.json()["traceId"] == "trace-corr-777"
 

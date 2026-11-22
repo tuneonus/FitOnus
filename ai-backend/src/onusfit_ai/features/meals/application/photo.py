@@ -12,6 +12,7 @@ from onusfit_ai.features.meals.application.photo_parsing import (
     FOOD_SUMMARY,
     NO_FOOD_REASON,
     NO_FOOD_SUMMARY,
+    MealPhotoOutcome,
     _empty_result,
     parse_meal_photo_output,
 )
@@ -81,7 +82,7 @@ async def analyze_meal_photo(
 
     # 3. Resolve result and outcome
     result: MealPhotoResult
-    outcome: str
+    outcome: MealPhotoOutcome
 
     if use_structured:
         parsed_output: GeminiPhotoMealOutput | None = None

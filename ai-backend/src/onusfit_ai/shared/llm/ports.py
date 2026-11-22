@@ -5,10 +5,60 @@ layers can depend on it without dragging Gemini or HTTP along. The only real imp
 `gemini.GeminiClient`; tests provide a fake with the same shape (see tests/conftest.py `FakeLlm`).
 """
 
-from dataclasses import dataclass
+import re
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from pydantic import BaseModel
+
+_RE_BEARER = re.compile(r"Bearer\s+[A-Za-z0-9\-_=.]+", re.IGNORECASE)
+_RE_URL = re.compile(r"https?://[^\s'\"]+", re.IGNORECASE)
+_RE_IP = re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b")
+
+
+def sanitize_tool_error(name: str, raw_error: Any) -> dict[str, Any]:
+    """Sanitize any error into a safe, domain-level error dictionary for Gemini.
+
+    Guarantees no internal URLs, ports, IP addresses, JWT tokens, DB schema names,
+    or raw stack traces leak to the LLM.
+    """
+    raw_str = str(raw_error)
+    cleaned = _RE_BEARER.sub("Bearer [REDACTED]", raw_str)
+    cleaned = _RE_URL.sub("[INTERNAL_ENDPOINT]", cleaned)
+    cleaned = _RE_IP.sub("[INTERNAL_HOST]", cleaned)
+
+    lower = cleaned.lower()
+    if "invalid arguments" in lower or "validation" in lower:
+        msg = f"Invalid arguments provided for tool '{name}'."
+    elif "status" in lower:
+        msg = cleaned
+    elif "timed out" in lower or "timeout" in lower:
+        msg = f"Tool '{name}' timed out."
+    elif "not found" in lower or "404" in cleaned:
+        msg = f"Requested data not found for tool '{name}'."
+    elif "network" in lower or "connection" in lower:
+        msg = f"Tool '{name}' network failure"
+    elif "limit" in lower and "exceeded" in lower:
+        msg = cleaned
+    else:
+        msg = f"Tool '{name}' temporary failure"
+
+    return {"error": msg}
+
+
+@dataclass(frozen=True)
+class ToolExecutionResult:
+    tool_name: str
+    args: dict[str, Any]
+    result: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class EmbeddingResult:
+    """Vector representation of text output by Gemini embedding models."""
+
+    values: list[float]
 
 
 @dataclass(frozen=True)
@@ -29,6 +79,7 @@ class LlmResult:
     usage: LlmUsage
     parsed: Any | None = None
     finish_reason: str | None = None
+    tool_calls: list[ToolExecutionResult] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -74,4 +125,23 @@ class TextGenerator(Protocol):
         deadline_s: float,
         media: MediaInput | None = None,
         schema: type[BaseModel] | None = None,
+        tools: list[Any] | None = None,
+        tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
+        max_tool_rounds: int = 3,
+        max_total_tool_calls: int = 5,
+        max_total_tokens: int | None = None,
     ) -> LlmResult: ...
+
+
+class EmbeddingsGenerator(Protocol):
+    """Protocol for generating text embeddings (e.g., gemini-embedding-001)."""
+
+    async def embed_content(
+        self,
+        contents: list[str],
+        *,
+        model: str = "gemini-embedding-001",
+        output_dimensionality: int = 768,
+        task_type: str = "RETRIEVAL_DOCUMENT",
+        title: str | None = None,
+    ) -> list[EmbeddingResult]: ...

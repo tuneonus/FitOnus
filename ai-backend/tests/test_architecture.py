@@ -42,6 +42,7 @@ SHARED_FOR_LAYER = {
         "shared.contracts",
         "shared.llm.ports",
         "shared.llm.dependencies",
+        "shared.tools",
     ),
 }
 # Which layers of its OWN feature each layer may import. Never another feature, never outwards.
@@ -67,7 +68,7 @@ PURE_SHARED = (
 # The one module allowed to import each provider/security library.
 SDK_HOMES = {
     "google": {"shared.llm.gemini"},
-    "httpx": {"shared.llm.errors"},
+    "httpx": {"shared.llm.errors", "shared.tools.client"},
     "jwt": {"shared.auth.auth"},
 }
 FRAMEWORK_AND_SDK = {"fastapi", "starlette", "google", "jwt", "httpx"}

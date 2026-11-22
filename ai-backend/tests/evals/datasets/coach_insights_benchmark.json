@@ -1,0 +1,289 @@
+[
+  {
+    "case_id": "INSIGHT_001",
+    "category": "coach_insights",
+    "description": "Insights generation for user with high training consistency and adequate protein.",
+    "language": "en",
+    "input_payload": {
+      "workouts": [
+        {
+          "name": "Push",
+          "volumeKg": 4500,
+          "durationMinutes": 55
+        }
+      ],
+      "nutrition": {
+        "calories": 2200,
+        "proteinGrams": 150,
+        "waterMl": 2800
+      },
+      "activeGoals": [
+        {
+          "title": "Bench 100kg",
+          "current": 85,
+          "target": 100
+        }
+      ]
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "OnusFit Coach Insights Heuristics Specification",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "greeting": "Hello Athlete!",
+      "recommendation": "Great consistency on your workouts this week.",
+      "insights": [
+        {
+          "title": "Training Consistency",
+          "description": "Consistent weekly volume helps progressive overload.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workouts",
+          "question": "Review your training log?",
+          "evidence": [
+            "Volume progression steady"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "INSIGHT_002",
+    "category": "coach_insights",
+    "description": "Insights generation flagging low hydration (< 1000ml).",
+    "language": "en",
+    "input_payload": {
+      "workouts": [
+        {
+          "name": "Leg Day",
+          "volumeKg": 6000,
+          "durationMinutes": 65
+        }
+      ],
+      "nutrition": {
+        "calories": 1900,
+        "proteinGrams": 120,
+        "waterMl": 800
+      },
+      "activeGoals": []
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "ACSM Fluid Replacement Guidelines",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "greeting": "Hello Athlete!",
+      "recommendation": "Great consistency on your workouts this week.",
+      "insights": [
+        {
+          "title": "Training Consistency",
+          "description": "Consistent weekly volume helps progressive overload.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workouts",
+          "question": "Review your training log?",
+          "evidence": [
+            "Volume progression steady"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "INSIGHT_003",
+    "category": "coach_insights",
+    "description": "Insights generation for user on a rest day with good recovery.",
+    "language": "en",
+    "input_payload": {
+      "workouts": [],
+      "nutrition": {
+        "calories": 1800,
+        "proteinGrams": 110,
+        "waterMl": 2400
+      },
+      "activeGoals": [
+        {
+          "title": "Weight loss",
+          "current": 78,
+          "target": 72
+        }
+      ]
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "NSCA Recovery & Periodization Guidelines",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "greeting": "Hello Athlete!",
+      "recommendation": "Great consistency on your workouts this week.",
+      "insights": [
+        {
+          "title": "Training Consistency",
+          "description": "Consistent weekly volume helps progressive overload.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workouts",
+          "question": "Review your training log?",
+          "evidence": [
+            "Volume progression steady"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "INSIGHT_004",
+    "category": "coach_insights",
+    "description": "Insights generation for beginner athlete needing form and habit encouragement.",
+    "language": "en",
+    "input_payload": {
+      "workouts": [
+        {
+          "name": "Full Body A",
+          "volumeKg": 1800,
+          "durationMinutes": 40
+        }
+      ],
+      "nutrition": {
+        "calories": 1600,
+        "proteinGrams": 75,
+        "waterMl": 1900
+      },
+      "activeGoals": []
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "OnusFit Behavioral Adherence Coaching Model",
+    "is_verified_ground_truth": false,
+    "offline_candidate": {
+      "greeting": "Hello Athlete!",
+      "recommendation": "Great consistency on your workouts this week.",
+      "insights": [
+        {
+          "title": "Training Consistency",
+          "description": "Consistent weekly volume helps progressive overload.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workouts",
+          "question": "Review your training log?",
+          "evidence": [
+            "Volume progression steady"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "INSIGHT_005",
+    "category": "coach_insights",
+    "description": "Insights generation flagging consecutive high-intensity days without rest.",
+    "language": "en",
+    "input_payload": {
+      "workouts": [
+        {
+          "name": "Legs",
+          "volumeKg": 7000,
+          "durationMinutes": 75
+        },
+        {
+          "name": "Back",
+          "volumeKg": 6500,
+          "durationMinutes": 70
+        },
+        {
+          "name": "Chest",
+          "volumeKg": 6000,
+          "durationMinutes": 65
+        }
+      ],
+      "nutrition": {
+        "calories": 2400,
+        "proteinGrams": 160,
+        "waterMl": 3000
+      },
+      "activeGoals": []
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "ACSM Overtraining & Fatigue Monitoring Protocol",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "greeting": "Hello Athlete!",
+      "recommendation": "Great consistency on your workouts this week.",
+      "insights": [
+        {
+          "title": "Training Consistency",
+          "description": "Consistent weekly volume helps progressive overload.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workouts",
+          "question": "Review your training log?",
+          "evidence": [
+            "Volume progression steady"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "INSIGHT_006",
+    "category": "coach_insights",
+    "description": "Insights generation for user hitting a new personal record.",
+    "language": "en",
+    "input_payload": {
+      "workouts": [
+        {
+          "name": "Deadlift Session",
+          "volumeKg": 5500,
+          "durationMinutes": 50,
+          "prAchieved": "Deadlift 180kg"
+        }
+      ],
+      "nutrition": {
+        "calories": 2500,
+        "proteinGrams": 170,
+        "waterMl": 3200
+      },
+      "activeGoals": [
+        {
+          "title": "Deadlift 180kg",
+          "current": 180,
+          "target": 180
+        }
+      ]
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "OnusFit Milestone & PR Celebration Architecture",
+    "is_verified_ground_truth": false,
+    "offline_candidate": {
+      "greeting": "Hello Athlete!",
+      "recommendation": "Great consistency on your workouts this week.",
+      "insights": [
+        {
+          "title": "Training Consistency",
+          "description": "Consistent weekly volume helps progressive overload.",
+          "category": "workout",
+          "priority": "high",
+          "severity": "positive",
+          "action": "View Workouts",
+          "question": "Review your training log?",
+          "evidence": [
+            "Volume progression steady"
+          ],
+          "confidence": "high",
+          "requiresDevice": false
+        }
+      ]
+    }
+  }
+]

@@ -42,6 +42,7 @@ export type {
   PersonalRecordView,
 } from './application/workout-view.js';
 export type { WorkoutStatsView } from './application/use-cases/get-workout-stats.js';
+export * from './application/ports.js';
 
 export interface WorkoutsModule {
   memberRoutes: RouteGroup;

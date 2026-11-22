@@ -150,6 +150,49 @@ describe('AI Coach chat served only by Python (full use case + quota gate)', () 
       await chat();
       expect(recorder.recordExternalUsage).toHaveBeenCalledTimes(1);
     });
+
+    it('propagates toolCalls and cumulative usage when Python executes function calling tools', async () => {
+      server.respond((_req, res) =>
+        json(
+          res,
+          200,
+          okCoachReply({
+            result: {
+              text: 'You completed 3 workouts in the past week.',
+              followUps: ['Show details?'],
+              sources: ['Profile', 'recent_workouts'],
+              medicalNote: false,
+              blocks: null,
+              toolCalls: ['get_recent_workouts'],
+            },
+            usage: {
+              model: 'gemini-3.5-flash-lite',
+              isFallback: false,
+              inputTokens: 1850,
+              outputTokens: 220,
+              cachedTokens: 0,
+              thinkingTokens: 45,
+              totalTokens: 2115,
+              durationMs: 2500,
+            },
+          }),
+        ),
+      );
+
+      const response = await chat();
+      expect(response.toolCalls).toEqual(['get_recent_workouts']);
+      expect(response.sources).toContain('recent_workouts');
+
+      expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          feature: 'coach_chat',
+          inputTokens: 1850,
+          outputTokens: 220,
+          totalTokens: 2115,
+          durationMs: 2500,
+        }),
+      );
+    });
   });
 
   describe('Python cannot answer', () => {

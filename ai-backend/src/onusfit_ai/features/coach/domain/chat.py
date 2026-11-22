@@ -102,11 +102,29 @@ class ChatTurn(ContractModel):
     text: str = Field(max_length=8000)
 
 
+class KnowledgeContextItem(ContractModel):
+    document_slug: str = Field(max_length=120)
+    document_title: str = Field(max_length=255)
+    category: str = Field(max_length=50)
+    chunk_index: int = Field(ge=0)
+    content: str = Field(max_length=8000)
+    citation: str = Field(max_length=255)
+
+
+class CitationReference(ContractModel):
+    document_slug: str
+    document_title: str
+    category: str | None = None
+    chunk_index: int | None = None
+    citation: str
+
+
 class CoachChatRequest(ContractModel):
     message: str = Field(min_length=1, max_length=1000)
     context: UserFitnessContext
     history: list[ChatTurn] = Field(default_factory=list, max_length=20)
     memories: list[Memory] = Field(default_factory=list, max_length=30)
+    knowledge: list[KnowledgeContextItem] = Field(default_factory=list, max_length=10)
     model: ModelSelection
     # Total time budget (primary + fallback model) chosen by Node.
     deadline_ms: int = Field(ge=1000, le=30000)
@@ -120,6 +138,8 @@ class CoachChatResult(ContractModel):
     # Kept so the Node/mobile contract does not change, but always None from this service: the model
     # is not asked for blocks and the parser ignores any it invents (see application/parsing.py).
     blocks: list[dict[str, Any]] | None = None
+    tool_calls: list[str] | None = None
+    citations: list[CitationReference] | None = None
 
 
 class CoachChatResponse(ContractModel):

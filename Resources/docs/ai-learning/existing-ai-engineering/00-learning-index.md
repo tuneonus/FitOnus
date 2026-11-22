@@ -16,8 +16,8 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 |:---|:------|:-------|:-------------|:------|:----------------|
 | **01** | [**Python FastAPI Architecture**](01-fastapi.md) | IMPLEMENTED | `ai-backend/src/onusfit_ai/main.py`<br>`ai-backend/src/onusfit_ai/features/`<br>`ai-backend/src/onusfit_ai/shared/` | `ai-backend/tests/test_architecture.py`<br>`ai-backend/tests/test_startup_and_logging.py`<br>`ai-backend/tests/test_health.py` | **COMPLETED** |
 | **02** | [**Node.js ↔ Python AI Integration**](02-node-python-integration.md) | IMPLEMENTED | `backend/src/shared/ai/python-ai-client.ts`<br>`backend/src/shared/ai/python-ai-call.ts`<br>`backend/src/modules/coach/infrastructure/python-coach-chat-service.ts` | `backend/tests/unit/ai/python-ai-client.test.ts`<br>`backend/tests/unit/ai/python-wire-contract.test.ts`<br>`backend/tests/helpers/fake-python-ai-server.ts` | **COMPLETED** |
-| **03** | **Gemini API Integration** | IMPLEMENTED | `ai-backend/src/onusfit_ai/shared/llm/gemini.py`<br>`ai-backend/src/onusfit_ai/shared/llm/ports.py`<br>`ai-backend/src/onusfit_ai/shared/llm/dependencies.py` | `ai-backend/tests/test_gemini_client.py` | **LEARNING** |
-| **04** | **Prompt Engineering** | IMPLEMENTED | `ai-backend/src/onusfit_ai/features/coach/application/prompts/`<br>`ai-backend/src/onusfit_ai/features/meals/application/prompts/`<br>`ai-backend/src/onusfit_ai/features/speech/application/prompts/` | `ai-backend/tests/test_coach_chat_prompt.py`<br>`ai-backend/tests/test_coach_insights_prompt.py`<br>`ai-backend/tests/test_meal_photo_prompt.py`<br>`ai-backend/tests/test_voice_meal_prompt.py` | NOT STARTED |
+| **03** | [**Gemini API Integration**](03-gemini-api.md) | IMPLEMENTED | `ai-backend/src/onusfit_ai/shared/llm/gemini.py`<br>`ai-backend/src/onusfit_ai/shared/llm/ports.py`<br>`ai-backend/src/onusfit_ai/shared/llm/dependencies.py` | `ai-backend/tests/test_gemini_client.py` | **COMPLETED** |
+| **04** | **Prompt Engineering** | IMPLEMENTED | `ai-backend/src/onusfit_ai/features/coach/application/prompts/`<br>`ai-backend/src/onusfit_ai/features/meals/application/prompts/`<br>`ai-backend/src/onusfit_ai/features/speech/application/prompts/` | `ai-backend/tests/test_coach_chat_prompt.py`<br>`ai-backend/tests/test_coach_insights_prompt.py`<br>`ai-backend/tests/test_meal_photo_prompt.py`<br>`ai-backend/tests/test_voice_meal_prompt.py` | **LEARNING** |
 | **05** | **Dynamic User Context Engineering** | IMPLEMENTED | `backend/src/modules/coach/infrastructure/pg-user-context-repository.ts`<br>`ai-backend/src/onusfit_ai/features/coach/domain/chat.py` | `backend/tests/unit/coach/coach-use-case.test.ts`<br>`ai-backend/tests/test_coach_prompt_safety.py` | NOT STARTED |
 | **06** | **AI Coach Chat** | IMPLEMENTED | `backend/src/modules/coach/application/use-cases/chat-with-coach.ts`<br>`ai-backend/src/onusfit_ai/features/coach/presentation/coach_chat.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/chat.py` | `backend/tests/unit/coach/coach-chat-python-integration.test.ts`<br>`ai-backend/tests/test_coach_chat_api.py`<br>`ai-backend/tests/test_coach_chat_parsing.py` | NOT STARTED |
 | **07** | **AI Coach Insights** | IMPLEMENTED | `backend/src/modules/coach/application/use-cases/get-coach-insights.ts`<br>`ai-backend/src/onusfit_ai/features/coach/presentation/coach_insights.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/insights.py` | `backend/tests/unit/coach/coach-insights-fallback.test.ts`<br>`ai-backend/tests/test_coach_insights_api.py`<br>`ai-backend/tests/test_coach_insights_parsing.py` | NOT STARTED |
@@ -46,3 +46,54 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 | **30** | **Node.js AI Integration Tests** | IMPLEMENTED | `backend/tests/unit/ai/`<br>`backend/tests/unit/coach/`<br>`backend/tests/unit/nutrition/` | `npm --prefix backend test` | NOT STARTED |
 | **31** | **Clean / Hexagonal Architecture** | IMPLEMENTED | `ai-backend/src/onusfit_ai/features/` (`presentation`, `application`, `domain`, `infrastructure`) | `ai-backend/tests/test_architecture.py` | NOT STARTED |
 | **32** | **Basic AI Rate Limiting** | IMPLEMENTED | `backend/src/shared/ai/ai-rate-limit.ts`<br>`backend/src/modules/app-settings/application/services/ai-usage-gate.ts` | `backend/tests/unit/ai/ai-rate-limit.test.ts`<br>`backend/tests/integration/http/ai-rate-limit.http.test.ts` | NOT STARTED |
+
+---
+
+## Phase 02: Advanced Gemini Function Calling & Autonomous Agents
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P2-S01** | [**Stage 01: Secure Internal Tool API & Declarations**](../phase-02-stage-01-function-calling-tools.md) | **COMPLETED** | `backend/src/modules/coach/interface/internal-tools.*`<br>`ai-backend/src/onusfit_ai/features/coach/application/tools.py` | `backend/tests/unit/coach/internal-tools-*.test.ts`<br>`ai-backend/tests/test_coach_tools.py` |
+| **P2-S02** | [**Stage 02: Multi-Turn Function Calling Loop**](../phase-02-stage-02-multi-turn-function-calling.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/shared/llm/gemini.py`<br>`ai-backend/src/onusfit_ai/shared/llm/ports.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/tools.py` | `ai-backend/tests/test_gemini_tools_loop.py`<br>`ai-backend/tests/test_gemini_client.py` |
+| **P2-S03** | [**Stage 03: AI Coach Integration & Observability**](../phase-02-stage-03-coach-chat-tools.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/coach/`<br>`ai-backend/src/onusfit_ai/shared/tools/`<br>`backend/src/modules/coach/infrastructure/python-coach-chat-service.ts` | `ai-backend/tests/test_coach_chat_tools_integration.py`<br>`backend/tests/unit/coach/coach-chat-python-integration.test.ts` |
+
+---
+
+## Phase 03: AI Evaluation Foundation
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P3-All** | [**Phase 03: AI Evaluation Foundation Master Guide**](../phase-03-ai-evaluation-foundation.md) | **COMPLETED** | `ai-backend/tests/evals/offline/*`<br>`ai-backend/tests/evals/datasets/*`<br>`ai-backend/tests/evals/evaluators/*`<br>`ai-backend/tests/evals/runner.py`<br>`ai-backend/tests/evals/reporter.py`<br>`.github/workflows/ai-backend.yml` | `ai-backend/tests/evals/` (50 passed, 66 golden benchmark cases) |
+
+---
+
+## Phase 04: Gemini Vector Embeddings, Semantic Text Chunking & Ingestion
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P4-All** | [**Phase 04: Gemini Vector Embeddings & Chunking Guide**](../phase-04-gemini-embeddings-and-chunking.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/knowledge/*`<br>`ai-backend/src/onusfit_ai/shared/llm/ports.py`<br>`ai-backend/src/onusfit_ai/shared/llm/gemini.py`<br>`backend/src/shared/ai/python-ai-client.ts` | `ai-backend/tests/test_embed_api.py`<br>`ai-backend/tests/test_gemini_embed.py`<br>`ai-backend/tests/test_knowledge_chunking.py`<br>`backend/tests/unit/ai/python-ai-client-embed.test.ts` |
+
+---
+
+## Phase 05: Vector Database & pgvector Integration
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P5-All** | [**Phase 05: Vector Database & pgvector Guide**](../phase-05-vector-database-and-pgvector.md) | **COMPLETED** | `backend/migrations/0029_create_vector_extension_and_knowledge_base.sql`<br>`backend/src/modules/knowledge/*`<br>`backend/scripts/seed-knowledge.ts` | `backend/tests/unit/database/knowledge-migration.test.ts`<br>`backend/tests/unit/knowledge/semantic-chunker.test.ts`<br>`backend/tests/unit/knowledge/pg-knowledge-repository.test.ts`<br>`backend/tests/unit/knowledge/knowledge-service.test.ts` |
+
+---
+
+## Phase 06: Advanced RAG & AI Coach Grounding
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P6-All** | [**Phase 06: Advanced RAG & AI Coach Grounding**](../phase-06-advanced-rag-and-grounding.md) | **COMPLETED** | `backend/migrations/0030_create_knowledge_fulltext_index.sql`<br>`backend/src/modules/knowledge/domain/reciprocal-rank-fusion.ts`<br>`backend/src/modules/knowledge/domain/rag-context-builder.ts`<br>`ai-backend/src/onusfit_ai/features/coach/application/prompts/coach_chat.py` | `backend/tests/unit/knowledge/reciprocal-rank-fusion.test.ts`<br>`backend/tests/unit/knowledge/hybrid-retrieval.test.ts`<br>`backend/tests/unit/knowledge/rag-context-builder.test.ts`<br>`backend/tests/unit/coach/coach-chat-rag-integration.test.ts`<br>`ai-backend/tests/evals/test_rag_evaluation.py` |
+
+---
+
+## Phase 06.5: Admin Knowledge Management & Production Hardening
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P6.5-All** | [**Phase 06.5: Admin Knowledge Management Hardening**](../phase-06.5-admin-knowledge-management.md) | **COMPLETED** | `backend/migrations/0031_add_knowledge_document_lifecycle.sql`<br>`backend/src/modules/knowledge/interface/text-extractor.ts`<br>`backend/src/modules/knowledge/infrastructure/pg-knowledge-repository.ts`<br>`backend/src/modules/knowledge/application/knowledge-service.ts`<br>`backend/src/modules/knowledge/interface/knowledge-admin.*`<br>`admin/src/features/knowledge/*` | `backend/tests/unit/knowledge/text-extractor.test.ts`<br>`backend/tests/unit/knowledge/knowledge-admin.controller.test.ts`<br>`backend/tests/unit/knowledge/pg-knowledge-repository.test.ts`<br>`backend/tests/unit/knowledge/knowledge-service.test.ts`<br>`admin/tests/admin-knowledge.test.ts` |
+

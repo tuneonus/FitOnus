@@ -28,6 +28,8 @@ class Settings:
     service_jwt_secret: str | None
     service_jwt_issuer: str
     service_jwt_audience: str
+    # Node.js API Gateway (for internal tool calls)
+    node_api_url: str = "http://127.0.0.1:3000"
 
 
 def _clean(value: str | None) -> str | None:
@@ -46,6 +48,7 @@ def get_settings() -> Settings:
         service_jwt_secret=_clean(os.environ.get("AI_SERVICE_JWT_SECRET")),
         service_jwt_issuer=os.environ.get("AI_SERVICE_JWT_ISSUER", "onusfit-node-api"),
         service_jwt_audience=os.environ.get("AI_SERVICE_JWT_AUDIENCE", "onusfit-ai-backend"),
+        node_api_url=os.environ.get("NODE_API_URL", "http://127.0.0.1:3000").rstrip("/"),
     )
 
 

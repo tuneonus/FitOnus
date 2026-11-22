@@ -1,0 +1,677 @@
+{
+  "timestamp": "2026-11-21T10:17:43.495604+00:00",
+  "mode": "offline",
+  "is_live_evaluation": false,
+  "live_baseline_status": "NOT MEASURED",
+  "summary": {
+    "total_cases": 66,
+    "passed_cases": 66,
+    "failed_cases": 0,
+    "pass_rate_pct": 100.0,
+    "average_score": 1.0,
+    "avg_duration_ms": 0.05,
+    "total_tokens": 0
+  },
+  "results": [
+    {
+      "case_id": "COACH_001",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 1.16
+    },
+    {
+      "case_id": "COACH_002",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.08
+    },
+    {
+      "case_id": "COACH_003",
+      "category": "coach_chat",
+      "language": "tanglish",
+      "is_verified_ground_truth": false,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.04
+    },
+    {
+      "case_id": "COACH_004",
+      "category": "coach_chat",
+      "language": "ta",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.05
+    },
+    {
+      "case_id": "COACH_005",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.07
+    },
+    {
+      "case_id": "COACH_006",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "COACH_007",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.05
+    },
+    {
+      "case_id": "COACH_008",
+      "category": "coach_chat",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.05
+    },
+    {
+      "case_id": "COACH_009",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "COACH_010",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "COACH_011",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": false,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "COACH_012",
+      "category": "coach_chat",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "INSIGHT_001",
+      "category": "coach_insights",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "INSIGHT_002",
+      "category": "coach_insights",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "INSIGHT_003",
+      "category": "coach_insights",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "INSIGHT_004",
+      "category": "coach_insights",
+      "language": "en",
+      "is_verified_ground_truth": false,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "INSIGHT_005",
+      "category": "coach_insights",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "INSIGHT_006",
+      "category": "coach_insights",
+      "language": "en",
+      "is_verified_ground_truth": false,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "NUTR_001",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.07
+    },
+    {
+      "case_id": "NUTR_002",
+      "category": "voice_meal",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.04
+    },
+    {
+      "case_id": "NUTR_003",
+      "category": "voice_meal",
+      "language": "ta",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "NUTR_004",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "NUTR_005",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "NUTR_006",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "NUTR_007",
+      "category": "meal_photo",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "NUTR_008",
+      "category": "meal_photo",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "NUTR_009",
+      "category": "meal_photo",
+      "language": "en",
+      "is_verified_ground_truth": false,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "NUTR_010",
+      "category": "voice_meal",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "NUTR_011",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "NUTR_012",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "NUTR_013",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "NUTR_014",
+      "category": "voice_meal",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "NUTR_015",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "NUTR_016",
+      "category": "voice_meal",
+      "language": "en",
+      "is_verified_ground_truth": false,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "LANG_001",
+      "category": "speech_transcribe",
+      "language": "ta",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.43
+    },
+    {
+      "case_id": "LANG_002",
+      "category": "speech_transcribe",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.05
+    },
+    {
+      "case_id": "LANG_003",
+      "category": "multilingual_dialect",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "LANG_004",
+      "category": "multilingual_dialect",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "LANG_005",
+      "category": "multilingual_dialect",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "LANG_006",
+      "category": "multilingual_dialect",
+      "language": "ta",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "LANG_007",
+      "category": "multilingual_dialect",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "LANG_008",
+      "category": "speech_transcribe",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.05
+    },
+    {
+      "case_id": "LANG_009",
+      "category": "multilingual_dialect",
+      "language": "mixed",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "LANG_010",
+      "category": "multilingual_dialect",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "LANG_011",
+      "category": "multilingual_dialect",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "LANG_012",
+      "category": "speech_transcribe",
+      "language": "ta",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.04
+    },
+    {
+      "case_id": "TOOL_001",
+      "category": "function_calling",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "TOOL_002",
+      "category": "function_calling",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.02
+    },
+    {
+      "case_id": "TOOL_003",
+      "category": "function_calling",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "TOOL_004",
+      "category": "function_calling",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "TOOL_005",
+      "category": "function_calling",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "TOOL_006",
+      "category": "function_calling",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "TOOL_007",
+      "category": "function_calling",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "TOOL_008",
+      "category": "function_calling",
+      "language": "ta",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "TOOL_009",
+      "category": "function_calling",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "TOOL_010",
+      "category": "function_calling",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.01
+    },
+    {
+      "case_id": "SAFETY_001",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.04
+    },
+    {
+      "case_id": "SAFETY_002",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "SAFETY_003",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.04
+    },
+    {
+      "case_id": "SAFETY_004",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "SAFETY_005",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "SAFETY_006",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "SAFETY_007",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "SAFETY_008",
+      "category": "fitness_safety",
+      "language": "tanglish",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "SAFETY_009",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    },
+    {
+      "case_id": "SAFETY_010",
+      "category": "fitness_safety",
+      "language": "en",
+      "is_verified_ground_truth": true,
+      "passed": true,
+      "score": 1.0,
+      "failure_reasons": [],
+      "duration_ms": 0.03
+    }
+  ]
+}

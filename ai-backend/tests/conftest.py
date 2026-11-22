@@ -16,8 +16,8 @@ from pydantic import BaseModel
 
 from onusfit_ai.main import create_app
 from onusfit_ai.shared.auth import replay_cache
-from onusfit_ai.shared.llm.dependencies import get_llm
-from onusfit_ai.shared.llm.ports import LlmResult, LlmUsage, MediaInput
+from onusfit_ai.shared.llm.dependencies import get_embeddings_generator, get_llm
+from onusfit_ai.shared.llm.ports import EmbeddingResult, LlmResult, LlmUsage, MediaInput
 from onusfit_ai.shared.logging import configure_logging
 
 SECRET = "test-secret-test-secret-test-secret-123"
@@ -67,11 +67,13 @@ class FakeLlm:
         error: Exception | None = None,
         parsed: Any | None = None,
         finish_reason: str | None = None,
+        tool_calls: list[Any] | None = None,
     ) -> None:
         self.text = text
         self.error = error
         self.parsed = parsed
         self.finish_reason = finish_reason
+        self.tool_calls = tool_calls or []
         self.calls: list[dict[str, Any]] = []
 
     async def generate_text(
@@ -83,6 +85,12 @@ class FakeLlm:
         deadline_s: float,
         media: MediaInput | None = None,
         schema: type[BaseModel] | None = None,
+        tools: list[Any] | None = None,
+        tool_handler: Any | None = None,
+        max_tool_rounds: int = 3,
+        max_total_tool_calls: int = 5,
+        max_total_tokens: int | None = None,
+        **kwargs: Any,
     ) -> LlmResult:
         self.calls.append(
             {
@@ -92,6 +100,12 @@ class FakeLlm:
                 "deadline_s": deadline_s,
                 "media": media,
                 "schema": schema,
+                "tools": tools,
+                "tool_handler": tool_handler,
+                "max_tool_rounds": max_tool_rounds,
+                "max_total_tool_calls": max_total_tool_calls,
+                "max_total_tokens": max_total_tokens,
+                **kwargs,
             }
         )
         if self.error:
@@ -110,6 +124,7 @@ class FakeLlm:
             text=self.text,
             parsed=parsed_val,
             finish_reason=self.finish_reason,
+            tool_calls=self.tool_calls,
             usage=LlmUsage(
                 model=primary_model,
                 is_fallback=False,
@@ -121,6 +136,31 @@ class FakeLlm:
                 duration_ms=321,
             ),
         )
+
+    async def embed_content(
+        self,
+        contents: list[str],
+        *,
+        model: str = "gemini-embedding-001",
+        output_dimensionality: int = 768,
+        task_type: str = "RETRIEVAL_DOCUMENT",
+        title: str | None = None,
+    ) -> list[EmbeddingResult]:
+        self.calls.append(
+            {
+                "embed_contents": contents,
+                "model": model,
+                "output_dimensionality": output_dimensionality,
+                "task_type": task_type,
+                "title": title,
+            }
+        )
+        if self.error:
+            raise self.error
+        return [
+            EmbeddingResult(values=[0.05 * (i % 10 + 1)] * output_dimensionality)
+            for i, _ in enumerate(contents)
+        ]
 
 
 @pytest.fixture(autouse=True)
@@ -141,6 +181,7 @@ def fake_llm() -> FakeLlm:
 def client(fake_llm: FakeLlm) -> TestClient:
     app = create_app()
     app.dependency_overrides[get_llm] = lambda: fake_llm
+    app.dependency_overrides[get_embeddings_generator] = lambda: fake_llm
     return TestClient(app)
 
 

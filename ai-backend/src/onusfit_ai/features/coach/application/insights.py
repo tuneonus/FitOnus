@@ -4,9 +4,9 @@ Pure orchestration (no HTTP, no database). Quota, caching, loading the user's da
 deterministic fallback all stay in Node.
 """
 
-from datetime import UTC, datetime
 import logging
 import os
+from datetime import UTC, datetime
 
 from onusfit_ai.features.coach.application.insights_parsing import _now_iso, parse_insights_output
 from onusfit_ai.features.coach.application.prompts.coach_insights import (

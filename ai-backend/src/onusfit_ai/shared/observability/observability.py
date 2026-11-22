@@ -78,6 +78,7 @@ FEATURE_BY_PATH: Final[dict[str, str]] = {
     "/internal/v1/ai/meals/parse-voice": "voice_meal",
     "/internal/v1/ai/meals/analyze-photo": "meal_photo",
     "/internal/v1/ai/speech/transcribe": "transcribe",
+    "/internal/v1/ai/embed": "knowledge_embed",
 }
 
 _SAFE_ID: Final = re.compile(r"^[A-Za-z0-9._-]{8,128}$")  # same rule as the Node API

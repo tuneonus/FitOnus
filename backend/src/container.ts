@@ -34,6 +34,7 @@ import {
   type PushSender,
 } from './modules/notifications/index.js';
 import { createAppSettingsModule, type AppSettingsModule } from './modules/app-settings/index.js';
+import { createKnowledgeModule, type KnowledgeModule } from './modules/knowledge/index.js';
 import type { RouteGroup } from './shared/http/route.js';
 import { IdempotencyService } from './shared/idempotency/idempotency.js';
 import { PgIdempotencyStore } from './shared/idempotency/pg-idempotency-store.js';
@@ -60,6 +61,7 @@ export interface Container {
   notifications?: NotificationsModule;
   /** The private member-photo storage and its deletion worker; null when R2_PRIVATE_* is not configured. */
   privateMedia?: PrivateMedia | null;
+  knowledge?: KnowledgeModule;
 }
 
 export interface ContainerOverrides {
@@ -277,8 +279,16 @@ export function createContainer(
     basePath: `${API_PREFIX}/dashboard`,
     db: database,
   });
+
+  const knowledge = createKnowledgeModule(database, pythonAi, {
+    adminBasePath: `${API_PREFIX}/admin/knowledge`,
+    uploadLimiter: rateLimiters.adminImageUploads,
+  });
+
   const coach = createCoachModule({
     basePath: `${API_PREFIX}/coach`,
+    internalToolsBasePath: `${API_PREFIX}/internal/tools`,
+    serviceSecret: aiBackend.serviceSecret,
     db: database,
     chatService: new PythonCoachChatService({
       client: pythonAi,
@@ -305,6 +315,14 @@ export function createContainer(
     aiUsageGate: appSettings.aiUsageGate,
     rateLimiter: rateLimiters.aiCoach,
     ...(logger ? { logger } : {}),
+    sessionRepo: workouts.sessionRepo,
+    personalRecordRepo: workouts.prRepo,
+    exerciseRepo: workouts.exerciseRepo,
+    mealRepo: nutrition.mealRepo,
+    waterRepo: nutrition.waterRepo,
+    targetAdapter: nutrition.targetAdapter,
+    weightRepo: progress.weightRepo,
+    knowledgeService: knowledge.service,
   });
 
   const fcm = config.notifications.fcm;
@@ -366,9 +384,11 @@ export function createContainer(
       analytics.routes,
       dashboard.routes,
       coach.routes,
+      ...(coach.internalToolsRoutes ? [coach.internalToolsRoutes] : []),
       notifications.memberRoutes,
       notifications.adminRoutes,
       notifications.internalRoutes,
+      ...(knowledge.adminRoutes ? [knowledge.adminRoutes] : []),
     ],
     authenticate: createAuthenticate(auth.authenticateAccessToken),
     rateLimiters,
@@ -376,5 +396,6 @@ export function createContainer(
     appSettings,
     notifications,
     privateMedia,
+    knowledge,
   };
 }

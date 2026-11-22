@@ -1,0 +1,326 @@
+[
+  {
+    "case_id": "TOOL_001",
+    "category": "function_calling",
+    "description": "User inquires about recent workout sessions and volume lifted.",
+    "language": "en",
+    "input_payload": {
+      "message": "How many workouts did I complete over the past week?"
+    },
+    "expected_outcome": "tool_call",
+    "expected_tools": [
+      {
+        "tool_name": "get_recent_workouts",
+        "arguments": {
+          "days": 7
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      }
+    ],
+    "ground_truth_source": "OnusFit Coach Tools Specification v1",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": [
+        {
+          "name": "get_recent_workouts",
+          "args": {
+            "days": 7
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "TOOL_002",
+    "category": "function_calling",
+    "description": "User inquires about daily macro targets and today's protein balance.",
+    "language": "en",
+    "input_payload": {
+      "message": "Did I hit my protein goal today?"
+    },
+    "expected_outcome": "tool_call",
+    "expected_tools": [
+      {
+        "tool_name": "get_nutrition_summary",
+        "arguments": {
+          "days": 1
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      }
+    ],
+    "ground_truth_source": "OnusFit Coach Tools Specification v1",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": [
+        {
+          "name": "get_nutrition_summary",
+          "args": {
+            "days": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "TOOL_003",
+    "category": "function_calling",
+    "description": "User asks for bodyweight progression over the last month.",
+    "language": "en",
+    "input_payload": {
+      "message": "Show me my weight trend for the past 30 days."
+    },
+    "expected_outcome": "tool_call",
+    "expected_tools": [
+      {
+        "tool_name": "get_weight_trend",
+        "arguments": {
+          "days": 30
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      }
+    ],
+    "ground_truth_source": "OnusFit Coach Tools Specification v1",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": [
+        {
+          "name": "get_weight_trend",
+          "args": {
+            "days": 30
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "TOOL_004",
+    "category": "function_calling",
+    "description": "User asks for exercise recommendations targeting quadriceps with dumbbells.",
+    "language": "en",
+    "input_payload": {
+      "message": "What dumbbell exercises can I do for quads?"
+    },
+    "expected_outcome": "tool_call",
+    "expected_tools": [
+      {
+        "tool_name": "search_exercises",
+        "arguments": {
+          "muscle": "quadriceps",
+          "equipment": "dumbbell"
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      }
+    ],
+    "ground_truth_source": "OnusFit Coach Tools Specification v1",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": [
+        {
+          "name": "search_exercises",
+          "args": {
+            "muscle": "quadriceps",
+            "equipment": "dumbbell"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "TOOL_005",
+    "category": "function_calling",
+    "description": "Negative case: General conceptual question should NOT trigger data tools.",
+    "language": "en",
+    "input_payload": {
+      "message": "What is the difference between aerobic and anaerobic exercise?"
+    },
+    "expected_outcome": "no_tools",
+    "expected_tools": [],
+    "ground_truth_source": "OnusFit Tool Routing Accuracy Benchmark",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": []
+    }
+  },
+  {
+    "case_id": "TOOL_006",
+    "category": "function_calling",
+    "description": "Negative case: Friendly motivation/greeting should NOT trigger tools.",
+    "language": "en",
+    "input_payload": {
+      "message": "Good morning Coach, I'm ready to crush today!"
+    },
+    "expected_outcome": "no_tools",
+    "expected_tools": [],
+    "ground_truth_source": "OnusFit Tool Routing Accuracy Benchmark",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": []
+    }
+  },
+  {
+    "case_id": "TOOL_007",
+    "category": "function_calling",
+    "description": "Tanglish query asking about past 14 days of workout progress.",
+    "language": "tanglish",
+    "input_payload": {
+      "message": "Last 2 weeks la na enna enna workout pannirukken coach?"
+    },
+    "expected_outcome": "tool_call",
+    "expected_tools": [
+      {
+        "tool_name": "get_recent_workouts",
+        "arguments": {
+          "days": 14
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      }
+    ],
+    "ground_truth_source": "OnusFit Coach Tools Specification v1",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": [
+        {
+          "name": "get_recent_workouts",
+          "args": {
+            "days": 14
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "TOOL_008",
+    "category": "function_calling",
+    "description": "Tamil script query asking for current weight progress.",
+    "language": "ta",
+    "input_payload": {
+      "message": "\u0b8e\u0ba9\u0ba4\u0bc1 \u0b9a\u0bae\u0bc0\u0baa\u0ba4\u0bcd\u0ba4\u0bbf\u0baf \u0b8e\u0b9f\u0bc8 \u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0ba4\u0bcd\u0ba4\u0bc8 \u0b95\u0bbe\u0b9f\u0bcd\u0b9f\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd"
+    },
+    "expected_outcome": "tool_call",
+    "expected_tools": [
+      {
+        "tool_name": "get_weight_trend",
+        "arguments": {
+          "days": 30
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      }
+    ],
+    "ground_truth_source": "OnusFit Coach Tools Specification v1",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": [
+        {
+          "name": "get_weight_trend",
+          "args": {
+            "days": 30
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "TOOL_009",
+    "category": "function_calling",
+    "description": "User requests chest cable exercises.",
+    "language": "en",
+    "input_payload": {
+      "message": "Show me chest exercises using the cable machine."
+    },
+    "expected_outcome": "tool_call",
+    "expected_tools": [
+      {
+        "tool_name": "search_exercises",
+        "arguments": {
+          "muscle": "chest",
+          "equipment": "cable"
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      }
+    ],
+    "ground_truth_source": "OnusFit Coach Tools Specification v1",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": [
+        {
+          "name": "search_exercises",
+          "args": {
+            "muscle": "chest",
+            "equipment": "cable"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "TOOL_010",
+    "category": "function_calling",
+    "description": "Multi-intent query: Workouts and calories in one prompt.",
+    "language": "en",
+    "input_payload": {
+      "message": "Did I work out yesterday and how many calories did I eat?"
+    },
+    "expected_outcome": "multi_tool_call",
+    "expected_tools": [
+      {
+        "tool_name": "get_recent_workouts",
+        "arguments": {
+          "days": 2
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      },
+      {
+        "tool_name": "get_nutrition_summary",
+        "arguments": {
+          "days": 2
+        },
+        "forbidden_arguments": [
+          "userId",
+          "targetUserId"
+        ]
+      }
+    ],
+    "ground_truth_source": "OnusFit Multi-Turn Tool Benchmark",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "tool_calls": [
+        {
+          "name": "get_recent_workouts",
+          "args": {
+            "days": 2
+          }
+        },
+        {
+          "name": "get_nutrition_summary",
+          "args": {
+            "days": 2
+          }
+        }
+      ]
+    }
+  }
+]

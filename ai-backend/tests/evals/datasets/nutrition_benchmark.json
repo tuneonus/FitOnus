@@ -1,0 +1,850 @@
+[
+  {
+    "case_id": "NUTR_001",
+    "category": "voice_meal",
+    "description": "Standard South Indian breakfast: 2 Idlis with 1 bowl Sambar.",
+    "language": "en",
+    "input_payload": {
+      "transcript": "two idlis and one bowl of sambar",
+      "mealType": "breakfast"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Idli",
+        "serving_weight_g": 100.0,
+        "serving_unit": "piece",
+        "serving_size": 2.0,
+        "calories": 130.0,
+        "protein_g": 4.0,
+        "carbs_g": 26.0,
+        "fat_g": 0.5,
+        "fiber_g": 1.5,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      },
+      {
+        "name": "Sambar",
+        "serving_weight_g": 200.0,
+        "serving_unit": "bowl",
+        "serving_size": 1.0,
+        "calories": 130.0,
+        "protein_g": 6.5,
+        "carbs_g": 18.0,
+        "fat_g": 3.4,
+        "fiber_g": 4.5,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (Indian Food Composition Tables, ICMR-NIN) Code B005 & G012",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Standard South Indian breakfast: 2 Idlis with 1 bowl Sambar.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Idli",
+          "calories": 130.0,
+          "proteinG": 4.0,
+          "carbsG": 26.0,
+          "fatG": 0.5,
+          "servingWeightG": 100.0,
+          "servingUnit": "piece",
+          "servingSize": 2.0,
+          "confidence": "high"
+        },
+        {
+          "name": "Sambar",
+          "calories": 130.0,
+          "proteinG": 6.5,
+          "carbsG": 18.0,
+          "fatG": 3.4,
+          "servingWeightG": 200.0,
+          "servingUnit": "bowl",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_002",
+    "category": "voice_meal",
+    "description": "Plain Dosa with Coconut Chutney in Tanglish.",
+    "language": "tanglish",
+    "input_payload": {
+      "transcript": "oru plain dosa konjam coconut chutney",
+      "mealType": "breakfast"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Plain Dosa",
+        "serving_weight_g": 80.0,
+        "serving_unit": "piece",
+        "serving_size": 1.0,
+        "calories": 135.0,
+        "protein_g": 3.0,
+        "carbs_g": 22.0,
+        "fat_g": 3.8,
+        "fiber_g": 1.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      },
+      {
+        "name": "Coconut Chutney",
+        "serving_weight_g": 40.0,
+        "serving_unit": "tablespoon",
+        "serving_size": 2.0,
+        "calories": 90.0,
+        "protein_g": 1.2,
+        "carbs_g": 3.0,
+        "fat_g": 8.0,
+        "fiber_g": 1.8,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code B002 & D021",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Plain Dosa with Coconut Chutney in Tanglish.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Plain Dosa",
+          "calories": 135.0,
+          "proteinG": 3.0,
+          "carbsG": 22.0,
+          "fatG": 3.8,
+          "servingWeightG": 80.0,
+          "servingUnit": "piece",
+          "servingSize": 1.0,
+          "confidence": "high"
+        },
+        {
+          "name": "Coconut Chutney",
+          "calories": 90.0,
+          "proteinG": 1.2,
+          "carbsG": 3.0,
+          "fatG": 8.0,
+          "servingWeightG": 40.0,
+          "servingUnit": "tablespoon",
+          "servingSize": 2.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_003",
+    "category": "voice_meal",
+    "description": "Tamil script input: \u0b87\u0bb0\u0ba3\u0bcd\u0b9f\u0bc1 \u0b9a\u0baa\u0bcd\u0baa\u0bbe\u0ba4\u0bcd\u0ba4\u0bbf \u0bae\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0bcd \u0b92\u0bb0\u0bc1 \u0b95\u0baa\u0bcd \u0ba4\u0bbe\u0bb2\u0bcd",
+    "language": "ta",
+    "input_payload": {
+      "transcript": "\u0b87\u0bb0\u0ba3\u0bcd\u0b9f\u0bc1 \u0b9a\u0baa\u0bcd\u0baa\u0bbe\u0ba4\u0bcd\u0ba4\u0bbf \u0bae\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0bcd \u0b92\u0bb0\u0bc1 \u0b95\u0baa\u0bcd \u0ba4\u0bbe\u0bb2\u0bcd",
+      "mealType": "dinner"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Chapati",
+        "serving_weight_g": 80.0,
+        "serving_unit": "piece",
+        "serving_size": 2.0,
+        "calories": 180.0,
+        "protein_g": 6.0,
+        "carbs_g": 34.0,
+        "fat_g": 1.8,
+        "fiber_g": 4.5,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      },
+      {
+        "name": "Dal",
+        "serving_weight_g": 180.0,
+        "serving_unit": "cup",
+        "serving_size": 1.0,
+        "calories": 150.0,
+        "protein_g": 8.5,
+        "carbs_g": 22.0,
+        "fat_g": 3.0,
+        "fiber_g": 5.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code A008 & C004",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Tamil script input: \u0b87\u0bb0\u0ba3\u0bcd\u0b9f\u0bc1 \u0b9a\u0baa\u0bcd\u0baa\u0bbe\u0ba4\u0bcd\u0ba4\u0bbf \u0bae\u0bb1\u0bcd\u0bb1\u0bc1\u0bae\u0bcd \u0b92\u0bb0\u0bc1 \u0b95\u0baa\u0bcd \u0ba4\u0bbe\u0bb2\u0bcd",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Chapati",
+          "calories": 180.0,
+          "proteinG": 6.0,
+          "carbsG": 34.0,
+          "fatG": 1.8,
+          "servingWeightG": 80.0,
+          "servingUnit": "piece",
+          "servingSize": 2.0,
+          "confidence": "high"
+        },
+        {
+          "name": "Dal",
+          "calories": 150.0,
+          "proteinG": 8.5,
+          "carbsG": 22.0,
+          "fatG": 3.0,
+          "servingWeightG": 180.0,
+          "servingUnit": "cup",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_004",
+    "category": "voice_meal",
+    "description": "Curd rice with pickle and green chilies.",
+    "language": "en",
+    "input_payload": {
+      "transcript": "one bowl curd rice with a small spoon of lemon pickle",
+      "mealType": "lunch"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Curd Rice",
+        "serving_weight_g": 250.0,
+        "serving_unit": "bowl",
+        "serving_size": 1.0,
+        "calories": 280.0,
+        "protein_g": 7.0,
+        "carbs_g": 45.0,
+        "fat_g": 7.5,
+        "fiber_g": 1.2,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code B014",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Curd rice with pickle and green chilies.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Curd Rice",
+          "calories": 280.0,
+          "proteinG": 7.0,
+          "carbsG": 45.0,
+          "fatG": 7.5,
+          "servingWeightG": 250.0,
+          "servingUnit": "bowl",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_005",
+    "category": "voice_meal",
+    "description": "High protein post-workout snack: 3 boiled whole eggs.",
+    "language": "en",
+    "input_payload": {
+      "transcript": "three whole boiled eggs",
+      "mealType": "snack"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Boiled Egg",
+        "serving_weight_g": 150.0,
+        "serving_unit": "egg",
+        "serving_size": 3.0,
+        "calories": 216.0,
+        "protein_g": 18.6,
+        "carbs_g": 1.6,
+        "fat_g": 14.4,
+        "fiber_g": 0.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "USDA FoodData Central FDC ID 173424",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "High protein post-workout snack: 3 boiled whole eggs.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Boiled Egg",
+          "calories": 216.0,
+          "proteinG": 18.6,
+          "carbsG": 1.6,
+          "fatG": 14.4,
+          "servingWeightG": 150.0,
+          "servingUnit": "egg",
+          "servingSize": 3.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_006",
+    "category": "voice_meal",
+    "description": "Cooked basmati rice with mixed vegetable poriyal.",
+    "language": "en",
+    "input_payload": {
+      "transcript": "one cup cooked basmati rice with one cup cabbage poriyal",
+      "mealType": "lunch"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Basmati Rice",
+        "serving_weight_g": 160.0,
+        "serving_unit": "cup",
+        "serving_size": 1.0,
+        "calories": 205.0,
+        "protein_g": 4.2,
+        "carbs_g": 44.5,
+        "fat_g": 0.5,
+        "fiber_g": 0.8,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      },
+      {
+        "name": "Vegetable Poriyal",
+        "serving_weight_g": 120.0,
+        "serving_unit": "cup",
+        "serving_size": 1.0,
+        "calories": 95.0,
+        "protein_g": 2.5,
+        "carbs_g": 8.0,
+        "fat_g": 5.5,
+        "fiber_g": 3.2,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code A001 & D015",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Cooked basmati rice with mixed vegetable poriyal.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Basmati Rice",
+          "calories": 205.0,
+          "proteinG": 4.2,
+          "carbsG": 44.5,
+          "fatG": 0.5,
+          "servingWeightG": 160.0,
+          "servingUnit": "cup",
+          "servingSize": 1.0,
+          "confidence": "high"
+        },
+        {
+          "name": "Vegetable Poriyal",
+          "calories": 95.0,
+          "proteinG": 2.5,
+          "carbsG": 8.0,
+          "fatG": 5.5,
+          "servingWeightG": 120.0,
+          "servingUnit": "cup",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_007",
+    "category": "meal_photo",
+    "description": "Photo of Masala Dosa with red and white chutney.",
+    "language": "en",
+    "input_payload": {
+      "notes": "restaurant masala dosa",
+      "mealType": "breakfast"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Masala Dosa",
+        "serving_weight_g": 180.0,
+        "serving_unit": "piece",
+        "serving_size": 1.0,
+        "calories": 290.0,
+        "protein_g": 5.5,
+        "carbs_g": 42.0,
+        "fat_g": 10.5,
+        "fiber_g": 3.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code B003",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Photo of Masala Dosa with red and white chutney.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Masala Dosa",
+          "calories": 290.0,
+          "proteinG": 5.5,
+          "carbsG": 42.0,
+          "fatG": 10.5,
+          "servingWeightG": 180.0,
+          "servingUnit": "piece",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_008",
+    "category": "meal_photo",
+    "description": "Photo of grilled chicken salad with olive oil dressing.",
+    "language": "en",
+    "input_payload": {
+      "notes": "grilled chicken salad",
+      "mealType": "lunch"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Grilled Chicken Breast",
+        "serving_weight_g": 150.0,
+        "serving_unit": "fillet",
+        "serving_size": 1.0,
+        "calories": 248.0,
+        "protein_g": 46.5,
+        "carbs_g": 0.0,
+        "fat_g": 5.4,
+        "fiber_g": 0.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "USDA FoodData Central FDC ID 171077",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Photo of grilled chicken salad with olive oil dressing.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Grilled Chicken Breast",
+          "calories": 248.0,
+          "proteinG": 46.5,
+          "carbsG": 0.0,
+          "fatG": 5.4,
+          "servingWeightG": 150.0,
+          "servingUnit": "fillet",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_009",
+    "category": "meal_photo",
+    "description": "Negative case: Non-food image (photo of barbell and dumbbells).",
+    "language": "en",
+    "input_payload": {
+      "notes": "gym picture",
+      "mealType": "snack"
+    },
+    "expected_outcome": "no_food",
+    "expected_nutrition": [],
+    "ground_truth_source": "Illustrative OnusFit edge case test fixture",
+    "is_verified_ground_truth": false,
+    "offline_candidate": {
+      "items": [],
+      "isFood": false,
+      "summary": "Non-food item or unclear audio",
+      "confidence": "high"
+    }
+  },
+  {
+    "case_id": "NUTR_010",
+    "category": "voice_meal",
+    "description": "Multi-item Tanglish: naalu idli, rendu medu vada, filter coffee.",
+    "language": "tanglish",
+    "input_payload": {
+      "transcript": "naalu idli, rendu medu vada, oru cup filter coffee",
+      "mealType": "breakfast"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Idli",
+        "serving_weight_g": 200.0,
+        "serving_unit": "piece",
+        "serving_size": 4.0,
+        "calories": 260.0,
+        "protein_g": 8.0,
+        "carbs_g": 52.0,
+        "fat_g": 1.0,
+        "fiber_g": 3.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      },
+      {
+        "name": "Medu Vada",
+        "serving_weight_g": 90.0,
+        "serving_unit": "piece",
+        "serving_size": 2.0,
+        "calories": 240.0,
+        "protein_g": 6.8,
+        "carbs_g": 24.0,
+        "fat_g": 13.5,
+        "fiber_g": 3.2,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code B005 & B009",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Multi-item Tanglish: naalu idli, rendu medu vada, filter coffee.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Idli",
+          "calories": 260.0,
+          "proteinG": 8.0,
+          "carbsG": 52.0,
+          "fatG": 1.0,
+          "servingWeightG": 200.0,
+          "servingUnit": "piece",
+          "servingSize": 4.0,
+          "confidence": "high"
+        },
+        {
+          "name": "Medu Vada",
+          "calories": 240.0,
+          "proteinG": 6.8,
+          "carbsG": 24.0,
+          "fatG": 13.5,
+          "servingWeightG": 90.0,
+          "servingUnit": "piece",
+          "servingSize": 2.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_011",
+    "category": "voice_meal",
+    "description": "Oatmeal with whey protein and almonds.",
+    "language": "en",
+    "input_payload": {
+      "transcript": "one cup cooked rolled oats with one scoop whey protein and ten almonds",
+      "mealType": "breakfast"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Rolled Oats",
+        "serving_weight_g": 234.0,
+        "serving_unit": "cup",
+        "serving_size": 1.0,
+        "calories": 166.0,
+        "protein_g": 5.9,
+        "carbs_g": 28.0,
+        "fat_g": 3.6,
+        "fiber_g": 4.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      },
+      {
+        "name": "Whey Protein Powder",
+        "serving_weight_g": 30.0,
+        "serving_unit": "scoop",
+        "serving_size": 1.0,
+        "calories": 120.0,
+        "protein_g": 24.0,
+        "carbs_g": 2.0,
+        "fat_g": 1.5,
+        "fiber_g": 0.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "USDA FoodData Central FDC ID 1101825",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Oatmeal with whey protein and almonds.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Rolled Oats",
+          "calories": 166.0,
+          "proteinG": 5.9,
+          "carbsG": 28.0,
+          "fatG": 3.6,
+          "servingWeightG": 234.0,
+          "servingUnit": "cup",
+          "servingSize": 1.0,
+          "confidence": "high"
+        },
+        {
+          "name": "Whey Protein Powder",
+          "calories": 120.0,
+          "proteinG": 24.0,
+          "carbsG": 2.0,
+          "fatG": 1.5,
+          "servingWeightG": 30.0,
+          "servingUnit": "scoop",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_012",
+    "category": "voice_meal",
+    "description": "Paneer tikka 150g.",
+    "language": "en",
+    "input_payload": {
+      "transcript": "one plate paneer tikka about 150 grams",
+      "mealType": "snack"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Paneer Tikka",
+        "serving_weight_g": 150.0,
+        "serving_unit": "plate",
+        "serving_size": 1.0,
+        "calories": 360.0,
+        "protein_g": 21.0,
+        "carbs_g": 9.0,
+        "fat_g": 26.0,
+        "fiber_g": 2.0,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code F003",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Paneer tikka 150g.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Paneer Tikka",
+          "calories": 360.0,
+          "proteinG": 21.0,
+          "carbsG": 9.0,
+          "fatG": 26.0,
+          "servingWeightG": 150.0,
+          "servingUnit": "plate",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_013",
+    "category": "voice_meal",
+    "description": "Two bananas (medium size).",
+    "language": "en",
+    "input_payload": {
+      "transcript": "two medium yellow bananas",
+      "mealType": "snack"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Banana",
+        "serving_weight_g": 236.0,
+        "serving_unit": "banana",
+        "serving_size": 2.0,
+        "calories": 210.0,
+        "protein_g": 2.6,
+        "carbs_g": 54.0,
+        "fat_g": 0.6,
+        "fiber_g": 6.2,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "USDA FoodData Central FDC ID 173944",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Two bananas (medium size).",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Banana",
+          "calories": 210.0,
+          "proteinG": 2.6,
+          "carbsG": 54.0,
+          "fatG": 0.6,
+          "servingWeightG": 236.0,
+          "servingUnit": "banana",
+          "servingSize": 2.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_014",
+    "category": "voice_meal",
+    "description": "Upma with peanut chutney.",
+    "language": "tanglish",
+    "input_payload": {
+      "transcript": "oru cup rava upma with peanut chutney",
+      "mealType": "breakfast"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Rava Upma",
+        "serving_weight_g": 180.0,
+        "serving_unit": "cup",
+        "serving_size": 1.0,
+        "calories": 220.0,
+        "protein_g": 4.5,
+        "carbs_g": 36.0,
+        "fat_g": 6.8,
+        "fiber_g": 2.4,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code B008",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Upma with peanut chutney.",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Rava Upma",
+          "calories": 220.0,
+          "proteinG": 4.5,
+          "carbsG": 36.0,
+          "fatG": 6.8,
+          "servingWeightG": 180.0,
+          "servingUnit": "cup",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_015",
+    "category": "voice_meal",
+    "description": "Chicken Biryani (one regular plate).",
+    "language": "en",
+    "input_payload": {
+      "transcript": "one regular portion chicken biryani with raita",
+      "mealType": "lunch"
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Chicken Biryani",
+        "serving_weight_g": 350.0,
+        "serving_unit": "plate",
+        "serving_size": 1.0,
+        "calories": 520.0,
+        "protein_g": 28.0,
+        "carbs_g": 62.0,
+        "fat_g": 18.0,
+        "fiber_g": 2.8,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN) Code B018",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "isFood": true,
+      "summary": "Chicken Biryani (one regular plate).",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Chicken Biryani",
+          "calories": 520.0,
+          "proteinG": 28.0,
+          "carbsG": 62.0,
+          "fatG": 18.0,
+          "servingWeightG": 350.0,
+          "servingUnit": "plate",
+          "servingSize": 1.0,
+          "confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "NUTR_016",
+    "category": "voice_meal",
+    "description": "Unclear / inaudible audio transcript.",
+    "language": "en",
+    "input_payload": {
+      "transcript": "muffled background noise and clicking sound",
+      "mealType": "snack"
+    },
+    "expected_outcome": "no_food",
+    "expected_nutrition": [],
+    "ground_truth_source": "Illustrative OnusFit edge case test fixture",
+    "is_verified_ground_truth": false,
+    "offline_candidate": {
+      "items": [],
+      "isFood": false,
+      "summary": "Non-food item or unclear audio",
+      "confidence": "high"
+    }
+  }
+]

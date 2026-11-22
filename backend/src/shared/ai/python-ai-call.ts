@@ -86,11 +86,8 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
 
     const parsed = call.schema.safeParse(raw);
     if (!parsed.success) {
-      const rawUsage =
-        raw && typeof raw === 'object' && 'usage' in raw ? (raw as Record<string, unknown>).usage : undefined;
       throw new PythonAiError('invalid_response', 'AI backend response did not match the contract.', {
         dispatched: true,
-        usage: rawUsage,
       });
     }
     const { usage, outcome } = parsed.data;

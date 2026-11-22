@@ -3,6 +3,10 @@ import type { Database } from '../../database/transaction.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import type { Logger } from '../../shared/logging/logger.js';
+import type { IExerciseRepository, IPersonalRecordRepository, IWorkoutSessionRepository } from '../workouts/index.js';
+import type { IMealRepository, IUserProfileTargetPort, IWaterRepository } from '../nutrition/index.js';
+import type { IWeightRepository } from '../progress/index.js';
+import type { KnowledgeService } from '../knowledge/index.js';
 import type { CoachChatService, CoachInsightsService, GeminiService, SpeechTranscriber } from './application/ports.js';
 import { ChatWithCoachUseCase } from './application/use-cases/chat-with-coach.js';
 import { GetCoachInsightsUseCase } from './application/use-cases/get-coach-insights.js';
@@ -13,6 +17,8 @@ import { PgConversationRepository } from './infrastructure/pg-conversation-repos
 import { PgMemoryRepository } from './infrastructure/pg-memory-repository.js';
 import { createCoachController, type CoachController } from './interface/coach.controller.js';
 import { createCoachRoutes } from './interface/coach.routes.js';
+import { createInternalToolsController, type InternalToolsController } from './interface/internal-tools.controller.js';
+import { createInternalToolsRoutes } from './interface/internal-tools.routes.js';
 
 export * from './domain/coach.types.js';
 export * from './domain/coach-history.types.js';
@@ -32,9 +38,13 @@ export * from './infrastructure/pg-memory-repository.js';
 export * from './interface/coach.schemas.js';
 export * from './interface/coach.controller.js';
 export * from './interface/coach.routes.js';
+export * from './interface/internal-tools.schemas.js';
+export * from './interface/internal-tools.controller.js';
+export * from './interface/internal-tools.routes.js';
 
 export interface CoachModule {
   routes: RouteGroup;
+  internalToolsRoutes?: RouteGroup;
   userContextRepo: PgUserContextRepository;
   conversationRepo: PgConversationRepository;
   memoryRepo: PgMemoryRepository;
@@ -45,10 +55,13 @@ export interface CoachModule {
   manageConversations: ManageConversationsUseCase;
   manageMemories: ManageMemoriesUseCase;
   controller: CoachController;
+  internalToolsController?: InternalToolsController;
 }
 
 export interface CreateCoachModuleOptions {
   basePath: string;
+  internalToolsBasePath?: string;
+  serviceSecret?: string;
   db: Database;
   /** Coach chat text generation (the Python AI backend, `PythonCoachChatService`). */
   chatService: CoachChatService;
@@ -59,8 +72,17 @@ export interface CreateCoachModuleOptions {
   /** Required: chat and insights must never reach Gemini without the feature flag / quota gate. */
   aiUsageGate: AiUsageGate;
   rateLimiter?: RequestHandler;
-  /** Observability only (cache events for coach insights). */
-  logger?: Pick<Logger, 'info'>;
+  /** Observability only (cache events for coach insights and RAG fallback warnings). */
+  logger?: Pick<Logger, 'info' | 'warn'>;
+  sessionRepo?: IWorkoutSessionRepository;
+  personalRecordRepo?: IPersonalRecordRepository;
+  exerciseRepo?: IExerciseRepository;
+  mealRepo?: IMealRepository;
+  waterRepo?: IWaterRepository;
+  targetAdapter?: IUserProfileTargetPort;
+  weightRepo?: IWeightRepository;
+  /** Optional knowledge service for RAG grounding */
+  knowledgeService?: KnowledgeService;
 }
 
 export function createCoachModule(options: CreateCoachModuleOptions): CoachModule {
@@ -68,8 +90,8 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
   const conversationRepo = new PgConversationRepository(options.db);
   const memoryRepo = new PgMemoryRepository(options.db);
   const aiService: GeminiService = {
-    generateCoachResponse: (message, context, history, memories) =>
-      options.chatService.generateCoachResponse(message, context, history, memories),
+    generateCoachResponse: (message, context, history, memories, knowledge) =>
+      options.chatService.generateCoachResponse(message, context, history, memories, knowledge),
     generateInsights: (context, lang) => options.insightsService.generateInsights(context, lang),
   };
 
@@ -79,6 +101,8 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
     options.aiUsageGate,
     conversationRepo,
     memoryRepo,
+    options.knowledgeService,
+    options.logger,
   );
   const insightsUseCase = new GetCoachInsightsUseCase(userContextRepo, aiService, options.aiUsageGate, options.logger);
   const manageConversations = new ManageConversationsUseCase(conversationRepo);
@@ -93,8 +117,39 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
   });
   const routes = createCoachRoutes(options.basePath, controller, options.rateLimiter);
 
+  let internalToolsRoutes: RouteGroup | undefined;
+  let internalToolsController: InternalToolsController | undefined;
+
+  if (
+    options.internalToolsBasePath &&
+    options.serviceSecret &&
+    options.sessionRepo &&
+    options.personalRecordRepo &&
+    options.exerciseRepo &&
+    options.mealRepo &&
+    options.waterRepo &&
+    options.targetAdapter &&
+    options.weightRepo
+  ) {
+    internalToolsController = createInternalToolsController({
+      sessionRepo: options.sessionRepo,
+      personalRecordRepo: options.personalRecordRepo,
+      exerciseRepo: options.exerciseRepo,
+      mealRepo: options.mealRepo,
+      waterRepo: options.waterRepo,
+      targetAdapter: options.targetAdapter,
+      weightRepo: options.weightRepo,
+    });
+    internalToolsRoutes = createInternalToolsRoutes(
+      options.internalToolsBasePath,
+      internalToolsController,
+      { serviceSecret: options.serviceSecret, limiter: options.rateLimiter },
+    );
+  }
+
   return {
     routes,
+    internalToolsRoutes,
     userContextRepo,
     conversationRepo,
     memoryRepo,
@@ -104,5 +159,6 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
     manageConversations,
     manageMemories,
     controller,
+    internalToolsController,
   };
 }

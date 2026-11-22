@@ -17,6 +17,14 @@ import httpx
 
 from onusfit_ai.shared.llm.ports import LlmServiceError
 
+__all__ = [
+    "ClassifiedError",
+    "ErrorKind",
+    "LlmServiceError",
+    "ModelCooldown",
+    "classify_gemini_error",
+]
+
 ErrorKind = Literal[
     "AUTH_ERROR",
     "MODEL_NOT_FOUND",
@@ -156,4 +164,3 @@ class ModelCooldown:
 
     def record_success(self, model: str) -> None:
         self._until.pop(model, None)
-

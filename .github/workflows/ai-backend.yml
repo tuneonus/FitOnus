@@ -49,6 +49,8 @@ jobs:
       - run: ruff format --check .
       - run: mypy
       - run: python -m pytest -q
+      - name: Run deterministic AI evaluation suite (offline quality gate)
+        run: python tests/evals/runner.py --output-json tests/evals/results/ci_report.json --output-md tests/evals/results/ci_report.md
 
   docker:
     name: AI Backend Docker Image Build + Smoke Test

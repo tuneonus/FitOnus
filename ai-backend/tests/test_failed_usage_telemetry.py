@@ -10,7 +10,6 @@ import base64
 import json
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 
 from conftest import INSIGHTS_FIXTURES, FakeLlm, load_request, make_token
@@ -18,7 +17,9 @@ from conftest import INSIGHTS_FIXTURES, FakeLlm, load_request, make_token
 MODEL = {"primary": "gemini-primary", "fallback": "gemini-backup"}
 JPEG = b"\xff\xd8\xff\xe0\x00\x10JFIF-fake-photo-bytes"
 PROMPT_CASES = json.loads((INSIGHTS_FIXTURES / "prompt_cases.json").read_text(encoding="utf-8"))
-INSIGHTS_CONTEXT: dict[str, Any] = next(c for c in PROMPT_CASES if c["name"] == "A_full__en")["context"]
+INSIGHTS_CONTEXT: dict[str, Any] = next(c for c in PROMPT_CASES if c["name"] == "A_full__en")[
+    "context"
+]
 
 
 def b64(data: bytes) -> str:
@@ -43,7 +44,9 @@ def test_coach_chat_safety_error_serializes_usage(client: TestClient, fake_llm: 
     assert error["usage"]["model"] == "gemini-3.5-flash-lite"
 
 
-def test_coach_chat_max_tokens_error_serializes_usage(client: TestClient, fake_llm: FakeLlm) -> None:
+def test_coach_chat_max_tokens_error_serializes_usage(
+    client: TestClient, fake_llm: FakeLlm
+) -> None:
     fake_llm.finish_reason = "MAX_TOKENS"
     response = client.post(
         "/internal/v1/ai/coach/chat",
@@ -76,7 +79,9 @@ def test_coach_chat_malformed_structured_error_serializes_usage(
     assert error["usage"]["totalTokens"] == 125
 
 
-def test_coach_insights_safety_error_serializes_usage(client: TestClient, fake_llm: FakeLlm) -> None:
+def test_coach_insights_safety_error_serializes_usage(
+    client: TestClient, fake_llm: FakeLlm
+) -> None:
     fake_llm.finish_reason = "SAFETY"
     response = client.post(
         "/internal/v1/ai/coach/insights",
@@ -106,7 +111,9 @@ def test_voice_meal_safety_error_serializes_usage(client: TestClient, fake_llm: 
     assert error["usage"]["totalTokens"] == 125
 
 
-def test_voice_meal_max_tokens_error_serializes_usage(client: TestClient, fake_llm: FakeLlm) -> None:
+def test_voice_meal_max_tokens_error_serializes_usage(
+    client: TestClient, fake_llm: FakeLlm
+) -> None:
     fake_llm.finish_reason = "MAX_TOKENS"
     response = client.post(
         "/internal/v1/ai/meals/parse-voice",
@@ -140,7 +147,9 @@ def test_meal_photo_safety_error_serializes_usage(client: TestClient, fake_llm: 
     assert error["usage"]["totalTokens"] == 125
 
 
-def test_meal_photo_max_tokens_error_serializes_usage(client: TestClient, fake_llm: FakeLlm) -> None:
+def test_meal_photo_max_tokens_error_serializes_usage(
+    client: TestClient, fake_llm: FakeLlm
+) -> None:
     fake_llm.finish_reason = "MAX_TOKENS"
     response = client.post(
         "/internal/v1/ai/meals/analyze-photo",

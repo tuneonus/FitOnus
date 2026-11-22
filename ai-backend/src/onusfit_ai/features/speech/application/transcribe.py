@@ -99,7 +99,7 @@ async def transcribe_audio(
             # Fallback to safe string parsing
             result, outcome = parse_transcription(llm_result.text)
     else:
-        # parsed is None: fallback to safe string parsing (e.g. rollback mode or unparsed model reply)
+        # parsed is None: fallback to safe string parsing
         result, outcome = parse_transcription(llm_result.text)
 
     usage = llm_result.usage

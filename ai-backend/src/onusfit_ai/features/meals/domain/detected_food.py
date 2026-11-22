@@ -24,4 +24,3 @@ class DetectedFoodItem(ContractModel):
     fiber: float | None = None
     confidence: Confidence
     is_ai_estimated: bool
-

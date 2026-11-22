@@ -3,8 +3,13 @@ import { currentAiRequestContext } from '../../../shared/ai/ai-usage.js';
 import { callPythonAi, pythonUsageSchema, requireGateUserId } from '../../../shared/ai/python-ai-call.js';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
 import type { Logger } from '../../../shared/logging/logger.js';
-import type { CoachChatService } from '../application/ports.js';
-import type { Block, ChatMessageTurn, CoachResponse, UserFitnessContext } from '../domain/coach.types.js';
+import type { CoachChatService, KnowledgeContextPayloadItem } from '../application/ports.js';
+import type {
+  Block,
+  ChatMessageTurn,
+  CoachResponse,
+  UserFitnessContext,
+} from '../domain/coach.types.js';
 
 /** Token scope Python requires for this endpoint. */
 export const COACH_CHAT_SCOPE = 'ai:coach:chat';
@@ -27,6 +32,18 @@ const pythonChatResponseSchema = z.object({
     sources: z.array(z.string()),
     medicalNote: z.boolean().nullish(),
     blocks: z.array(z.record(z.string(), z.unknown())).nullish(),
+    toolCalls: z.array(z.string()).nullish(),
+    citations: z
+      .array(
+        z.object({
+          documentSlug: z.string(),
+          documentTitle: z.string(),
+          category: z.string().nullish(),
+          chunkIndex: z.number().nullish(),
+          citation: z.string(),
+        }),
+      )
+      .nullish(),
   }),
   usage: pythonUsageSchema,
   traceId: z.string(),
@@ -60,6 +77,7 @@ export class PythonCoachChatService implements CoachChatService {
     context: UserFitnessContext,
     history: ChatMessageTurn[] = [],
     memories: string[] = [],
+    knowledge: KnowledgeContextPayloadItem[] = [],
   ): Promise<CoachResponse> {
     // Identity comes from the server-side request context set by the AI usage gate, never from input.
     const userId = requireGateUserId(currentAiRequestContext()?.userId);
@@ -78,6 +96,7 @@ export class PythonCoachChatService implements CoachChatService {
         context,
         history,
         memories,
+        ...(knowledge.length > 0 ? { knowledge } : {}),
         model: { primary: models.primary, fallback: models.fallback },
         deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
       },
@@ -94,8 +113,20 @@ export class PythonCoachChatService implements CoachChatService {
       text: result.text,
       followUps: result.followUps,
       sources: result.sources,
+      ...(result.toolCalls && result.toolCalls.length > 0 ? { toolCalls: result.toolCalls } : {}),
       ...(typeof result.medicalNote === 'boolean' ? { medicalNote: result.medicalNote } : {}),
       ...(result.blocks ? { blocks: result.blocks as unknown as Block[] } : {}),
+      ...(result.citations && result.citations.length > 0
+        ? {
+            citations: result.citations.map((c) => ({
+              documentSlug: c.documentSlug,
+              documentTitle: c.documentTitle,
+              category: c.category ?? undefined,
+              chunkIndex: c.chunkIndex ?? undefined,
+              citation: c.citation,
+            })),
+          }
+        : {}),
     };
   }
 }

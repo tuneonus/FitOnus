@@ -26,7 +26,6 @@ from onusfit_ai.features.meals.application.schemas import (
     GeminiPhotoMealOutput,
     is_meal_photo_structured_output_enabled,
 )
-from onusfit_ai.shared.llm.ports import LlmResult, LlmUsage
 
 URL = "/internal/v1/ai/meals/analyze-photo"
 MODEL = {"primary": "gemini-primary", "fallback": "gemini-backup"}
@@ -427,4 +426,3 @@ def test_telemetry_privacy(
     assert "meal_photo" in logs
     assert "SECRET-PHOTO-CONTENT" not in logs
     assert "SECRET-NOTES-CONTENT" not in logs
-

@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { AppError, isAppError } from '../../../../shared/errors/app-error.js';
+import type { Logger } from '../../../../shared/logging/logger.js';
+import type { KnowledgeService } from '../../../knowledge/index.js';
 import type {
   ConversationRepository,
   GeminiService,
+  KnowledgeContextPayloadItem,
   MemoryRepository,
   UserContextRepository,
 } from '../ports.js';
@@ -29,6 +32,8 @@ export class ChatWithCoachUseCase {
     private readonly aiUsageGate: AiUsageGate,
     private readonly conversationRepo?: ConversationRepository,
     private readonly memoryRepo?: MemoryRepository,
+    private readonly knowledgeService?: KnowledgeService,
+    private readonly logger?: Pick<Logger, 'info' | 'warn'>,
   ) {}
 
   async execute(input: ChatWithCoachInput): Promise<ChatWithCoachOutput> {
@@ -105,21 +110,62 @@ export class ChatWithCoachUseCase {
       ? await this.memoryRepo.getActiveMemoriesForContext(userId)
       : [];
 
-    // 5. Generate coach response using Gemini
+    // 5. Retrieve grounded knowledge if knowledge service configured
+    let knowledgeItems: KnowledgeContextPayloadItem[] = [];
+    if (this.knowledgeService) {
+      try {
+        const hybridChunks = await this.knowledgeService.searchHybrid(trimmedMessage, {
+          limit: 3,
+          minSimilarity: 0.35,
+        });
+
+        if (hybridChunks.length > 0) {
+          const ragContext = this.knowledgeService.buildRagContext(hybridChunks, {
+            maxTokens: 1200,
+            maxChunks: 3,
+            minSimilarity: 0.35,
+          });
+          knowledgeItems = ragContext.items.map((item) => ({
+            documentSlug: item.documentSlug,
+            documentTitle: item.documentTitle,
+            category: item.category,
+            chunkIndex: item.chunkIndex,
+            content: item.content,
+            citation: item.citation,
+          }));
+        }
+      } catch (err) {
+        // Safe fallback: log error without leaking sensitive user data, and continue normally
+        this.logger?.warn?.(
+          `[CoachRAG] Knowledge retrieval failed; falling back to ungrounded coach chat. Error: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        knowledgeItems = [];
+      }
+    }
+
+    // 6. Generate coach response using Gemini
     const effectiveHistory = input.history ?? (history && history.length > 0 ? history : undefined);
     const response =
-      memories.length > 0
+      knowledgeItems.length > 0
         ? await this.geminiService.generateCoachResponse(
             trimmedMessage,
             context,
             effectiveHistory,
-            memories,
+            memories.length > 0 ? memories : undefined,
+            knowledgeItems,
           )
-        : await this.geminiService.generateCoachResponse(
-            trimmedMessage,
-            context,
-            effectiveHistory,
-          );
+        : memories.length > 0
+          ? await this.geminiService.generateCoachResponse(
+              trimmedMessage,
+              context,
+              effectiveHistory,
+              memories,
+            )
+          : await this.geminiService.generateCoachResponse(
+              trimmedMessage,
+              context,
+              effectiveHistory,
+            );
 
     // 6. Persist assistant response to conversation history
     if (this.conversationRepo && conversationId) {

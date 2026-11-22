@@ -31,6 +31,8 @@ def test_success_returns_camel_case_contract(client: TestClient, fake_llm: FakeL
         "sources": ["Profile", "AI Memory"],
         "medicalNote": False,
         "blocks": None,
+        "toolCalls": None,
+        "citations": None,
     }
     assert body["usage"]["model"] == "gemini-3.5-flash-lite"
     assert body["usage"]["thinkingTokens"] == 5

@@ -32,6 +32,7 @@ export const okCoachReply = (overrides: Record<string, unknown> = {}): Record<st
     sources: ['Profile', "Today's Nutrition"],
     medicalNote: false,
     blocks: null,
+    toolCalls: null,
   },
   usage: {
     model: 'gemini-3.5-flash-lite',
@@ -194,6 +195,26 @@ export const okTranscribeReply = (overrides: Record<string, unknown> = {}): Reco
     durationMs: 800,
   },
   traceId: 'trace-stt-1',
+  ...overrides,
+});
+
+/** A successful embedding reply in the shape of ai-backend/src/onusfit_ai/shared/contracts/embed.py. */
+export const okEmbedReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  outcome: 'ok',
+  embeddings: [new Array(768).fill(0.01)],
+  dimensions: 768,
+  count: 1,
+  usage: {
+    model: 'gemini-embedding-001',
+    isFallback: false,
+    inputTokens: 16,
+    outputTokens: 0,
+    cachedTokens: 0,
+    thinkingTokens: 0,
+    totalTokens: 16,
+    durationMs: 45,
+  },
+  traceId: 'trace-embed-1',
   ...overrides,
 });
 
