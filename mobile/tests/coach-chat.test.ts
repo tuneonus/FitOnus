@@ -182,6 +182,18 @@ describe('AI Coach Chat Mobile Contracts & Integration', () => {
     assert.equal(memoryResponse.items[0]?.category, 'food');
   });
 
+  it('validates MemoryListApiResponse handles disabled memory by default', () => {
+    const defaultResponse: MemoryListApiResponse = {
+      enabled: false,
+      items: [],
+      suggestions: [],
+    };
+
+    assert.equal(defaultResponse.enabled, false);
+    assert.equal(defaultResponse.items.length, 0);
+    assert.equal(defaultResponse.suggestions.length, 0);
+  });
+
   it('validates stripMarkdownForSpeech removes formatting while keeping natural prose', () => {
     const raw = '### Workout Tip\nHere is your **routine**:\n- 3 sets of `squats`\n- Drink [water](https://fitonus.com)!\n> Rest 60s.';
     const stripped = stripMarkdownForSpeech(raw);

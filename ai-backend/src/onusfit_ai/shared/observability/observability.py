@@ -75,6 +75,7 @@ _CATEGORY_BY_GEMINI_KIND: Final[dict[str, AiErrorCategory]] = {
 FEATURE_BY_PATH: Final[dict[str, str]] = {
     "/internal/v1/ai/coach/chat": "coach_chat",
     "/internal/v1/ai/coach/insights": "coach_insights",
+    "/internal/v1/ai/coach/memories/extract": "coach_memory_extract",
     "/internal/v1/ai/meals/parse-voice": "voice_meal",
     "/internal/v1/ai/meals/analyze-photo": "meal_photo",
     "/internal/v1/ai/speech/transcribe": "transcribe",

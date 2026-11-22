@@ -89,6 +89,8 @@ function main(): void {
   if (config.notifications.dispatcher.enabled) container.notifications?.dispatcher?.start();
   // Removes the private photos that members deleted (and those of deleted accounts) from the private bucket.
   if (container.privateMedia?.purgeEnabled) container.privateMedia.purger.start();
+  // Starts background memory extraction worker loop.
+  container.coach?.memoryWorker?.start();
   const server = http.createServer(app);
   server.requestTimeout = 30_000;
   server.headersTimeout = 20_000;
@@ -112,6 +114,7 @@ function main(): void {
     const dispatcherStopped = Promise.all([
       container.notifications?.dispatcher?.stop() ?? Promise.resolve(),
       container.privateMedia?.purger.stop() ?? Promise.resolve(),
+      container.coach?.memoryWorker?.stop() ?? Promise.resolve(),
     ]);
 
     server.close((error) => {

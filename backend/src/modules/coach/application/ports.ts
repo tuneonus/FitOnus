@@ -4,6 +4,8 @@ import type {
   CoachInsightsResponse,
   UserFitnessContext,
 } from '../domain/coach.types.js';
+
+export type { ChatMessageTurn };
 import type {
   ConversationSummary,
   ConversationDetail,
@@ -15,6 +17,7 @@ import type {
   MemoryListResponse,
   MemoryStatus,
 } from '../domain/coach-memory.types.js';
+import type { MemoryExtractionJob } from '../domain/extraction-job.types.js';
 
 export interface UserContextRepository {
   getUserFitnessContext(userId: string, timezone?: string): Promise<UserFitnessContext>;
@@ -84,13 +87,46 @@ export interface MemoryRepository {
       source?: string;
       sensitive?: boolean;
       status?: MemoryStatus;
+      confidence?: number;
+      sourceMessageId?: string | null;
+      sourceConversationId?: string | null;
+      expiresAt?: string | null;
     },
   ): Promise<MemoryItem>;
   updateMemory(userId: string, memoryId: string, text: string): Promise<MemoryItem | null>;
   deleteMemory(userId: string, memoryId: string): Promise<boolean>;
   updateMemoryStatus(userId: string, memoryId: string, status: MemoryStatus): Promise<MemoryItem | null>;
+  dismissSuggestion(userId: string, memoryId: string): Promise<boolean>;
   clearAll(userId: string): Promise<void>;
   isMemoryEnabled(userId: string): Promise<boolean>;
   setMemoryEnabled(userId: string, enabled: boolean): Promise<void>;
-  getActiveMemoriesForContext(userId: string): Promise<string[]>;
+  getActiveMemoriesForContext(userId: string, queryText?: string, maxTokens?: number): Promise<string[]>;
+  getDismissedTexts(userId: string): Promise<string[]>;
+}
+
+export interface ExtractedCandidate {
+  category: MemoryCategory;
+  text: string;
+  confidence: number;
+  sensitive: boolean;
+  sourceQuote: string;
+  supersedesQuote?: string | null;
+}
+
+export interface MemoryExtractor {
+  extract(
+    userId: string,
+    turns: ChatMessageTurn[],
+    existingMemories: string[],
+  ): Promise<ExtractedCandidate[]>;
+}
+
+export interface MemoryExtractionJobQueue {
+  enqueue(userId: string, conversationId: string, messageId: string): Promise<void>;
+  claimDue(limit: number, leaseSeconds: number): Promise<MemoryExtractionJob[]>;
+  complete(jobId: string): Promise<void>;
+  fail(jobId: string, error: string): Promise<void>;
+  cancelForUser(userId: string): Promise<void>;
+  isJobCancelled(jobId: string): Promise<boolean>;
+  pruneOldJobs(olderThanDays?: number): Promise<number>;
 }

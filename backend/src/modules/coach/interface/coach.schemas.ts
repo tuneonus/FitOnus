@@ -125,7 +125,13 @@ export const memoryCategorySchema = z.enum([
   'conversations',
 ]);
 
-export const memoryStatusSchema = z.enum(['active', 'pending_approval', 'dismissed', 'archived']);
+export const memoryStatusSchema = z.enum([
+  'active',
+  'pending_approval',
+  'dismissed',
+  'archived',
+  'superseded',
+]);
 
 export const memoryItemSchema = z.object({
   id: z.string(),
@@ -134,6 +140,11 @@ export const memoryItemSchema = z.object({
   source: z.string(),
   sensitive: z.boolean(),
   status: memoryStatusSchema,
+  confidence: z.number().optional(),
+  sourceMessageId: z.string().nullable().optional(),
+  sourceConversationId: z.string().nullable().optional(),
+  expiresAt: z.string().nullable().optional(),
+  supersededById: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

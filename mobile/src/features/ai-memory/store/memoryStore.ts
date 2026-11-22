@@ -50,7 +50,7 @@ type MemoryState = {
 export const useMemoryStore = create<MemoryState>((storeSet, get) => {
   const set = storeSet;
   return {
-    enabled: true,
+    enabled: false,
     useSensitive: true,
     loading: false,
     items: [],
@@ -85,7 +85,7 @@ export const useMemoryStore = create<MemoryState>((storeSet, get) => {
         }));
 
         set({
-          enabled: res.enabled !== false,
+          enabled: Boolean(res.enabled),
           items,
           suggestions,
         });

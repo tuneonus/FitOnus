@@ -97,3 +97,11 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 |:---|:---|:---|:---|:---|
 | **P6.5-All** | [**Phase 06.5: Admin Knowledge Management Hardening**](../phase-06.5-admin-knowledge-management.md) | **COMPLETED** | `backend/migrations/0031_add_knowledge_document_lifecycle.sql`<br>`backend/src/modules/knowledge/interface/text-extractor.ts`<br>`backend/src/modules/knowledge/infrastructure/pg-knowledge-repository.ts`<br>`backend/src/modules/knowledge/application/knowledge-service.ts`<br>`backend/src/modules/knowledge/interface/knowledge-admin.*`<br>`admin/src/features/knowledge/*` | `backend/tests/unit/knowledge/text-extractor.test.ts`<br>`backend/tests/unit/knowledge/knowledge-admin.controller.test.ts`<br>`backend/tests/unit/knowledge/pg-knowledge-repository.test.ts`<br>`backend/tests/unit/knowledge/knowledge-service.test.ts`<br>`admin/tests/admin-knowledge.test.ts` |
 
+---
+
+## Phase 07: AI Memory Systems
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P7-All** | [**Phase 07: AI Memory Systems**](../phase-07-ai-memory-systems.md) | **COMPLETED** | `backend/migrations/0033_harden_ai_memory_consent_and_metadata.sql`<br>`backend/src/modules/coach/domain/history-budget.ts`<br>`backend/src/modules/coach/infrastructure/pg-memory-job-queue.ts`<br>`backend/src/modules/coach/infrastructure/python-memory-extractor.ts`<br>`backend/src/modules/coach/application/services/memory-extraction-worker.ts`<br>`ai-backend/src/onusfit_ai/features/coach/domain/memory.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/extraction.py`<br>`mobile/src/features/ai-memory/*` | `backend/tests/unit/coach/coach-history.test.ts`<br>`backend/tests/unit/coach/history-budget.test.ts`<br>`backend/tests/unit/database/memory-migration.test.ts`<br>`backend/tests/unit/coach/coach-memory.test.ts`<br>`backend/tests/unit/coach/pg-memory-job-queue.test.ts`<br>`backend/tests/unit/coach/memory-extraction-worker.test.ts`<br>`ai-backend/tests/test_memory_extraction.py`<br>`ai-backend/tests/evals/offline/test_memory_eval.py`<br>`mobile/tests/coach-chat.test.ts` |
+

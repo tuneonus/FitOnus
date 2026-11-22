@@ -56,6 +56,7 @@ class BenchmarkCase(BaseModel):
         "function_calling",
         "fitness_safety",
         "multilingual_dialect",
+        "memory_extraction",
     ]
     description: str = Field(description="Summary of test intent")
     language: Literal["en", "ta", "tanglish", "mixed"] = "en"

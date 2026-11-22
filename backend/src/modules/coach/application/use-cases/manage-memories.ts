@@ -91,8 +91,8 @@ export class ManageMemoriesUseCase {
     if (!userId?.trim()) {
       throw new AppError('unauthorized', 'UNAUTHENTICATED', 'Authentication is required.');
     }
-    const deleted = await this.memoryRepo.deleteMemory(userId, memoryId);
-    if (!deleted) {
+    const dismissed = await this.memoryRepo.dismissSuggestion(userId, memoryId);
+    if (!dismissed) {
       throw new AppError('not_found', 'NOT_FOUND', 'Suggestion not found.');
     }
   }

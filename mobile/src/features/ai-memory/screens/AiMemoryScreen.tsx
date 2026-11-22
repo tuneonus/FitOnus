@@ -89,9 +89,27 @@ export function AiMemoryScreen() {
         </View>
 
         {!enabled && (
-          <Text style={[styles.pausedHint, { color: colors.muted }]}>
-            Memory is paused. Your coach won’t read or save memories, so answers will be less personal. Saved items stay until you delete them.
-          </Text>
+          <View
+            style={[
+              styles.optInCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.line,
+              },
+            ]}
+          >
+            <Text style={[styles.optInTitle, { color: colors.ink }]}>
+              AI Memory is turned off
+            </Text>
+            <Text style={[styles.optInBody, { color: colors.muted }]}>
+              FitOnus respects your privacy: AI memory is disabled by default until you opt in. When enabled, your coach remembers your goals, food preferences, and exercise background across conversations. All suggestions stay pending until you approve them.
+            </Text>
+            <Button
+              size="sm"
+              title="Turn on AI memory"
+              onPress={() => setEnabled(true)}
+            />
+          </View>
         )}
 
         {/* Suggestions / Waiting for OK */}
@@ -324,6 +342,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     paddingHorizontal: 8,
+  },
+  optInCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    gap: 10,
+  },
+  optInTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  optInBody: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   section: {},
   sectionTitle: {

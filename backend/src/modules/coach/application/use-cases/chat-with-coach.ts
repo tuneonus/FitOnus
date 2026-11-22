@@ -3,10 +3,12 @@ import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { AppError, isAppError } from '../../../../shared/errors/app-error.js';
 import type { Logger } from '../../../../shared/logging/logger.js';
 import type { KnowledgeService } from '../../../knowledge/index.js';
+import { selectHistoryWithinTokenBudget } from '../../domain/history-budget.js';
 import type {
   ConversationRepository,
   GeminiService,
   KnowledgeContextPayloadItem,
+  MemoryExtractionJobQueue,
   MemoryRepository,
   UserContextRepository,
 } from '../ports.js';
@@ -19,6 +21,7 @@ export interface ChatWithCoachInput {
   history?: ChatMessageTurn[];
   conversationId?: string | null;
   clientMessageId?: string | null;
+  maxHistoryTokens?: number;
 }
 
 export type ChatWithCoachOutput = CoachResponse & {
@@ -34,6 +37,8 @@ export class ChatWithCoachUseCase {
     private readonly memoryRepo?: MemoryRepository,
     private readonly knowledgeService?: KnowledgeService,
     private readonly logger?: Pick<Logger, 'info' | 'warn'>,
+    private readonly jobQueue?: MemoryExtractionJobQueue,
+    private readonly onJobEnqueued?: () => void,
   ) {}
 
   async execute(input: ChatWithCoachInput): Promise<ChatWithCoachOutput> {
@@ -96,18 +101,22 @@ export class ChatWithCoachUseCase {
     // 3. Resolve conversation history if not supplied by client
     let history = input.history ?? [];
     if (history.length === 0 && this.conversationRepo && conversationId) {
-      const pastMessages = await this.conversationRepo.getMessages(userId, conversationId, 8);
-      history = pastMessages
-        .filter((m) => m.id !== userMsgId && m.text)
+      const pastMessages = await this.conversationRepo.getMessages(userId, conversationId, 15);
+      const eligible = pastMessages
+        .filter((m) => m.id !== userMsgId && m.text && m.text.trim().length > 0)
         .map((m) => ({
           role: m.role as 'user' | 'assistant',
           text: m.text,
         }));
+      history = selectHistoryWithinTokenBudget(eligible, {
+        maxTokens: input.maxHistoryTokens ?? 800,
+        maxTurns: 10,
+      });
     }
 
     // 4. Retrieve user-approved fitness memories if enabled
     const memories = this.memoryRepo
-      ? await this.memoryRepo.getActiveMemoriesForContext(userId)
+      ? await this.memoryRepo.getActiveMemoriesForContext(userId, trimmedMessage)
       : [];
 
     // 5. Retrieve grounded knowledge if knowledge service configured
@@ -180,6 +189,20 @@ export class ChatWithCoachUseCase {
         followUps: response.followUps,
         createdAt: new Date().toISOString(),
       });
+    }
+
+    // 7. Enqueue background memory extraction durably in PostgreSQL (idempotent, does not block response)
+    if (this.jobQueue && this.memoryRepo && conversationId) {
+      this.jobQueue
+        .enqueue(userId, conversationId, userMsgId)
+        .then(() => {
+          this.onJobEnqueued?.();
+        })
+        .catch((err) => {
+          this.logger?.warn?.(
+            `[CoachChat] Failed to enqueue memory extraction: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
     }
 
     return {

@@ -2,10 +2,11 @@
 
 from fastapi import APIRouter
 
-from onusfit_ai.features.coach.presentation import coach_chat, coach_insights
+from onusfit_ai.features.coach.presentation import coach_chat, coach_insights, memory_extract
 
 router = APIRouter()
 router.include_router(coach_chat.router)
 router.include_router(coach_insights.router)
+router.include_router(memory_extract.router)
 
-__all__ = ["coach_chat", "coach_insights", "router"]
+__all__ = ["coach_chat", "coach_insights", "memory_extract", "router"]

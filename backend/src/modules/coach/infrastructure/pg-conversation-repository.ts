@@ -6,6 +6,7 @@ import type {
   ConversationSummary,
   StoredChatMessage,
 } from '../domain/coach-history.types.js';
+import type { Block } from '../domain/coach.types.js';
 
 interface ConvoRow {
   id: string;
@@ -20,9 +21,9 @@ interface MessageRow {
   conversation_id: string;
   role: 'user' | 'assistant' | 'system';
   text: string;
-  blocks: any;
-  sources: any;
-  follow_ups: any;
+  blocks: unknown;
+  sources: unknown;
+  follow_ups: unknown;
   feedback?: 'like' | 'dislike' | 'none' | null;
   created_at: Date;
 }
@@ -191,11 +192,16 @@ export class PgConversationRepository implements ConversationRepository {
     limit = 100,
   ): Promise<StoredChatMessage[]> {
     const res = await this.db.query<MessageRow>(
-      `SELECT id, conversation_id, role, text, blocks, sources, follow_ups, created_at, feedback
-       FROM coach_messages
-       WHERE conversation_id = $1 AND user_id = $2
-       ORDER BY created_at ASC
-       LIMIT $3`,
+      `WITH recent_messages AS (
+         SELECT id, conversation_id, role, text, blocks, sources, follow_ups, created_at, feedback
+         FROM coach_messages
+         WHERE conversation_id = $1 AND user_id = $2
+         ORDER BY created_at DESC, id DESC
+         LIMIT $3
+       )
+       SELECT id, conversation_id, role, text, blocks, sources, follow_ups, created_at, feedback
+       FROM recent_messages
+       ORDER BY created_at ASC, id ASC`,
       [conversationId, userId, limit],
     );
 
@@ -204,9 +210,9 @@ export class PgConversationRepository implements ConversationRepository {
       conversationId: r.conversation_id,
       role: r.role,
       text: r.text,
-      blocks: typeof r.blocks === 'string' ? JSON.parse(r.blocks) : r.blocks ?? [],
-      sources: typeof r.sources === 'string' ? JSON.parse(r.sources) : r.sources ?? [],
-      followUps: typeof r.follow_ups === 'string' ? JSON.parse(r.follow_ups) : r.follow_ups ?? [],
+      blocks: (typeof r.blocks === 'string' ? (JSON.parse(r.blocks) as Block[]) : (r.blocks as Block[]) ?? []),
+      sources: (typeof r.sources === 'string' ? (JSON.parse(r.sources) as string[]) : (r.sources as string[]) ?? []),
+      followUps: (typeof r.follow_ups === 'string' ? (JSON.parse(r.follow_ups) as string[]) : (r.follow_ups as string[]) ?? []),
       feedback: r.feedback ?? null,
       createdAt: r.created_at.toISOString(),
     }));

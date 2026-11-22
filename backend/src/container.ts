@@ -26,6 +26,8 @@ import {
   PythonCoachChatService,
   PythonCoachInsightsService,
   PythonSpeechTranscriber,
+  PythonMemoryExtractor,
+  type CoachModule,
 } from './modules/coach/index.js';
 import {
   createNotificationsModule,
@@ -62,6 +64,7 @@ export interface Container {
   /** The private member-photo storage and its deletion worker; null when R2_PRIVATE_* is not configured. */
   privateMedia?: PrivateMedia | null;
   knowledge?: KnowledgeModule;
+  coach?: CoachModule;
 }
 
 export interface ContainerOverrides {
@@ -312,6 +315,13 @@ export function createContainer(
       pythonTimeoutMs: aiBackend.timeoutMs,
       ...(logger ? { logger } : {}),
     }),
+    extractor: new PythonMemoryExtractor({
+      client: pythonAi,
+      resolveModels: resolveModelsFor('coach_chat'),
+      usageRecorder: appSettings.runtimeService,
+      pythonTimeoutMs: aiBackend.timeoutMs,
+      ...(logger ? { logger } : {}),
+    }),
     aiUsageGate: appSettings.aiUsageGate,
     rateLimiter: rateLimiters.aiCoach,
     ...(logger ? { logger } : {}),
@@ -397,5 +407,6 @@ export function createContainer(
     notifications,
     privateMedia,
     knowledge,
+    coach,
   };
 }
