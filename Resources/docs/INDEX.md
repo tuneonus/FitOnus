@@ -33,6 +33,7 @@ Keep the context needed to maintain the application: agent instructions, product
 - [Engineering roadmap](../../AI_ENGINEERING_ROADMAP.md)
 - [AI learning guides](ai-learning/existing-ai-engineering/00-learning-index.md)
 - [Phase 09: AI Agent Fundamentals](ai-learning/phase-09-ai-agent-fundamentals.md)
+- [Phase 10: LangGraph Agent Workflows](ai-learning/phase-10-langgraph-agent-workflows.md)
 
 The architecture proposal and roadmap describe planned work. They do not indicate that the proposed services or integrations exist.
 

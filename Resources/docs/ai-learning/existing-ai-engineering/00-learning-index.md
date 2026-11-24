@@ -120,3 +120,11 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 | Stage | Guide | Status | Core Implementation Files | Tests |
 |:---|:---|:---|:---|:---|
 | **P9-All** | [**Phase 09: AI Agent Fundamentals**](../phase-09-ai-agent-fundamentals.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/coach/domain/agent.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/planner.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/observer.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/executor.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/chat.py`<br>`ai-backend/src/onusfit_ai/features/coach/presentation/coach_chat.py`<br>`ai-backend/tests/evals/evaluators/agent.py` | `ai-backend/tests/test_agent_contracts.py`<br>`ai-backend/tests/test_agent_planner.py`<br>`ai-backend/tests/test_agent_observation.py`<br>`ai-backend/tests/test_agent_executor.py`<br>`ai-backend/tests/evals/offline/test_agent_eval.py`<br>`ai-backend/tests/evals/test_runner.py` |
+
+---
+
+## Phase 10: LangGraph Agent Workflows
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P10-All** | [**Phase 10: LangGraph Agent Workflows**](../phase-10-langgraph-agent-workflows.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/coach/application/agent/graph/state.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/nodes.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/routing.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/builder.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/executor.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/telemetry.py`<br>`ai-backend/tests/evals/evaluators/langgraph.py` | `ai-backend/tests/test_langgraph_contracts.py`<br>`ai-backend/tests/test_langgraph_nodes_and_routing.py`<br>`ai-backend/tests/test_langgraph_workflow.py`<br>`ai-backend/tests/test_langgraph_parity.py`<br>`ai-backend/tests/evals/offline/test_langgraph_eval.py` |

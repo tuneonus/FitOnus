@@ -49,7 +49,8 @@ RE_PURE_GREETING_EN = re.compile(
     r"^(?:(?:hi|hello|hey|good\s+(?:morning|afternoon|evening|day)|"
     r"thanks?(?:\s+(?:so\s+much|a\s+lot|you))?|thank\s+you(?:\s+so\s+much|\s+very\s+much)?|"
     r"thx|ty|bye|goodbye|cya|ok|okay|cool|awesome|great|cheers|sup|yo)"
-    r"(?:[\s,]+(?:coach|bye|thanks|thank\s+you|ok|okay))?)(?:[!?.\s]*)$",
+    r"(?:[\s,]+(?:coach|bye|thanks|thank\s+you|ok|okay|good\s+(?:morning|afternoon|evening|day)|hi|hello|hey))*)"
+    r"(?:[!?.\s]*)$",
     re.IGNORECASE,
 )
 
@@ -92,52 +93,55 @@ RE_SIMPLE_LOCAL_LOOKUP_TL = re.compile(
 # Goal Intent Classification Patterns
 # -----------------------------------------------------------------------------
 RE_FITNESS_PROGRESS = re.compile(
-    r"\b(?:fitness\s+progress|check\s+my\s+progress|overall\s+progress|progress\s+review|"
-    r"how\s+am\s+i\s+doing|weekly\s+review|progress\s+check|"
-    r"முன்னேற்றம்|முன்னேற்றத்தை|எப்படி\s*உள்ளது|"
-    r"progress\s+check\s+panni|progress\s+epdi|progress\s+review|improve\s+pannanum)\b",
+    r"(?:\b(?:fitness\s+progress|check\s+(?:my\s+)?progress|overall\s+progress|progress\s+review|"
+    r"progress\s+and|how\s+am\s+i\s+doing|weekly\s+review|progress\s+check|"
+    r"workouts?\s+and\s+diet|workouts?\s+and\s+nutrition|"
+    r"progress\s+check\s+panni|progress\s+epdi|progress\s+review|improve\s+pannanum)\b|"
+    r"(?:முன்னேற்றம்|முன்னேற்றத்தை|எப்படி\s*உள்ளது))",
     re.IGNORECASE | re.UNICODE,
 )
 
 RE_WORKOUT_ANALYSIS = re.compile(
-    r"\b(?:workout\s+history|recent\s+workouts|past\s+workouts|workout\s+logs?|"
+    r"(?:\b(?:check\s+(?:my\s+)?workouts?|review\s+(?:my\s+)?workouts?|show\s+(?:my\s+)?workouts?|"
+    r"my\s+workouts?|workout\s+progress|workout\s+history|recent\s+workouts|past\s+workouts|workout\s+logs?|"
     r"workout\s+sessions?|training\s+logs?|exercises\s+done|what\s+did\s+i\s+lift|sessions\s+completed|"
-    r"உடற்பயிற்சி\s*வரலாறு|செய்த\s*பயிற்சிகள்|கடந்த\s*வார\s*பயிற்சி|"
-    r"workout\s+history|workout\s+enna\s+pannen|workout\s+paaru|sessions\s+evlo)\b",
+    r"workout\s+history|workout\s+enna\s+pannen|workout\s+paaru|sessions\s+evlo)\b|"
+    r"(?:உடற்பயிற்சி\s*வரலாறு|செய்த\s*பயிற்சிகள்|கடந்த\s*வார\s*பயிற்சி))",
     re.IGNORECASE | re.UNICODE,
 )
 
 RE_NUTRITION_ANALYSIS = re.compile(
-    r"\b(?:nutrition\s+summary|past\s+diet|diet\s+and\s+protein|diet\s+history|diet\s+summary|"
+    r"(?:\b(?:check\s+(?:my\s+)?(?:diet|nutrition)|review\s+(?:my\s+)?(?:diet|nutrition)|"
+    r"nutrition\s+summary|past\s+diet|diet\s+and\s+protein|diet\s+history|diet\s+summary|"
     r"nutrition\s+logs?|weekly\s+nutrition|macros\s+history|protein\s+intake|caloric\s+adherence|"
-    r"eating\s+history|caloric\s+intake|"
-    r"உணவு\s*முறை|உணவு\s*சுருக்கம்|புரத\s*அளவு\s*கடந்த|"
-    r"protein\s+target\s+reach)\b",
+    r"eating\s+history|caloric\s+intake|caloric\s+and\s+protein\s+intake|"
+    r"protein\s+target\s+reach)\b|"
+    r"(?:உணவு\s*முறை|உணவு\s*சுருக்கம்|புரத\s*அளவு\s*கடந்த))",
     re.IGNORECASE | re.UNICODE,
 )
 
 RE_WEIGHT_TREND = re.compile(
-    r"\b(?:weight\s+trend|weight\s+loss\s+trend|weight\s+change|weight\s+trended|"
+    r"(?:\b(?:weight\s+trend|weight\s+loss\s+trend|weight\s+change|weight\s+trended|"
     r"weight\s+over\s+time|body\s+weight\s+graph|weight\s+history|weight\s+logs?|"
-    r"எடை\s*போக்கு|எடை\s*மாற்றம்|எடை\s*வரலாறு|"
-    r"weight\s+reduce\s+aairukka|weight\s+change\s+epdi)\b",
+    r"weight\s+reduce\s+aairukka|weight\s+change\s+epdi)\b|"
+    r"(?:எடை\s*போக்கு|எடை\s*மாற்றம்|எடை\s*வரலாறு))",
     re.IGNORECASE | re.UNICODE,
 )
 
 RE_EXERCISE_SEARCH = re.compile(
-    r"\b(?:suggest\s+(?:an?\s+)?exercise|exercise\s+for|alternative\s+for|substitute\s+for|"
+    r"(?:\b(?:suggest\s+(?:an?\s+)?exercise|exercise\s+for|alternative\s+for|substitute\s+for|"
     r"how\s+to\s+train\s+(?:chest|back|quads|hamstrings|shoulders|biceps|triceps)|"
     r"exercises?\s+with\s+(?:dumbbells?|barbell|cable|bodyweight)|"
-    r"உடற்பயிற்சி\s*பரிந்துரை|பயிற்சி\s*சொல்|மாற்று\s*பயிற்சி|"
-    r"exercise\s+sollu|workout\s+sollu|alternative\s+exercise|exercise\s+thedu)\b",
+    r"exercise\s+sollu|workout\s+sollu|alternative\s+exercise|exercise\s+thedu)\b|"
+    r"(?:உடற்பயிற்சி\s*பரிந்துரை|பயிற்சி\s*சொல்|மாற்று\s*பயிற்சி))",
     re.IGNORECASE | re.UNICODE,
 )
 
 RE_COMBINED_RECOMMENDATIONS = re.compile(
-    r"\b(?:what\s+should\s+i\s+improve|how\s+to\s+improve\s+this\s+week|"
+    r"(?:\b(?:what\s+should\s+i\s+improve|how\s+to\s+improve\s+this\s+week|"
     r"recommendations\s+for\s+next\s+week|next\s+week\s+plan|routine\s+optimization|"
-    r"அடுத்த\s*வாரம்\s*என்ன\s*செய்ய\s*வேண்டும்|வழக்கத்தை\s*மேம்படுத்து|"
-    r"indha\s+week\s+enna\s+improve|adutha\s+week\s+plan|routine\s+improve)\b",
+    r"indha\s+week\s+enna\s+improve|adutha\s+week\s+plan|routine\s+improve)\b|"
+    r"(?:அடுத்த\s*வாரம்\s*என்ன\s*செய்ய\s*வேண்டும்|வழக்கத்தை\s*மேம்படுத்து))",
     re.IGNORECASE | re.UNICODE,
 )
 

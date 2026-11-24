@@ -10,6 +10,10 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from onusfit_ai.features.coach.application.agent.executor import AgentExecutor
+from onusfit_ai.features.coach.application.agent.graph.executor import (
+    LangGraphAgentExecutor,
+    get_configured_agent_engine,
+)
 from onusfit_ai.features.coach.application.parsing import MEMORY_SOURCE, parse_coach_output
 from onusfit_ai.features.coach.application.prompts.coach_chat import PROMPT_VERSION, build_prompt
 from onusfit_ai.features.coach.application.schemas import GeminiCoachReplyOutput
@@ -66,17 +70,23 @@ async def generate_coach_reply(
     user_id: str | None = None,
     tools: list[Any] | None = None,
     tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
-    executor: AgentExecutor | None = None,
+    executor: AgentExecutor | LangGraphAgentExecutor | None = None,
 ) -> CoachChatResponse:
     """Orchestrate coach reply generation: format prompt, call LLM with fallback, and parse reply.
 
     The LLM client is injected via the TextGenerator protocol to keep the use case testable
     without real network calls or Gemini credentials.
     """
-    # Phase 09: When AI Agent mode is enabled and tool execution is available,
-    # delegate execution to the goal-driven AgentExecutor.
+    # Phase 09 & 10: When AI Agent mode is enabled and tool execution is available,
+    # delegate execution to the configured agent executor (LangGraph or native fallback).
     if is_coach_agent_enabled() and tool_handler is not None:
-        agent_exec = executor or AgentExecutor()
+        agent_exec: AgentExecutor | LangGraphAgentExecutor
+        if executor is not None:
+            agent_exec = executor
+        elif get_configured_agent_engine() == "native":
+            agent_exec = AgentExecutor()
+        else:
+            agent_exec = LangGraphAgentExecutor()
         agent_res = await agent_exec.execute(
             request=request,
             llm=llm,

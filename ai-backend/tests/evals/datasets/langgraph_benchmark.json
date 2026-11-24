@@ -1,0 +1,477 @@
+[
+  {
+    "case_id": "lg_exec_01_simple_progress",
+    "category": "langgraph_workflow",
+    "facet": "graph_execution",
+    "description": "Standard progress analysis executing workouts and nutrition tools in LangGraph",
+    "language": "en",
+    "user_message": "Can you check my fitness progress over the past week?",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_recent_workouts", "get_nutrition_summary"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Push Day", "durationMinutes": 45, "volumeKg": 3500}]},
+      "get_nutrition_summary": {"avgCalories": 2150, "avgProtein": 145}
+    }
+  },
+  {
+    "case_id": "lg_exec_02_workout_history",
+    "category": "langgraph_workflow",
+    "facet": "graph_execution",
+    "description": "Workout history inspection executing recent workouts tool",
+    "language": "en",
+    "user_message": "Show my recent workout sessions from the past 7 days",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Leg Day", "durationMinutes": 50, "volumeKg": 4200}]}
+    }
+  },
+  {
+    "case_id": "lg_exec_03_diet_summary",
+    "category": "langgraph_workflow",
+    "facet": "graph_execution",
+    "description": "Nutrition analysis executing nutrition summary tool",
+    "language": "en",
+    "user_message": "Review my caloric and protein intake for the past week",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_nutrition_summary"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_nutrition_summary": {"avgCalories": 2000, "avgProtein": 150}
+    }
+  },
+  {
+    "case_id": "lg_exec_04_weight_trend",
+    "category": "langgraph_workflow",
+    "facet": "graph_execution",
+    "description": "Weight trend query executing weight trend tool",
+    "language": "en",
+    "user_message": "What is my weight trend over the last 30 days?",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_weight_trend"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_weight_trend": {"logs": [{"weightKg": 78.5}, {"weightKg": 76.8}]}
+    }
+  },
+  {
+    "case_id": "lg_route_01_pure_greeting",
+    "category": "langgraph_workflow",
+    "facet": "conditional_routing",
+    "description": "Pure greeting bypasses task planning and tool execution entirely",
+    "language": "en",
+    "user_message": "Good morning Coach!",
+    "expected_status": "bypassed",
+    "expected_termination_reason": "simple_query_bypass",
+    "expected_tools": [],
+    "is_bypass": true
+  },
+  {
+    "case_id": "lg_route_02_local_metric_weight",
+    "category": "langgraph_workflow",
+    "facet": "conditional_routing",
+    "description": "Local profile metric lookup bypasses agent tool execution",
+    "language": "en",
+    "user_message": "what is my current weight?",
+    "expected_status": "bypassed",
+    "expected_termination_reason": "simple_query_bypass",
+    "expected_tools": [],
+    "is_bypass": true
+  },
+  {
+    "case_id": "lg_route_03_local_metric_water",
+    "category": "langgraph_workflow",
+    "facet": "conditional_routing",
+    "description": "Today's water intake query answered directly from context envelope",
+    "language": "en",
+    "user_message": "how much water did i drink today?",
+    "expected_status": "bypassed",
+    "expected_termination_reason": "simple_query_bypass",
+    "expected_tools": [],
+    "is_bypass": true
+  },
+  {
+    "case_id": "lg_route_04_exercise_search",
+    "category": "langgraph_workflow",
+    "facet": "conditional_routing",
+    "description": "Targeted exercise search query correctly routes to search_exercises tool",
+    "language": "en",
+    "user_message": "suggest an exercise for chest with dumbbells",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["search_exercises"],
+    "is_bypass": false,
+    "mock_tools": {
+      "search_exercises": {"exercises": [{"name": "Dumbbell Bench Press"}]}
+    }
+  },
+  {
+    "case_id": "lg_par_01_workout_nutrition",
+    "category": "langgraph_workflow",
+    "facet": "parallel_tools",
+    "description": "Independent workout and nutrition steps executed concurrently in tool_execution node",
+    "language": "en",
+    "user_message": "Give me a weekly review of my workouts and diet adherence",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_recent_workouts", "get_nutrition_summary"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Full Body", "durationMinutes": 60}]},
+      "get_nutrition_summary": {"avgCalories": 2200}
+    }
+  },
+  {
+    "case_id": "lg_par_02_workout_weight",
+    "category": "langgraph_workflow",
+    "facet": "parallel_tools",
+    "description": "Workout sessions and weight trend gathered in parallel",
+    "language": "en",
+    "user_message": "How is my workout history and weight trend over the past 30 days?",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Cardio", "durationMinutes": 30}]},
+      "get_weight_trend": {"logs": [{"weightKg": 75.0}, {"weightKg": 74.2}]}
+    }
+  },
+  {
+    "case_id": "lg_par_03_combined_recommendations",
+    "category": "langgraph_workflow",
+    "facet": "parallel_tools",
+    "description": "Comprehensive recommendation planning dispatching workouts and diet simultaneously",
+    "language": "en",
+    "user_message": "what should i improve this week in my routine?",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_recent_workouts", "get_nutrition_summary"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Back", "durationMinutes": 45}]},
+      "get_nutrition_summary": {"avgCalories": 1900}
+    }
+  },
+  {
+    "case_id": "lg_replan_01_empty_workouts",
+    "category": "langgraph_workflow",
+    "facet": "replanning",
+    "description": "Empty 7-day workouts automatically triggers replanning node expanding to 14 days",
+    "language": "en",
+    "user_message": "Review my workout history for recent training",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "expected_replans": 1,
+    "mock_tools_sequence": {
+      "get_recent_workouts": [
+        {"workouts": []},
+        {"workouts": [{"name": "Lower Body", "durationMinutes": 50}]}
+      ]
+    }
+  },
+  {
+    "case_id": "lg_replan_02_persistent_empty",
+    "category": "langgraph_workflow",
+    "facet": "replanning",
+    "description": "Persistent empty data terminates gracefully after reaching max_replanning_attempts",
+    "language": "en",
+    "user_message": "Check my workout sessions",
+    "expected_status": "completed",
+    "expected_termination_reason": "goal_satisfied",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "expected_replans": 1,
+    "mock_tools_sequence": {
+      "get_recent_workouts": [
+        {"workouts": []},
+        {"workouts": []}
+      ]
+    }
+  },
+  {
+    "case_id": "lg_replan_03_bounded_steps",
+    "category": "langgraph_workflow",
+    "facet": "replanning",
+    "description": "Total steps after replan strictly respects max_planning_steps boundary",
+    "language": "en",
+    "user_message": "Review my workout history for recent training",
+    "expected_status": "completed",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools_sequence": {
+      "get_recent_workouts": [
+        {"workouts": []},
+        {"workouts": [{"name": "Shoulders", "durationMinutes": 35}]}
+      ]
+    }
+  },
+  {
+    "case_id": "lg_budget_01_max_tool_calls",
+    "category": "langgraph_workflow",
+    "facet": "budget_exhaustion",
+    "description": "Execution terminates when total tool calls reach configured budget limit",
+    "language": "en",
+    "user_message": "Check my fitness progress this week",
+    "expected_status": "budget_exceeded",
+    "expected_termination_reason": "max_tool_calls_reached",
+    "max_tool_calls": 2,
+    "override_budget": {"max_tool_calls": 2},
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": []},
+      "get_nutrition_summary": {"days": []}
+    }
+  },
+  {
+    "case_id": "lg_budget_02_max_iterations",
+    "category": "langgraph_workflow",
+    "facet": "budget_exhaustion",
+    "description": "Loop terminates when max iterations reached without infinite cycling",
+    "language": "en",
+    "user_message": "Analyze my fitness progress",
+    "expected_status": "budget_exceeded",
+    "expected_termination_reason": "max_iterations_reached",
+    "override_budget": {"max_iterations": 1, "max_replanning_attempts": 2},
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": []}
+    }
+  },
+  {
+    "case_id": "lg_budget_03_token_accumulation",
+    "category": "langgraph_workflow",
+    "facet": "budget_exhaustion",
+    "description": "Accumulated tokens tracked across nodes within budget constraints",
+    "language": "en",
+    "user_message": "Review my workout history",
+    "expected_status": "completed",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Cardio", "durationMinutes": 20}]}
+    }
+  },
+  {
+    "case_id": "lg_dead_01_tight_deadline",
+    "category": "langgraph_workflow",
+    "facet": "deadline_handling",
+    "description": "Graph aborts tool execution when remaining deadline falls below safe margin",
+    "language": "en",
+    "user_message": "Check my fitness progress",
+    "expected_status": "deadline_exceeded",
+    "expected_termination_reason": "deadline_approaching",
+    "deadline_ms": 1000,
+    "override_budget": {"deadline_margin_s": 2.0},
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": []}
+    }
+  },
+  {
+    "case_id": "lg_dead_02_safe_margin_synthesis",
+    "category": "langgraph_workflow",
+    "facet": "deadline_handling",
+    "description": "When deadline triggers, synthesis produces grounded output with collected observations",
+    "language": "en",
+    "user_message": "Review my workout history",
+    "expected_status": "deadline_exceeded",
+    "expected_termination_reason": "deadline_approaching",
+    "deadline_ms": 1200,
+    "override_budget": {"deadline_margin_s": 2.0},
+    "is_bypass": false
+  },
+  {
+    "case_id": "lg_fail_01_tool_exception",
+    "category": "langgraph_workflow",
+    "facet": "node_failures",
+    "description": "Tool exception handled gracefully, recording error observation without crashing",
+    "language": "en",
+    "user_message": "Check my recent workouts",
+    "expected_status": "completed",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tool_error": {"get_recent_workouts": "Database connection refused"}
+  },
+  {
+    "case_id": "lg_fail_02_invalid_arguments",
+    "category": "langgraph_workflow",
+    "facet": "node_failures",
+    "description": "Schema validation failure sanitizes error and marks step failed",
+    "language": "en",
+    "user_message": "Check my recent workouts",
+    "expected_status": "completed",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false
+  },
+  {
+    "case_id": "lg_fail_03_partial_results",
+    "category": "langgraph_workflow",
+    "facet": "node_failures",
+    "description": "Partial success when one tool fails and one succeeds is grounded properly in synthesis",
+    "language": "en",
+    "user_message": "Review my fitness progress across workouts and nutrition",
+    "expected_status": "completed",
+    "expected_tools": ["get_recent_workouts", "get_nutrition_summary"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_nutrition_summary": {"avgCalories": 2100, "avgProtein": 130}
+    },
+    "mock_tool_error": {
+      "get_recent_workouts": "Service unavailable"
+    }
+  },
+  {
+    "case_id": "lg_fb_01_runtime_graph_panic",
+    "category": "langgraph_workflow",
+    "facet": "fallback_behavior",
+    "description": "Uncaught graph runtime error transparently delegates to native AgentExecutor fallback",
+    "language": "en",
+    "user_message": "Check my overall progress",
+    "expected_status": "completed",
+    "is_bypass": false,
+    "force_graph_panic": true,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Upper", "durationMinutes": 45}]},
+      "get_nutrition_summary": {"avgCalories": 2050}
+    }
+  },
+  {
+    "case_id": "lg_fb_02_engine_flag_native",
+    "category": "langgraph_workflow",
+    "facet": "fallback_behavior",
+    "description": "Setting COACH_AGENT_ENGINE=native routes directly to Phase 09 native executor",
+    "language": "en",
+    "user_message": "Show my workout history",
+    "expected_status": "completed",
+    "is_bypass": false,
+    "engine_flag": "native",
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Legs", "durationMinutes": 40}]}
+    }
+  },
+  {
+    "case_id": "lg_dedup_01_identical_actions",
+    "category": "langgraph_workflow",
+    "facet": "duplicate_prevention",
+    "description": "Identical tool signatures are cached in memory and not re-executed over the wire",
+    "language": "en",
+    "user_message": "Show my workout logs from past 7 days",
+    "expected_status": "completed",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Chest", "durationMinutes": 35}]}
+    }
+  },
+  {
+    "case_id": "lg_dedup_02_replan_signature",
+    "category": "langgraph_workflow",
+    "facet": "duplicate_prevention",
+    "description": "Replanned step with distinct arguments (14 days) is executed while prior call is cached",
+    "language": "en",
+    "user_message": "Show my workout history from past 7 days",
+    "expected_status": "completed",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools_sequence": {
+      "get_recent_workouts": [
+        {"workouts": []},
+        {"workouts": [{"name": "Back", "durationMinutes": 40}]}
+      ]
+    }
+  },
+  {
+    "case_id": "lg_iso_01_user_claims",
+    "category": "langgraph_workflow",
+    "facet": "user_isolation",
+    "description": "User ID and trace ID are strictly preserved across state transitions",
+    "language": "en",
+    "user_message": "Check my fitness progress",
+    "expected_status": "completed",
+    "is_bypass": false,
+    "user_id": "auth_user_999",
+    "trace_id": "req_trace_999",
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": []},
+      "get_nutrition_summary": {"avgCalories": 1800}
+    }
+  },
+  {
+    "case_id": "lg_iso_02_context_boundary",
+    "category": "langgraph_workflow",
+    "facet": "user_isolation",
+    "description": "State between two consecutive requests remains strictly isolated without state bleeding",
+    "language": "en",
+    "user_message": "Show my workout history",
+    "expected_status": "completed",
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Arms", "durationMinutes": 30}]}
+    }
+  },
+  {
+    "case_id": "lg_lang_01_tamil_script",
+    "category": "langgraph_workflow",
+    "facet": "tamil_tanglish_queries",
+    "description": "Tamil script input detected and passed to synthesis with Tamil language directive",
+    "language": "ta",
+    "user_message": "என் உடற்பயிற்சி வரலாறு எப்படி உள்ளது",
+    "expected_status": "completed",
+    "expected_language": "ta",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "பயிற்சி", "durationMinutes": 45}]}
+    }
+  },
+  {
+    "case_id": "lg_lang_02_tanglish_latin",
+    "category": "langgraph_workflow",
+    "facet": "tamil_tanglish_queries",
+    "description": "Tanglish input detected and passed to synthesis with Tanglish language directive",
+    "language": "tanglish",
+    "user_message": "Last week workout enna pannen, sessions paaru",
+    "expected_status": "completed",
+    "expected_language": "tanglish",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Workout", "durationMinutes": 40}]}
+    }
+  },
+  {
+    "case_id": "lg_parity_01_workout_progress",
+    "category": "langgraph_workflow",
+    "facet": "behavioral_parity",
+    "description": "Identical tool calls and outcome between native agent and LangGraph agent",
+    "language": "en",
+    "user_message": "Check my recent workouts from past 7 days",
+    "expected_status": "completed",
+    "expected_tools": ["get_recent_workouts"],
+    "is_bypass": false,
+    "mock_tools": {
+      "get_recent_workouts": {"workouts": [{"name": "Chest", "durationMinutes": 45}]}
+    }
+  },
+  {
+    "case_id": "lg_parity_02_greeting_bypass",
+    "category": "langgraph_workflow",
+    "facet": "behavioral_parity",
+    "description": "Identical bypass behavior between native agent and LangGraph agent on greetings",
+    "language": "en",
+    "user_message": "Good morning Coach!",
+    "expected_status": "bypassed",
+    "expected_termination_reason": "simple_query_bypass",
+    "expected_tools": [],
+    "is_bypass": true
+  }
+]
