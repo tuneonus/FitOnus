@@ -76,3 +76,50 @@ export interface IWorkoutAuditLogger {
     userAgent?: string | null,
   ): Promise<void>;
 }
+
+export interface GenerateAiWorkoutPlanInput {
+  userId: string;
+  goal: string;
+  experienceLevel: string;
+  availableEquipment: string[];
+  daysPerWeek: number;
+  sessionDurationMinutes: number;
+  environment?: string;
+  physicalLimitations?: string[];
+  targetMuscles?: string[];
+  preferredExercises?: string[];
+  excludedExercises?: string[];
+  language?: string;
+}
+
+export interface AdaptAiWorkoutPlanInput {
+  userId: string;
+  currentPlan: unknown;
+  missedSessions?: string[];
+  reducedDurationMinutes?: number;
+  newEquipment?: string[];
+  difficultyFeedback?: 'too_easy' | 'just_right' | 'too_hard';
+  userFeedback?: string;
+  recoveryScore?: number;
+  language?: string;
+}
+
+export interface AiPlanValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  safetyScore: number;
+  repaired: boolean;
+  medicalRedFlags: string[];
+}
+
+export interface AiWorkoutPlanResult {
+  plan: unknown;
+  validation: AiPlanValidationResult;
+  traceId: string;
+}
+
+export interface IAiWorkoutPlanner {
+  generatePlan(input: GenerateAiWorkoutPlanInput): Promise<AiWorkoutPlanResult>;
+  adaptPlan(input: AdaptAiWorkoutPlanInput): Promise<AiWorkoutPlanResult>;
+}

@@ -11,6 +11,7 @@ from onusfit_ai.features.coach.presentation import router as coach_router
 from onusfit_ai.features.knowledge.presentation import router as knowledge_router
 from onusfit_ai.features.meals.presentation import router as meals_router
 from onusfit_ai.features.speech.presentation import router as speech_router
+from onusfit_ai.features.workout_planner.presentation import router as workout_planner_router
 from onusfit_ai.shared.config import Settings, configuration_problems, get_settings, is_production
 from onusfit_ai.shared.errors import register_error_handlers
 from onusfit_ai.shared.health import router as health_router
@@ -100,6 +101,7 @@ def create_app() -> FastAPI:
     app.include_router(meals_router)
     app.include_router(speech_router)
     app.include_router(knowledge_router)
+    app.include_router(workout_planner_router)
     return app
 
 

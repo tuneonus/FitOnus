@@ -4,6 +4,8 @@ import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
 import type { CreateWorkoutPlanUseCase } from '../application/use-cases/create-workout-plan.js';
 import type { DeleteWorkoutPlanUseCase } from '../application/use-cases/delete-workout-plan.js';
+import type { GenerateAiWorkoutPlanUseCase } from '../application/use-cases/generate-ai-workout-plan.js';
+import type { AdaptAiWorkoutPlanUseCase } from '../application/use-cases/adapt-ai-workout-plan.js';
 import type { GetExerciseUseCase } from '../application/use-cases/get-exercise.js';
 import type { GetWorkoutPlanUseCase } from '../application/use-cases/get-workout-plan.js';
 import type { GetWorkoutSessionUseCase } from '../application/use-cases/get-workout-session.js';
@@ -31,7 +33,10 @@ import {
   listWorkoutSessionsRequest,
   saveWorkoutSessionRequest,
   updateWorkoutPlanRequest,
+  generateAiWorkoutPlanRequest,
+  adaptAiWorkoutPlanRequest,
 } from './workouts.schemas.js';
+import type { AiWorkoutPlanResult } from '../application/ports.js';
 
 export interface WorkoutMemberUseCases {
   listExercises: ListExercisesUseCase;
@@ -41,6 +46,8 @@ export interface WorkoutMemberUseCases {
   createWorkoutPlan: CreateWorkoutPlanUseCase;
   updateWorkoutPlan: UpdateWorkoutPlanUseCase;
   deleteWorkoutPlan: DeleteWorkoutPlanUseCase;
+  generateAiWorkoutPlan: GenerateAiWorkoutPlanUseCase;
+  adaptAiWorkoutPlan: AdaptAiWorkoutPlanUseCase;
   logWorkoutSession: LogWorkoutSessionUseCase;
   listWorkoutSessions: ListWorkoutSessionsUseCase;
   getWorkoutSession: GetWorkoutSessionUseCase;
@@ -195,6 +202,43 @@ export function createWorkoutMemberController(useCases: WorkoutMemberUseCases) {
         type: query.type,
       });
       return { data: res.records, message: 'Personal records retrieved successfully' };
+    },
+
+    generateAiPlanPreview: async (req: Request): Promise<RouteResult<AiWorkoutPlanResult>> => {
+      const actor = requireActor(req);
+      const { body } = getValidated(req, generateAiWorkoutPlanRequest);
+      const res = await useCases.generateAiWorkoutPlan.execute({
+        userId: actor.userId,
+        goal: body.goal,
+        experienceLevel: body.experienceLevel,
+        availableEquipment: body.availableEquipment,
+        daysPerWeek: body.daysPerWeek,
+        sessionDurationMinutes: body.sessionDurationMinutes,
+        environment: body.environment,
+        physicalLimitations: body.physicalLimitations,
+        targetMuscles: body.targetMuscles,
+        preferredExercises: body.preferredExercises,
+        excludedExercises: body.excludedExercises,
+        language: body.language,
+      });
+      return { data: res, message: 'AI workout plan preview generated successfully' };
+    },
+
+    adaptAiPlan: async (req: Request): Promise<RouteResult<AiWorkoutPlanResult>> => {
+      const actor = requireActor(req);
+      const { body } = getValidated(req, adaptAiWorkoutPlanRequest);
+      const res = await useCases.adaptAiWorkoutPlan.execute({
+        userId: actor.userId,
+        currentPlan: body.currentPlan,
+        missedSessions: body.missedSessions,
+        reducedDurationMinutes: body.reducedDurationMinutes,
+        newEquipment: body.newEquipment,
+        difficultyFeedback: body.difficultyFeedback,
+        userFeedback: body.userFeedback,
+        recoveryScore: body.recoveryScore,
+        language: body.language,
+      });
+      return { data: res, message: 'AI workout plan adapted successfully' };
     },
   };
 }

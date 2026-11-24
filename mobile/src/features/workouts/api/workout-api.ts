@@ -187,5 +187,60 @@ export const workoutApi = {
     });
     return res.data?.data || [];
   },
+
+  // 10. Generate AI Workout Plan Preview
+  async generateAiWorkoutPlan(data: {
+    goal: string;
+    experienceLevel: 'beginner' | 'intermediate' | 'advanced';
+    availableEquipment: string[];
+    daysPerWeek: number;
+    sessionDurationMinutes: number;
+    environment?: 'home' | 'gym' | 'bodyweight';
+    physicalLimitations?: string[];
+    targetMuscles?: string[];
+    preferredExercises?: string[];
+    excludedExercises?: string[];
+    language?: string;
+  }): Promise<{
+    plan: any;
+    validation: {
+      isValid: boolean;
+      errors: string[];
+      warnings: string[];
+      safetyScore: number;
+      repaired: boolean;
+      medicalRedFlags: string[];
+    };
+    traceId: string;
+  }> {
+    const res = await apiClient.post('/workouts/plans/ai/generate', data);
+    return res.data?.data;
+  },
+
+  // 11. Adapt AI Workout Plan
+  async adaptAiWorkoutPlan(data: {
+    currentPlan: any;
+    missedSessions?: string[];
+    reducedDurationMinutes?: number;
+    newEquipment?: string[];
+    difficultyFeedback?: 'too_easy' | 'just_right' | 'too_hard';
+    userFeedback?: string;
+    recoveryScore?: number;
+    language?: string;
+  }): Promise<{
+    plan: any;
+    validation: {
+      isValid: boolean;
+      errors: string[];
+      warnings: string[];
+      safetyScore: number;
+      repaired: boolean;
+      medicalRedFlags: string[];
+    };
+    traceId: string;
+  }> {
+    const res = await apiClient.post('/workouts/plans/ai/adapt', data);
+    return res.data?.data;
+  },
 };
 

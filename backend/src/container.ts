@@ -196,6 +196,11 @@ export function createContainer(
     publicBaseUrl: r2?.publicBaseUrl ?? null,
     processor: imageProcessor,
   };
+  // AI Coach chat and insights, voice meal, meal photo, speech transcription and workout planner are served by the Python AI backend (ai-backend/). Its URL
+  // and secret are required: `assertAiBackendConfigured` stops startup with a clear message if missing.
+  const { aiBackend } = assertAiBackendConfigured(config);
+  const pythonAi = new PythonAiClient({ baseUrl: aiBackend.url, serviceSecret: aiBackend.serviceSecret });
+
   const workouts = createWorkoutsModule({
     memberBasePath: `${API_PREFIX}/workouts`,
     adminBasePath: `${API_PREFIX}/admin/workouts`,
@@ -205,6 +210,7 @@ export function createContainer(
     images: publicImages,
     limiters: { adminImageUploads: rateLimiters.adminImageUploads },
     logger,
+    pythonAi,
   });
   const appSettings = createAppSettingsModule({
     adminBasePath: `${API_PREFIX}/admin/application-settings`,
@@ -218,10 +224,6 @@ export function createContainer(
     fallbackModel: config.gemini.fallbackModel,
   });
 
-  // AI Coach chat and insights, voice meal, meal photo and speech transcription are served only by the Python AI backend (ai-backend/). Its URL
-  // and secret are required: `assertAiBackendConfigured` stops startup with a clear message if missing.
-  const { aiBackend } = assertAiBackendConfigured(config);
-  const pythonAi = new PythonAiClient({ baseUrl: aiBackend.url, serviceSecret: aiBackend.serviceSecret });
   /** Admin-configured primary/fallback model names for a feature; Python applies the fallback itself. */
   const resolveModelsFor =
     (feature: 'coach_chat' | 'voice_meal' | 'meal_photo' | 'coach_insights') => async (): Promise<{ primary: string; fallback: string | null }> => {

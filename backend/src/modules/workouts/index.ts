@@ -23,6 +23,11 @@ import { UploadExerciseImageUseCase } from './application/use-cases/upload-exerc
 import { UploadWorkoutCoverUseCase } from './application/use-cases/upload-workout-cover.js';
 import { LogWorkoutSessionUseCase } from './application/use-cases/log-workout-session.js';
 import { UpdateWorkoutPlanUseCase } from './application/use-cases/update-workout-plan.js';
+import { GenerateAiWorkoutPlanUseCase } from './application/use-cases/generate-ai-workout-plan.js';
+import { AdaptAiWorkoutPlanUseCase } from './application/use-cases/adapt-ai-workout-plan.js';
+import { PythonWorkoutPlannerService } from './infrastructure/python-workout-planner-service.js';
+import type { IAiWorkoutPlanner, GenerateAiWorkoutPlanInput, AdaptAiWorkoutPlanInput, AiWorkoutPlanResult } from './application/ports.js';
+import type { PythonAiClient } from '../../shared/ai/python-ai-client.js';
 import { PgExerciseRepository } from './infrastructure/pg-exercise-repository.js';
 import { PgPersonalRecordRepository } from './infrastructure/pg-personal-record-repository.js';
 import { PgWorkoutSessionRepository } from './infrastructure/pg-session-repository.js';
@@ -72,12 +77,62 @@ export function createWorkoutsModule(deps: {
   };
   limiters?: { adminImageUploads: RequestHandler };
   logger?: ImageLogger | undefined;
+  pythonAi?: PythonAiClient;
+  aiPlanner?: IAiWorkoutPlanner;
 }): WorkoutsModule {
   const exerciseRepo = new PgExerciseRepository(deps.db);
   const workoutRepo = new PgWorkoutPlanRepository(deps.db);
   const sessionRepo = new PgWorkoutSessionRepository(deps.db);
   const prRepo = new PgPersonalRecordRepository(deps.db);
   const auditLogger = new PgWorkoutAuditLogger(deps.db);
+
+  class DefaultFallbackWorkoutPlanner implements IAiWorkoutPlanner {
+    generatePlan(input: GenerateAiWorkoutPlanInput): Promise<AiWorkoutPlanResult> {
+      return Promise.resolve({
+        plan: {
+          plan_id: crypto.randomUUID(),
+          title: `${input.daysPerWeek}-Day ${input.goal} Plan`,
+          description: `Custom ${input.experienceLevel} workout routine.`,
+          goal: input.goal,
+          level: input.experienceLevel,
+          total_days_per_week: input.daysPerWeek,
+          environment: input.environment ?? 'gym',
+          schedule_days: [],
+          recovery_days: ['Sunday'],
+          rationale: ['Grounded in user preferences'],
+          language: input.language ?? 'en',
+        },
+        validation: {
+          isValid: true,
+          errors: [],
+          warnings: [],
+          safetyScore: 1.0,
+          repaired: false,
+          medicalRedFlags: [],
+        },
+        traceId: `wp-${crypto.randomUUID().slice(0, 8)}`,
+      });
+    }
+
+    adaptPlan(input: AdaptAiWorkoutPlanInput): Promise<AiWorkoutPlanResult> {
+      return Promise.resolve({
+        plan: input.currentPlan,
+        validation: {
+          isValid: true,
+          errors: [],
+          warnings: [],
+          safetyScore: 1.0,
+          repaired: false,
+          medicalRedFlags: [],
+        },
+        traceId: `wp-adapt-${crypto.randomUUID().slice(0, 8)}`,
+      });
+    }
+  }
+
+  const aiPlanner: IAiWorkoutPlanner =
+    deps.aiPlanner ??
+    (deps.pythonAi ? new PythonWorkoutPlannerService({ client: deps.pythonAi }) : new DefaultFallbackWorkoutPlanner());
 
   // Uploaded exercise images: the URL is only ever built from the trusted media origin and a canonical key.
   const resolveImageUrl = createFeatureImageUrlResolver(deps.images?.publicBaseUrl ?? null, 'exercises');
@@ -101,6 +156,8 @@ export function createWorkoutsModule(deps: {
     createWorkoutPlan: new CreateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
     updateWorkoutPlan: new UpdateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
     deleteWorkoutPlan: new DeleteWorkoutPlanUseCase(workoutRepo),
+    generateAiWorkoutPlan: new GenerateAiWorkoutPlanUseCase(aiPlanner),
+    adaptAiWorkoutPlan: new AdaptAiWorkoutPlanUseCase(aiPlanner),
     logWorkoutSession: new LogWorkoutSessionUseCase(sessionRepo, prRepo, exerciseRepo, deps.idempotency),
     listWorkoutSessions: new ListWorkoutSessionsUseCase(sessionRepo),
     getWorkoutSession: new GetWorkoutSessionUseCase(sessionRepo),

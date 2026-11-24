@@ -128,3 +128,11 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 | Stage | Guide | Status | Core Implementation Files | Tests |
 |:---|:---|:---|:---|:---|
 | **P10-All** | [**Phase 10: LangGraph Agent Workflows**](../phase-10-langgraph-agent-workflows.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/coach/application/agent/graph/state.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/nodes.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/routing.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/builder.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/executor.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/graph/telemetry.py`<br>`ai-backend/tests/evals/evaluators/langgraph.py` | `ai-backend/tests/test_langgraph_contracts.py`<br>`ai-backend/tests/test_langgraph_nodes_and_routing.py`<br>`ai-backend/tests/test_langgraph_workflow.py`<br>`ai-backend/tests/test_langgraph_parity.py`<br>`ai-backend/tests/evals/offline/test_langgraph_eval.py` |
+
+---
+
+## Phase 11: AI Workout Planner
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P11-All** | [**Phase 11: AI Workout Planner**](../phase-11-ai-workout-planner.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/workout_planner/domain/contracts.py`<br>`ai-backend/src/onusfit_ai/features/workout_planner/domain/safety.py`<br>`ai-backend/src/onusfit_ai/features/workout_planner/application/grounding.py`<br>`ai-backend/src/onusfit_ai/features/workout_planner/application/generator.py`<br>`ai-backend/src/onusfit_ai/features/workout_planner/application/graph/`<br>`backend/src/modules/workouts/infrastructure/python-workout-planner-service.ts`<br>`backend/src/modules/workouts/application/use-cases/`<br>`mobile/src/features/workouts/services/workoutPlanGenerator.ts` | `ai-backend/tests/test_workout_planner_contracts.py`<br>`ai-backend/tests/test_workout_planner_safety.py`<br>`ai-backend/tests/test_workout_planner_graph.py`<br>`ai-backend/tests/test_workout_planner_api.py`<br>`ai-backend/tests/evals/offline/test_workout_planner_eval.py`<br>`backend/tests/unit/workouts/ai-workout-planner.test.ts` |

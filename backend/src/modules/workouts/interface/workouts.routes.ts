@@ -18,6 +18,9 @@ import {
   workoutPlanDetailSchema,
   workoutPlanSummarySchema,
   workoutSessionViewSchema,
+  generateAiWorkoutPlanRequest,
+  adaptAiWorkoutPlanRequest,
+  aiWorkoutPlanResponseSchema,
 } from './workouts.schemas.js';
 
 const tags = ['Workouts'];
@@ -100,6 +103,44 @@ export function createWorkoutMemberRoutes(basePath: string, controller: WorkoutM
         },
         errorStatuses: [400],
         handler: controller.createWorkoutPlan,
+      }),
+
+      // 4.5. Generate AI Workout Plan Preview
+      defineRoute({
+        method: 'post',
+        path: '/plans/ai/generate',
+        summary: 'Generate personalized AI workout plan preview',
+        description: 'Generate an evidence-based personalized workout plan grounded in available equipment and catalog exercises.',
+        tags,
+        access: { kind: 'authenticated' },
+        request: generateAiWorkoutPlanRequest,
+        response: {
+          status: 200,
+          description: 'Generated AI workout plan preview',
+          message: 'AI workout plan preview generated successfully',
+          schema: aiWorkoutPlanResponseSchema,
+        },
+        errorStatuses: [400],
+        handler: controller.generateAiPlanPreview,
+      }),
+
+      // 4.6. Adapt AI Workout Plan
+      defineRoute({
+        method: 'post',
+        path: '/plans/ai/adapt',
+        summary: 'Adapt existing AI workout plan',
+        description: 'Dynamically adapt an active workout plan based on missed sessions, reduced duration, or recovery feedback.',
+        tags,
+        access: { kind: 'authenticated' },
+        request: adaptAiWorkoutPlanRequest,
+        response: {
+          status: 200,
+          description: 'Adapted AI workout plan',
+          message: 'AI workout plan adapted successfully',
+          schema: aiWorkoutPlanResponseSchema,
+        },
+        errorStatuses: [400],
+        handler: controller.adaptAiPlan,
       }),
 
       // 5. Get Workout Plan

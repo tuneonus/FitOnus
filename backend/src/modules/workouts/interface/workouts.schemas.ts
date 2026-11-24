@@ -374,3 +374,49 @@ export const workoutStatsSchema = z.object({
   totalVolumeKg: z.number().nonnegative().optional(),
   activeLiftersCount: z.number().int().nonnegative(),
 });
+
+// --- AI Workout Planner Schemas ---
+
+export const generateAiWorkoutPlanRequest = {
+  body: z.object({
+    goal: z.string().trim().default('general_fitness'),
+    experienceLevel: z.enum(['beginner', 'intermediate', 'advanced']).default('intermediate'),
+    availableEquipment: z.array(z.string().trim()).default(['dumbbells', 'bench']),
+    daysPerWeek: z.number().int().min(1).max(7).default(3),
+    sessionDurationMinutes: z.number().int().min(15).max(120).default(45),
+    environment: z.enum(['home', 'gym', 'bodyweight']).default('gym'),
+    physicalLimitations: z.array(z.string().trim()).default([]),
+    targetMuscles: z.array(z.string().trim()).default([]),
+    preferredExercises: z.array(z.string().trim()).default([]),
+    excludedExercises: z.array(z.string().trim()).default([]),
+    language: z.string().default('en'),
+  }),
+};
+
+export const adaptAiWorkoutPlanRequest = {
+  body: z.object({
+    currentPlan: z.record(z.string(), z.unknown()),
+    missedSessions: z.array(z.string().trim()).default([]),
+    reducedDurationMinutes: z.number().int().min(15).max(120).optional(),
+    newEquipment: z.array(z.string().trim()).optional(),
+    difficultyFeedback: z.enum(['too_easy', 'just_right', 'too_hard']).optional(),
+    userFeedback: z.string().trim().max(1000).optional(),
+    recoveryScore: z.number().min(0).max(100).optional(),
+    language: z.string().default('en'),
+  }),
+};
+
+export const aiPlanValidationSchema = z.object({
+  isValid: z.boolean(),
+  errors: z.array(z.string()),
+  warnings: z.array(z.string()),
+  safetyScore: z.number(),
+  repaired: z.boolean(),
+  medicalRedFlags: z.array(z.string()),
+});
+
+export const aiWorkoutPlanResponseSchema = z.object({
+  plan: z.record(z.string(), z.unknown()),
+  validation: aiPlanValidationSchema,
+  traceId: z.string(),
+});
