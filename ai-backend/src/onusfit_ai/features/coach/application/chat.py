@@ -9,6 +9,7 @@ import os
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from onusfit_ai.features.coach.application.agent.executor import AgentExecutor
 from onusfit_ai.features.coach.application.parsing import MEMORY_SOURCE, parse_coach_output
 from onusfit_ai.features.coach.application.prompts.coach_chat import PROMPT_VERSION, build_prompt
 from onusfit_ai.features.coach.application.schemas import GeminiCoachReplyOutput
@@ -20,7 +21,7 @@ from onusfit_ai.features.coach.domain.chat import (
 )
 from onusfit_ai.shared.contracts.common import Usage
 from onusfit_ai.shared.contracts.tools import TOOL_SOURCE_LABELS
-from onusfit_ai.shared.llm.ports import LlmServiceError, TextGenerator
+from onusfit_ai.shared.llm.ports import LlmServiceError, LlmUsage, TextGenerator
 from onusfit_ai.shared.llm.telemetry import log_ai_call
 from onusfit_ai.shared.utils.js_compat import strict_json_loads, strip_code_fences
 
@@ -47,19 +48,82 @@ def is_coach_chat_tools_enabled() -> bool:
     return raw in ("1", "true", "yes", "on")
 
 
+def is_coach_agent_enabled() -> bool:
+    """Feature flag for AI Coach Agent mode (Phase 09 & Phase 10).
+
+    Defaults to 'false'. Enabled only when COACH_AGENT_ENABLED or
+    AI_COACH_AGENT_ENABLED is set to '1', 'true', 'yes', or 'on'.
+    """
+    raw = os.environ.get("COACH_AGENT_ENABLED") or os.environ.get("AI_COACH_AGENT_ENABLED", "false")
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
 async def generate_coach_reply(
     request: CoachChatRequest,
     llm: TextGenerator,
     *,
     trace_id: str,
+    user_id: str | None = None,
     tools: list[Any] | None = None,
     tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
+    executor: AgentExecutor | None = None,
 ) -> CoachChatResponse:
     """Orchestrate coach reply generation: format prompt, call LLM with fallback, and parse reply.
 
     The LLM client is injected via the TextGenerator protocol to keep the use case testable
     without real network calls or Gemini credentials.
     """
+    # Phase 09: When AI Agent mode is enabled and tool execution is available,
+    # delegate execution to the goal-driven AgentExecutor.
+    if is_coach_agent_enabled() and tool_handler is not None:
+        agent_exec = executor or AgentExecutor()
+        agent_res = await agent_exec.execute(
+            request=request,
+            llm=llm,
+            trace_id=trace_id,
+            user_id=user_id or "authenticated_user",
+            tool_handler=tool_handler,
+        )
+        usage_contract = (
+            agent_res.usage
+            if agent_res.usage
+            else Usage(
+                model=request.model.primary,
+                is_fallback=False,
+                input_tokens=0,
+                output_tokens=0,
+                cached_tokens=0,
+                thinking_tokens=0,
+                total_tokens=0,
+                duration_ms=0,
+            )
+        )
+        llm_usage = LlmUsage(
+            model=usage_contract.model,
+            is_fallback=usage_contract.is_fallback,
+            input_tokens=usage_contract.input_tokens,
+            output_tokens=usage_contract.output_tokens,
+            cached_tokens=usage_contract.cached_tokens,
+            thinking_tokens=usage_contract.thinking_tokens,
+            total_tokens=usage_contract.total_tokens,
+            duration_ms=usage_contract.duration_ms,
+        )
+        log_ai_call(
+            logger,
+            feature="coach_agent",
+            trace_id=trace_id,
+            prompt_version="agent_v1",
+            outcome="ok",
+            usage=llm_usage,
+            tool_calls_count=len(agent_res.tool_calls),
+        )
+        return CoachChatResponse(
+            outcome="ok",
+            result=agent_res.response,
+            usage=usage_contract,
+            trace_id=trace_id,
+        )
+
     prompt = build_prompt(
         request.message,
         request.context,

@@ -60,6 +60,7 @@ async def coach_chat(
         body,
         llm,
         trace_id=trace_id,
+        user_id=claims.user_id,
         tools=tools,
         tool_handler=tool_handler,
     )

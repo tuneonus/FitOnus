@@ -112,3 +112,11 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 | Stage | Guide | Status | Core Implementation Files | Tests |
 |:---|:---|:---|:---|:---|
 | **P8-All** | [**Phase 08: Context Engineering**](../phase-08-context-engineering.md) | **COMPLETED** | `backend/src/modules/coach/domain/intent-router.ts`<br>`backend/src/modules/coach/domain/context-deduplicator.ts`<br>`backend/src/modules/coach/domain/context-budget.ts`<br>`backend/src/modules/coach/application/services/context-assembler.ts`<br>`ai-backend/src/onusfit_ai/features/coach/application/prompts/coach_chat.py`<br>`ai-backend/tests/evals/evaluators/context.py` | `backend/tests/unit/coach/intent-router.test.ts`<br>`backend/tests/unit/coach/context-deduplicator.test.ts`<br>`backend/tests/unit/coach/context-budget.test.ts`<br>`backend/tests/unit/coach/context-assembler.test.ts`<br>`backend/tests/unit/coach/coach-chat-rag-integration.test.ts`<br>`ai-backend/tests/test_context_hardening.py`<br>`ai-backend/tests/evals/offline/test_context_eval.py`<br>`ai-backend/tests/evals/test_runner.py` |
+
+---
+
+## Phase 09: AI Agent Fundamentals
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P9-All** | [**Phase 09: AI Agent Fundamentals**](../phase-09-ai-agent-fundamentals.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/coach/domain/agent.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/planner.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/observer.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/agent/executor.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/chat.py`<br>`ai-backend/src/onusfit_ai/features/coach/presentation/coach_chat.py`<br>`ai-backend/tests/evals/evaluators/agent.py` | `ai-backend/tests/test_agent_contracts.py`<br>`ai-backend/tests/test_agent_planner.py`<br>`ai-backend/tests/test_agent_observation.py`<br>`ai-backend/tests/test_agent_executor.py`<br>`ai-backend/tests/evals/offline/test_agent_eval.py`<br>`ai-backend/tests/evals/test_runner.py` |

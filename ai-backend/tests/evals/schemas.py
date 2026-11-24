@@ -58,6 +58,7 @@ class BenchmarkCase(BaseModel):
         "multilingual_dialect",
         "memory_extraction",
         "context_engineering",
+        "agent_fundamentals",
     ]
     description: str = Field(description="Summary of test intent")
     language: Literal["en", "ta", "tanglish", "mixed"] = "en"

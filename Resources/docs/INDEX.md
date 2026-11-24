@@ -31,6 +31,8 @@ Keep the context needed to maintain the application: agent instructions, product
 - [Baseline findings](../../AI_ENGINEERING_BASELINE.md)
 - [Architecture proposal](../../AI_ARCHITECTURE_PROPOSAL.md)
 - [Engineering roadmap](../../AI_ENGINEERING_ROADMAP.md)
+- [AI learning guides](ai-learning/existing-ai-engineering/00-learning-index.md)
+- [Phase 09: AI Agent Fundamentals](ai-learning/phase-09-ai-agent-fundamentals.md)
 
 The architecture proposal and roadmap describe planned work. They do not indicate that the proposed services or integrations exist.
 

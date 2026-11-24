@@ -27,6 +27,7 @@ if str(_SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(_SRC_ROOT))
 
 from tests.evals.datasets.loader import load_all_benchmark_cases, load_benchmark_dataset
+from tests.evals.evaluators.agent import AgentFundamentalsEvaluator
 from tests.evals.evaluators.grounding import FactualGroundingEvaluator
 from tests.evals.evaluators.multilingual import MultilingualAccuracyEvaluator
 from tests.evals.evaluators.nutrition import NutritionToleranceEvaluator
@@ -69,6 +70,7 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
     ground_eval = FactualGroundingEvaluator()
     lang_eval = MultilingualAccuracyEvaluator()
     safety_eval = SafetyEvaluator()
+    agent_eval = AgentFundamentalsEvaluator()
 
     results: list[dict[str, Any]] = []
 
@@ -149,6 +151,24 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
             if not res.passed:
                 failure_reasons.extend(res.failure_reasons)
 
+        # 5b. Agent Fundamentals evaluation
+        if case.category == "agent_fundamentals":
+            res = agent_eval.evaluate(
+                candidate=cand,
+                expected_goal_type=cand.get("goal_type"),
+                expected_tools=case.expected_tools,
+                expected_language=case.language,
+                requires_agent_execution=cand.get("requires_agent_execution"),
+                max_iterations=3,
+                max_tool_calls=5,
+                max_replans=1,
+                forbidden_terms=case.forbidden_terms,
+                expected_outcome=case.expected_outcome,
+            )
+            scores.append(res.score)
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
+
         # 6. Factual grounding against structured user context
         if case.input_payload.get("context"):
             ctx = case.input_payload.get("context", {})
@@ -211,210 +231,6 @@ async def run_live_evaluation(
         if dataset_key and dataset_key != "all"
         else load_all_benchmark_cases()
     )
-
-    schema_evaluators = {
-        "coach_chat": SchemaConformanceEvaluator(GeminiCoachReplyOutput),
-        "coach_insights": SchemaConformanceEvaluator(GeminiCoachInsightsOutput),
-        "meal_photo": SchemaConformanceEvaluator(GeminiPhotoMealOutput),
-        "voice_meal": SchemaConformanceEvaluator(GeminiVoiceMealOutput),
-        "speech_transcribe": SchemaConformanceEvaluator(GeminiTranscribeOutput),
-    }
-
-    tool_eval = ToolSelectionEvaluator()
-    nutr_eval = NutritionToleranceEvaluator()
-    ground_eval = FactualGroundingEvaluator()
-    lang_eval = MultilingualAccuracyEvaluator()
-    safety_eval = SafetyEvaluator()
-
-    results: list[dict[str, Any]] = []
-
-    for case in cases:
-        for _ in range(trials):
-            start_t = time.perf_counter()
-            failure_reasons: list[str] = []
-            scores: list[float] = []
-
-            prompt = ""
-            schema_class = None
-            tools = None
-
-            if case.category == "coach_chat":
-                msg = case.input_payload.get("user_message") or case.input_payload.get(
-                    "message", ""
-                )
-                ctx = case.input_payload.get("context")
-                prompt = f"User: {msg}\nContext: {json.dumps(ctx)}" if ctx else f"User: {msg}"
-                schema_class = GeminiCoachReplyOutput
-            elif case.category == "coach_insights":
-                prompt = f"Generate insights for user context:\n{json.dumps(case.input_payload)}"
-                schema_class = GeminiCoachInsightsOutput
-            elif case.category == "meal_photo":
-                prompt = f"Analyze meal photo caption: {case.input_payload.get('caption', case.description)}"
-                schema_class = GeminiPhotoMealOutput
-            elif case.category == "voice_meal":
-                prompt = f"Extract meal from voice transcript: {case.input_payload.get('transcript', case.description)}"
-                schema_class = GeminiVoiceMealOutput
-            elif case.category in ("speech_transcribe", "multilingual_dialect"):
-                prompt = f"Transcribe and detect language: {case.input_payload.get('transcript', case.description)}"
-                schema_class = GeminiTranscribeOutput
-            elif case.category == "function_calling":
-                prompt = case.input_payload.get("message", case.description)
-                tools = get_coach_tools()
-            elif case.category == "fitness_safety":
-                prompt = case.input_payload.get("message", case.description)
-
-            try:
-                llm_res = await llm.generate_text(
-                    prompt=prompt,
-                    primary_model=primary,
-                    fallback_model=fallback,
-                    deadline_s=30.0,
-                    schema=schema_class,
-                    tools=tools,
-                )
-                duration_ms = (
-                    llm_res.usage.duration_ms
-                    if llm_res.usage.duration_ms > 0
-                    else round((time.perf_counter() - start_t) * 1000, 2)
-                )
-
-                token_usage = {
-                    "model": llm_res.usage.model,
-                    "is_fallback": llm_res.usage.is_fallback,
-                    "input_tokens": llm_res.usage.input_tokens,
-                    "output_tokens": llm_res.usage.output_tokens,
-                    "total_tokens": llm_res.usage.total_tokens,
-                }
-
-                candidate: dict[str, Any] = {}
-                if llm_res.parsed is not None:
-                    if hasattr(llm_res.parsed, "model_dump"):
-                        candidate = llm_res.parsed.model_dump(by_alias=True)
-                    elif isinstance(llm_res.parsed, dict):
-                        candidate = llm_res.parsed
-                elif llm_res.text:
-                    try:
-                        candidate = json.loads(llm_res.text)
-                    except Exception:
-                        candidate = {"text": llm_res.text}
-                else:
-                    candidate = {"text": ""}
-
-                if llm_res.tool_calls:
-                    candidate["tool_calls"] = [
-                        {"name": tc.tool_name, "args": tc.args} for tc in llm_res.tool_calls
-                    ]
-
-                if case.category in schema_evaluators:
-                    res = schema_evaluators[case.category].evaluate(candidate)
-                    scores.append(res.score)
-                    if not res.passed:
-                        failure_reasons.extend(res.failure_reasons)
-
-                if case.category == "function_calling":
-                    actual_tools = candidate.get("tool_calls", [])
-                    res = tool_eval.evaluate(actual_tools, case.expected_tools)
-                    scores.append(res.score)
-                    if not res.passed:
-                        failure_reasons.extend(res.failure_reasons)
-
-                if case.category in ("meal_photo", "voice_meal"):
-                    actual_items = candidate.get("items", [])
-                    res = nutr_eval.evaluate(actual_items, case.expected_nutrition)
-                    scores.append(res.score)
-                    if not res.passed:
-                        failure_reasons.extend(res.failure_reasons)
-
-                if case.category in ("speech_transcribe", "multilingual_dialect"):
-                    actual_transcript = candidate.get("transcript", candidate.get("text", ""))
-                    det_lang = candidate.get(
-                        "detectedLanguage", candidate.get("detected_language", "")
-                    )
-                    res = lang_eval.evaluate(
-                        actual_transcript=actual_transcript,
-                        detected_language=det_lang,
-                        expected_language=case.language,
-                        expected_entities=case.input_payload.get("expected_entities"),
-                    )
-                    scores.append(res.score)
-                    if not res.passed:
-                        failure_reasons.extend(res.failure_reasons)
-
-                if (
-                    case.category == "fitness_safety"
-                    or case.expected_safety_disclaimers
-                    or case.forbidden_terms
-                    or case.expected_outcome in ("refusal", "medical_escalation")
-                ):
-                    text = candidate.get("text", "")
-                    res = safety_eval.evaluate(
-                        text,
-                        expected_disclaimers=case.expected_safety_disclaimers,
-                        forbidden_terms=case.forbidden_terms,
-                        is_medical_case=(case.expected_outcome == "medical_escalation"),
-                    )
-                    scores.append(res.score)
-                    if not res.passed:
-                        failure_reasons.extend(res.failure_reasons)
-
-                if case.input_payload.get("context"):
-                    ctx = case.input_payload.get("context", {})
-                    text = candidate.get("text", "")
-                    if not text and "insights" in candidate:
-                        text = (
-                            f"{candidate.get('greeting', '')} {candidate.get('recommendation', '')} "
-                            + " ".join(
-                                i.get("description", "") for i in candidate.get("insights", [])
-                            )
-                        )
-                    if text:
-                        res = ground_eval.evaluate(text, ctx)
-                        scores.append(res.score)
-                        if not res.passed:
-                            failure_reasons.extend(res.failure_reasons)
-
-                passed = len(failure_reasons) == 0
-                final_score = round(sum(scores) / max(len(scores), 1), 3) if passed else 0.0
-
-                results.append(
-                    {
-                        "case_id": case.case_id,
-                        "category": case.category,
-                        "language": case.language,
-                        "is_verified_ground_truth": case.is_verified_ground_truth,
-                        "passed": passed,
-                        "score": final_score,
-                        "failure_reasons": failure_reasons,
-                        "duration_ms": duration_ms,
-                        "token_usage": token_usage,
-                        "model": llm_res.usage.model,
-                        "is_fallback": llm_res.usage.is_fallback,
-                    }
-                )
-
-            except Exception as err:
-                duration_ms = round((time.perf_counter() - start_t) * 1000, 2)
-                results.append(
-                    {
-                        "case_id": case.case_id,
-                        "category": case.category,
-                        "language": case.language,
-                        "is_verified_ground_truth": case.is_verified_ground_truth,
-                        "passed": False,
-                        "score": 0.0,
-                        "failure_reasons": [f"Live model execution error: {err}"],
-                        "duration_ms": duration_ms,
-                        "token_usage": {
-                            "model": primary,
-                            "is_fallback": False,
-                            "total_tokens": 0,
-                        },
-                        "model": primary,
-                        "is_fallback": False,
-                    }
-                )
-
-    return results
 
     schema_evaluators = {
         "coach_chat": SchemaConformanceEvaluator(GeminiCoachReplyOutput),
