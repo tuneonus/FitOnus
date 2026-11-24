@@ -47,10 +47,12 @@ export type {
   UserSettingsView,
 } from './application/profile-view.js';
 
+export type { ProfileWithIdentity } from './application/ports.js';
 export type { AvatarResponse, AvatarView } from './application/avatar-view.js';
 
 export interface ProfileModule {
   routes: RouteGroup;
+  profileRepo: PgProfileRepository;
 }
 
 export function createProfileModule(deps: {
@@ -89,5 +91,6 @@ export function createProfileModule(deps: {
       basePath: profileRoutes.basePath,
       routes: [...profileRoutes.routes, ...createAvatarRoutes(avatarController, deps.limiters)],
     },
+    profileRepo,
   };
 }

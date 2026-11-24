@@ -29,6 +29,7 @@ if str(_SRC_ROOT) not in sys.path:
 from tests.evals.datasets.loader import load_all_benchmark_cases, load_benchmark_dataset
 from tests.evals.evaluators.agent import AgentFundamentalsEvaluator
 from tests.evals.evaluators.grounding import FactualGroundingEvaluator
+from tests.evals.evaluators.mcp import McpToolsEvaluator
 from tests.evals.evaluators.multilingual import MultilingualAccuracyEvaluator
 from tests.evals.evaluators.nutrition import NutritionToleranceEvaluator
 from tests.evals.evaluators.safety import SafetyEvaluator
@@ -71,6 +72,7 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
     lang_eval = MultilingualAccuracyEvaluator()
     safety_eval = SafetyEvaluator()
     agent_eval = AgentFundamentalsEvaluator()
+    mcp_eval = McpToolsEvaluator()
 
     results: list[dict[str, Any]] = []
 
@@ -137,7 +139,7 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
         if (
             case.category == "fitness_safety"
             or (
-                case.category != "workout_planner"
+                case.category not in ("workout_planner", "mcp_tools")
                 and (
                     case.expected_safety_disclaimers
                     or case.forbidden_terms
@@ -195,6 +197,18 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
                     scores.append(1.0)
                 else:
                     failure_reasons.append(f"Unexpected status: {cand.get('status')}")
+
+        # 5d. MCP Tools evaluation
+        if case.category == "mcp_tools":
+            res = mcp_eval.evaluate(
+                candidate=cand,
+                expected_tools=case.expected_tools,
+                expected_outcome=case.expected_outcome,
+                forbidden_terms=case.forbidden_terms,
+            )
+            scores.append(res.score)
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
 
         # 6. Factual grounding against structured user context
         if case.input_payload.get("context"):

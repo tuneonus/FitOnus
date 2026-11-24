@@ -335,6 +335,7 @@ export function createContainer(
     targetAdapter: nutrition.targetAdapter,
     weightRepo: progress.weightRepo,
     knowledgeService: knowledge.service,
+    profileRepo: profile.profileRepo,
   });
 
   const fcm = config.notifications.fcm;

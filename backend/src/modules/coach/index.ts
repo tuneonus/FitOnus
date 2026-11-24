@@ -7,6 +7,7 @@ import type { IExerciseRepository, IPersonalRecordRepository, IWorkoutSessionRep
 import type { IMealRepository, IUserProfileTargetPort, IWaterRepository } from '../nutrition/index.js';
 import type { IWeightRepository } from '../progress/index.js';
 import type { KnowledgeService } from '../knowledge/index.js';
+import type { ProfileWithIdentity } from '../profile/index.js';
 import type {
   CoachChatService,
   CoachInsightsService,
@@ -104,6 +105,9 @@ export interface CreateCoachModuleOptions {
   weightRepo?: IWeightRepository;
   /** Optional knowledge service for RAG grounding */
   knowledgeService?: KnowledgeService;
+  profileRepo?: {
+    ensureProfile(userId: string): Promise<ProfileWithIdentity>;
+  };
 }
 
 export function createCoachModule(options: CreateCoachModuleOptions): CoachModule {
@@ -173,6 +177,8 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
       waterRepo: options.waterRepo,
       targetAdapter: options.targetAdapter,
       weightRepo: options.weightRepo,
+      ...(options.knowledgeService ? { knowledgeService: options.knowledgeService } : {}),
+      ...(options.profileRepo ? { profileRepo: options.profileRepo } : {}),
     });
     internalToolsRoutes = createInternalToolsRoutes(
       options.internalToolsBasePath,

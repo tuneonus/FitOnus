@@ -207,6 +207,15 @@ class ExerciseCatalogIndex:
             ex.name.lower().strip(): ex for ex in self._catalog
         }
 
+    @property
+    def catalog(self) -> list[ExerciseItemGrounding]:
+        return list(self._catalog)
+
+    def search_by_name(self, query: str, limit: int = 5) -> list[ExerciseItemGrounding]:
+        q = query.lower().strip()
+        matches = [ex for ex in self._catalog if q in ex.name.lower()]
+        return matches[:limit]
+
     def get_by_id(self, exercise_id: str) -> ExerciseItemGrounding | None:
         return self._by_id.get(exercise_id)
 

@@ -1,5 +1,6 @@
 """POST /internal/v1/ai/coach/chat: a thin HTTP wrapper around `generate_coach_reply`."""
 
+import logging
 import uuid
 from typing import Any
 
@@ -13,7 +14,14 @@ from onusfit_ai.features.coach.domain.chat import CoachChatRequest, CoachChatRes
 from onusfit_ai.shared.auth import ServiceClaims, require_scope
 from onusfit_ai.shared.llm.dependencies import get_coach_tools, get_llm
 from onusfit_ai.shared.llm.ports import TextGenerator
-from onusfit_ai.shared.tools import InternalToolsClient, get_tools_client
+from onusfit_ai.shared.tools import (
+    InternalToolsClient,
+    get_mcp_client_adapter,
+    get_tools_client,
+    is_mcp_enabled,
+)
+
+logger = logging.getLogger("onusfit_ai.coach_chat")
 
 SCOPE = "ai:coach:chat"
 require_chat_scope = require_scope(SCOPE)
@@ -42,19 +50,46 @@ async def coach_chat(
 
     tools = None
     tool_handler = None
-    if is_coach_chat_tools_enabled():
-        tools = get_coach_tools()
-        user_id = claims.user_id
+    if is_coach_chat_tools_enabled() or is_mcp_enabled():
+        if is_mcp_enabled():
+            try:
+                mcp_adapter = get_mcp_client_adapter(tools_client=tools_client)
+                tools = await mcp_adapter.get_gemini_tools()
+                tool_handler = mcp_adapter.create_tool_handler(
+                    user_id=claims.user_id,
+                    request_id=trace_id,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to initialize MCP tools (%s). Falling back to native tools.",
+                    exc,
+                    extra={"requestId": trace_id},
+                )
+                tools = get_coach_tools()
+                user_id = claims.user_id
 
-        async def _tool_handler(name: str, args: dict[str, Any]) -> dict[str, Any]:
-            return await tools_client.execute_tool(
-                name=name,
-                args=args,
-                user_id=user_id,
-                request_id=trace_id,
-            )
+                async def _tool_handler(name: str, args: dict[str, Any]) -> dict[str, Any]:
+                    return await tools_client.execute_tool(
+                        name=name,
+                        args=args,
+                        user_id=user_id,
+                        request_id=trace_id,
+                    )
 
-        tool_handler = _tool_handler
+                tool_handler = _tool_handler
+        else:
+            tools = get_coach_tools()
+            user_id = claims.user_id
+
+            async def _tool_handler(name: str, args: dict[str, Any]) -> dict[str, Any]:
+                return await tools_client.execute_tool(
+                    name=name,
+                    args=args,
+                    user_id=user_id,
+                    request_id=trace_id,
+                )
+
+            tool_handler = _tool_handler
 
     return await generate_coach_reply(
         body,

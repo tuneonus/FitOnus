@@ -40,6 +40,24 @@ describe('Internal Tools Controller', () => {
       } as unknown as InternalToolsControllerDeps['personalRecordRepo'],
 
       exerciseRepo: {
+        findById: vi.fn().mockImplementation((id: string) => {
+          if (id === '22222222-2222-4222-8222-222222222222') {
+            return Promise.resolve({
+              id,
+              name: 'Barbell Bench Press',
+              description: 'Standard chest press',
+              instructions: ['Lie on bench', 'Lower bar', 'Press up'],
+              tips: ['Keep feet planted'],
+              primaryMuscles: ['chest'],
+              secondaryMuscles: ['triceps'],
+              equipment: 'barbell',
+              category: 'strength',
+              difficulty: 'intermediate',
+              isCompound: true,
+            });
+          }
+          return Promise.resolve(null);
+        }),
         list: vi.fn().mockResolvedValue({
           exercises: [
             {
@@ -55,6 +73,34 @@ describe('Internal Tools Controller', () => {
           total: 1,
         }),
       } as unknown as InternalToolsControllerDeps['exerciseRepo'],
+
+      profileRepo: {
+        ensureProfile: vi.fn().mockResolvedValue({
+          profile: {
+            primaryGoal: 'strength',
+            experienceLevel: 'intermediate',
+            preferredWorkoutPlace: 'gym',
+            workoutDaysPerWeek: 4,
+            preferredWorkoutDurationMin: 60,
+            availableEquipment: ['barbell', 'dumbbell'],
+            dietType: 'none',
+            allergies: ['peanuts'],
+          },
+          name: 'Test Athlete',
+        }),
+      },
+
+      knowledgeService: {
+        searchSimilar: vi.fn().mockResolvedValue([
+          {
+            id: 'chunk-1',
+            documentCategory: 'fitness',
+            documentTitle: 'Progressive Overload Guide',
+            content: 'Increase weight or repetitions incrementally.',
+            similarity: 0.92,
+          },
+        ]),
+      } as unknown as InternalToolsControllerDeps['knowledgeService'],
 
       mealRepo: {
         listDateRange: vi.fn().mockResolvedValue([
@@ -234,5 +280,42 @@ describe('Internal Tools Controller', () => {
     // Assert that the repository was called with the authenticated userId, NOT victim-user-999
     expect(mockDeps.sessionRepo.listForUser).toHaveBeenCalledWith(userId, expect.anything());
     expect(mockDeps.sessionRepo.listForUser).not.toHaveBeenCalledWith('victim-user-999', expect.anything());
+  });
+
+  it('getExerciseDetails returns detailed exercise metadata or null if not found', async () => {
+    const controller = createInternalToolsController(mockDeps);
+    const validReq = createMockRequest({ exerciseId: '22222222-2222-4222-8222-222222222222' });
+
+    const found = await controller.getExerciseDetails(validReq);
+    expect(found.data.exercise).not.toBeNull();
+    expect(found.data.exercise?.name).toBe('Barbell Bench Press');
+    expect(found.data.exercise?.instructions).toHaveLength(3);
+    expect(found.data.exercise?.tips).toContain('Keep feet planted');
+
+    const notFoundReq = createMockRequest({ exerciseId: '33333333-3333-4333-8333-333333333333' });
+    const notFound = await controller.getExerciseDetails(notFoundReq);
+    expect(notFound.data.exercise).toBeNull();
+  });
+
+  it('getFitnessProfile returns user profile preferences and metabolic targets', async () => {
+    const controller = createInternalToolsController(mockDeps);
+    const req = createMockRequest({});
+
+    const result = await controller.getFitnessProfile(req);
+    expect(result.data.profile.userId).toBe(userId);
+    expect(result.data.profile.primaryGoal).toBe('strength');
+    expect(result.data.profile.experienceLevel).toBe('intermediate');
+    expect(result.data.profile.availableEquipment).toContain('barbell');
+    expect(result.data.profile.targets.calories).toBe(2200);
+  });
+
+  it('retrieveFitnessKnowledge searches similar chunks with relevance scoring', async () => {
+    const controller = createInternalToolsController(mockDeps);
+    const req = createMockRequest({ query: 'progressive overload', category: 'fitness', limit: 2 });
+
+    const result = await controller.retrieveFitnessKnowledge(req);
+    expect(result.data.chunks).toHaveLength(1);
+    expect(result.data.chunks[0]?.title).toBe('Progressive Overload Guide');
+    expect(result.data.chunks[0]?.similarity).toBe(0.92);
   });
 });

@@ -136,3 +136,12 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 | Stage | Guide | Status | Core Implementation Files | Tests |
 |:---|:---|:---|:---|:---|
 | **P11-All** | [**Phase 11: AI Workout Planner**](../phase-11-ai-workout-planner.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/workout_planner/domain/contracts.py`<br>`ai-backend/src/onusfit_ai/features/workout_planner/domain/safety.py`<br>`ai-backend/src/onusfit_ai/features/workout_planner/application/grounding.py`<br>`ai-backend/src/onusfit_ai/features/workout_planner/application/generator.py`<br>`ai-backend/src/onusfit_ai/features/workout_planner/application/graph/`<br>`backend/src/modules/workouts/infrastructure/python-workout-planner-service.ts`<br>`backend/src/modules/workouts/application/use-cases/`<br>`mobile/src/features/workouts/services/workoutPlanGenerator.ts` | `ai-backend/tests/test_workout_planner_contracts.py`<br>`ai-backend/tests/test_workout_planner_safety.py`<br>`ai-backend/tests/test_workout_planner_graph.py`<br>`ai-backend/tests/test_workout_planner_api.py`<br>`ai-backend/tests/evals/offline/test_workout_planner_eval.py`<br>`backend/tests/unit/workouts/ai-workout-planner.test.ts` |
+
+---
+
+## Phase 12: AI Agent Protocols & Tool Ecosystem
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P12-All** | [**Phase 12: AI Agent Protocols & Tool Ecosystem**](../phase-12-ai-agent-protocols-and-tool-ecosystem.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/mcp/*`<br>`ai-backend/src/onusfit_ai/shared/tools/mcp.py`<br>`backend/src/modules/coach/interface/internal-tools.*`<br>`PHASE_12_LEARNING_GUIDE.md` | `ai-backend/tests/test_mcp_*.py` (43 passed)<br>`ai-backend/tests/evals/offline/test_mcp_eval.py` (7 passed, 32 cases)<br>`ai-backend/tests/test_architecture.py` (22 passed) |
+

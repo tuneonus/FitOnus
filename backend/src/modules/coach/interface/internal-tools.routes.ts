@@ -5,12 +5,18 @@ import { AppError } from '../../../shared/errors/app-error.js';
 import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
 import type { InternalToolsController } from './internal-tools.controller.js';
 import {
+  getExerciseDetailsInputSchema,
+  getExerciseDetailsResponseSchema,
+  getFitnessProfileInputSchema,
+  getFitnessProfileResponseSchema,
   getNutritionSummaryInputSchema,
   getNutritionSummaryResponseSchema,
   getRecentWorkoutsInputSchema,
   getRecentWorkoutsResponseSchema,
   getWeightTrendInputSchema,
   getWeightTrendResponseSchema,
+  retrieveFitnessKnowledgeInputSchema,
+  retrieveFitnessKnowledgeResponseSchema,
   searchExercisesInputSchema,
   searchExercisesResponseSchema,
 } from './internal-tools.schemas.js';
@@ -196,6 +202,66 @@ export function createInternalToolsRoutes(
         },
         errorStatuses: [400, 401],
         handler: (req) => controller.searchExercises(req),
+      }),
+
+      // 5. Exercise Details Tool
+      defineRoute({
+        method: 'post',
+        path: '/exercise-details',
+        summary: 'Retrieve detailed exercise metadata and execution instructions',
+        description: 'Internal machine-to-machine tool endpoint for Gemini / MCP AI Agent.',
+        tags: ['Internal Tools'],
+        access: { kind: 'public' },
+        middleware: authMiddleware,
+        request: { body: getExerciseDetailsInputSchema },
+        response: {
+          status: 200,
+          description: 'Exercise details with instructions and mechanics',
+          message: 'Exercise details retrieved successfully',
+          schema: getExerciseDetailsResponseSchema,
+        },
+        errorStatuses: [400, 401],
+        handler: (req) => controller.getExerciseDetails(req),
+      }),
+
+      // 6. Fitness Profile Tool
+      defineRoute({
+        method: 'post',
+        path: '/fitness-profile',
+        summary: 'Retrieve fitness profile summary for authenticated user',
+        description: 'Internal machine-to-machine tool endpoint for Gemini / MCP AI Agent.',
+        tags: ['Internal Tools'],
+        access: { kind: 'public' },
+        middleware: authMiddleware,
+        request: { body: getFitnessProfileInputSchema },
+        response: {
+          status: 200,
+          description: 'User fitness profile, equipment, and calculated targets',
+          message: 'Fitness profile retrieved successfully',
+          schema: getFitnessProfileResponseSchema,
+        },
+        errorStatuses: [400, 401],
+        handler: (req) => controller.getFitnessProfile(req),
+      }),
+
+      // 7. Retrieve Fitness Knowledge Tool
+      defineRoute({
+        method: 'post',
+        path: '/retrieve-knowledge',
+        summary: 'Retrieve relevant fitness knowledge chunks from vector/text store',
+        description: 'Internal machine-to-machine tool endpoint for Gemini / MCP AI Agent.',
+        tags: ['Internal Tools'],
+        access: { kind: 'public' },
+        middleware: authMiddleware,
+        request: { body: retrieveFitnessKnowledgeInputSchema },
+        response: {
+          status: 200,
+          description: 'Relevant fitness knowledge chunks with similarity scores',
+          message: 'Fitness knowledge retrieved successfully',
+          schema: retrieveFitnessKnowledgeResponseSchema,
+        },
+        errorStatuses: [400, 401],
+        handler: (req) => controller.retrieveFitnessKnowledge(req),
       }),
     ],
   };

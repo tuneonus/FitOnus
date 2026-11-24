@@ -54,7 +54,7 @@ OWN_LAYERS = {
 THIRD_PARTY_FOR_LAYER = {
     "domain": {"pydantic"},
     "application": {"pydantic", "langgraph", "langchain_core"},
-    "presentation": {"fastapi", "pydantic"},
+    "presentation": {"fastapi", "pydantic", "mcp"},
 }
 # Shared modules the inner layers import: they must not drag in a framework or an SDK themselves.
 PURE_SHARED = (
@@ -70,8 +70,13 @@ SDK_HOMES = {
     "google": {"shared.llm.gemini"},
     "httpx": {"shared.llm.errors", "shared.tools.client"},
     "jwt": {"shared.auth.auth"},
+    "mcp": {
+        "features.mcp.presentation.server.builder",
+        "features.mcp.presentation.server.transports",
+        "features.mcp.presentation.client.client",
+    },
 }
-FRAMEWORK_AND_SDK = {"fastapi", "starlette", "google", "jwt", "httpx"}
+FRAMEWORK_AND_SDK = {"fastapi", "starlette", "google", "jwt", "httpx", "mcp"}
 
 
 def _under(module: str, prefixes: tuple[str, ...] | set[str] | list[str]) -> bool:
@@ -231,7 +236,7 @@ def test_the_source_tree_obeys_every_boundary_rule() -> None:
 def test_the_checker_really_sees_the_code() -> None:
     modules = {_module_name(SRC, f) for f in (SRC / PKG).rglob("*.py")}
     assert len(modules) > 60  # a checker that found nothing would pass the test above vacuously
-    for feature in ("coach", "meals", "speech"):
+    for feature in ("coach", "meals", "speech", "workout_planner", "mcp"):
         assert f"{PKG}.features.{feature}.application" in modules
         assert f"{PKG}.features.{feature}.presentation" in modules
 

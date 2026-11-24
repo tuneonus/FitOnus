@@ -23,6 +23,7 @@ DATASET_FILES: dict[str, str] = {
     "context": "context_engineering_benchmark.json",
     "agent": "agent_fundamentals_benchmark.json",
     "workout_planner": "workout_planner_benchmark.json",
+    "mcp_tools": "mcp_tools_benchmark.json",
 }
 
 

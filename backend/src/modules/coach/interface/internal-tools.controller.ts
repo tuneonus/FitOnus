@@ -5,14 +5,22 @@ import type { RouteResult } from '../../../shared/http/route.js';
 import type { IExerciseRepository, IPersonalRecordRepository, IWorkoutSessionRepository } from '../../workouts/index.js';
 import type { IMealRepository, IUserProfileTargetPort, IWaterRepository } from '../../nutrition/index.js';
 import type { IWeightRepository } from '../../progress/index.js';
+import type { KnowledgeCategory, KnowledgeService } from '../../knowledge/index.js';
+import type { ProfileWithIdentity } from '../../profile/index.js';
 import {
+  getExerciseDetailsInputSchema,
+  getFitnessProfileInputSchema,
   getNutritionSummaryInputSchema,
   getRecentWorkoutsInputSchema,
   getWeightTrendInputSchema,
+  retrieveFitnessKnowledgeInputSchema,
   searchExercisesInputSchema,
+  type GetExerciseDetailsResponseDto,
+  type GetFitnessProfileResponseDto,
   type GetNutritionSummaryResponseDto,
   type GetRecentWorkoutsResponseDto,
   type GetWeightTrendResponseDto,
+  type RetrieveFitnessKnowledgeResponseDto,
   type SearchExercisesResponseDto,
 } from './internal-tools.schemas.js';
 
@@ -21,6 +29,9 @@ export interface InternalToolsController {
   getNutritionSummary(req: Request): Promise<RouteResult<GetNutritionSummaryResponseDto>>;
   getWeightTrend(req: Request): Promise<RouteResult<GetWeightTrendResponseDto>>;
   searchExercises(req: Request): Promise<RouteResult<SearchExercisesResponseDto>>;
+  getExerciseDetails(req: Request): Promise<RouteResult<GetExerciseDetailsResponseDto>>;
+  getFitnessProfile(req: Request): Promise<RouteResult<GetFitnessProfileResponseDto>>;
+  retrieveFitnessKnowledge(req: Request): Promise<RouteResult<RetrieveFitnessKnowledgeResponseDto>>;
 }
 
 export interface InternalToolsControllerDeps {
@@ -31,6 +42,10 @@ export interface InternalToolsControllerDeps {
   waterRepo: IWaterRepository;
   targetAdapter: IUserProfileTargetPort;
   weightRepo: IWeightRepository;
+  knowledgeService?: KnowledgeService;
+  profileRepo?: {
+    ensureProfile(userId: string): Promise<ProfileWithIdentity>;
+  };
 }
 
 export function createInternalToolsController(deps: InternalToolsControllerDeps): InternalToolsController {
@@ -205,6 +220,107 @@ export function createInternalToolsController(deps: InternalToolsControllerDeps)
       return {
         data: { exercises, total: result.total },
         message: 'Exercises retrieved successfully',
+      };
+    },
+
+    async getExerciseDetails(req: Request): Promise<RouteResult<GetExerciseDetailsResponseDto>> {
+      requireActor(req);
+      const validated = getValidated(req, { body: getExerciseDetailsInputSchema });
+      const exercise = await deps.exerciseRepo.findById(validated.body.exerciseId);
+
+      if (!exercise) {
+        return {
+          data: { exercise: null },
+          message: 'Exercise not found',
+        };
+      }
+
+      return {
+        data: {
+          exercise: {
+            id: exercise.id,
+            name: exercise.name,
+            description: exercise.description,
+            targetMuscle: exercise.primaryMuscles[0] || 'general',
+            secondaryMuscles: Array.from(exercise.secondaryMuscles),
+            equipment: exercise.equipment,
+            category: exercise.category,
+            difficulty: exercise.difficulty,
+            instructions: Array.from(exercise.instructions),
+            tips: Array.from(exercise.tips),
+            isCompound: exercise.isCompound,
+          },
+        },
+        message: 'Exercise details retrieved successfully',
+      };
+    },
+
+    async getFitnessProfile(req: Request): Promise<RouteResult<GetFitnessProfileResponseDto>> {
+      const actor = requireActor(req);
+      getValidated(req, { body: getFitnessProfileInputSchema });
+      const [targets, weightSummary, profileData] = await Promise.all([
+        deps.targetAdapter.findTargetsByUserId(actor.userId),
+        deps.weightRepo.getUserWeightSummary(actor.userId),
+        deps.profileRepo ? deps.profileRepo.ensureProfile(actor.userId) : Promise.resolve(null),
+      ]);
+
+      const prof = profileData?.profile;
+
+      return {
+        data: {
+          profile: {
+            userId: actor.userId,
+            primaryGoal: prof?.primaryGoal ?? null,
+            experienceLevel: prof?.experienceLevel ?? null,
+            preferredWorkoutPlace: prof?.preferredWorkoutPlace ?? null,
+            workoutDaysPerWeek: prof?.workoutDaysPerWeek ?? null,
+            preferredWorkoutDurationMin: prof?.preferredWorkoutDurationMin ?? null,
+            availableEquipment: prof ? Array.from(prof.availableEquipment) : [],
+            dietType: prof?.dietType ?? null,
+            allergies: prof ? Array.from(prof.allergies) : [],
+            currentWeightKg: weightSummary.currentWeightKg ?? null,
+            targetWeightKg: weightSummary.targetWeightKg ?? null,
+            targets: {
+              calories: targets.calories,
+              proteinG: targets.proteinG,
+              carbsG: targets.carbsG,
+              fatG: targets.fatG,
+              waterMl: targets.waterMl,
+            },
+          },
+        },
+        message: 'Fitness profile retrieved successfully',
+      };
+    },
+
+    async retrieveFitnessKnowledge(req: Request): Promise<RouteResult<RetrieveFitnessKnowledgeResponseDto>> {
+      requireActor(req);
+      const validated = getValidated(req, { body: retrieveFitnessKnowledgeInputSchema });
+      const { query, category, limit = 3 } = validated.body;
+
+      if (!deps.knowledgeService) {
+        return {
+          data: { chunks: [] },
+          message: 'Knowledge service not configured',
+        };
+      }
+
+      const similar = await deps.knowledgeService.searchSimilar(query, {
+        limit,
+        ...(category ? { category: category as KnowledgeCategory } : {}),
+      });
+
+      const chunks = similar.map((c) => ({
+        chunkId: c.id,
+        category: c.documentCategory,
+        content: c.content,
+        similarity: c.similarity,
+        title: c.documentTitle,
+      }));
+
+      return {
+        data: { chunks },
+        message: 'Fitness knowledge retrieved successfully',
       };
     },
   };

@@ -35,6 +35,8 @@ Keep the context needed to maintain the application: agent instructions, product
 - [Phase 09: AI Agent Fundamentals](ai-learning/phase-09-ai-agent-fundamentals.md)
 - [Phase 10: LangGraph Agent Workflows](ai-learning/phase-10-langgraph-agent-workflows.md)
 - [Phase 11: AI Workout Planner](ai-learning/phase-11-ai-workout-planner.md)
+- [Phase 12: AI Agent Protocols & Tool Ecosystem](ai-learning/phase-12-ai-agent-protocols-and-tool-ecosystem.md)
+- [Phase 12 Learning Guide](../../PHASE_12_LEARNING_GUIDE.md)
 
 The architecture proposal and roadmap describe planned work. They do not indicate that the proposed services or integrations exist.
 
@@ -114,6 +116,7 @@ The architecture proposal and roadmap describe planned work. They do not indicat
 - [EXPO_GO.md](../../mobile/docs/EXPO_GO.md)
 - [push-notifications.md](../../mobile/docs/push-notifications.md)
 - [private-photos.md](../../mobile/docs/private-photos.md): profile picture and progress photos on the phone: signed URLs, image-cache keys and sign-out clearing, upload, picker configuration, and the live screens
+- [WORKOUT_ASSET_STANDARD.md](WORKOUT_ASSET_STANDARD.md): workout exercise image display, 5:4 aspect ratio standard, static WebP, character consistency, and stable ID mapping
 - [Notification integration patches](../../mobile/docs/notification-integration-patches/)
 
 ## Admin

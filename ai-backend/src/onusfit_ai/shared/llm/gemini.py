@@ -645,3 +645,24 @@ def get_coach_tool_declarations() -> list[types.FunctionDeclaration]:
 def get_coach_tools() -> list[types.Tool]:
     """Return the Gemini Tool instance containing all coach function declarations."""
     return [types.Tool(function_declarations=get_coach_tool_declarations())]
+
+
+def create_gemini_tools_from_schemas(tool_schemas: list[dict[str, Any]]) -> list[types.Tool]:
+    """Helper converting tool definitions into Gemini Tool format."""
+    decls: list[types.FunctionDeclaration] = []
+    for s in tool_schemas:
+        schema_dict = s.get("input_schema", {})
+        cleaned = {
+            k: v
+            for k, v in schema_dict.items()
+            if k not in ("$schema", "title", "additionalProperties")
+        }
+        parsed = types.Schema.model_validate(cleaned)
+        decls.append(
+            types.FunctionDeclaration(
+                name=s["name"],
+                description=s.get("description", ""),
+                parameters=parsed,
+            )
+        )
+    return [types.Tool(function_declarations=decls)]

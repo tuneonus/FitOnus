@@ -9,6 +9,8 @@ from fastapi import FastAPI
 from onusfit_ai import __version__
 from onusfit_ai.features.coach.presentation import router as coach_router
 from onusfit_ai.features.knowledge.presentation import router as knowledge_router
+from onusfit_ai.features.mcp.presentation import router as mcp_router
+from onusfit_ai.features.mcp.presentation.server import get_fitonus_mcp_server
 from onusfit_ai.features.meals.presentation import router as meals_router
 from onusfit_ai.features.speech.presentation import router as speech_router
 from onusfit_ai.features.workout_planner.presentation import router as workout_planner_router
@@ -18,6 +20,7 @@ from onusfit_ai.shared.health import router as health_router
 from onusfit_ai.shared.logging import configure_logging, log_event
 from onusfit_ai.shared.observability import RequestObservabilityMiddleware
 from onusfit_ai.shared.request_limits import MAX_REQUEST_BODY_BYTES, RequestBodyLimitMiddleware
+from onusfit_ai.shared.tools import set_shared_mcp_server
 
 logger = logging.getLogger("onusfit_ai.main")
 
@@ -102,6 +105,12 @@ def create_app() -> FastAPI:
     app.include_router(speech_router)
     app.include_router(knowledge_router)
     app.include_router(workout_planner_router)
+    app.include_router(mcp_router)
+
+    # Wire in-process MCP server for shared tools client resolution
+    mcp_srv = get_fitonus_mcp_server()
+    set_shared_mcp_server(mcp_srv)
+
     return app
 
 

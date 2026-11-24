@@ -129,3 +129,89 @@ export const searchExercisesResponseSchema = z.object({
 
 export type SearchExercisesResponseDto = z.infer<typeof searchExercisesResponseSchema>;
 
+// ============================================================================
+// Tool 5: Exercise Details
+// ============================================================================
+
+export const getExerciseDetailsInputSchema = z.object({
+  exerciseId: z.string().uuid('Exercise ID must be a valid UUID'),
+});
+
+export type GetExerciseDetailsInput = z.infer<typeof getExerciseDetailsInputSchema>;
+
+export const exerciseDetailsSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  targetMuscle: z.string(),
+  secondaryMuscles: z.array(z.string()),
+  equipment: z.string(),
+  category: z.string(),
+  difficulty: z.string(),
+  instructions: z.array(z.string()),
+  tips: z.array(z.string()),
+  isCompound: z.boolean(),
+});
+
+export const getExerciseDetailsResponseSchema = z.object({
+  exercise: exerciseDetailsSchema.nullable(),
+});
+
+export type GetExerciseDetailsResponseDto = z.infer<typeof getExerciseDetailsResponseSchema>;
+
+// ============================================================================
+// Tool 6: Fitness Profile
+// ============================================================================
+
+export const getFitnessProfileInputSchema = z.object({}).default({});
+
+export type GetFitnessProfileInput = z.infer<typeof getFitnessProfileInputSchema>;
+
+export const fitnessProfileSummarySchema = z.object({
+  userId: z.string(),
+  primaryGoal: z.string().nullable(),
+  experienceLevel: z.string().nullable(),
+  preferredWorkoutPlace: z.string().nullable(),
+  workoutDaysPerWeek: z.number().nullable(),
+  preferredWorkoutDurationMin: z.number().nullable(),
+  availableEquipment: z.array(z.string()),
+  dietType: z.string().nullable(),
+  allergies: z.array(z.string()),
+  currentWeightKg: z.number().nullable(),
+  targetWeightKg: z.number().nullable(),
+  targets: nutritionTargetsSchema,
+});
+
+export const getFitnessProfileResponseSchema = z.object({
+  profile: fitnessProfileSummarySchema,
+});
+
+export type GetFitnessProfileResponseDto = z.infer<typeof getFitnessProfileResponseSchema>;
+
+// ============================================================================
+// Tool 7: Retrieve Fitness Knowledge
+// ============================================================================
+
+export const retrieveFitnessKnowledgeInputSchema = z.object({
+  query: z.string().trim().min(1, 'Query must not be empty').max(200, 'Query must be at most 200 characters'),
+  category: z.string().trim().min(1).max(50).optional(),
+  limit: z.number().int().min(1).max(10).default(3),
+});
+
+export type RetrieveFitnessKnowledgeInput = z.infer<typeof retrieveFitnessKnowledgeInputSchema>;
+
+export const fitnessKnowledgeChunkSchema = z.object({
+  chunkId: z.string(),
+  title: z.string().optional(),
+  category: z.string(),
+  content: z.string(),
+  similarity: z.number().optional(),
+});
+
+export const retrieveFitnessKnowledgeResponseSchema = z.object({
+  chunks: z.array(fitnessKnowledgeChunkSchema),
+});
+
+export type RetrieveFitnessKnowledgeResponseDto = z.infer<typeof retrieveFitnessKnowledgeResponseSchema>;
+
+
