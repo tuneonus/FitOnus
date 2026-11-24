@@ -3,11 +3,10 @@ import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { AppError, isAppError } from '../../../../shared/errors/app-error.js';
 import type { Logger } from '../../../../shared/logging/logger.js';
 import type { KnowledgeService } from '../../../knowledge/index.js';
-import { selectHistoryWithinTokenBudget } from '../../domain/history-budget.js';
+import { CoachContextAssembler } from '../services/context-assembler.js';
 import type {
   ConversationRepository,
   GeminiService,
-  KnowledgeContextPayloadItem,
   MemoryExtractionJobQueue,
   MemoryRepository,
   UserContextRepository,
@@ -29,6 +28,8 @@ export type ChatWithCoachOutput = CoachResponse & {
 };
 
 export class ChatWithCoachUseCase {
+  private readonly contextAssembler: CoachContextAssembler;
+
   constructor(
     private readonly userContextRepo: UserContextRepository,
     private readonly geminiService: GeminiService,
@@ -39,7 +40,18 @@ export class ChatWithCoachUseCase {
     private readonly logger?: Pick<Logger, 'info' | 'warn'>,
     private readonly jobQueue?: MemoryExtractionJobQueue,
     private readonly onJobEnqueued?: () => void,
-  ) {}
+    contextAssembler?: CoachContextAssembler,
+  ) {
+    this.contextAssembler =
+      contextAssembler ??
+      new CoachContextAssembler({
+        userContextRepo: this.userContextRepo,
+        conversationRepo: this.conversationRepo,
+        memoryRepo: this.memoryRepo,
+        knowledgeService: this.knowledgeService,
+        logger: this.logger,
+      });
+  }
 
   async execute(input: ChatWithCoachInput): Promise<ChatWithCoachOutput> {
     if (!input.userId || !input.userId.trim()) {
@@ -65,9 +77,6 @@ export class ChatWithCoachUseCase {
     trimmedMessage: string,
     input: ChatWithCoachInput,
   ): Promise<ChatWithCoachOutput> {
-    const timezone = input.timezone || 'UTC';
-    const context = await this.userContextRepo.getUserFitnessContext(userId, timezone);
-
     // 1. Resolve or create persistent conversation if repository configured
     let conversationId = input.conversationId?.trim();
     if (this.conversationRepo) {
@@ -98,81 +107,38 @@ export class ChatWithCoachUseCase {
       );
     }
 
-    // 3. Resolve conversation history if not supplied by client
-    let history = input.history ?? [];
-    if (history.length === 0 && this.conversationRepo && conversationId) {
-      const pastMessages = await this.conversationRepo.getMessages(userId, conversationId, 15);
-      const eligible = pastMessages
-        .filter((m) => m.id !== userMsgId && m.text && m.text.trim().length > 0)
-        .map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          text: m.text,
-        }));
-      history = selectHistoryWithinTokenBudget(eligible, {
-        maxTokens: input.maxHistoryTokens ?? 800,
-        maxTurns: 10,
-      });
-    }
+    // 3. Assemble and budget unified context via Centralized Context Assembler
+    const assembled = await this.contextAssembler.assemble({
+      userId,
+      message: trimmedMessage,
+      timezone: input.timezone,
+      conversationId,
+      clientMessageId: userMsgId,
+      clientHistory: input.history,
+      maxHistoryTokens: input.maxHistoryTokens,
+    });
 
-    // 4. Retrieve user-approved fitness memories if enabled
-    const memories = this.memoryRepo
-      ? await this.memoryRepo.getActiveMemoriesForContext(userId, trimmedMessage)
-      : [];
-
-    // 5. Retrieve grounded knowledge if knowledge service configured
-    let knowledgeItems: KnowledgeContextPayloadItem[] = [];
-    if (this.knowledgeService) {
-      try {
-        const hybridChunks = await this.knowledgeService.searchHybrid(trimmedMessage, {
-          limit: 3,
-          minSimilarity: 0.35,
-        });
-
-        if (hybridChunks.length > 0) {
-          const ragContext = this.knowledgeService.buildRagContext(hybridChunks, {
-            maxTokens: 1200,
-            maxChunks: 3,
-            minSimilarity: 0.35,
-          });
-          knowledgeItems = ragContext.items.map((item) => ({
-            documentSlug: item.documentSlug,
-            documentTitle: item.documentTitle,
-            category: item.category,
-            chunkIndex: item.chunkIndex,
-            content: item.content,
-            citation: item.citation,
-          }));
-        }
-      } catch (err) {
-        // Safe fallback: log error without leaking sensitive user data, and continue normally
-        this.logger?.warn?.(
-          `[CoachRAG] Knowledge retrieval failed; falling back to ungrounded coach chat. Error: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        knowledgeItems = [];
-      }
-    }
-
-    // 6. Generate coach response using Gemini
-    const effectiveHistory = input.history ?? (history && history.length > 0 ? history : undefined);
+    // 4. Generate coach response using Gemini (exact arity for backward compatibility)
+    const effectiveHistory = assembled.history.length > 0 ? assembled.history : undefined;
     const response =
-      knowledgeItems.length > 0
+      assembled.knowledge.length > 0
         ? await this.geminiService.generateCoachResponse(
             trimmedMessage,
-            context,
+            assembled.context,
             effectiveHistory,
-            memories.length > 0 ? memories : undefined,
-            knowledgeItems,
+            assembled.memories.length > 0 ? assembled.memories : undefined,
+            assembled.knowledge,
           )
-        : memories.length > 0
+        : assembled.memories.length > 0
           ? await this.geminiService.generateCoachResponse(
               trimmedMessage,
-              context,
+              assembled.context,
               effectiveHistory,
-              memories,
+              assembled.memories,
             )
           : await this.geminiService.generateCoachResponse(
               trimmedMessage,
-              context,
+              assembled.context,
               effectiveHistory,
             );
 

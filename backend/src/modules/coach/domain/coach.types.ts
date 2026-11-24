@@ -50,6 +50,15 @@ export interface UserFitnessContext {
   latestWeightKg: number | null;
 }
 
+export interface KnowledgeContextPayloadItem {
+  documentSlug: string;
+  documentTitle: string;
+  category: string;
+  chunkIndex: number;
+  content: string;
+  citation: string;
+}
+
 export type BlockType =
   | 'metrics'
   | 'workout'

@@ -242,6 +242,9 @@ async def generate_coach_reply(
         outcome=outcome,
         usage=usage,
         tool_calls_count=tool_calls_count,
+        memories_count=len(request.memories),
+        knowledge_count=len(request.knowledge),
+        history_turns=len(request.history),
     )
     return CoachChatResponse(
         outcome=outcome,  # type: ignore[arg-type]

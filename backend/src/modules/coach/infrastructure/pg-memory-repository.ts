@@ -275,9 +275,9 @@ export class PgMemoryRepository implements MemoryRepository {
         let score = 0;
         const textLower = row.text.toLowerCase();
 
-        // Safety prioritization: Injury memories are pinned/boosted for movement queries
-        const isWorkoutQuery = /(workout|exercise|squat|bench|deadlift|press|run|cardio|lift|pain|injury|shoulder|knee|back|leg)/i.test(qLower);
-        const isNutritionQuery = /(food|eat|diet|protein|calorie|carb|fat|meal|snack|supplement|allergy|fasting)/i.test(qLower);
+        // Safety prioritization: Injury memories are pinned/boosted for movement queries (English, Tamil, Tanglish)
+        const isWorkoutQuery = /(workout|exercise|squat|bench|deadlift|press|run|cardio|lift|pain|injury|shoulder|knee|back|leg|chest|arm|வலி|காயம்|தோள்பட்டை|முட்டி|முழங்கால்|இடுப்பு|முதுகு|சுளுக்கு|மார்பு|vali|valikuthu|kaayam|tholpattai|mutti|iduppu|mudhugu|soreness)/i.test(qLower);
+        const isNutritionQuery = /(food|eat|diet|protein|calorie|carb|fat|meal|snack|supplement|allergy|fasting|water|hydration|உணவு|சாப்பாடு|தண்ணீர்|முட்டை|பால்|புரதம்|saapadu|unavu|thanni|muttai|saapdalama|diet)/i.test(qLower);
 
         if (isWorkoutQuery && (row.category === 'injuries' || row.category === 'medical')) {
           score += 10;

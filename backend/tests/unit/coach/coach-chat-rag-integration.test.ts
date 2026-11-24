@@ -185,13 +185,13 @@ describe('AI Coach Chat RAG Grounding & Hybrid Retrieval Integration', () => {
 
     const result = await useCase.execute({
       userId: USER_ID,
-      message: 'Hi coach, good morning!',
+      message: 'What is the best way to warm up?',
     });
 
     expect(mockKnowledgeService.searchHybrid).toHaveBeenCalled();
     // When no chunks match, knowledge items are empty so standard 3 arguments are passed
     expect(mockGeminiService.generateCoachResponse).toHaveBeenCalledWith(
-      'Hi coach, good morning!',
+      'What is the best way to warm up?',
       mockContext,
       undefined,
     );

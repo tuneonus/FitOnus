@@ -20,6 +20,7 @@ DATASET_FILES: dict[str, str] = {
     "tools": "function_calling_benchmark.json",
     "safety": "safety_benchmark.json",
     "memory": "memory_benchmark.json",
+    "context": "context_engineering_benchmark.json",
 }
 
 

@@ -2,10 +2,11 @@ import type {
   ChatMessageTurn,
   CoachResponse,
   CoachInsightsResponse,
+  KnowledgeContextPayloadItem,
   UserFitnessContext,
 } from '../domain/coach.types.js';
 
-export type { ChatMessageTurn };
+export type { ChatMessageTurn, KnowledgeContextPayloadItem };
 import type {
   ConversationSummary,
   ConversationDetail,
@@ -21,15 +22,6 @@ import type { MemoryExtractionJob } from '../domain/extraction-job.types.js';
 
 export interface UserContextRepository {
   getUserFitnessContext(userId: string, timezone?: string): Promise<UserFitnessContext>;
-}
-
-export interface KnowledgeContextPayloadItem {
-  documentSlug: string;
-  documentTitle: string;
-  category: string;
-  chunkIndex: number;
-  content: string;
-  citation: string;
 }
 
 export interface CoachChatService {

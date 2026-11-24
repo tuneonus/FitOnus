@@ -9,6 +9,8 @@ purpose, bump PROMPT_VERSION and regenerate the golden files in the same change,
 change is visible in review.
 """
 
+import re
+
 from onusfit_ai.features.coach.domain.chat import (
     ChatTurn,
     KnowledgeContextItem,
@@ -17,6 +19,37 @@ from onusfit_ai.features.coach.domain.chat import (
 from onusfit_ai.shared.utils.js_compat import js_nullish, js_num
 
 PROMPT_VERSION = "coach_chat_v1_node_parity"
+
+
+def sanitize_context_untrusted_text(text: str) -> str:
+    """Sanitizes untrusted text inside memories, history, or knowledge to prevent injection/breakout."""
+    if not text:
+        return ""
+    # 1. Neutralize XML delimiter breakouts
+    cleaned = re.sub(
+        r"</?(?:retrieved_knowledge|knowledge_source|system|context_manifest)[^>]*>",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+    # 2. Neutralize instruction override headers that start a line
+    cleaned = re.sub(
+        r"(?m)^\s*(?:SYSTEM\s+INSTRUCTION|CRITICAL\s+RULES|IGNORE\s+ALL\s+PREVIOUS\s+INSTRUCTIONS)\s*:",
+        "[REDACTED_OVERRIDE]:",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    return cleaned.strip()
+
+
+def sanitize_history_turn_text(text: str) -> str:
+    """Prevents fake conversational turn spoofing inside previous chat history."""
+    if not text:
+        return ""
+    cleaned = sanitize_context_untrusted_text(text)
+    # If a previous turn contains a newline immediately followed by "User:" or "Coach:", indent it
+    # so Gemini does not parse it as a new dialogue turn.
+    return re.sub(r"\n(?=(?:User|Coach|System|Assistant)\s*:)", "\n ", cleaned)
 
 
 def build_system_prompt(context: UserFitnessContext) -> str:
@@ -119,7 +152,7 @@ def build_prompt(
     if memories:
         prompt += "USER-APPROVED FITNESS MEMORIES & PREFERENCES:\n"
         for memory in memories:
-            prompt += f"- {memory}\n"
+            prompt += f"- {sanitize_context_untrusted_text(memory)}\n"
         prompt += "\n"
 
     if knowledge:
@@ -134,7 +167,7 @@ def build_prompt(
             prompt += (
                 f"[Source {idx}: {item.document_title} | slug: {item.document_slug} | "
                 f"category: {item.category} | chunk: {item.chunk_index}]\n"
-                f"{item.content}\n\n"
+                f"{sanitize_context_untrusted_text(item.content)}\n\n"
             )
         prompt += (
             "</retrieved_knowledge>\n\n"
@@ -148,8 +181,9 @@ def build_prompt(
         prompt += "PREVIOUS RECENT CHAT HISTORY:\n"
         for turn in history[-6:]:
             speaker = "User" if turn.role == "user" else "Coach"
-            prompt += f"{speaker}: {turn.text}\n"
+            prompt += f"{speaker}: {sanitize_history_turn_text(turn.text)}\n"
         prompt += "\n"
 
-    prompt += f"CURRENT USER INQUIRY:\n{message}\n\nREPLY STRICTLY IN VALID JSON ONLY:"
+    sanitized_msg = sanitize_context_untrusted_text(message)
+    prompt += f"CURRENT USER INQUIRY:\n{sanitized_msg}\n\nREPLY STRICTLY IN VALID JSON ONLY:"
     return prompt
