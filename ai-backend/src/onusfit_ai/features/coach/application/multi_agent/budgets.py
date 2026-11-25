@@ -21,22 +21,41 @@ from onusfit_ai.features.coach.domain.multi_agent import (
     MultiAgentExecutionBudget,
 )
 
-# Deterministic clinical red flags requiring medical disclaimer & workout intensity halt
+# Deterministic clinical red flags requiring medical notice & workout halt (EN / TA / Tanglish)
 _RED_FLAG_PATTERNS: Final[list[re.Pattern[str]]] = [
-    re.compile(r"\b(chest\s+pain|angina|cardiac|tight\s+chest)\b", re.IGNORECASE),
     re.compile(
-        r"\b(fractur\w*|broken\s+bone|acute\s+(\w+\s+)?tear|severe\s+sharp\s+pain)\b",
+        r"\b(chest\s+pain|angina|cardiac|tight\s+chest|shortness\s+of\s+breath)\b",
         re.IGNORECASE,
     ),
-    re.compile(r"\b(dizziness|faint\w*|syncope|vertigo|blackout\w*)\b", re.IGNORECASE),
+    re.compile(
+        r"\b(fractur\w*|broken\s+bone|cast|acute\s+(\w+\s+)?tear|severe\s+sharp\s+pain)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\b(dizziness|dizzy|faint\w*|syncope|vertigo|blackout\w*)\b", re.IGNORECASE),
     re.compile(r"\b(post[\s-]surgery|unhealed\s+wound)\b", re.IGNORECASE),
     re.compile(r"\b(numbness|tingling|radiating\s+pain)\b", re.IGNORECASE),
+    re.compile(r"(?:நெஞ்சு\s*வலி|மார்பு\s*வலி|மூச்சு\s*த்திணறல்|மூச்சுத்\s*திணறல்|மயக்கம்|தலைச்சுற்றல்|எலும்பு\s*முறிவு|மரத்துப்\s*போதல்)"),
+    re.compile(
+        r"\b(?:nenju\s+vali\w*|marbu\s+vali\w*|moochu\s*thinaral|mayakkam|thalai\s*suth\w*|elumbu\s*murivu)\b",
+        re.IGNORECASE,
+    ),
 ]
 
 _INJECTION_PATTERNS: Final[list[re.Pattern[str]]] = [
-    re.compile(r"(?i)\b(?:ignore\s+(?:all\s+)?previous\s+instructions?)\b"),
-    re.compile(r"(?i)\b(?:system\s+instruction|critical\s+rules|override\s+rules)\s*:"),
-    re.compile(r"</?(?:system|grounding_observations|retrieved_knowledge|context_manifest)[^>]*>"),
+    re.compile(r"(?i)\b(?:ignore\s+(?:all\s+|any\s+)?previous\s+instructions?)\b"),
+    re.compile(
+        r"(?i)\b(?:system\s+instruction|system\s+prompt|critical\s+rules|override\s+rules|new\s+system\s+directive|developer\s+(?:prompt|instruction))\s*:"
+    ),
+    re.compile(
+        r"(?i)</?(?:system|developer|grounding_observations|retrieved_knowledge|context_manifest|conversation)[^>]*>"
+        r"|<\|(?:im_start|im_end|system|assistant|user)\|>|\[/?INST\]|<<\s*/?\s*SYS\s*>>"
+    ),
+    re.compile(r"[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]"),
+    re.compile(
+        r"முந்தைய\s+(?:விதிகளை|வழிமுறைகளை)\s*(?:மறந்துவிடு|புறக்கணி)"
+        r"|\b(?:munthaiya|palaya)\s+(?:vidhigalai|rules-?(?:ai|a))\s+(?:maranthudu|ignore\s+pannu)\b",
+        re.IGNORECASE,
+    ),
 ]
 
 _CREDENTIAL_PATTERNS: Final[list[re.Pattern[str]]] = [

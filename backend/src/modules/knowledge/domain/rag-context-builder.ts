@@ -51,15 +51,34 @@ export interface RagContextBuilderOptions {
  * Sanitizes untrusted knowledge content to neutralize prompt-injection attempts
  * or XML tag breakout.
  */
+function stripControlChars(input: string): string {
+  let out = '';
+  for (let i = 0; i < input.length; i += 1) {
+    const code = input.charCodeAt(i);
+    if (
+      (code <= 0x1f && code !== 0x09 && code !== 0x0a && code !== 0x0d) ||
+      (code >= 0x7f && code <= 0x9f)
+    ) {
+      continue;
+    }
+    out += input[i];
+  }
+  return out;
+}
+
 export function sanitizeUntrustedContent(content: string): string {
   if (!content) return '';
 
-  return content
-    // Neutralize XML closing/opening tags matching our delimiter
-    .replace(/<\/?retrieved_knowledge>/gi, '')
-    .replace(/<\/?knowledge_source[^>]*>/gi, '')
-    // Neutralize fake system headers or instruction overrides
-    .replace(/(?:SYSTEM\s+INSTRUCTION|CRITICAL\s+RULES|IGNORE\s+ALL\s+PREVIOUS\s+INSTRUCTIONS)\s*:/gi, '[REDACTED_INSTRUCTION_OVERRIDE]:')
+  return stripControlChars(content)
+    // Strip zero-width, BOM, bidi overrides, and Unicode line/paragraph separators
+    .replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g, '')
+    .replace(/[\u2028\u2029]/g, '\n')
+    // Neutralize XML & chat-template delimiters matching prompt boundaries
+    .replace(/<\/?(?:retrieved_knowledge|knowledge_source|system|developer|assistant|user|human|context_manifest|grounding_observations|conversation|tool_output|instructions?)(?:\s[^>]*)?>/gi, '')
+    .replace(/<\|(?:im_start|im_end|system|assistant|user|developer|endoftext)\|>|\[\/?INST\]|<<\s*\/?\s*SYS\s*>>/gi, '')
+    // Neutralize fake system/developer headers or instruction overrides
+    .replace(/\b(?:SYSTEM\s+(?:INSTRUCTIONS?|PROMPT)|SYSTEM|CRITICAL\s+RULES?|NEW\s+SYSTEM\s+DIRECTIVE|OVERRIDE\s+RULES?|DEVELOPER\s+(?:INSTRUCTIONS?|MESSAGE|PROMPT|RULES?)|DEVELOPER)\s*:/gi, '[REDACTED_INSTRUCTION_OVERRIDE]:')
+    .replace(/\bIGNORE\s+(?:ALL\s+|ANY\s+)?PREVIOUS\s+INSTRUCTIONS?\b\s*:?/gi, '[REDACTED_INSTRUCTION_OVERRIDE]:')
     .trim();
 }
 

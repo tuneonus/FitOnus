@@ -20,8 +20,8 @@ logger = logging.getLogger("onusfit_ai.mcp.security")
 
 # Injection header directives that attempt to hijack instruction hierarchy
 INJECTION_HEADER_PATTERNS = [
-    re.compile(r"(?i)\b(?:system\s*instruction|critical\s*rules|ignore\s*previous\s*instructions?)\s*:"),
-    re.compile(r"(?i)\b(?:new\s*system\s*directive|override\s*rules|system\s*prompt)\s*:"),
+    re.compile(r"(?i)\b(?:system\s*instructions?|critical\s*rules?|ignore\s*(?:all\s+|any\s+)?previous\s*instructions?)\s*:?"),
+    re.compile(r"(?i)\b(?:new\s*system\s*directive|override\s*rules|system\s*prompt|developer\s*(?:instruction|prompt|message))\s*:"),
     re.compile(r"(?i)\b(?:assistant\s*:|human\s*:|user\s*:)\s*"),
 ]
 
@@ -33,8 +33,18 @@ DELIMITER_BREAKOUT_TOKENS = [
     "<retrieved_knowledge>",
     "</system>",
     "<system>",
+    "</developer>",
+    "<developer>",
     "</context_manifest>",
     "<context_manifest>",
+    "</conversation>",
+    "<conversation>",
+    "<|im_start|>",
+    "<|im_end|>",
+    "[INST]",
+    "[/INST]",
+    "<<SYS>>",
+    "<</SYS>>",
     "```system",
 ]
 
@@ -77,7 +87,21 @@ class McpSecurityGuardrails:
             )
 
     def validate_tool_arguments(self, tool_name: str, args: dict[str, Any]) -> dict[str, Any]:
-        """Validate input arguments against Pydantic schema."""
+        """Validate input arguments against Pydantic schema and block cross-user overrides."""
+        for forbidden_key in (
+            "user_id",
+            "userId",
+            "target_user_id",
+            "targetUserId",
+            "account_id",
+            "accountId",
+            "member_id",
+            "memberId",
+        ):
+            if forbidden_key in args:
+                raise McpSecurityError(
+                    f"Cross-user override argument '{forbidden_key}' is forbidden."
+                )
         schema = TOOL_ARG_SCHEMAS.get(tool_name)
         if not schema:
             return args
@@ -90,21 +114,25 @@ class McpSecurityGuardrails:
 
     def sanitize_tool_output(self, tool_name: str, raw_output: str) -> str:
         """Sanitize tool result to neutralize prompt injection attacks and delimiter breakouts."""
+        from onusfit_ai.shared.utils.guardrails import (
+            redact_runtime_secrets,
+            strip_invisible_and_control,
+        )
+
+        sanitized = redact_runtime_secrets(strip_invisible_and_control(raw_output))
         if not self.config.enforce_prompt_injection_sanitization:
-            return raw_output
+            return sanitized
 
-        sanitized = raw_output
-
-        # 1. Neutralize boundary delimiter breakouts
+        # 1. Neutralize boundary delimiter breakouts (case-insensitive)
         for token in DELIMITER_BREAKOUT_TOKENS:
-            if token in sanitized:
+            if token.lower() in sanitized.lower():
                 logger.warning(
                     "Detected delimiter breakout attempt '%s' in tool '%s' output",
                     token,
                     tool_name,
                 )
                 safe_replacement = token.replace("<", "[").replace(">", "]").replace("`", "'")
-                sanitized = sanitized.replace(token, safe_replacement)
+                sanitized = re.sub(re.escape(token), safe_replacement, sanitized, flags=re.IGNORECASE)
 
         # 2. Neutralize injection directive headers
         for pattern in INJECTION_HEADER_PATTERNS:
@@ -128,3 +156,4 @@ class McpSecurityGuardrails:
             match = pattern.search(text)
             if match:
                 raise McpPromptInjectionError(match.group(0))
+

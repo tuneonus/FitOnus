@@ -41,7 +41,12 @@ from onusfit_ai.shared.logging import (
     classify_media_validation_error,
 )
 from onusfit_ai.shared.utils.audio import decode_audio_base64
-from onusfit_ai.shared.utils.image import decode_image_base64, strip_jpeg_exif_metadata
+from onusfit_ai.shared.utils.guardrails import (
+    apply_output_guardrail,
+    assess_input_guardrail,
+    strip_image_metadata,
+)
+from onusfit_ai.shared.utils.image import decode_image_base64
 from onusfit_ai.shared.utils.js_compat import strict_json_loads, strip_code_fences
 from onusfit_ai.shared.utils.media import InvalidMediaError
 
@@ -154,7 +159,7 @@ async def generate_coach_reply(
                 raw_img = decode_image_base64(
                     request.image.base64, claimed_mime_type=request.image.mime_type
                 )
-                safe_img = strip_jpeg_exif_metadata(raw_img)
+                safe_img = strip_image_metadata(raw_img)
                 total_media_bytes += len(safe_img)
                 exif_stripped = len(safe_img) != len(raw_img)
                 validated_media.append(
@@ -277,6 +282,7 @@ async def generate_coach_reply(
             trace_id=trace_id,
         )
 
+    input_assessment = assess_input_guardrail(request.message)
     prompt = build_prompt(
         request.message,
         request.context,
@@ -468,11 +474,15 @@ async def generate_coach_reply(
                     verified_sources.append(s)
             sources = verified_sources
 
+        safe_text, enforced_medical = apply_output_guardrail(
+            parsed_output.text,
+            input_assessment=input_assessment,
+        )
         result = CoachChatResult(
-            text=parsed_output.text,
+            text=safe_text,
             follow_ups=list(parsed_output.follow_ups),
             sources=sources,
-            medical_note=parsed_output.medical_note,
+            medical_note=bool(parsed_output.medical_note or enforced_medical),
             blocks=None,
             tool_calls=executed_tools,
             citations=citations,

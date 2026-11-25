@@ -64,7 +64,8 @@ from onusfit_ai.features.coach.domain.multi_agent import (
 from onusfit_ai.shared.contracts.common import Usage
 from onusfit_ai.shared.llm.ports import MediaInput, TextGenerator
 from onusfit_ai.shared.utils.audio import decode_audio_base64
-from onusfit_ai.shared.utils.image import decode_image_base64, strip_jpeg_exif_metadata
+from onusfit_ai.shared.utils.guardrails import strip_image_metadata
+from onusfit_ai.shared.utils.image import decode_image_base64
 
 logger = logging.getLogger("onusfit_ai.coach.multi_agent.executor")
 
@@ -294,7 +295,7 @@ class MultiAgentCoachExecutor:
             validated_media.append(
                 MediaInput(
                     mime_type=request.image.mime_type,
-                    data=strip_jpeg_exif_metadata(raw_img),
+                    data=strip_image_metadata(raw_img),
                 )
             )
 

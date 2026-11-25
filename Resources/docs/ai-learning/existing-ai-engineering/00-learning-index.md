@@ -171,6 +171,14 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 
 ---
 
+## Phase 16: AI Security & Guardrails
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P16-All** | [**Phase 16: AI Security & Guardrails**](../phase-16-ai-security-guardrails.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/shared/utils/guardrails.py`<br>`ai-backend/src/onusfit_ai/features/{coach,meals,mcp,workout_planner}/*`<br>`backend/src/modules/knowledge/domain/rag-context-builder.ts`<br>`admin/package.json` (`next@16.4.6`) | `ai-backend/tests/test_security_guardrails.py`<br>`ai-backend/tests/evals/runner.py` (`451/451`, `68/68` security cases)<br>`ai-backend` pytest (`1267` passed, excluding Phase 14 `test_streaming_ai.py`)<br>`backend` (`706` passed) & `admin` (`299` passed, 0 audit vulns) |
+
+---
+
 ## Phase 18: Advanced AI Evaluation
 
 | Stage | Guide | Status | Core Implementation Files | Tests |

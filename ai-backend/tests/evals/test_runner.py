@@ -24,7 +24,7 @@ from tests.evals.runner import main, run_live_evaluation, run_offline_evaluation
 
 def test_offline_evaluation_execution() -> None:
     results = run_offline_evaluation()
-    assert len(results) == 401, f"Expected exactly 401 benchmark results, got {len(results)}"
+    assert len(results) == 451, f"Expected exactly 451 benchmark results, got {len(results)}"
     failures = [r for r in results if not r["passed"]]
     assert len(failures) == 0, f"Offline evaluation failures: {failures}"
 
@@ -167,7 +167,7 @@ def test_phase18_datasets_individually_executable() -> None:
         "rag_evaluation": 16,
         "agent_advanced": 12,
         "multimodal_advanced": 14,
-        "security_adversarial": 18,
+        "security_adversarial": 68,
         "performance_eval": 12,
     }
     for ds_key, expected_len in expected_counts.items():

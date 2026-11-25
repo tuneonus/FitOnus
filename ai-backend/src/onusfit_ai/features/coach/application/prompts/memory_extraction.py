@@ -51,17 +51,19 @@ def build_memory_extraction_prompt(
     """Builds the single extraction prompt passed to Gemini with response_schema."""
     prompt = f"{SYSTEM_INSTRUCTION}\n\n"
 
+    from onusfit_ai.shared.utils.guardrails import sanitize_untrusted_text
+
     if existing_memories:
         prompt += "KNOWN EXISTING USER MEMORIES (DO NOT DUPLICATE):\n"
         for mem in existing_memories:
-            prompt += f"- {mem}\n"
+            prompt += f"- {sanitize_untrusted_text(mem)}\n"
         prompt += "\n"
 
     prompt += "CONVERSATION DIALOGUE TO ANALYZE (UNTRUSTED USER CONTENT):\n"
     prompt += "<conversation>\n"
     for turn in turns:
         speaker = "USER" if turn.role == "user" else "COACH"
-        prompt += f"[{speaker}]: {turn.text}\n"
+        prompt += f"[{speaker}]: {sanitize_untrusted_text(turn.text)}\n"
     prompt += "</conversation>\n\n"
 
     prompt += "Extract all valid, stable user memories matching the rules. If none exist, return an empty candidates list."

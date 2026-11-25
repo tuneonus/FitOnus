@@ -36,7 +36,8 @@ from onusfit_ai.shared.logging import (
     MultimodalObservabilityTracker,
     classify_media_validation_error,
 )
-from onusfit_ai.shared.utils.image import decode_image_base64, strip_jpeg_exif_metadata
+from onusfit_ai.shared.utils.guardrails import strip_image_metadata
+from onusfit_ai.shared.utils.image import decode_image_base64
 from onusfit_ai.shared.utils.js_compat import js_round, strict_json_loads, strip_code_fences
 from onusfit_ai.shared.utils.media import InvalidMediaError
 
@@ -77,7 +78,7 @@ async def analyze_meal_photo(
     val_started = time.monotonic()
     try:
         raw_bytes = decode_image_base64(request.image.base64)
-        stripped = strip_jpeg_exif_metadata(raw_bytes)
+        stripped = strip_image_metadata(raw_bytes)
     except InvalidMediaError as exc:
         val_ms = (time.monotonic() - val_started) * 1000.0
         tracker.record_validation_failure(

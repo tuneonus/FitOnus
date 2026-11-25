@@ -37,26 +37,38 @@ def build_workout_generation_user_prompt(
     rag_context: list[str] | None = None,
     language: str = "en",
 ) -> str:
+    from onusfit_ai.shared.utils.guardrails import sanitize_untrusted_text
+
+    safe_goal = sanitize_untrusted_text(goal)
+    safe_exp = sanitize_untrusted_text(experience_level)
+    safe_env = sanitize_untrusted_text(environment)
+    safe_lang = sanitize_untrusted_text(language)
+    safe_equip = [sanitize_untrusted_text(item) for item in available_equipment]
+    safe_limits = [sanitize_untrusted_text(item) for item in physical_limitations]
+    safe_targets = [sanitize_untrusted_text(item) for item in (target_muscles or [])]
+    safe_pref = [sanitize_untrusted_text(item) for item in (preferred_exercises or [])]
+    safe_excl = [sanitize_untrusted_text(item) for item in (excluded_exercises or [])]
     prompt = f"""Generate a {days_per_week}-day weekly workout plan tailored to the following user profile:
 
 **User Profile & Constraints:**
-- Goal: {goal}
-- Experience Level: {experience_level}
-- Available Equipment: {", ".join(available_equipment) if available_equipment else "Bodyweight only"}
+- Goal: {safe_goal}
+- Experience Level: {safe_exp}
+- Available Equipment: {", ".join(safe_equip) if safe_equip else "Bodyweight only"}
 - Training Frequency: {days_per_week} days per week
 - Target Session Duration: {session_duration_minutes} minutes
-- Environment: {environment}
-- Physical Limitations / Injuries: {", ".join(physical_limitations) if physical_limitations else "None reported"}
-- Preferred Target Muscles: {", ".join(target_muscles) if target_muscles else "Balanced full body"}
-- Preferred Exercises: {", ".join(preferred_exercises) if preferred_exercises else "None"}
-- Excluded Exercises: {", ".join(excluded_exercises) if excluded_exercises else "None"}
-- Output Language: {language}
+- Environment: {safe_env}
+- Physical Limitations / Injuries: {", ".join(safe_limits) if safe_limits else "None reported"}
+- Preferred Target Muscles: {", ".join(safe_targets) if safe_targets else "Balanced full body"}
+- Preferred Exercises: {", ".join(safe_pref) if safe_pref else "None"}
+- Excluded Exercises: {", ".join(safe_excl) if safe_excl else "None"}
+- Output Language: {safe_lang}
 """
     if recent_training_summary:
-        prompt += f"\n**Recent Workout Performance:**\n{recent_training_summary}\n"
+        prompt += f"\n**Recent Workout Performance:**\n{sanitize_untrusted_text(recent_training_summary)}\n"
 
     if rag_context:
-        prompt += "\n**Evidence & Knowledge Excerpts:**\n" + "\n---\n".join(rag_context) + "\n"
+        safe_rag = [sanitize_untrusted_text(chunk) for chunk in rag_context]
+        prompt += "\n**Evidence & Knowledge Excerpts:**\n" + "\n---\n".join(safe_rag) + "\n"
 
     prompt += f"\n**Available Catalog Exercises (ONLY choose from this list):**\n{catalog_exercises_summary}\n"
     prompt += "\nRespond strictly with the structured WeeklyWorkoutSchedule schema."
@@ -74,19 +86,26 @@ def build_workout_adaptation_user_prompt(
     catalog_exercises_summary: str = "",
     language: str = "en",
 ) -> str:
+    from onusfit_ai.shared.utils.guardrails import sanitize_untrusted_text
+
+    safe_missed = [sanitize_untrusted_text(item) for item in missed_sessions]
+    safe_new_equip = [sanitize_untrusted_text(item) for item in (new_equipment or [])]
+    safe_diff = sanitize_untrusted_text(difficulty_feedback) if difficulty_feedback else "None"
+    safe_feedback = sanitize_untrusted_text(user_feedback) if user_feedback else "None"
+    safe_lang = sanitize_untrusted_text(language)
     prompt = f"""Adapt the existing weekly workout plan based on dynamic changes and user feedback.
 
 **Current Active Plan:**
 {current_plan_json}
 
 **Adaptation Triggers:**
-- Missed Sessions: {", ".join(missed_sessions) if missed_sessions else "None"}
+- Missed Sessions: {", ".join(safe_missed) if safe_missed else "None"}
 - Reduced Duration: {f"{reduced_duration_minutes} minutes" if reduced_duration_minutes else "Unchanged"}
-- Updated Equipment: {", ".join(new_equipment) if new_equipment else "Unchanged"}
-- Difficulty Feedback: {difficulty_feedback or "None"}
-- User Feedback: {user_feedback or "None"}
+- Updated Equipment: {", ".join(safe_new_equip) if safe_new_equip else "Unchanged"}
+- Difficulty Feedback: {safe_diff}
+- User Feedback: {safe_feedback}
 - Recovery Score: {f"{recovery_score}/100" if recovery_score is not None else "Not provided"}
-- Output Language: {language}
+- Output Language: {safe_lang}
 
 **Adaptation Guidelines:**
 1. Preserve unaffected days and exercises wherever possible.

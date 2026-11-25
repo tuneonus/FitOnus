@@ -23,23 +23,9 @@ PROMPT_VERSION = "coach_chat_v1_node_parity"
 
 def sanitize_context_untrusted_text(text: str) -> str:
     """Sanitizes untrusted text inside memories, history, or knowledge to prevent injection/breakout."""
-    if not text:
-        return ""
-    # 1. Neutralize XML delimiter breakouts
-    cleaned = re.sub(
-        r"</?(?:retrieved_knowledge|knowledge_source|system|context_manifest)[^>]*>",
-        "",
-        text,
-        flags=re.IGNORECASE,
-    )
-    # 2. Neutralize instruction override headers that start a line
-    cleaned = re.sub(
-        r"(?m)^\s*(?:SYSTEM\s+INSTRUCTION|CRITICAL\s+RULES|IGNORE\s+ALL\s+PREVIOUS\s+INSTRUCTIONS)\s*:",
-        "[REDACTED_OVERRIDE]:",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    return cleaned.strip()
+    from onusfit_ai.shared.utils.guardrails import sanitize_untrusted_text
+
+    return sanitize_untrusted_text(text, strip_outer=True)
 
 
 def sanitize_history_turn_text(text: str) -> str:

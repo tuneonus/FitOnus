@@ -117,11 +117,17 @@ class McpToolRegistry:
         return list(self._prompts.values())
 
     def render_prompt(self, name: str, **kwargs: Any) -> McpPromptResult | None:
+        from onusfit_ai.shared.utils.guardrails import sanitize_untrusted_text
+
         handler = self._prompt_handlers.get(name)
         prompt = self._prompts.get(name)
         if not handler or not prompt:
             return None
-        raw = handler(**kwargs)
+        safe_kwargs = {
+            key: sanitize_untrusted_text(val) if isinstance(val, str) else val
+            for key, val in kwargs.items()
+        }
+        raw = handler(**safe_kwargs)
         if isinstance(raw, str):
             messages = [McpPromptMessage(role="user", content=raw)]
         else:

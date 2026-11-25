@@ -15,16 +15,25 @@ from onusfit_ai.features.workout_planner.domain.contracts import (
     WorkoutGenerationRequest,
 )
 
-# Medical red flags requiring immediate clinical avoidance
+# Medical red flags requiring immediate clinical avoidance (English, Tamil, and Tanglish)
 RED_FLAG_PATTERNS: Final[list[re.Pattern[str]]] = [
-    re.compile(r"\b(chest\s+pain|angina|cardiac|tight\s+chest)\b", re.IGNORECASE),
+    re.compile(
+        r"\b(chest\s+pain|angina|cardiac|tight\s+chest|shortness\s+of\s+breath)\b",
+        re.IGNORECASE,
+    ),
     re.compile(
         r"\b(fractur\w*|broken\s+bone|cast|acute\s+(\w+\s+)?tear|severe\s+sharp\s+pain)\b",
         re.IGNORECASE,
     ),
-    re.compile(r"\b(dizziness|faint\w*|syncope|vertigo|blackout\w*)\b", re.IGNORECASE),
+    re.compile(r"\b(dizziness|dizzy|faint\w*|syncope|vertigo|blackout\w*)\b", re.IGNORECASE),
     re.compile(r"\b(post[\s-]surgery|unhealed\s+wound)\b", re.IGNORECASE),
     re.compile(r"\b(numbness|tingling|radiating\s+pain)\b", re.IGNORECASE),
+    re.compile(r"(?:நெஞ்சு\s*வலி|மார்பு\s*வலி|மூச்சு\s*த்திணறல்|மூச்சுத்\s*திணறல்|மயக்கம்|தலைச்சுற்றல்|எலும்பு\s*முறிவு|மரத்துப்\s*போதல்|கடுமையான\s*(?:கூர்மையான\s*)?வலி)"),
+    re.compile(
+        r"\b(?:nenju\s+vali\w*|marbu\s+vali\w*|moochu\s*thinaral|mayakkam|thalai\s*suth\w*|"
+        r"elumbu\s*murivu|marathu\s*po\w*|koorumaiyana\s+vali)\b",
+        re.IGNORECASE,
+    ),
 ]
 
 # Injury contraindications: maps limitation keyword to forbidden exercise keywords

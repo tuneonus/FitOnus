@@ -36,7 +36,8 @@ from onusfit_ai.shared.logging import (
     classify_media_validation_error,
 )
 from onusfit_ai.shared.utils.audio import decode_audio_base64
-from onusfit_ai.shared.utils.image import decode_image_base64, strip_jpeg_exif_metadata
+from onusfit_ai.shared.utils.guardrails import strip_image_metadata
+from onusfit_ai.shared.utils.image import decode_image_base64
 from onusfit_ai.shared.utils.js_compat import js_round, strict_json_loads, strip_code_fences
 from onusfit_ai.shared.utils.media import InvalidMediaError
 
@@ -107,7 +108,7 @@ async def analyze_multimodal_meal(
             raw_image = decode_image_base64(
                 request.image.base64, claimed_mime_type=request.image.mime_type
             )
-            safe_image = strip_jpeg_exif_metadata(raw_image)
+            safe_image = strip_image_metadata(raw_image)
             image_bytes_len = len(safe_image)
             exif_stripped = len(safe_image) != len(raw_image)
             media_inputs.append(MediaInput(mime_type=request.image.mime_type, data=safe_image))
