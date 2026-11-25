@@ -30,6 +30,7 @@ import {
   createCoachModule,
   PythonCoachChatService,
   PythonCoachInsightsService,
+  PythonCoachStreamService,
   PythonSpeechTranscriber,
   PythonMemoryExtractor,
   type CoachModule,
@@ -315,6 +316,17 @@ export function createContainer(
       pythonTimeoutMs: aiBackend.timeoutMs,
       ...(logger ? { logger } : {}),
     }),
+    streamService: new PythonCoachStreamService({
+      clientConfig: {
+        baseUrl: aiBackend.url,
+        serviceSecret: aiBackend.serviceSecret,
+      },
+      resolveModels: resolveModelsFor('coach_chat'),
+      usageRecorder: appSettings.runtimeService,
+      pythonTimeoutMs: aiBackend.timeoutMs,
+      ...(logger ? { logger } : {}),
+    }),
+    streamingEnabled: aiBackend.streamingEnabled,
     insightsService: new PythonCoachInsightsService({
       client: pythonAi,
       resolveModels: resolveModelsFor('coach_insights'),

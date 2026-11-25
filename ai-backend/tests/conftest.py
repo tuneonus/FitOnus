@@ -1,11 +1,12 @@
 """Shared test helpers: signed service tokens, a fake LLM, and an app wired with the fake."""
 
+import asyncio
 import io
 import json
 import logging
 import time
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,13 @@ from pydantic import BaseModel
 from onusfit_ai.main import create_app
 from onusfit_ai.shared.auth import replay_cache
 from onusfit_ai.shared.llm.dependencies import get_embeddings_generator, get_llm
-from onusfit_ai.shared.llm.ports import EmbeddingResult, LlmResult, LlmUsage, MediaInput
+from onusfit_ai.shared.llm.ports import (
+    EmbeddingResult,
+    LlmResult,
+    LlmStreamChunk,
+    LlmUsage,
+    MediaInput,
+)
 from onusfit_ai.shared.logging import configure_logging
 
 SECRET = "test-secret-test-secret-test-secret-123"
@@ -68,13 +75,98 @@ class FakeLlm:
         parsed: Any | None = None,
         finish_reason: str | None = None,
         tool_calls: list[Any] | None = None,
+        stream_chunks: list[str] | None = None,
+        stream_delay_s: float = 0.0,
+        stream_error: Exception | None = None,
+        stream_error_after_chunks: int | None = None,
     ) -> None:
         self.text = text
         self.error = error
         self.parsed = parsed
         self.finish_reason = finish_reason
         self.tool_calls = tool_calls or []
+        self.stream_chunks = stream_chunks
+        self.stream_delay_s = stream_delay_s
+        self.stream_error = stream_error
+        self.stream_error_after_chunks = stream_error_after_chunks
         self.calls: list[dict[str, Any]] = []
+
+    async def generate_text_stream(
+        self,
+        prompt: str,
+        *,
+        primary_model: str,
+        fallback_model: str | None,
+        deadline_s: float,
+        media: MediaInput | None = None,
+        schema: type[BaseModel] | None = None,
+        tools: list[Any] | None = None,
+        tool_handler: Any | None = None,
+        max_tool_rounds: int = 3,
+        max_total_tool_calls: int = 5,
+        max_total_tokens: int | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[LlmStreamChunk]:
+        self.calls.append(
+            {
+                "stream": True,
+                "prompt": prompt,
+                "primary": primary_model,
+                "fallback": fallback_model,
+                "deadline_s": deadline_s,
+                "media": media,
+                "schema": schema,
+                "tools": tools,
+                "tool_handler": tool_handler,
+                "max_tool_rounds": max_tool_rounds,
+                "max_total_tool_calls": max_total_tool_calls,
+                "max_total_tokens": max_total_tokens,
+                **kwargs,
+            }
+        )
+        if self.error:
+            raise self.error
+        if self.stream_error and self.stream_error_after_chunks in (None, 0):
+            raise self.stream_error
+
+        chunks = (
+            self.stream_chunks
+            if self.stream_chunks is not None
+            else [self.text]
+        )
+        for idx, chunk_text in enumerate(chunks, start=1):
+            if self.stream_delay_s > 0:
+                await asyncio.sleep(self.stream_delay_s)
+            yield LlmStreamChunk(
+                text_delta=chunk_text,
+                model=primary_model,
+                is_fallback=False,
+            )
+            if (
+                self.stream_error is not None
+                and self.stream_error_after_chunks is not None
+                and idx >= self.stream_error_after_chunks
+            ):
+                raise self.stream_error
+
+        yield LlmStreamChunk(
+            text_delta="",
+            model=primary_model,
+            is_fallback=False,
+            finish_reason=self.finish_reason,
+            tool_calls=self.tool_calls,
+            is_final=True,
+            usage=LlmUsage(
+                model=primary_model,
+                is_fallback=False,
+                input_tokens=100,
+                output_tokens=20,
+                cached_tokens=0,
+                thinking_tokens=5,
+                total_tokens=125,
+                duration_ms=150,
+            ),
+        )
 
     async def generate_text(
         self,

@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 import { z } from 'zod';
 import { AUDIO_BODY_LIMIT } from '../../../shared/ai/body-limits.js';
 import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
+import { idempotencyHeadersSchema } from '../../../shared/http/schemas.js';
 import type { CoachController } from './coach.controller.js';
 import {
   chatRequestSchema,
@@ -51,6 +52,30 @@ export function createCoachRoutes(
           schema: coachResponseSchema,
         },
         handler: (req) => controller.chat(req),
+      }),
+
+      // 1b. Coach Chat Streaming (SSE)
+      defineRoute({
+        method: 'post',
+        path: '/chat/stream',
+        summary: 'Stream response from personal AI fitness coach via SSE',
+        description:
+          'Streams typed SSE progress events and incremental response deltas when AI_COACH_STREAMING_ENABLED is active.',
+        tags: ['Coach'],
+        access: { kind: 'authenticated' },
+        middleware: authMiddleware,
+        streaming: true,
+        request: {
+          headers: idempotencyHeadersSchema,
+          body: chatRequestSchema,
+        },
+        response: {
+          status: 200,
+          description: 'SSE stream of AI coach status, text deltas, and completion metadata',
+          message: 'Coach stream completed',
+          schema: z.object({ streamed: z.boolean() }),
+        },
+        handler: (req, res) => controller.streamChat(req, res),
       }),
 
       // 2. Coach Insights

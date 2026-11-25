@@ -119,40 +119,66 @@ export function AssistantMessage({
 
       <View style={styles.body}>
         {message.status === 'thinking' && (
-          <ThinkingIndicator toolCalls={message.toolCalls} />
+          <ThinkingIndicator
+            toolCalls={message.toolCalls}
+            statusMessage={message.statusMessage}
+          />
+        )}
+
+        {message.status === 'streaming' && (
+          <View style={styles.doneContent}>
+            {message.text ? (
+              <Text style={[styles.messageText, { color: colors.ink }]}>
+                {message.text}
+              </Text>
+            ) : null}
+            <ThinkingIndicator
+              toolCalls={message.toolCalls}
+              statusMessage={message.statusMessage}
+            />
+          </View>
         )}
 
         {message.status === 'error' && (
-          <View
-            style={[
-              styles.errorBox,
-              { backgroundColor: `${colors.bad}20` },
-            ]}
-          >
-            <View style={styles.errorHead}>
-              <AlertTriangle size={16} color={colors.bad} />
-              <Text style={[styles.errorTitle, { color: colors.ink }]}>
-                Response failed
+          <View style={styles.doneContent}>
+            {message.isPartial && message.text ? (
+              <Text style={[styles.messageText, { color: colors.ink }]}>
+                {message.text}
               </Text>
-            </View>
-            <Text style={[styles.errorMsg, { color: colors.muted }]}>
-              {message.text}
-            </Text>
-            {onRetry && (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={onRetry}
-                style={[
-                  styles.retryBtn,
-                  { backgroundColor: colors.surface },
-                ]}
-              >
-                <RefreshCw size={14} color={colors.ink} />
-                <Text style={[styles.retryText, { color: colors.ink }]}>
-                  Try again
+            ) : null}
+            <View
+              style={[
+                styles.errorBox,
+                { backgroundColor: `${colors.bad}20` },
+              ]}
+            >
+              <View style={styles.errorHead}>
+                <AlertTriangle size={16} color={colors.bad} />
+                <Text style={[styles.errorTitle, { color: colors.ink }]}>
+                  Response failed
                 </Text>
-              </TouchableOpacity>
-            )}
+              </View>
+              <Text style={[styles.errorMsg, { color: colors.muted }]}>
+                {message.isPartial
+                  ? message.statusMessage || 'Connection interrupted before completion.'
+                  : message.text}
+              </Text>
+              {onRetry && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={onRetry}
+                  style={[
+                    styles.retryBtn,
+                    { backgroundColor: colors.surface },
+                  ]}
+                >
+                  <RefreshCw size={14} color={colors.ink} />
+                  <Text style={[styles.retryText, { color: colors.ink }]}>
+                    Try again
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 
@@ -161,6 +187,12 @@ export function AssistantMessage({
             {message.text ? (
               <Text style={[styles.messageText, { color: colors.ink }]}>
                 {message.text}
+              </Text>
+            ) : null}
+
+            {message.isPartial ? (
+              <Text style={[styles.medicalNote, { color: colors.muted }]}>
+                Generation stopped — partial response shown above.
               </Text>
             ) : null}
 

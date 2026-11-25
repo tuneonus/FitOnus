@@ -46,6 +46,8 @@ export interface RouteSpec<T> {
    * route keeps the small limit, so this is the only place a bigger limit is granted.
    */
   bodyLimit?: string;
+  /** When true, handler streams directly (e.g. text/event-stream) after setting headers and flushes. */
+  streaming?: boolean;
   response: {
     status: number;
     description: string;
@@ -99,6 +101,9 @@ export function largeBodyRouteKeys(groups: readonly RouteGroup[]): ReadonlySet<s
 function respond(spec: AnyRouteSpec): RequestHandler {
   return async (req, res) => {
     const result = await spec.handler(req, res);
+    if (spec.streaming && (res.headersSent || res.writableEnded)) {
+      return;
+    }
     const data = spec.response.schema.parse(result.data);
     for (const [name, value] of Object.entries(result.headers ?? {})) res.setHeader(name, value);
     res.status(result.status ?? spec.response.status).json({

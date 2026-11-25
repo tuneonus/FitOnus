@@ -5,7 +5,13 @@ import { toolLabels } from '../services/aiToolContracts';
 import type { ToolName } from '../types/coach';
 import { useTheme } from '@/hooks/use-theme';
 
-export function ThinkingIndicator({ toolCalls = [] }: { toolCalls?: ToolName[] | undefined }) {
+export function ThinkingIndicator({
+  toolCalls = [],
+  statusMessage,
+}: {
+  toolCalls?: ToolName[] | undefined;
+  statusMessage?: string | undefined;
+}) {
   const { colors } = useTheme();
   const [step, setStep] = useState(0);
 
@@ -54,6 +60,10 @@ export function ThinkingIndicator({ toolCalls = [] }: { toolCalls?: ToolName[] |
 
   return (
     <View style={styles.container}>
+      {statusMessage ? (
+        <Text style={[styles.toolText, { color: colors.muted }]}>{statusMessage}</Text>
+      ) : null}
+
       {toolCalls.map((tool, i) => (
         <View key={tool} style={styles.toolRow}>
           {i < step ? (

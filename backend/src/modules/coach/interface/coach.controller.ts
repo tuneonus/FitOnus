@@ -1,10 +1,13 @@
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
+import { idempotencyHeadersSchema } from '../../../shared/http/schemas.js';
 import { AppError } from '../../../shared/errors/app-error.js';
 import type { SpeechTranscriber } from '../application/ports.js';
 import type { ChatWithCoachUseCase } from '../application/use-cases/chat-with-coach.js';
+import type { StreamCoachChatUseCase } from '../application/use-cases/stream-coach-chat.js';
+import { formatSseEvent } from '../domain/coach-stream.types.js';
 import type { GetCoachInsightsUseCase } from '../application/use-cases/get-coach-insights.js';
 import type { ManageConversationsUseCase } from '../application/use-cases/manage-conversations.js';
 import type { ManageMemoriesUseCase } from '../application/use-cases/manage-memories.js';
@@ -34,6 +37,7 @@ import type {
 
 export interface CoachController {
   chat(req: Request): Promise<RouteResult<CoachResponseDto>>;
+  streamChat(req: Request, res: Response): Promise<RouteResult<{ streamed: boolean }>>;
   getInsights(req: Request): Promise<RouteResult<CoachInsightsResponseDto>>;
   listConversations(req: Request): Promise<RouteResult<{ conversations: ConversationSummary[]; total: number; page: number; limit: number }>>;
   createConversation(req: Request): Promise<RouteResult<ConversationSummary>>;
@@ -54,6 +58,7 @@ export interface CoachController {
 
 export function createCoachController(deps: {
   chatWithCoach: ChatWithCoachUseCase;
+  streamCoachChat?: StreamCoachChatUseCase;
   getCoachInsights: GetCoachInsightsUseCase;
   manageConversations?: ManageConversationsUseCase;
   manageMemories?: ManageMemoriesUseCase;
@@ -90,6 +95,97 @@ export function createCoachController(deps: {
         status: 200,
         message: 'Coach response generated successfully',
         data,
+      };
+    },
+
+    async streamChat(req: Request, res: Response): Promise<RouteResult<{ streamed: boolean }>> {
+      const actor = requireActor(req);
+      if (!deps.streamCoachChat) {
+        throw new AppError(
+          'unprocessable',
+          'FEATURE_DISABLED',
+          'Streaming AI Coach is currently disabled.',
+        );
+      }
+      const { body, headers } = getValidated(req, {
+        body: chatRequestSchema,
+        headers: idempotencyHeadersSchema,
+      });
+
+      const abortController = new AbortController();
+      const onClose = (): void => {
+        if (!res.writableFinished) {
+          abortController.abort(new Error('CLIENT_DISCONNECTED'));
+        }
+      };
+      res.on('close', onClose);
+
+      let headersFlushed = false;
+      const openSseStream = (): void => {
+        if (headersFlushed || res.headersSent) return;
+        headersFlushed = true;
+        res.status(200);
+        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache, no-transform');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+        res.flushHeaders?.();
+      };
+
+      const writeChunkWithBackpressure = async (chunk: string): Promise<void> => {
+        if (res.writableEnded || res.destroyed || abortController.signal.aborted) return;
+        const canContinue = res.write(chunk);
+        if (!canContinue) {
+          await new Promise<void>((resolve) => {
+            const cleanup = (): void => {
+              res.off('drain', onDrain);
+              res.off('close', onSocketClose);
+            };
+            const onDrain = (): void => {
+              cleanup();
+              resolve();
+            };
+            const onSocketClose = (): void => {
+              cleanup();
+              resolve();
+            };
+            res.once('drain', onDrain);
+            res.once('close', onSocketClose);
+          });
+        }
+      };
+
+      try {
+        await deps.streamCoachChat.execute(
+          {
+            userId: actor.userId,
+            message: body.message,
+            timezone: body.timezone,
+            history: body.history,
+            conversationId: body.conversationId,
+            clientMessageId: body.clientMessageId,
+            idempotencyKey: headers['idempotency-key'],
+            signal: abortController.signal,
+          },
+          {
+            onStreamReady: openSseStream,
+            onEvent: async (event) => {
+              openSseStream();
+              await writeChunkWithBackpressure(formatSseEvent(event));
+            },
+          },
+        );
+      } finally {
+        res.off('close', onClose);
+        if (headersFlushed && !res.writableEnded && !res.destroyed) {
+          res.end();
+        }
+      }
+
+      return {
+        status: 200,
+        message: 'Coach stream completed',
+        data: { streamed: true },
       };
     },
 

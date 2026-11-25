@@ -15,7 +15,9 @@ import type {
   MemoryExtractor,
   SpeechTranscriber,
 } from './application/ports.js';
+import type { CoachChatStreamService } from './application/stream-ports.js';
 import { ChatWithCoachUseCase } from './application/use-cases/chat-with-coach.js';
+import { StreamCoachChatUseCase } from './application/use-cases/stream-coach-chat.js';
 import { GetCoachInsightsUseCase } from './application/use-cases/get-coach-insights.js';
 import { ManageConversationsUseCase } from './application/use-cases/manage-conversations.js';
 import { ManageMemoriesUseCase } from './application/use-cases/manage-memories.js';
@@ -37,9 +39,12 @@ export * from './domain/extraction-job.types.js';
 export * from './domain/intent-router.js';
 export * from './domain/context-deduplicator.js';
 export * from './domain/context-budget.js';
+export * from './domain/coach-stream.types.js';
 export * from './application/services/context-assembler.js';
 export * from './application/ports.js';
+export * from './application/stream-ports.js';
 export * from './application/use-cases/chat-with-coach.js';
+export * from './application/use-cases/stream-coach-chat.js';
 export * from './application/use-cases/get-coach-insights.js';
 export * from './application/use-cases/manage-conversations.js';
 export * from './application/use-cases/manage-memories.js';
@@ -47,6 +52,7 @@ export * from './application/services/memory-extraction-worker.js';
 export * from './domain/coach-insights.js';
 export * from './infrastructure/python-coach-insights-service.js';
 export * from './infrastructure/python-coach-chat-service.js';
+export * from './infrastructure/python-coach-stream-service.js';
 export * from './infrastructure/python-memory-extractor.js';
 export * from './infrastructure/python-speech-transcriber.js';
 export * from './infrastructure/pg-user-context-repository.js';
@@ -71,6 +77,7 @@ export interface CoachModule {
   /** Chat and insights generation behind one port (both served by the Python AI backend). */
   aiService: GeminiService;
   useCase: ChatWithCoachUseCase;
+  streamUseCase?: StreamCoachChatUseCase;
   insightsUseCase: GetCoachInsightsUseCase;
   manageConversations: ManageConversationsUseCase;
   manageMemories: ManageMemoriesUseCase;
@@ -85,6 +92,10 @@ export interface CreateCoachModuleOptions {
   db: Database;
   /** Coach chat text generation (the Python AI backend, `PythonCoachChatService`). */
   chatService: CoachChatService;
+  /** Optional SSE streaming Coach generation (`PythonCoachStreamService`). */
+  streamService?: CoachChatStreamService;
+  /** Master feature flag (`AI_COACH_STREAMING_ENABLED`), disabled by default. */
+  streamingEnabled?: boolean;
   /** Coach insights generation (the Python AI backend, `PythonCoachInsightsService`). */
   insightsService: CoachInsightsService;
   /** Speech transcription for `POST /coach/transcribe` (the Python AI backend). */
@@ -146,8 +157,26 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
   const manageConversations = new ManageConversationsUseCase(conversationRepo);
   const manageMemories = new ManageMemoriesUseCase(memoryRepo);
 
+  const streamUseCase = options.streamService
+    ? new StreamCoachChatUseCase({
+        userContextRepo,
+        streamService: options.streamService,
+        aiUsageGate: options.aiUsageGate,
+        streamingEnabled: Boolean(options.streamingEnabled),
+        conversationRepo,
+        memoryRepo,
+        ...(options.knowledgeService ? { knowledgeService: options.knowledgeService } : {}),
+        ...(options.logger ? { logger: options.logger } : {}),
+        jobQueue: memoryJobQueue,
+        onJobEnqueued: () => {
+          memoryWorker?.kick();
+        },
+      })
+    : undefined;
+
   const controller = createCoachController({
     chatWithCoach: useCase,
+    ...(streamUseCase ? { streamCoachChat: streamUseCase } : {}),
     getCoachInsights: insightsUseCase,
     manageConversations,
     manageMemories,
@@ -197,6 +226,7 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
     memoryWorker,
     aiService,
     useCase,
+    ...(streamUseCase ? { streamUseCase } : {}),
     insightsUseCase,
     manageConversations,
     manageMemories,

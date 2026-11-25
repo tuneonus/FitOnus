@@ -75,6 +75,7 @@ const appSchema = databaseSchema.extend({
   AI_BACKEND_SERVICE_SECRET: z.string().optional(),
   // HTTP timeout for one call to Python (mobile gives up at 30 s; Python's Gemini deadline is derived from this).
   AI_BACKEND_TIMEOUT_MS: integer(25_000, 1_000, 28_000),
+  AI_COACH_STREAMING_ENABLED: booleanString('false'),
   // Transactional e-mail (password reset). Unset/empty/"none" keeps the feature off (the endpoints answer 503).
   EMAIL_PROVIDER: z.preprocess(
     (value) => (typeof value === 'string' ? value.trim().toLowerCase() || undefined : value),
@@ -186,6 +187,7 @@ export type AppConfig = {
     url?: string;
     serviceSecret?: string;
     timeoutMs: number;
+    streamingEnabled?: boolean;
   };
   /** Outbound e-mail. `none` means no delivery channel is configured, so password reset stays disabled. */
   email: EmailConfig;
@@ -269,14 +271,15 @@ function aiBackendIssues(parsed: z.output<typeof appSchema>): string[] {
  * naming the missing keys (never values).
  */
 export function assertAiBackendConfigured(config: AppConfig): AppConfig & {
-  aiBackend: { url: string; serviceSecret: string; timeoutMs: number };
+  aiBackend: { url: string; serviceSecret: string; timeoutMs: number; streamingEnabled: boolean };
 } {
   const { url, serviceSecret, timeoutMs } = config.aiBackend;
+  const streamingEnabled = Boolean(config.aiBackend.streamingEnabled);
   const issues: string[] = [];
   if (!url) issues.push('AI_BACKEND_URL: required (AI Coach chat is served by the Python AI backend, see ai-backend/README.md)');
   if (!serviceSecret) issues.push('AI_BACKEND_SERVICE_SECRET: required (>= 32 characters; must equal AI_SERVICE_JWT_SECRET in ai-backend)');
   if (issues.length > 0 || !url || !serviceSecret) throw new ConfigError(issues);
-  return { ...config, aiBackend: { url, serviceSecret, timeoutMs } };
+  return { ...config, aiBackend: { url, serviceSecret, timeoutMs, streamingEnabled } };
 }
 
 function toEmailConfig(parsed: z.output<typeof appSchema>): EmailConfig {
@@ -526,6 +529,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
         ? { serviceSecret: parsed.AI_BACKEND_SERVICE_SECRET.trim() }
         : {}),
       timeoutMs: parsed.AI_BACKEND_TIMEOUT_MS,
+      streamingEnabled: parsed.AI_COACH_STREAMING_ENABLED,
     },
     email: toEmailConfig(parsed),
     notifications: toNotificationsConfig(parsed, serviceAccount),

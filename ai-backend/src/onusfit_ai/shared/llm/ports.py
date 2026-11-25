@@ -6,7 +6,7 @@ layers can depend on it without dragging Gemini or HTTP along. The only real imp
 """
 
 import re
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -83,6 +83,19 @@ class LlmResult:
 
 
 @dataclass(frozen=True)
+class LlmStreamChunk:
+    """One incremental unit yielded by `StreamingTextGenerator.generate_text_stream`."""
+
+    text_delta: str = ""
+    model: str = ""
+    is_fallback: bool = False
+    usage: LlmUsage | None = None
+    finish_reason: str | None = None
+    tool_calls: list[ToolExecutionResult] = field(default_factory=list)
+    is_final: bool = False
+
+
+@dataclass(frozen=True)
 class MediaInput:
     """An audio/image clip sent to Gemini together with the prompt."""
 
@@ -134,6 +147,30 @@ class TextGenerator(Protocol):
         system_instruction: str | None = None,
         user_id: str | None = None,
     ) -> LlmResult: ...
+
+
+class StreamingTextGenerator(Protocol):
+    """Optional streaming extension of TextGenerator using genuine incremental chunks."""
+
+    def generate_text_stream(
+        self,
+        prompt: str,
+        *,
+        primary_model: str,
+        fallback_model: str | None,
+        deadline_s: float,
+        media: MediaInput | Sequence[MediaInput] | None = None,
+        schema: type[BaseModel] | None = None,
+        tools: list[Any] | None = None,
+        tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
+        max_tool_rounds: int = 3,
+        max_total_tool_calls: int = 5,
+        max_total_tokens: int | None = None,
+        max_output_tokens: int | None = None,
+        system_instruction: str | None = None,
+        user_id: str | None = None,
+        on_tool_status: Callable[[str], Awaitable[None]] | None = None,
+    ) -> AsyncIterator[LlmStreamChunk]: ...
 
 
 class EmbeddingsGenerator(Protocol):

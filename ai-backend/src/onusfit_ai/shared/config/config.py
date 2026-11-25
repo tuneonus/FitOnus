@@ -38,6 +38,9 @@ class Settings:
     mcp_timeout_seconds: float = 5.0
     # Multi-Agent Systems (Phase 13)
     multi_agent_enabled: bool = False
+    # Streaming AI (Phase 14)
+    coach_streaming_enabled: bool = False
+    stream_heartbeat_interval_s: float = 5.0
 
 
 _VALID_TRUE_FLAGS: frozenset[str] = frozenset({"1", "true", "yes", "on"})
@@ -98,6 +101,14 @@ def get_settings() -> Settings:
             or os.environ.get("COACH_MULTI_AGENT_ENABLED"),
             default=False,
         ),
+        coach_streaming_enabled=parse_feature_flag(
+            os.environ.get("AI_COACH_STREAMING_ENABLED")
+            or os.environ.get("COACH_STREAMING_ENABLED"),
+            default=False,
+        ),
+        stream_heartbeat_interval_s=float(
+            os.environ.get("AI_STREAM_HEARTBEAT_INTERVAL_S", "5.0")
+        ),
     )
 
 
@@ -141,4 +152,11 @@ def configuration_problems() -> list[str]:
     )
     if not is_valid_feature_flag(raw_ma_flag):
         problems.append("AI_COACH_MULTI_AGENT_ENABLED must be true/false (failing closed)")
+    raw_stream_flag = os.environ.get("AI_COACH_STREAMING_ENABLED") or os.environ.get(
+        "COACH_STREAMING_ENABLED"
+    )
+    if not is_valid_feature_flag(raw_stream_flag):
+        problems.append("AI_COACH_STREAMING_ENABLED must be true/false (failing closed)")
+    if not 0.05 <= settings.stream_heartbeat_interval_s <= 60.0:
+        problems.append("AI_STREAM_HEARTBEAT_INTERVAL_S must be between 0.05 and 60")
     return problems

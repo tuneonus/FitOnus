@@ -61,10 +61,15 @@ function errorStatuses(spec: AnyRouteSpec): number[] {
 
 function operation(spec: AnyRouteSpec, fullPath: string): JsonSchema {
   const responses: JsonSchema = {
-    [spec.response.status]: {
-      description: spec.response.description,
-      content: { 'application/json': { schema: successSchema(spec) } },
-    },
+    [spec.response.status]: spec.streaming
+      ? {
+          description: spec.response.description,
+          content: { 'text/event-stream': { schema: { type: 'string' } } },
+        }
+      : {
+          description: spec.response.description,
+          content: { 'application/json': { schema: successSchema(spec) } },
+        },
   };
   for (const status of errorStatuses(spec)) {
     responses[status] = {

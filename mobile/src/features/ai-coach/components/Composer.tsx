@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { ArrowUp, Mic } from 'lucide-react-native';
+import { ArrowUp, Mic, Square } from 'lucide-react-native';
 import { useTheme } from '@/hooks/use-theme';
 
 type ComposerProps = {
   onSend: (text: string) => void;
   onVoice: () => void;
   disabled?: boolean;
+  streaming?: boolean;
+  onStop?: () => void;
 };
 
-export function Composer({ onSend, onVoice, disabled }: ComposerProps) {
+export function Composer({ onSend, onVoice, disabled, streaming, onStop }: ComposerProps) {
   const { colors } = useTheme();
   const [value, setValue] = useState('');
 
@@ -54,22 +56,39 @@ export function Composer({ onSend, onVoice, disabled }: ComposerProps) {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={submit}
-        disabled={!canSend}
-        accessibilityRole="button"
-        accessibilityLabel="Send message"
-        style={[
-          styles.sendButton,
-          {
-            backgroundColor: colors.accent,
-            opacity: canSend ? 1 : 0.35,
-          },
-        ]}
-      >
-        <ArrowUp size={21} strokeWidth={2.4} color={colors.accentInk} />
-      </TouchableOpacity>
+      {streaming && onStop ? (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onStop}
+          accessibilityRole="button"
+          accessibilityLabel="Stop generating"
+          style={[
+            styles.sendButton,
+            {
+              backgroundColor: colors.accent,
+            },
+          ]}
+        >
+          <Square size={16} strokeWidth={2.4} fill={colors.accentInk} color={colors.accentInk} />
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={submit}
+          disabled={!canSend}
+          accessibilityRole="button"
+          accessibilityLabel="Send message"
+          style={[
+            styles.sendButton,
+            {
+              backgroundColor: colors.accent,
+              opacity: canSend ? 1 : 0.35,
+            },
+          ]}
+        >
+          <ArrowUp size={21} strokeWidth={2.4} color={colors.accentInk} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

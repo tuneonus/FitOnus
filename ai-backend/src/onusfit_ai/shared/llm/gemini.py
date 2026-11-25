@@ -12,10 +12,11 @@ modules/app-settings/.../gemini-runtime-service.ts):
 
 import asyncio
 import hashlib
+import inspect
 import json
 import logging
 import time
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from typing import Any
 
 from google import genai
@@ -41,6 +42,7 @@ from onusfit_ai.shared.llm.errors import (
 from onusfit_ai.shared.llm.ports import (
     EmbeddingResult,
     LlmResult,
+    LlmStreamChunk,
     LlmUsage,
     MediaInput,
     ToolExecutionResult,
@@ -727,6 +729,382 @@ class GeminiClient:
             dispatched=False,
         )
 
+    async def generate_text_stream(
+        self,
+        prompt: str,
+        *,
+        primary_model: str,
+        fallback_model: str | None,
+        deadline_s: float,
+        media: MediaInput | Sequence[MediaInput] | None = None,
+        schema: type[BaseModel] | None = None,
+        tools: list[Any] | None = None,
+        tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
+        max_tool_rounds: int = _DEFAULT_MAX_TOOL_ROUNDS,
+        max_total_tool_calls: int = _DEFAULT_MAX_TOOL_CALLS,
+        max_total_tokens: int | None = None,
+        max_output_tokens: int | None = None,
+        system_instruction: str | None = None,
+        user_id: str | None = None,
+        on_tool_status: Callable[[str], Awaitable[None]] | None = None,
+    ) -> AsyncIterator[LlmStreamChunk]:
+        """Stream genuine incremental response chunks via `sdk.aio.models.generate_content_stream`.
+
+        - Enforces pre-flight key, token budget, and cooldown checks before network dispatch.
+        - When ``tools`` and ``tool_handler`` are given, handles tool-calling turns cleanly and
+          streams the final non-tool synthesis turn token-by-token.
+        - Falls back to ``fallback_model`` at most once, and ONLY if primary fails before any
+          response delta chunk has been emitted to the caller.
+        - Closes the underlying SDK stream immediately on cancellation or timeout.
+        """
+        _ = user_id  # Streaming never coalesces across requests; user scope stays in Node/claims.
+        sdk = self._sdk_client()
+        media_items = _normalize_media_inputs(media)
+
+        if max_total_tokens is not None:
+            estimated_input = estimate_multimodal_input_tokens(
+                prompt,
+                media_items,
+                system_instruction=system_instruction,
+            )
+            if estimated_input > max_total_tokens:
+                raise LlmServiceError(
+                    code="INVALID_REQUEST",
+                    message="Request exceeds the allowed AI token budget.",
+                    dispatched=False,
+                )
+
+        plan = self._build_model_plan(primary_model, fallback_model)
+        started = self._clock()
+        deadline = started + deadline_s
+        tool_cache: dict[tuple[str, str], dict[str, Any]] = {}
+        last: ClassifiedError | None = None
+        attempts = 0
+        emitted_any_chunk = False
+
+        for index, (model, is_fallback) in enumerate(plan):
+            remaining = deadline - self._clock()
+            if remaining < _MIN_ATTEMPT_SECONDS:
+                break
+            attempts += 1
+            attempt_started = self._clock()
+            executed_tool_results: list[ToolExecutionResult] = []
+            accumulated_usage = {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cached_tokens": 0,
+                "thinking_tokens": 0,
+                "total_tokens": 0,
+            }
+            round_count = 0
+            total_tool_calls = 0
+            semaphore = asyncio.Semaphore(_TOOL_CONCURRENCY_LIMIT)
+
+            initial_parts: list[types.Part] = [
+                types.Part.from_bytes(data=item.data, mime_type=item.mime_type)
+                for item in media_items
+            ]
+            initial_parts.append(types.Part.from_text(text=prompt))
+            contents: Any = (
+                [types.Content(role="user", parts=initial_parts)]
+                if (tools and tool_handler is not None)
+                else (
+                    [
+                        *[
+                            types.Part.from_bytes(data=item.data, mime_type=item.mime_type)
+                            for item in media_items
+                        ],
+                        prompt,
+                    ]
+                    if media_items
+                    else prompt
+                )
+            )
+
+            try:
+                while True:
+                    turn_remaining = deadline - self._clock()
+                    if turn_remaining < _MIN_ATTEMPT_SECONDS:
+                        raise TimeoutError("AI request deadline exceeded before stream turn.")
+                    turn_timeout_s = min(turn_remaining, self._attempt_timeout_s)
+
+                    tools_enabled = (
+                        bool(tools)
+                        and tool_handler is not None
+                        and round_count < max_tool_rounds
+                        and total_tool_calls < max_total_tool_calls
+                        and (
+                            max_total_tokens is None
+                            or accumulated_usage["total_tokens"] < max_total_tokens
+                        )
+                    )
+
+                    config_kwargs: dict[str, Any] = {
+                        "http_options": types.HttpOptions(
+                            timeout=int(turn_timeout_s * 1000),
+                            retry_options=types.HttpRetryOptions(attempts=1),
+                        )
+                    }
+                    if max_output_tokens is not None:
+                        config_kwargs["max_output_tokens"] = max_output_tokens
+                    if system_instruction is not None:
+                        config_kwargs["system_instruction"] = system_instruction
+
+                    if tools and tool_handler is not None:
+                        if tools_enabled:
+                            config_kwargs["tools"] = tools
+                        else:
+                            config_kwargs["tool_config"] = types.ToolConfig(
+                                function_calling_config=types.FunctionCallingConfig(
+                                    mode=types.FunctionCallingConfigMode.NONE
+                                )
+                            )
+                            if schema is not None:
+                                config_kwargs["response_mime_type"] = "application/json"
+                                config_kwargs["response_schema"] = schema
+                    elif schema is not None:
+                        config_kwargs["response_mime_type"] = "application/json"
+                        config_kwargs["response_schema"] = schema
+
+                    config = types.GenerateContentConfig(**config_kwargs)
+
+                    turn_usage = {
+                        "input_tokens": 0,
+                        "output_tokens": 0,
+                        "cached_tokens": 0,
+                        "thinking_tokens": 0,
+                        "total_tokens": 0,
+                    }
+                    turn_function_calls: list[Any] = []
+                    turn_model_contents: list[Any] = []
+                    finish_reason_name: str | None = None
+
+                    stream_obj: Any = None
+                    try:
+                        async with asyncio.timeout(turn_timeout_s):
+                            stream_candidate = sdk.aio.models.generate_content_stream(
+                                model=model,
+                                contents=contents,
+                                config=config,
+                            )
+                            stream_obj = (
+                                await stream_candidate
+                                if inspect.isawaitable(stream_candidate)
+                                else stream_candidate
+                            )
+                            async for chunk in stream_obj:
+                                meta = getattr(chunk, "usage_metadata", None)
+                                if meta is not None:
+                                    in_tok = getattr(meta, "prompt_token_count", None) or 0
+                                    out_tok = getattr(meta, "candidates_token_count", None) or 0
+                                    cached_tok = (
+                                        getattr(meta, "cached_content_token_count", None) or 0
+                                    )
+                                    think_tok = getattr(meta, "thoughts_token_count", None) or 0
+                                    tot_tok = getattr(meta, "total_token_count", None) or (
+                                        in_tok + out_tok
+                                    )
+                                    turn_usage["input_tokens"] = max(
+                                        turn_usage["input_tokens"], in_tok
+                                    )
+                                    turn_usage["output_tokens"] = max(
+                                        turn_usage["output_tokens"], out_tok
+                                    )
+                                    turn_usage["cached_tokens"] = max(
+                                        turn_usage["cached_tokens"], cached_tok
+                                    )
+                                    turn_usage["thinking_tokens"] = max(
+                                        turn_usage["thinking_tokens"], think_tok
+                                    )
+                                    turn_usage["total_tokens"] = max(
+                                        turn_usage["total_tokens"], tot_tok
+                                    )
+
+                                cand_content: Any = None
+                                candidates = getattr(chunk, "candidates", None)
+                                if candidates:
+                                    cand0 = candidates[0]
+                                    raw_finish = getattr(cand0, "finish_reason", None)
+                                    if raw_finish is not None:
+                                        finish_reason_name = (
+                                            raw_finish.name
+                                            if hasattr(raw_finish, "name")
+                                            else str(raw_finish)
+                                        )
+                                    cand_content = getattr(cand0, "content", None)
+                                    if cand_content is not None:
+                                        turn_model_contents.append(cand_content)
+
+                                fcs = getattr(chunk, "function_calls", None) or []
+                                if not fcs and cand_content is not None:
+                                    parts_list = getattr(cand_content, "parts", None) or []
+                                    for p in parts_list:
+                                        if not getattr(p, "thought", False):
+                                            p_fc = getattr(p, "function_call", None)
+                                            if p_fc is not None:
+                                                fcs.append(p_fc)
+                                if fcs:
+                                    turn_function_calls.extend(fcs)
+
+                                delta_text = _extract_stream_chunk_text(chunk)
+                                if delta_text and not turn_function_calls:
+                                    emitted_any_chunk = True
+                                    yield LlmStreamChunk(
+                                        text_delta=delta_text,
+                                        model=model,
+                                        is_fallback=is_fallback,
+                                    )
+                    finally:
+                        if stream_obj is not None:
+                            aclose = getattr(stream_obj, "aclose", None)
+                            if callable(aclose):
+                                try:
+                                    await aclose()
+                                except Exception:  # noqa: BLE001 - best-effort stream cleanup
+                                    pass
+
+                    for k, v in turn_usage.items():
+                        accumulated_usage[k] += v
+
+                    if turn_function_calls and tools_enabled and tool_handler is not None:
+                        round_count += 1
+                        model_content = (
+                            turn_model_contents[0]
+                            if turn_model_contents
+                            else types.Content(
+                                role="model",
+                                parts=[
+                                    types.Part(function_call=fc) for fc in turn_function_calls
+                                ],
+                            )
+                        )
+
+                        async def _run_stream_tool(
+                            fc: Any,
+                            sem: asyncio.Semaphore = semaphore,
+                        ) -> tuple[Any, dict[str, Any]]:
+                            nonlocal total_tool_calls
+                            call_name = getattr(fc, "name", str(fc))
+                            raw_args = getattr(fc, "args", {}) or {}
+                            if not isinstance(raw_args, dict):
+                                raw_args = dict(raw_args)
+                            if total_tool_calls >= max_total_tool_calls:
+                                return fc, {
+                                    "error": (
+                                        f"Tool execution limit of {max_total_tool_calls} "
+                                        "calls exceeded."
+                                    )
+                                }
+                            total_tool_calls += 1
+                            cache_key = (call_name, json.dumps(raw_args, sort_keys=True))
+                            if cache_key in tool_cache:
+                                return fc, tool_cache[cache_key]
+                            if on_tool_status is not None:
+                                await on_tool_status(call_name)
+                            try:
+                                async with sem:
+                                    res = await tool_handler(call_name, raw_args)
+                            except Exception as exc:  # noqa: BLE001
+                                res = sanitize_tool_error(call_name, exc)
+                            tool_cache[cache_key] = res
+                            return fc, res
+
+                        call_results = await asyncio.gather(
+                            *[_run_stream_tool(fc) for fc in turn_function_calls]
+                        )
+                        response_parts: list[types.Part] = []
+                        for fc, res in call_results:
+                            call_name = getattr(fc, "name", str(fc))
+                            raw_args = getattr(fc, "args", {}) or {}
+                            if not isinstance(raw_args, dict):
+                                raw_args = dict(raw_args)
+                            executed_tool_results.append(
+                                ToolExecutionResult(tool_name=call_name, args=raw_args, result=res)
+                            )
+                            response_parts.append(
+                                types.Part.from_function_response(name=call_name, response=res)
+                            )
+
+                        contents.append(model_content)
+                        contents.append(types.Content(role="user", parts=response_parts))
+                        continue
+
+                    final_usage = LlmUsage(
+                        model=model,
+                        is_fallback=is_fallback,
+                        input_tokens=accumulated_usage["input_tokens"],
+                        output_tokens=accumulated_usage["output_tokens"],
+                        cached_tokens=accumulated_usage["cached_tokens"],
+                        thinking_tokens=accumulated_usage["thinking_tokens"],
+                        total_tokens=accumulated_usage["total_tokens"],
+                        duration_ms=round((self._clock() - attempt_started) * 1000),
+                    )
+                    if finish_reason_name == "SAFETY":
+                        raise LlmServiceError(
+                            code="PROVIDER_UNAVAILABLE",
+                            message="Coach reply was blocked by safety policies.",
+                            dispatched=True,
+                            usage=final_usage,
+                        )
+                    if finish_reason_name == "MAX_TOKENS" and not emitted_any_chunk:
+                        raise LlmServiceError(
+                            code="PROVIDER_ERROR",
+                            message="Coach reply exceeded maximum token limit.",
+                            dispatched=True,
+                            usage=final_usage,
+                        )
+
+                    self._cooldown.record_success(model)
+                    yield LlmStreamChunk(
+                        text_delta="",
+                        model=model,
+                        is_fallback=is_fallback,
+                        usage=final_usage,
+                        finish_reason=finish_reason_name,
+                        tool_calls=executed_tool_results,
+                        is_final=True,
+                    )
+                    return
+
+            except asyncio.CancelledError:
+                raise
+            except LlmServiceError as exc:
+                if exc.code == "PROVIDER_UNAVAILABLE" and "safety" in exc.message.lower():
+                    raise
+                last = ClassifiedError(
+                    kind="UNKNOWN",
+                    is_retryable=False,
+                    is_project_wide=False,
+                    retry_after_seconds=exc.retry_after_seconds or 0,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001 - every SDK/network failure is classified below
+                last = classify_gemini_error(exc)
+                if last.kind != "BAD_REQUEST":
+                    self._cooldown.record_failure(model, last.retry_after_seconds)
+                can_try_next = last.is_retryable and not last.is_project_wide
+                will_fallback = (
+                    not emitted_any_chunk and index < len(plan) - 1 and can_try_next
+                )
+                log_event(
+                    logger,
+                    "ai.gemini.attempt_failed",
+                    level=logging.WARNING,
+                    message="gemini streaming attempt failed",
+                    model=model,
+                    modelFallbackUsed=is_fallback,
+                    errorCategory=category_for_gemini_kind(last.kind),
+                    geminiKind=last.kind,
+                    durationMs=round((self._clock() - attempt_started) * 1000),
+                    willTryFallbackModel=will_fallback,
+                    streamedBeforeFailure=emitted_any_chunk,
+                )
+                if not will_fallback:
+                    break
+                continue
+
+        raise _to_llm_error(last, attempts_made=attempts)
+
     async def embed_content(
         self,
         contents: list[str],
@@ -776,6 +1154,25 @@ class GeminiClient:
                 geminiKind=classified.kind,
             )
             raise _to_llm_error(classified, attempts_made=1) from exc
+
+
+def _extract_stream_chunk_text(chunk: Any) -> str:
+    """Extract non-thought text from a streaming chunk without stripping whitespace."""
+    candidates = getattr(chunk, "candidates", None)
+    if candidates:
+        content = getattr(candidates[0], "content", None)
+        parts = getattr(content, "parts", None) if content is not None else None
+        if parts is not None:
+            texts: list[str] = []
+            for part in parts:
+                if getattr(part, "thought", False):
+                    continue
+                part_text = getattr(part, "text", None)
+                if isinstance(part_text, str) and part_text:
+                    texts.append(part_text)
+            return "".join(texts)
+    raw = getattr(chunk, "text", None)
+    return raw if isinstance(raw, str) else ""
 
 
 def _usage_from(response: Any, model: str, is_fallback: bool, elapsed_s: float) -> LlmUsage:

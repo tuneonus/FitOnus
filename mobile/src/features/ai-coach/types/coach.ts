@@ -78,7 +78,9 @@ export type CoachMessage = {
   followUps?: string[] | undefined;
   sources?: string[] | undefined;
   toolCalls?: ToolName[] | undefined;
-  status: 'done' | 'thinking' | 'error';
+  status: 'done' | 'thinking' | 'streaming' | 'error';
+  statusMessage?: string | undefined;
+  isPartial?: boolean | undefined;
   medicalNote?: boolean | undefined;
   memoryUsed?: string | undefined;
   feedback?: 'like' | 'dislike' | 'none' | null | undefined;

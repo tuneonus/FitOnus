@@ -15,7 +15,8 @@ import { Composer } from '../components/Composer';
 export function CoachScreen() {
   const { navigate, isTabRoot } = useNavigation();
   const params = useRouteParams<{ q?: string }>();
-  const { messages, busy, send, retry, setActionStatus, newConversation, stopSpeech } = useCoachStore();
+  const { messages, busy, streaming, send, stopGeneration, retry, setActionStatus, newConversation, stopSpeech } =
+    useCoachStore();
   const offline = useHealthStore((s) => s.status === 'offline');
   const sentParam = useRef(false);
 
@@ -65,6 +66,8 @@ export function CoachScreen() {
           onSend={send}
           onVoice={() => navigate('voiceCoach')}
           disabled={busy}
+          streaming={streaming}
+          onStop={stopGeneration}
         />
       }
     >
