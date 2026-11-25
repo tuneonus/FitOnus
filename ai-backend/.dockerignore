@@ -1,7 +1,8 @@
-# Keep the build context small and secret-free. The image needs only: Dockerfile inputs
-# (requirements.txt, pyproject.toml, README.md, src/).
+# Keep the build context small and secret-free.
+# Dockerfile inputs only: requirements.txt, pyproject.toml, README.md, src/.
 .git
 .github
+.claude
 .venv
 venv
 __pycache__
@@ -17,9 +18,11 @@ htmlcov
 .coverage
 tests
 docs
+*.md
+!README.md
+uv.lock
 .env
 .env.*
-!.env.example
 *.log
 .vscode
 .idea

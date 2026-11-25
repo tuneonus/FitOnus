@@ -1,0 +1,146 @@
+# Root Docker Compose orchestration for FitOnus backend services (local development).
+#
+# Modes (all credentials stay in backend/.env and ai-backend/.env, both gitignored):
+#   1. Neon cloud DB + local containers (preserves Neon DEV/branching):
+#        docker compose --profile app up --build
+#   2. Optional local PostgreSQL 17 + pgvector only (for host-run Node + Python):
+#        docker compose --profile local-db up -d
+#   3. Optional local PostgreSQL + full containerized stack:
+#        # In backend/.env, point DATABASE_URL at @db:5432/... and set DATABASE_SSL=disable
+#        docker compose --profile local-db up -d
+#        docker compose --profile local-migrate run --rm migrate
+#        docker compose --profile app up --build
+#   4. Python AI backend container only (when running Node on host):
+#        docker compose --profile ai up --build
+name: fitonus
+
+services:
+  db:
+    profiles: [local-db]
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    init: true
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - fitonus-pgdata:/var/lib/postgresql/data
+    mem_limit: 512m
+    cpus: '1.0'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    profiles: [local-migrate]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ['node', 'dist/scripts/migrate.js']
+    env_file:
+      - ./backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    cpus: '0.5'
+
+  ai-backend:
+    profiles: [ai, app]
+    build:
+      context: ./ai-backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./ai-backend/.env
+    environment:
+      PORT: '10000'
+      NODE_API_URL: ${COMPOSE_NODE_API_URL:-http://api:3000}
+      LOG_FORMAT: json
+    ports:
+      - '127.0.0.1:${AI_BACKEND_PORT:-8000}:10000'
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+    stop_grace_period: 15s
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    cpus: '1.0'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import os,sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:10000/health/live', timeout=4).status == 200 else 1)",
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+  api:
+    profiles: [app]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      HOST: 0.0.0.0
+      PORT: '3000'
+      AI_BACKEND_URL: ${COMPOSE_AI_BACKEND_URL:-http://ai-backend:10000}
+      LOG_PRETTY: 'false'
+    ports:
+      - '127.0.0.1:${PORT:-3000}:3000'
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      ai-backend:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 20s
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    cpus: '1.0'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+volumes:
+  fitonus-pgdata:

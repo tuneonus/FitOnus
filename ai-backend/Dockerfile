@@ -1,44 +1,50 @@
 # syntax=docker/dockerfile:1
-# Production image for the OnusFit AI backend (FastAPI). Build context = this folder (ai-backend/).
+# Production image for the OnusFit Python AI backend (FastAPI).
+# Build context: ai-backend/ (contains requirements.txt, pyproject.toml, README.md, src/).
 #
-# Multi-stage: dependencies and the package are installed into a virtualenv in the build stage; the
-# runtime stage copies only that virtualenv, so no pip cache, build tools or source tree ship.
-# For reproducible production builds, pin the base image by digest (python:3.12-slim-bookworm@sha256:...).
-# Python 3.12 matches pyproject.toml (requires-python >= 3.12); every dependency has a prebuilt wheel, so
-# no compiler is needed.
+# Multi-stage: pinned runtime packages and the application package are installed into an isolated
+# virtualenv in the build stage; the runtime stage copies only /opt/venv so no pip cache, build
+# tooling, test suite, or .env* files ship.
+# For strict release reproducibility, pin the base image by digest:
+#   python:3.12-slim-bookworm@sha256:<digest>
 
 FROM python:3.12-slim-bookworm AS build
-ENV PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONDONTWRITEBYTECODE=1
 WORKDIR /build
 RUN python -m venv /opt/venv
 # 1. Pinned runtime dependencies (cached until requirements.txt changes).
 COPY requirements.txt ./
-RUN /opt/venv/bin/pip install -r requirements.txt
-# 2. The application itself, without re-resolving dependencies.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+# 2. The application package itself, without re-resolving dependencies, then strip installer tools.
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN /opt/venv/bin/pip install --no-deps .
+RUN /opt/venv/bin/pip install --no-cache-dir --no-deps . \
+ && /opt/venv/bin/pip uninstall -y pip setuptools wheel >/dev/null 2>&1 || true \
+ && chmod -R a+rX /opt/venv
 
 FROM python:3.12-slim-bookworm AS runtime
-# Unprivileged user: no shell, no home directory, nothing writable by it.
+LABEL org.opencontainers.image.title="onusfit-ai-backend" \
+      org.opencontainers.image.description="OnusFit FastAPI AI inference service" \
+      org.opencontainers.image.source="https://github.com/TuneOnus/FitOnus"
+# Unprivileged user: no shell, no home directory, nothing writable in the image layers.
 RUN groupadd --system --gid 10001 app \
  && useradd --system --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /opt/venv /opt/venv
-# ONUSFIT_AI_ENV=production makes the service refuse to start with a missing or short service secret
-# or without a Gemini key (a failed deploy is better than a service that answers 503 to everything).
+# ONUSFIT_AI_ENV=production enforces fail-closed startup validation for AI_SERVICE_JWT_SECRET and GEMINI_API_KEY.
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    ONUSFIT_AI_ENV=production
+    ONUSFIT_AI_ENV=production \
+    PORT=10000
+WORKDIR /app
 USER 10001:10001
-# Render injects PORT (default 10000); the service must listen on 0.0.0.0 on that port.
+# Render injects PORT (default 10000); container always binds 0.0.0.0:$PORT.
 EXPOSE 10000
-# Not used by Render (it has its own health check path); useful for `docker run` and orchestrators.
-# Needs no secrets and never calls Gemini.
+STOPSIGNAL SIGTERM
+# Checks process liveness without touching Gemini or requiring secrets.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["python", "-c", "import os,sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:%s/health/live' % os.environ.get('PORT','10000'), timeout=4).status == 200 else 1)"]
-# One worker on purpose: the replay cache and Gemini model cooldown are per-process memory (see
-# docs/render-deployment.md). Keep-alive is above the 5 s default so pooled client connections are not
-# closed underneath the Node API.
+# Single worker on purpose: token replay cache and Gemini model cooldown live in process memory.
 CMD ["sh", "-c", "exec uvicorn onusfit_ai.main:app --host 0.0.0.0 --port ${PORT:-10000} --timeout-keep-alive 65 --no-server-header"]

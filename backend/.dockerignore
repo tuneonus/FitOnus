@@ -1,17 +1,26 @@
-# Keep the build context small and secret-free.
+# Keep the build context minimal and free of secrets or local database artifacts.
 .git
 .github
+.claude
+.vscode
+.idea
 node_modules
 dist
 coverage
 tests
 docs
 *.md
+*.tsbuildinfo
 .env
 .env.*
-!.env.example
+backups
+pgdata
+*.sqlite
+*.dump
+*.sql
+!migrations/*.sql
 *.log
-.vscode
-.idea
+requests.http
 compose.yaml
 Dockerfile
+.dockerignore
