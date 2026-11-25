@@ -36,6 +36,32 @@ class Settings:
     mcp_server_url: str = "http://localhost:8000/internal/v1/mcp"
     mcp_discovery_ttl_seconds: int = 300
     mcp_timeout_seconds: float = 5.0
+    # Multi-Agent Systems (Phase 13)
+    multi_agent_enabled: bool = False
+
+
+_VALID_TRUE_FLAGS: frozenset[str] = frozenset({"1", "true", "yes", "on"})
+_VALID_FALSE_FLAGS: frozenset[str] = frozenset({"0", "false", "no", "off", ""})
+
+
+def is_valid_feature_flag(raw: str | None) -> bool:
+    """Return True if an env boolean flag value is empty or syntactically valid."""
+    if raw is None:
+        return True
+    norm = raw.strip().lower()
+    return norm in _VALID_TRUE_FLAGS or norm in _VALID_FALSE_FLAGS
+
+
+def parse_feature_flag(raw: str | None, *, default: bool = False) -> bool:
+    """Parse a boolean feature flag failing safely to `default` when unset or invalid."""
+    if raw is None:
+        return default
+    norm = raw.strip().lower()
+    if norm in _VALID_TRUE_FLAGS:
+        return True
+    if norm in _VALID_FALSE_FLAGS:
+        return False
+    return default
 
 
 def _clean(value: str | None) -> str | None:
@@ -67,6 +93,11 @@ def get_settings() -> Settings:
         ).rstrip("/"),
         mcp_discovery_ttl_seconds=int(os.environ.get("MCP_DISCOVERY_TTL_SECONDS", "300")),
         mcp_timeout_seconds=float(os.environ.get("MCP_TIMEOUT_SECONDS", "5.0")),
+        multi_agent_enabled=parse_feature_flag(
+            os.environ.get("AI_COACH_MULTI_AGENT_ENABLED")
+            or os.environ.get("COACH_MULTI_AGENT_ENABLED"),
+            default=False,
+        ),
     )
 
 
@@ -105,4 +136,9 @@ def configuration_problems() -> list[str]:
         problems.append("LOG_LEVEL must be one of DEBUG, INFO, WARNING, ERROR, CRITICAL")
     if settings.log_format not in {"json", "text"}:
         problems.append("LOG_FORMAT must be json or text")
+    raw_ma_flag = os.environ.get("AI_COACH_MULTI_AGENT_ENABLED") or os.environ.get(
+        "COACH_MULTI_AGENT_ENABLED"
+    )
+    if not is_valid_feature_flag(raw_ma_flag):
+        problems.append("AI_COACH_MULTI_AGENT_ENABLED must be true/false (failing closed)")
     return problems

@@ -30,6 +30,7 @@ from tests.evals.datasets.loader import load_all_benchmark_cases, load_benchmark
 from tests.evals.evaluators.agent import AgentFundamentalsEvaluator
 from tests.evals.evaluators.grounding import FactualGroundingEvaluator
 from tests.evals.evaluators.mcp import McpToolsEvaluator
+from tests.evals.evaluators.multi_agent import MultiAgentEvaluator
 from tests.evals.evaluators.multilingual import MultilingualAccuracyEvaluator
 from tests.evals.evaluators.nutrition import NutritionToleranceEvaluator
 from tests.evals.evaluators.safety import SafetyEvaluator
@@ -73,6 +74,7 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
     safety_eval = SafetyEvaluator()
     agent_eval = AgentFundamentalsEvaluator()
     mcp_eval = McpToolsEvaluator()
+    multi_eval = MultiAgentEvaluator()
 
     results: list[dict[str, Any]] = []
 
@@ -139,7 +141,7 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
         if (
             case.category == "fitness_safety"
             or (
-                case.category not in ("workout_planner", "mcp_tools")
+                case.category not in ("workout_planner", "mcp_tools", "multi_agent")
                 and (
                     case.expected_safety_disclaimers
                     or case.forbidden_terms
@@ -205,6 +207,20 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
                 expected_tools=case.expected_tools,
                 expected_outcome=case.expected_outcome,
                 forbidden_terms=case.forbidden_terms,
+            )
+            scores.append(res.score)
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
+
+        # 5e. Multi-Agent Systems evaluation
+        if case.category == "multi_agent":
+            res = multi_eval.evaluate(
+                candidate=cand,
+                expected_tools=case.expected_tools,
+                expected_outcome=case.expected_outcome,
+                expected_safety_disclaimers=case.expected_safety_disclaimers,
+                forbidden_terms=case.forbidden_terms,
+                input_payload=case.input_payload,
             )
             scores.append(res.score)
             if not res.passed:

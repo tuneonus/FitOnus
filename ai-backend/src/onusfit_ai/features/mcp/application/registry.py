@@ -290,8 +290,8 @@ def create_fitonus_tool_registry(
 
     # --- Tool 5b: preview_workout_adaptation ---
     async def _handle_preview_workout_adaptation(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
-        existing_plan = args.get("existing_plan", {})
-        reason = args.get("reason", "fatigue")
+        existing_plan = args.get("current_plan") or args.get("existing_plan") or {}
+        reason = args.get("feedback") or args.get("reason") or "fatigue"
         deload = args.get("deload", False)
         sessions = existing_plan.get("sessions", [])
         adapted_sessions = []

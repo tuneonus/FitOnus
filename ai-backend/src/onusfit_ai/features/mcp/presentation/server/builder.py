@@ -16,12 +16,14 @@ from onusfit_ai.features.mcp.application.registry import (
     McpToolRegistry,
     create_fitonus_tool_registry,
 )
+from onusfit_ai.features.mcp.application.security import McpSecurityGuardrails
 from onusfit_ai.features.mcp.domain.contracts import (
     CatalogIndexProtocol,
     McpConfig,
     McpToolResult,
     PlanGeneratorProtocol,
 )
+from onusfit_ai.features.mcp.domain.errors import McpSecurityError
 
 logger = logging.getLogger("onusfit_ai.mcp.presentation.server.builder")
 
@@ -42,6 +44,7 @@ class FitOnusMcpServer:
         catalog_index: CatalogIndexProtocol | None = None,
     ) -> None:
         self.config = config or McpConfig()
+        self.guardrails = McpSecurityGuardrails(self.config)
         self.registry = registry or create_fitonus_tool_registry(
             tools_client_getter=tools_client_getter,
             plan_generator=plan_generator,
@@ -76,8 +79,15 @@ class FitOnusMcpServer:
                 async def _tool_func(**kwargs: Any) -> str:
                     u_id = current_user_id.get()
                     r_id = current_request_id.get()
-                    res = await t_handler(kwargs, u_id, r_id)
-                    return json.dumps(res) if isinstance(res, (dict, list)) else str(res)
+                    res = await self.call_tool_in_process(
+                        name=t_name,
+                        arguments=kwargs,
+                        user_id=u_id,
+                        request_id=r_id,
+                    )
+                    if res.is_error:
+                        return json.dumps({"error": res.error_message or "Tool execution failed"})
+                    return res.content
 
                 return _tool_func
 
@@ -149,10 +159,11 @@ class FitOnusMcpServer:
         user_id: str,
         request_id: str,
     ) -> McpToolResult:
-        """Execute a tool directly in-process via registry handler."""
+        """Execute a security-validated, read-only/preview tool directly in-process."""
         start = time.perf_counter()
+        definition = self.registry.get_tool(name)
         handler = self.registry.get_tool_handler(name)
-        if not handler:
+        if not definition or not handler:
             return McpToolResult(
                 tool_name=name,
                 content=json.dumps({"error": f"Tool '{name}' not found"}),
@@ -162,22 +173,40 @@ class FitOnusMcpServer:
 
         tokens = self.bind_request_context(user_id, request_id)
         try:
-            res = await handler(arguments, user_id, request_id)
+            uid = user_id.strip()
+            if not uid:
+                raise McpSecurityError("Authenticated user_id is required")
+
+            self.guardrails.validate_tool_allowed(name)
+            payload_bytes = len(json.dumps(arguments, default=str).encode("utf-8"))
+            self.guardrails.validate_request_size(payload_bytes)
+            validated_args = self.guardrails.validate_tool_arguments(name, arguments)
+
+            if definition.is_write:
+                raise McpSecurityError(
+                    f"Mutating write tool '{name}' requires HITL approval workflow via AgentToolOrchestrator"
+                )
+
+            res = await handler(validated_args, uid, request_id)
+            content_str = json.dumps(res) if isinstance(res, (dict, list)) else str(res)
+            sanitized_content = self.guardrails.sanitize_tool_output(name, content_str)
             elapsed_ms = (time.perf_counter() - start) * 1000.0
             return McpToolResult(
                 tool_name=name,
-                content=json.dumps(res) if isinstance(res, (dict, list)) else str(res),
+                content=sanitized_content,
                 structured_data=res if isinstance(res, dict) else {"result": res},
                 is_error=False,
                 execution_time_ms=elapsed_ms,
             )
         except Exception as exc:
             elapsed_ms = (time.perf_counter() - start) * 1000.0
+            safe_error = self.guardrails.sanitize_tool_output(name, str(exc))
             return McpToolResult(
                 tool_name=name,
-                content=json.dumps({"error": str(exc)}),
+                content=json.dumps({"error": safe_error}),
+                structured_data={"error": safe_error},
                 is_error=True,
-                error_message=str(exc),
+                error_message=safe_error,
                 execution_time_ms=elapsed_ms,
             )
         finally:

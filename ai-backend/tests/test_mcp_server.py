@@ -162,3 +162,27 @@ async def test_mcp_server_prompt_rendering() -> None:
     assert rendered.name == "fitness_progress_analysis"
     assert "hypertrophy" in rendered.messages[0].content
     assert "14" in rendered.messages[0].content
+
+
+@pytest.mark.asyncio
+async def test_mcp_server_in_process_enforces_guardrails_and_blocks_writes() -> None:
+    server = FitOnusMcpServer(config=McpConfig())
+
+    # Extra/forbidden user_id argument rejected by schema guardrails
+    deputy_res = await server.call_tool_in_process(
+        name="get_fitness_profile",
+        arguments={"user_id": "victim"},
+        user_id="attacker",
+        request_id="req-sec-1",
+    )
+    assert deputy_res.is_error is True
+
+    # Write tool blocked from direct in-process execution even if confirmed=True
+    write_res = await server.call_tool_in_process(
+        name="persist_workout_plan",
+        arguments={"plan": {"sessions": []}, "name": "Sneaky", "confirmed": True},
+        user_id="attacker",
+        request_id="req-sec-2",
+    )
+    assert write_res.is_error is True
+    assert "hitl" in (write_res.error_message or "").lower()

@@ -145,3 +145,11 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 |:---|:---|:---|:---|:---|
 | **P12-All** | [**Phase 12: AI Agent Protocols & Tool Ecosystem**](../phase-12-ai-agent-protocols-and-tool-ecosystem.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/mcp/*`<br>`ai-backend/src/onusfit_ai/shared/tools/mcp.py`<br>`backend/src/modules/coach/interface/internal-tools.*`<br>`PHASE_12_LEARNING_GUIDE.md` | `ai-backend/tests/test_mcp_*.py` (43 passed)<br>`ai-backend/tests/evals/offline/test_mcp_eval.py` (7 passed, 32 cases)<br>`ai-backend/tests/test_architecture.py` (22 passed) |
 
+---
+
+## Phase 13: Multi-Agent Systems
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P13-All** | [**Phase 13: Multi-Agent Systems**](../phase-13-multi-agent-systems.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/coach/domain/multi_agent.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/multi_agent/*`<br>`ai-backend/src/onusfit_ai/features/mcp/application/a2a.py`<br>`ai-backend/src/onusfit_ai/shared/tools/multi_agent.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/chat.py`<br>`ai-backend/src/onusfit_ai/features/coach/presentation/coach_chat.py`<br>`ai-backend/src/onusfit_ai/main.py` | `ai-backend/tests/test_multi_agent_*.py`<br>`ai-backend/tests/evals/offline/test_multi_agent_eval.py` (42 benchmark cases)<br>`ai-backend/tests/evals/test_runner.py` (277 total benchmark cases)<br>`ai-backend/pytest -q` (1091 passed)<br>`backend` targeted unit tests (34 passed) |
+

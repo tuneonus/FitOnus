@@ -37,6 +37,7 @@ Keep the context needed to maintain the application: agent instructions, product
 - [Phase 11: AI Workout Planner](ai-learning/phase-11-ai-workout-planner.md)
 - [Phase 12: AI Agent Protocols & Tool Ecosystem](ai-learning/phase-12-ai-agent-protocols-and-tool-ecosystem.md)
 - [Phase 12 Learning Guide](../../PHASE_12_LEARNING_GUIDE.md)
+- [Phase 13: Multi-Agent Systems](ai-learning/phase-13-multi-agent-systems.md)
 
 The architecture proposal and roadmap describe planned work. They do not indicate that the proposed services or integrations exist.
 

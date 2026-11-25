@@ -129,7 +129,8 @@ class PreviewWorkoutPlanArgs(BaseModel):
         description="Primary goal: 'strength', 'hypertrophy', 'endurance', or 'general_fitness'."
     )
     experience_level: str = Field(
-        description="User experience tier: 'beginner', 'intermediate', or 'advanced'."
+        default="intermediate",
+        description="User experience tier: 'beginner', 'intermediate', or 'advanced'.",
     )
     days_per_week: int = Field(
         default=3,

@@ -118,10 +118,12 @@ class McpClientAdapter:
         tools_client: InternalToolsClient | None = None,
         server_instance: Any | None = None,
         timeout_seconds: float = 5.0,
+        include_write_tools: bool = False,
     ) -> None:
         self.tools_client = tools_client
         self.server_instance = server_instance or get_shared_mcp_server()
         self.timeout_seconds = timeout_seconds
+        self.include_write_tools = include_write_tools
         self.cache = McpDiscoveryCache()
         self.telemetry = McpTelemetry()
 
@@ -138,7 +140,7 @@ class McpClientAdapter:
         tool_dicts: list[dict[str, Any]] = []
         if server and hasattr(server, "get_registry"):
             registry = server.get_registry()
-            for t in registry.list_tools():
+            for t in registry.list_tools(filter_read_only=not self.include_write_tools):
                 tool_dicts.append({
                     "name": t.name,
                     "description": t.description,
@@ -146,6 +148,8 @@ class McpClientAdapter:
                 })
         else:
             for t_name, s_cls in TOOL_ARG_SCHEMAS.items():
+                if not self.include_write_tools and t_name == "persist_workout_plan":
+                    continue
                 tool_dicts.append({
                     "name": t_name,
                     "description": f"FitOnus tool: {t_name}",
@@ -155,6 +159,18 @@ class McpClientAdapter:
         self.cache.set_tools(tool_dicts)
         return create_gemini_tools_from_schemas(tool_dicts)
 
+    async def discover_tool_names(self) -> list[str]:
+        """Return discovered non-mutating tool names permitted by MCP server discovery."""
+        cached = self.cache.get_tools()
+        if not cached:
+            await self.get_gemini_tools()
+            cached = self.cache.get_tools() or []
+        return [
+            str(entry["name"])
+            for entry in cached
+            if isinstance(entry, dict) and entry.get("name")
+        ]
+
     def create_tool_handler(
         self,
         user_id: str,
@@ -162,6 +178,15 @@ class McpClientAdapter:
     ) -> Callable[[str, dict[str, Any]], Any]:
         """Create tool execution callback bound to authenticated request context."""
         async def _handler(name: str, args: dict[str, Any]) -> dict[str, Any]:
+            # Anti-confused deputy guard: never forward caller/LLM-supplied user identifiers
+            for forbidden_key in ("userId", "targetUserId", "user_id"):
+                if forbidden_key in args:
+                    return {"error": f"Forbidden identity parameter '{forbidden_key}' rejected"}
+
+            # Mutation tools remain disabled unless durable approval & Node persistence are enabled
+            if not self.include_write_tools and name == "persist_workout_plan":
+                return {"error": f"Mutation tool '{name}' is disabled without durable approval"}
+
             start = time.perf_counter()
             server = self.server_instance or get_shared_mcp_server()
 
@@ -177,7 +202,15 @@ class McpClientAdapter:
                     self.telemetry.record_call(name, elapsed_ms, success=not result.is_error, request_id=request_id)
                     if not result.is_error:
                         return result.structured_data or {"result": result.content}
-                    self.telemetry.record_fallback(name, result.error_message or "mcp_error", request_id=request_id)
+                    err_text = result.error_message or "mcp_error"
+                    # Never bypass security, validation, or approval blocks via native fallback
+                    lowered = err_text.lower()
+                    if any(
+                        token in lowered
+                        for token in ("security", "forbidden", "allowlist", "validation", "approval", "unauthorized")
+                    ):
+                        return {"error": err_text}
+                    self.telemetry.record_fallback(name, err_text, request_id=request_id)
                 except Exception as exc:
                     elapsed_ms = (time.perf_counter() - start) * 1000.0
                     self.telemetry.record_call(name, elapsed_ms, success=False, request_id=request_id)

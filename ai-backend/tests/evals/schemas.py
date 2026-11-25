@@ -61,6 +61,7 @@ class BenchmarkCase(BaseModel):
         "agent_fundamentals",
         "workout_planner",
         "mcp_tools",
+        "multi_agent",
     ]
     description: str = Field(description="Summary of test intent")
     language: Literal["en", "ta", "tanglish", "mixed"] = "en"

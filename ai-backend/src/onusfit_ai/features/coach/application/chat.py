@@ -14,6 +14,9 @@ from onusfit_ai.features.coach.application.agent.graph.executor import (
     LangGraphAgentExecutor,
     get_configured_agent_engine,
 )
+from onusfit_ai.features.coach.application.multi_agent.graph.executor import (
+    MultiAgentCoachExecutor,
+)
 from onusfit_ai.features.coach.application.parsing import MEMORY_SOURCE, parse_coach_output
 from onusfit_ai.features.coach.application.prompts.coach_chat import PROMPT_VERSION, build_prompt
 from onusfit_ai.features.coach.application.schemas import GeminiCoachReplyOutput
@@ -22,6 +25,10 @@ from onusfit_ai.features.coach.domain.chat import (
     CoachChatRequest,
     CoachChatResponse,
     CoachChatResult,
+)
+from onusfit_ai.features.coach.domain.multi_agent import (
+    A2AMediatorProtocol,
+    WorkoutPlannerPort,
 )
 from onusfit_ai.shared.contracts.common import Usage
 from onusfit_ai.shared.contracts.tools import TOOL_SOURCE_LABELS
@@ -62,6 +69,25 @@ def is_coach_agent_enabled() -> bool:
     return raw.strip().lower() in ("1", "true", "yes", "on")
 
 
+def is_multi_agent_enabled() -> bool:
+    """Validated feature flag for Phase 13 Multi-Agent Coach orchestration.
+
+    Fails closed ('false') when unset or invalid. Enabled only when
+    AI_COACH_MULTI_AGENT_ENABLED or COACH_MULTI_AGENT_ENABLED is '1', 'true',
+    'yes', or 'on'.
+    """
+    raw = os.environ.get("AI_COACH_MULTI_AGENT_ENABLED") or os.environ.get(
+        "COACH_MULTI_AGENT_ENABLED", "false"
+    )
+    norm = raw.strip().lower()
+    if norm in ("1", "true", "yes", "on"):
+        return True
+    if norm in ("0", "false", "no", "off", ""):
+        return False
+    logger.warning("Invalid multi-agent feature flag value; failing closed to disabled")
+    return False
+
+
 async def generate_coach_reply(
     request: CoachChatRequest,
     llm: TextGenerator,
@@ -71,12 +97,58 @@ async def generate_coach_reply(
     tools: list[Any] | None = None,
     tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
     executor: AgentExecutor | LangGraphAgentExecutor | None = None,
+    multi_agent_executor: MultiAgentCoachExecutor | None = None,
+    mcp_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
+    discovered_tools: list[str] | None = None,
+    a2a_mediator: A2AMediatorProtocol | None = None,
+    workout_planner: WorkoutPlannerPort | None = None,
 ) -> CoachChatResponse:
     """Orchestrate coach reply generation: format prompt, call LLM with fallback, and parse reply.
 
     The LLM client is injected via the TextGenerator protocol to keep the use case testable
     without real network calls or Gemini credentials.
     """
+    # Phase 13: Coordinated Multi-Agent System behind validated disabled-by-default feature flag.
+    if is_multi_agent_enabled():
+        ma_exec = multi_agent_executor or MultiAgentCoachExecutor()
+        ma_res = await ma_exec.execute(
+            request=request,
+            llm=llm,
+            trace_id=trace_id,
+            user_id=user_id or "authenticated_user",
+            tool_handler=tool_handler,
+            mcp_handler=mcp_handler,
+            discovered_tools=discovered_tools,
+            a2a_mediator=a2a_mediator,
+            workout_planner=workout_planner,
+            memory_consent_granted=bool(request.memories),
+        )
+        llm_usage = LlmUsage(
+            model=ma_res.usage.model,
+            is_fallback=ma_res.usage.is_fallback,
+            input_tokens=ma_res.usage.input_tokens,
+            output_tokens=ma_res.usage.output_tokens,
+            cached_tokens=ma_res.usage.cached_tokens,
+            thinking_tokens=ma_res.usage.thinking_tokens,
+            total_tokens=ma_res.usage.total_tokens,
+            duration_ms=ma_res.usage.duration_ms,
+        )
+        log_ai_call(
+            logger,
+            feature="coach_multi_agent",
+            trace_id=trace_id,
+            prompt_version="multi_agent_v1",
+            outcome="ok",
+            usage=llm_usage,
+            tool_calls_count=len(ma_res.executed_tools),
+        )
+        return CoachChatResponse(
+            outcome="ok",
+            result=ma_res.response,
+            usage=ma_res.usage,
+            trace_id=trace_id,
+        )
+
     # Phase 09 & 10: When AI Agent mode is enabled and tool execution is available,
     # delegate execution to the configured agent executor (LangGraph or native fallback).
     if is_coach_agent_enabled() and tool_handler is not None:

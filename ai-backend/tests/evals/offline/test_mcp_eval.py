@@ -12,9 +12,9 @@ from tests.evals.evaluators.mcp import McpToolsEvaluator
 from tests.evals.runner import run_offline_evaluation
 
 
-def test_mcp_benchmark_dataset_loads_and_has_at_least_35_cases() -> None:
+def test_mcp_benchmark_dataset_loads_and_has_at_least_40_cases() -> None:
     cases = load_benchmark_dataset("mcp_tools")
-    assert len(cases) >= 35, f"Expected at least 35 MCP benchmark cases, got {len(cases)}"
+    assert len(cases) >= 40, f"Expected at least 40 MCP benchmark cases, got {len(cases)}"
 
 
 def test_mcp_tools_evaluator_evaluates_all_benchmark_cases() -> None:
@@ -100,6 +100,6 @@ def test_prompt_injection_defense_across_eval_cases() -> None:
 
 def test_offline_eval_runner_runs_mcp_tools_category() -> None:
     results = run_offline_evaluation("mcp_tools")
-    assert len(results) >= 35, f"Expected at least 35 evaluation results, got {len(results)}"
+    assert len(results) >= 40, f"Expected at least 40 evaluation results, got {len(results)}"
     passed_count = sum(1 for r in results if r["passed"])
     assert passed_count == len(results), f"Expected all cases to pass, got {passed_count}/{len(results)}"

@@ -23,7 +23,7 @@ from tests.evals.runner import main, run_live_evaluation, run_offline_evaluation
 
 def test_offline_evaluation_execution() -> None:
     results = run_offline_evaluation()
-    assert len(results) == 227, f"Expected exactly 227 benchmark results, got {len(results)}"
+    assert len(results) == 277, f"Expected exactly 277 benchmark results, got {len(results)}"
     failures = [r for r in results if not r["passed"]]
     assert len(failures) == 0, f"Offline evaluation failures: {failures}"
 

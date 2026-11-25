@@ -125,7 +125,10 @@ def test_mcp_hitl_approval_confirmation_flow(client: TestClient) -> None:
     # 2. Confirm approval via POST /internal/v1/mcp/approval/confirm
     confirm_res = client.post(
         f"{MCP_BASE}/approval/confirm",
-        json={"approval_id": ticket_id},
+        json={
+            "approval_id": ticket_id,
+            "expected_payload_hash": unconf_data["approval_ticket"]["payload_hash"],
+        },
         headers=mcp_auth_headers(sub=USER_ID),
     )
     assert confirm_res.status_code == 200
@@ -133,3 +136,62 @@ def test_mcp_hitl_approval_confirmation_flow(client: TestClient) -> None:
     assert data["is_error"] is False
     assert data["structured_data"]["success"] is True
     assert data["structured_data"]["name"] == "API Confirmed Plan"
+
+    # 3. Replay of same ticket is forbidden (403)
+    replay_res = client.post(
+        f"{MCP_BASE}/approval/confirm",
+        json={"approval_id": ticket_id},
+        headers=mcp_auth_headers(sub=USER_ID),
+    )
+    assert replay_res.status_code == 403
+
+
+def test_mcp_api_blocks_direct_confirmed_and_empty_subject_and_cross_user_confirm(
+    client: TestClient,
+) -> None:
+    # 1. Direct confirmed=True on /tools/execute is forbidden (403)
+    direct_res = client.post(
+        f"{MCP_BASE}/tools/execute",
+        json={
+            "tool_name": "persist_workout_plan",
+            "arguments": {"plan": {"sessions": []}, "name": "Bypass", "confirmed": True},
+            "user_id": USER_ID,
+            "request_id": "req-bypass-api",
+        },
+        headers=mcp_auth_headers(sub=USER_ID),
+    )
+    assert direct_res.status_code == 403
+
+    # 2. Empty token sub is forbidden (403)
+    empty_sub_res = client.post(
+        f"{MCP_BASE}/tools/execute",
+        json={
+            "tool_name": "preview_nutrition_plan",
+            "arguments": {"goal": "fat_loss"},
+            "user_id": "",
+            "request_id": "req-empty-sub",
+        },
+        headers=mcp_auth_headers(sub=""),
+    )
+    assert empty_sub_res.status_code == 403
+
+    # 3. Cross-user approval confirm returns 403
+    ticket_res = client.post(
+        f"{MCP_BASE}/tools/execute",
+        json={
+            "tool_name": "persist_workout_plan",
+            "arguments": {"plan": {"sessions": []}, "name": "Owner Plan"},
+            "user_id": USER_ID,
+            "request_id": "req-owner",
+        },
+        headers=mcp_auth_headers(sub=USER_ID),
+    )
+    ticket_id = ticket_res.json()["approval_ticket"]["approval_id"]
+
+    attacker_res = client.post(
+        f"{MCP_BASE}/approval/confirm",
+        json={"approval_id": ticket_id},
+        headers=mcp_auth_headers(sub="22222222-2222-2222-2222-222222222222"),
+    )
+    assert attacker_res.status_code == 403
+

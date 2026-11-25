@@ -32,6 +32,7 @@ class AgentApprovalStatus(StrEnum):
     """Lifecycle status for human-in-the-loop approval tickets."""
     PENDING = "pending"
     APPROVED = "approved"
+    CONSUMED = "consumed"
     REJECTED = "rejected"
     EXPIRED = "expired"
 
@@ -50,6 +51,10 @@ class ApprovalTicket(BaseModel):
     created_at: float = Field(description="Monotonic or epoch creation timestamp")
     expires_at: float = Field(description="Expiration timestamp after which ticket is invalid")
     status: AgentApprovalStatus = Field(default=AgentApprovalStatus.PENDING)
+    payload_hash: str = Field(
+        default="",
+        description="Canonical SHA-256 hash binding this ticket to user_id, tool_name, and arguments",
+    )
 
 
 class IdempotencyRecord(BaseModel):
@@ -61,6 +66,9 @@ class IdempotencyRecord(BaseModel):
     tool_name: str
     result: dict[str, Any]
     created_at: float
+    user_id: str = Field(default="", description="Owner user ID scoping this idempotency record")
+    payload_hash: str = Field(default="", description="Canonical SHA-256 hash of bound arguments")
+    expires_at: float | None = Field(default=None, description="Optional expiration epoch timestamp")
 
 
 class McpToolDefinition(BaseModel):
@@ -225,6 +233,10 @@ class McpConfig(BaseModel):
     enforce_prompt_injection_sanitization: bool = Field(
         default=True,
         description="Whether to sanitize injection delimiters in tool outputs",
+    )
+    strict_hitl_tickets: bool = Field(
+        default=True,
+        description="Require server-issued, single-use approval tickets for write executions",
     )
 
 

@@ -16,6 +16,7 @@ from onusfit_ai.features.mcp.domain.contracts import (
     McpToolDefinition,
     McpToolResult,
 )
+from onusfit_ai.features.mcp.domain.errors import McpError, McpSecurityError
 from onusfit_ai.features.mcp.presentation.server.builder import get_fitonus_mcp_server
 from onusfit_ai.shared.auth import ServiceClaims, require_scope
 
@@ -39,16 +40,22 @@ class GetPromptRequest(BaseModel):
 
 class ConfirmApprovalRequest(BaseModel):
     approval_id: str = Field(description="Unique ID of pending approval ticket")
+    expected_payload_hash: str | None = Field(
+        default=None,
+        description="Optional SHA-256 payload hash binding confirmation to original proposed arguments",
+    )
 
 
 _shared_orchestrator: AgentToolOrchestrator | None = None
+_shared_server_id: int | None = None
 
 
 def _get_orchestrator() -> AgentToolOrchestrator:
-    global _shared_orchestrator
-    if _shared_orchestrator is None:
-        server = get_fitonus_mcp_server()
+    global _shared_orchestrator, _shared_server_id
+    server = get_fitonus_mcp_server()
+    if _shared_orchestrator is None or _shared_server_id != id(server):
         _shared_orchestrator = AgentToolOrchestrator(registry=server.get_registry(), config=server.config)
+        _shared_server_id = id(server)
     return _shared_orchestrator
 
 
@@ -83,18 +90,26 @@ async def execute_tool(
     """Execute a validated tool call under authenticated user context."""
     orchestrator = _get_orchestrator()
 
-    # User isolation check: target user_id must match token claims
-    if claims.user_id and call.user_id != claims.user_id:
+    # User isolation check: authenticated claims user_id is mandatory and must match target user_id
+    claims_uid = (claims.user_id or "").strip()
+    if not claims_uid or call.user_id.strip() != claims_uid:
         raise HTTPException(
             status_code=403,
-            detail=f"Forbidden: Token user '{claims.user_id}' cannot execute tool on behalf of '{call.user_id}'",
+            detail="Forbidden: Authenticated token user does not match requested user scope",
+        )
+
+    # Reject attempts to bypass HITL approval directly over /tools/execute
+    if call.arguments.get("confirmed") is True:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: Direct write confirmation is not permitted; use /approval/confirm",
         )
 
     trace_id = x_request_id or call.request_id or claims.request_id or str(uuid.uuid4())
     call_with_trace = McpToolCall(
         tool_name=call.tool_name,
         arguments=call.arguments,
-        user_id=call.user_id,
+        user_id=claims_uid,
         request_id=trace_id,
         timeout_seconds=call.timeout_seconds,
     )
@@ -152,13 +167,26 @@ async def confirm_approval(
     x_request_id: str | None = Header(default=None),
 ) -> McpToolResult:
     """Confirm a pending Human-in-the-Loop write operation."""
+    claims_uid = (claims.user_id or "").strip()
+    if not claims_uid:
+        raise HTTPException(status_code=403, detail="Forbidden: Authenticated user_id required")
+
     orchestrator = _get_orchestrator()
     trace_id = x_request_id or claims.request_id or str(uuid.uuid4())
     try:
         return await orchestrator.confirm_and_execute(
             approval_id=req.approval_id,
-            user_id=claims.user_id,
+            user_id=claims_uid,
             request_id=trace_id,
+            expected_payload_hash=req.expected_payload_hash,
         )
-    except Exception as exc:
+    except McpSecurityError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except McpError as exc:
+        if exc.code == "TICKET_NOT_FOUND":
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        if exc.code == "TICKET_EXPIRED":
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Approval confirmation failed") from exc

@@ -127,39 +127,173 @@ async def test_idempotency_prevents_duplicate_mutations() -> None:
     idempotency_mgr = IdempotencyManager()
     orchestrator = AgentToolOrchestrator(registry=registry, idempotency_manager=idempotency_mgr)
 
-    # First write with idempotency key
+    # First write request creates HITL ticket, then confirms with idempotency key
     call1 = McpToolCall(
         tool_name="persist_workout_plan",
         arguments={
             "plan": {"sessions": []},
             "name": "Repeat Split",
-            "confirmed": True,
+            "confirmed": False,
             "idempotency_key": "idemp-unique-999",
         },
         user_id="user-idemp",
         request_id="req-idemp-1",
     )
 
-    res1 = await orchestrator.execute_tool(call1)
+    ticket_res_1 = await orchestrator.execute_tool(call1)
+    assert ticket_res_1.requires_approval is True
+    assert ticket_res_1.approval_ticket is not None
+    res1 = await orchestrator.confirm_and_execute(
+        approval_id=ticket_res_1.approval_ticket.approval_id,
+        user_id="user-idemp",
+        request_id="req-idemp-confirm-1",
+    )
     assert res1.is_error is False
     plan_id_1 = res1.structured_data["plan_id"]
 
-    # Replay same call with identical idempotency key
+    # Second write request with identical user, tool, payload, and idempotency key
     call2 = McpToolCall(
         tool_name="persist_workout_plan",
         arguments={
             "plan": {"sessions": []},
             "name": "Repeat Split",
-            "confirmed": True,
+            "confirmed": False,
             "idempotency_key": "idemp-unique-999",
         },
         user_id="user-idemp",
         request_id="req-idemp-2",
     )
 
-    res2 = await orchestrator.execute_tool(call2)
+    ticket_res_2 = await orchestrator.execute_tool(call2)
+    assert ticket_res_2.requires_approval is True
+    assert ticket_res_2.approval_ticket is not None
+    res2 = await orchestrator.confirm_and_execute(
+        approval_id=ticket_res_2.approval_ticket.approval_id,
+        user_id="user-idemp",
+        request_id="req-idemp-confirm-2",
+    )
     assert res2.is_error is False
     plan_id_2 = res2.structured_data["plan_id"]
 
     # Must return identical cached result without creating new record
     assert plan_id_1 == plan_id_2
+
+
+@pytest.mark.asyncio
+async def test_hitl_blocks_direct_confirmed_bypass() -> None:
+    registry = create_fitonus_tool_registry()
+    orchestrator = AgentToolOrchestrator(registry=registry)
+
+    bypass_call = McpToolCall(
+        tool_name="persist_workout_plan",
+        arguments={"plan": {"sessions": []}, "name": "Bypass Attempt", "confirmed": True},
+        user_id="user-bypass",
+        request_id="req-bypass",
+    )
+    res = await orchestrator.execute_tool(bypass_call)
+    assert res.is_error is True
+    assert "forbidden" in (res.error_message or "").lower()
+
+
+@pytest.mark.asyncio
+async def test_hitl_ticket_replay_and_payload_binding_enforced() -> None:
+    registry = create_fitonus_tool_registry()
+    approval_mgr = ApprovalManager()
+    orchestrator = AgentToolOrchestrator(registry=registry, approval_manager=approval_mgr)
+
+    ticket_res = await orchestrator.execute_tool(
+        McpToolCall(
+            tool_name="persist_workout_plan",
+            arguments={"plan": {"sessions": []}, "name": "Bound Plan"},
+            user_id="user-bound",
+            request_id="req-bound-1",
+        )
+    )
+    ticket = ticket_res.approval_ticket
+    assert ticket is not None
+    assert len(ticket.payload_hash) == 64
+
+    # Wrong payload hash fails binding check before consuming ticket
+    with pytest.raises(McpSecurityError):
+        await orchestrator.confirm_and_execute(
+            approval_id=ticket.approval_id,
+            user_id="user-bound",
+            request_id="req-bound-bad",
+            expected_payload_hash="0" * 64,
+        )
+
+    # Matching payload hash succeeds once
+    confirmed = await orchestrator.confirm_and_execute(
+        approval_id=ticket.approval_id,
+        user_id="user-bound",
+        request_id="req-bound-ok",
+        expected_payload_hash=ticket.payload_hash,
+    )
+    assert confirmed.is_error is False
+    assert confirmed.structured_data["success"] is True
+
+    # Replaying the same ticket fails
+    with pytest.raises(McpSecurityError):
+        await orchestrator.confirm_and_execute(
+            approval_id=ticket.approval_id,
+            user_id="user-bound",
+            request_id="req-bound-replay",
+        )
+
+
+@pytest.mark.asyncio
+async def test_idempotency_is_user_scoped_and_rejects_conflicting_payloads() -> None:
+    registry = create_fitonus_tool_registry()
+    idempotency_mgr = IdempotencyManager()
+    orchestrator = AgentToolOrchestrator(registry=registry, idempotency_manager=idempotency_mgr)
+
+    # User A saves Plan A under shared key
+    t_a = await orchestrator.execute_tool(
+        McpToolCall(
+            tool_name="persist_workout_plan",
+            arguments={"plan": {"sessions": []}, "name": "Plan A", "idempotency_key": "shared-k1"},
+            user_id="user-a",
+            request_id="req-a1",
+        )
+    )
+    assert t_a.approval_ticket is not None
+    res_a = await orchestrator.confirm_and_execute(
+        t_a.approval_ticket.approval_id, user_id="user-a", request_id="req-a2"
+    )
+    assert res_a.structured_data["name"] == "Plan A"
+
+    # User B with the SAME key gets an independent mutation (no cross-user cache leak)
+    t_b = await orchestrator.execute_tool(
+        McpToolCall(
+            tool_name="persist_workout_plan",
+            arguments={"plan": {"sessions": []}, "name": "Plan B", "idempotency_key": "shared-k1"},
+            user_id="user-b",
+            request_id="req-b1",
+        )
+    )
+    assert t_b.approval_ticket is not None
+    res_b = await orchestrator.confirm_and_execute(
+        t_b.approval_ticket.approval_id, user_id="user-b", request_id="req-b2"
+    )
+    assert res_b.structured_data["name"] == "Plan B"
+    assert res_b.structured_data["plan_id"] != res_a.structured_data["plan_id"]
+
+    # User A reusing same key with a DIFFERENT payload is blocked
+    t_a_conflict = await orchestrator.execute_tool(
+        McpToolCall(
+            tool_name="persist_workout_plan",
+            arguments={
+                "plan": {"sessions": []},
+                "name": "Conflicting Plan A",
+                "idempotency_key": "shared-k1",
+            },
+            user_id="user-a",
+            request_id="req-a3",
+        )
+    )
+    assert t_a_conflict.approval_ticket is not None
+    conflict_res = await orchestrator.confirm_and_execute(
+        t_a_conflict.approval_ticket.approval_id, user_id="user-a", request_id="req-a4"
+    )
+    assert conflict_res.is_error is True
+    assert "conflicting payload" in (conflict_res.error_message or "").lower()
