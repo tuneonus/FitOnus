@@ -1,9 +1,17 @@
 import { z } from 'zod';
 import { AppError } from '../errors/app-error.js';
-import type { Logger } from '../logging/logger.js';
+import { redactSensitiveText, type Logger } from '../logging/logger.js';
 import { currentCorrelationId } from '../logging/request-correlation.js';
 import type { GeminiFeature } from './gemini-feature.js';
-import { aiCallCompletedFields, aiCallFailedFields, classifyPythonAiError, tagAiErrorCategory } from './ai-observability.js';
+import { defaultAiMetrics } from './ai-metrics.js';
+import {
+  INVALID_OUTPUT_OUTCOMES,
+  aiCallCompletedFields,
+  aiCallFailedFields,
+  classifyPythonAiError,
+  tagAiErrorCategory,
+} from './ai-observability.js';
+import { withAiSpan } from './ai-tracing.js';
 import { markAiRequestDispatched } from './ai-usage.js';
 import { toPublicAiError } from './python-ai-errors.js';
 import type { AiUsageRecorder, PythonAiClient } from './python-ai-client.js';
@@ -46,6 +54,8 @@ export interface PythonAiCall<S extends z.ZodType<PythonReply>> {
   label: string;
   /** User-facing text when the AI backend itself is the problem (nothing internal leaks). */
   unavailableMessage: string;
+  /** Optional caller abort signal forwarded to the underlying HTTP client. */
+  signal?: AbortSignal | undefined;
 }
 
 /**
@@ -71,15 +81,21 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
   const elapsedMs = () => Math.round(performance.now() - startedAt);
 
   try {
-    const raw = await call.client.postJson({
-      path: call.path,
-      scope: call.scope,
-      userId: call.userId,
-      requestId: call.requestId,
-      correlationId,
-      timeoutMs: call.timeoutMs,
-      body: call.body,
-    });
+    const raw = await withAiSpan(
+      'ai.python.call',
+      { attributes: { feature: call.feature, endpoint: call.path, aiRequestId: call.requestId } },
+      () =>
+        call.client.postJson({
+          path: call.path,
+          scope: call.scope,
+          userId: call.userId,
+          requestId: call.requestId,
+          correlationId,
+          timeoutMs: call.timeoutMs,
+          body: call.body,
+          ...(call.signal ? { signal: call.signal } : {}),
+        }),
+    );
 
     // The request definitely reached Python, so Gemini may have been billed.
     markAiRequestDispatched();
@@ -115,7 +131,9 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
             event: 'ledger_persistence_failed',
             ...ids,
             feature: call.feature,
-            error: ledgerError instanceof Error ? ledgerError.message : String(ledgerError),
+            error: redactSensitiveText(
+              ledgerError instanceof Error ? ledgerError.message : String(ledgerError),
+            ),
             status: 'success',
           },
           'Failed to persist Gemini usage event to database',
@@ -123,8 +141,28 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
       }
     }
 
+    const totalMs = elapsedMs();
+    try {
+      const unusable = INVALID_OUTPUT_OUTCOMES.has(outcome);
+      defaultAiMetrics.recordLlmCall({
+        feature: call.feature,
+        model: usage.model,
+        durationMs: totalMs,
+        success: !unusable,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        cachedTokens: usage.cachedTokens,
+        thinkingTokens: usage.thinkingTokens,
+        totalTokens: usage.totalTokens,
+        isFallback: usage.isFallback,
+        errorCategory: unusable ? 'invalid_ai_response' : null,
+      });
+    } catch {
+      // Fail-open observability
+    }
+
     call.logger?.info(
-      aiCallCompletedFields({ ids, feature: call.feature, endpoint: call.path, outcome, usage, durationMs: elapsedMs() }),
+      aiCallCompletedFields({ ids, feature: call.feature, endpoint: call.path, outcome, usage, durationMs: totalMs }),
       `${call.label} served`,
     );
     return parsed.data;
@@ -164,7 +202,9 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
               event: 'ledger_persistence_failed',
               ...ids,
               feature: call.feature,
-              error: ledgerError instanceof Error ? ledgerError.message : String(ledgerError),
+              error: redactSensitiveText(
+                ledgerError instanceof Error ? ledgerError.message : String(ledgerError),
+              ),
               status: 'failed',
             },
             'Failed to persist failed Gemini usage event to database',
@@ -173,12 +213,26 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
       }
     }
 
+    const totalMs = elapsedMs();
+    const category = classifyPythonAiError(failure);
+    try {
+      defaultAiMetrics.recordLlmCall({
+        feature: call.feature,
+        durationMs: totalMs,
+        success: false,
+        errorCategory: category,
+        timeout: category === 'gemini_timeout' || category === 'python_timeout',
+      });
+    } catch {
+      // Fail-open observability
+    }
+
     call.logger?.error(
-      aiCallFailedFields({ ids, feature: call.feature, endpoint: call.path, error: failure, durationMs: elapsedMs() }),
+      aiCallFailedFields({ ids, feature: call.feature, endpoint: call.path, error: failure, durationMs: totalMs }),
       `${call.label} failed`,
     );
     // The public error keeps its shape; the category rides along out of band for callers that degrade (insights).
-    throw tagAiErrorCategory(toPublicAiError(failure, call.unavailableMessage), classifyPythonAiError(failure));
+    throw tagAiErrorCategory(toPublicAiError(failure, call.unavailableMessage), category);
   }
 }
 

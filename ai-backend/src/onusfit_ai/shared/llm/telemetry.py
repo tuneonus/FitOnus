@@ -11,7 +11,8 @@ import logging
 from typing import Final
 
 from onusfit_ai.shared.llm.ports import LlmUsage
-from onusfit_ai.shared.logging.logging import log_event
+from onusfit_ai.shared.logging.logging import llm_metrics_recorded_var, log_event
+from onusfit_ai.shared.logging.metrics import metrics_registry
 
 # Outcomes meaning "the model answered but its output was not usable". `no_food` is NOT one of them:
 # "this photo has no food" is a valid answer. Must match INVALID_OUTPUT_OUTCOMES in the Node API.
@@ -26,10 +27,31 @@ def log_ai_call(
     prompt_version: str,
     outcome: str,
     usage: LlmUsage,
+    record_metrics: bool = True,
     **counts: int | bool,
 ) -> None:
     """`counts` are small per-feature numbers such as `items=3` or `audio_bytes=48211`."""
     unusable = outcome in INVALID_OUTPUT_OUTCOMES
+    error_category = "invalid_ai_response" if unusable else None
+    if record_metrics:
+        try:
+            metrics_registry.record_llm_call(
+                feature=feature,
+                model=usage.model,
+                duration_ms=float(usage.duration_ms),
+                success=not unusable,
+                input_tokens=usage.input_tokens,
+                output_tokens=usage.output_tokens,
+                cached_tokens=usage.cached_tokens,
+                thinking_tokens=usage.thinking_tokens,
+                total_tokens=usage.total_tokens,
+                is_fallback=usage.is_fallback,
+                error_category=error_category,
+            )
+            llm_metrics_recorded_var.set(True)
+        except Exception:  # noqa: BLE001 - observability must never break AI calls
+            pass
+
     log_event(
         logger,
         "ai.call.completed",
@@ -39,7 +61,7 @@ def log_ai_call(
         promptVersion=prompt_version,
         success=not unusable,
         outcome=outcome,
-        errorCategory="invalid_ai_response" if unusable else None,
+        errorCategory=error_category,
         model=usage.model,
         modelFallbackUsed=usage.is_fallback,
         geminiDurationMs=usage.duration_ms,

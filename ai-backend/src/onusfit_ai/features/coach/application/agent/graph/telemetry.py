@@ -10,7 +10,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 
-from onusfit_ai.shared.logging.logging import log_event
+from onusfit_ai.shared.logging import log_event, metrics_registry
 
 logger = logging.getLogger("onusfit_ai.agent.graph")
 
@@ -70,8 +70,29 @@ class GraphExecutionTelemetry:
         )
 
     def log_completion(self) -> None:
-        """Logs the final summary of graph execution."""
+        """Logs the final summary of graph execution and records bounded metrics."""
         total_duration_ms = round((time.monotonic() - self.start_time) * 1000, 2)
+        try:
+            limit_hit: str | None = None
+            reason = (self.termination_reason or "").lower()
+            if "max_iterations" in reason:
+                limit_hit = "max_iterations"
+            elif "max_tool_calls" in reason:
+                limit_hit = "max_tool_calls"
+            elif "deadline" in reason:
+                limit_hit = "deadline"
+            metrics_registry.record_agent_execution(
+                engine=self.engine,
+                routing_decision=self.outcome,
+                duration_ms=total_duration_ms,
+                tool_calls=self.tool_calls_count,
+                replans=self.replans_count,
+                limit_hit=limit_hit,
+                failed=self.outcome in ("error", "node_error"),
+                fallback_used=self.fallback_used,
+            )
+        except Exception:  # noqa: BLE001 - fail-open observability
+            pass
         log_event(
             logger,
             "agent.graph.completed",

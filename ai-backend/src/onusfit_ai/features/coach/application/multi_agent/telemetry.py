@@ -8,7 +8,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 
-from onusfit_ai.shared.logging.logging import log_event
+from onusfit_ai.shared.logging import log_event, metrics_registry
 
 logger = logging.getLogger("onusfit_ai.coach.multi_agent")
 
@@ -30,6 +30,7 @@ class MultiAgentTelemetry:
     replans_count: int = 0
     llm_calls_count: int = 0
     tool_calls_count: int = 0
+    tool_failures_count: int = 0
     tool_cache_hits: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
@@ -94,6 +95,25 @@ class MultiAgentTelemetry:
 
     def log_workflow_completed(self) -> None:
         total_ms = round(max(0.0, (time.monotonic() - self.start_time) * 1000.0), 2)
+        try:
+            reason_lower = self.termination_reason.lower()
+            limit_hit: str | None = None
+            if "max_" in reason_lower or "budget" in reason_lower or "deadline" in reason_lower:
+                limit_hit = self.termination_reason
+            metrics_registry.record_agent_execution(
+                engine="multi_agent",
+                routing_decision=self.routing_mode,
+                duration_ms=total_ms,
+                tool_calls=self.tool_calls_count,
+                tool_failures=self.tool_failures_count,
+                iterations=self.delegation_count,
+                replans=self.replans_count,
+                limit_hit=limit_hit,
+                failed=(self.outcome == "error" or self.agent_failures_count > 0),
+                fallback_used=self.fallback_used,
+            )
+        except Exception:  # noqa: BLE001 - fail-open observability
+            pass
         log_event(
             logger,
             "multi_agent.workflow.completed",
@@ -110,6 +130,7 @@ class MultiAgentTelemetry:
             replansCount=self.replans_count,
             llmCallsCount=self.llm_calls_count,
             toolCallsCount=self.tool_calls_count,
+            toolFailuresCount=self.tool_failures_count,
             toolCacheHits=self.tool_cache_hits,
             inputTokens=self.input_tokens,
             outputTokens=self.output_tokens,
@@ -122,4 +143,3 @@ class MultiAgentTelemetry:
             terminationReason=self.termination_reason,
             totalDurationMs=total_ms,
         )
-

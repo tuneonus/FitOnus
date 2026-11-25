@@ -5,6 +5,7 @@ and the decision "may this user do this now" stay in Node.
 """
 
 import logging
+import time
 from datetime import UTC, datetime
 
 from onusfit_ai.features.meals.application.parsing import (
@@ -30,8 +31,13 @@ from onusfit_ai.features.meals.domain.voice import (
 from onusfit_ai.shared.contracts.common import Usage
 from onusfit_ai.shared.llm.ports import LlmServiceError, MediaInput, TextGenerator
 from onusfit_ai.shared.llm.telemetry import log_ai_call
+from onusfit_ai.shared.logging import (
+    MultimodalObservabilityTracker,
+    classify_media_validation_error,
+)
 from onusfit_ai.shared.utils.audio import decode_audio_base64
 from onusfit_ai.shared.utils.js_compat import js_round, strict_json_loads, strip_code_fences
+from onusfit_ai.shared.utils.media import InvalidMediaError
 
 logger = logging.getLogger("onusfit_ai.voice_meal")
 
@@ -45,28 +51,61 @@ async def parse_voice_meal(
     and bounds every nutrient value via domain sanitization before returning.
     """
     prompt = build_prompt(request.transcript, request.lang, request.meal_type)
-    media = (
-        MediaInput(
-            mime_type=request.audio.mime_type, data=decode_audio_base64(request.audio.base64)
+    tracker: MultimodalObservabilityTracker | None = None
+    media: MediaInput | None = None
+    if request.audio is not None:
+        tracker = MultimodalObservabilityTracker(
+            modality="audio",
+            feature="voice_meal",
+            trace_id=trace_id,
         )
-        if request.audio
-        else None
-    )
+        val_started = time.monotonic()
+        try:
+            decoded_audio = decode_audio_base64(request.audio.base64)
+        except InvalidMediaError as exc:
+            tracker.record_validation_failure(
+                duration_ms=(time.monotonic() - val_started) * 1000.0,
+                reason=classify_media_validation_error(str(exc)),
+            )
+            raise
+        media = MediaInput(mime_type=request.audio.mime_type, data=decoded_audio)
+        tracker.record_validation_success(
+            duration_ms=(time.monotonic() - val_started) * 1000.0,
+            byte_size=len(decoded_audio),
+            mime_type=request.audio.mime_type,
+        )
 
     use_structured = is_voice_meal_structured_output_enabled()
     schema = GeminiVoiceMealOutput if use_structured else None
 
-    llm_result = await llm.generate_text(
-        prompt,
-        primary_model=request.model.primary,
-        fallback_model=request.model.fallback,
-        deadline_s=request.deadline_ms / 1000,
-        media=media,
-        schema=schema,
-    )
+    try:
+        llm_result = await llm.generate_text(
+            prompt,
+            primary_model=request.model.primary,
+            fallback_model=request.model.fallback,
+            deadline_s=request.deadline_ms / 1000,
+            media=media,
+            schema=schema,
+        )
+    except LlmServiceError as exc:
+        if tracker is not None:
+            tracker.record_processing_completed(
+                model=exc.usage.model if exc.usage else request.model.primary,
+                outcome="error",
+                processing_error=True,
+                error_category=exc.code.lower(),
+            )
+        raise
 
     # 1. Defensively handle safety-blocked content
     if llm_result.finish_reason == "SAFETY":
+        if tracker is not None:
+            tracker.record_processing_completed(
+                model=llm_result.usage.model,
+                outcome="safety_blocked",
+                processing_error=True,
+                error_category="gemini_unavailable",
+            )
         raise LlmServiceError(
             code="PROVIDER_UNAVAILABLE",
             message="Voice meal parsing was blocked by safety policies.",
@@ -76,6 +115,13 @@ async def parse_voice_meal(
 
     # 2. Defensively handle token truncation
     if llm_result.finish_reason == "MAX_TOKENS":
+        if tracker is not None:
+            tracker.record_processing_completed(
+                model=llm_result.usage.model,
+                outcome="max_tokens",
+                processing_error=True,
+                error_category="gemini_error",
+            )
         raise LlmServiceError(
             code="PROVIDER_ERROR",
             message="Voice meal parsing exceeded maximum token limit.",
@@ -106,6 +152,13 @@ async def parse_voice_meal(
                 parsed_output = None
 
         if parsed_output is None:
+            if tracker is not None:
+                tracker.record_processing_completed(
+                    model=llm_result.usage.model,
+                    outcome="parse_failed",
+                    processing_error=True,
+                    error_category="invalid_ai_response",
+                )
             log_ai_call(
                 logger,
                 feature="voice_meal",
@@ -205,6 +258,13 @@ async def parse_voice_meal(
         has_audio=media is not None,
         items=len(result.items),
     )
+    if tracker is not None:
+        tracker.record_processing_completed(
+            model=usage.model,
+            outcome=outcome,
+            processing_error=(outcome == "parse_failed"),
+            error_category=("invalid_ai_response" if outcome == "parse_failed" else None),
+        )
     return ParseVoiceMealResponse(
         outcome=outcome,
         result=result,

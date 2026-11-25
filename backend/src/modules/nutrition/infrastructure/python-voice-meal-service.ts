@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { defaultAiMetrics } from '../../../shared/ai/ai-metrics.js';
 import { currentAiRequestContext } from '../../../shared/ai/ai-usage.js';
 import { callPythonAi, pythonUsageSchema, requireGateUserId } from '../../../shared/ai/python-ai-call.js';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
@@ -70,59 +71,90 @@ export class PythonVoiceMealService implements VoiceMealParser {
 
     const models = await this.deps.resolveModels();
     const timeoutMs = Math.min(this.deps.pythonTimeoutMs, VOICE_MEAL_MAX_TIMEOUT_MS);
-    const { result } = await callPythonAi({
-      client: this.deps.client,
-      path: VOICE_MEAL_PATH,
-      scope: VOICE_MEAL_SCOPE,
-      userId,
-      requestId: `voice-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-      timeoutMs,
-      body: {
-        // Optional fields that are undefined are dropped by JSON.stringify.
-        transcript: params.transcript,
-        audio: params.audio ? { mimeType: params.audio.mimeType, base64: params.audio.base64 } : undefined,
-        lang: params.lang,
-        mealType: params.mealType,
-        model: { primary: models.primary, fallback: models.fallback },
-        deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
-      },
-      schema: pythonVoiceResponseSchema,
-      feature: 'voice_meal',
-      usageRecorder: this.deps.usageRecorder,
-      logger: this.deps.logger,
-      label: 'Python voice meal',
-      unavailableMessage: VOICE_MEAL_UNAVAILABLE_MESSAGE,
-    });
+    const startedAt = performance.now();
+    const hasAudio = Boolean(params.audio);
+    const approxBytes = params.audio ? Math.floor((params.audio.base64.length * 3) / 4) : 0;
+    try {
+      const { result } = await callPythonAi({
+        client: this.deps.client,
+        path: VOICE_MEAL_PATH,
+        scope: VOICE_MEAL_SCOPE,
+        userId,
+        requestId: `voice-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+        timeoutMs,
+        body: {
+          // Optional fields that are undefined are dropped by JSON.stringify.
+          transcript: params.transcript,
+          audio: params.audio ? { mimeType: params.audio.mimeType, base64: params.audio.base64 } : undefined,
+          lang: params.lang,
+          mealType: params.mealType,
+          model: { primary: models.primary, fallback: models.fallback },
+          deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
+        },
+        schema: pythonVoiceResponseSchema,
+        feature: 'voice_meal',
+        usageRecorder: this.deps.usageRecorder,
+        logger: this.deps.logger,
+        label: 'Python voice meal',
+        unavailableMessage: VOICE_MEAL_UNAVAILABLE_MESSAGE,
+      });
 
-    // The exact shape the mobile app has always received (optional keys are absent, never null).
-    const items: DetectedFoodItem[] = result.items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      ...(item.brand ? { brand: item.brand } : {}),
-      serving: item.serving,
-      ...(typeof item.servingWeightG === 'number' ? { servingWeightG: item.servingWeightG } : {}),
-      ...(typeof item.servingUnit === 'string' ? { servingUnit: item.servingUnit } : {}),
-      ...(typeof item.servingSize === 'number' ? { servingSize: item.servingSize } : {}),
-      kcal: item.kcal,
-      protein: item.protein,
-      carbs: item.carbs,
-      fat: item.fat,
-      ...(typeof item.fiber === 'number' ? { fiber: item.fiber } : {}),
-      confidence: item.confidence,
-      isAiEstimated: item.isAiEstimated,
-    }));
-    return {
-      transcript: result.transcript,
-      detectedLanguage: result.detectedLanguage,
-      items,
-      confidence: result.confidence,
-      totalKcal: result.totalKcal,
-      totalProteinGrams: result.totalProteinGrams,
-      totalCarbsGrams: result.totalCarbsGrams,
-      totalFatGrams: result.totalFatGrams,
-      ...(typeof result.totalFiberGrams === 'number' ? { totalFiberGrams: result.totalFiberGrams } : {}),
-      ...(result.unclearReason ? { unclearReason: result.unclearReason } : {}),
-      parsedAt: result.parsedAt,
-    };
+      if (hasAudio) {
+        try {
+          defaultAiMetrics.recordMultimodalProcessing({
+            modality: 'audio',
+            durationMs: Math.round(performance.now() - startedAt),
+            byteSize: approxBytes,
+          });
+        } catch {
+          // Fail-open observability
+        }
+      }
+
+      // The exact shape the mobile app has always received (optional keys are absent, never null).
+      const items: DetectedFoodItem[] = result.items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        ...(item.brand ? { brand: item.brand } : {}),
+        serving: item.serving,
+        ...(typeof item.servingWeightG === 'number' ? { servingWeightG: item.servingWeightG } : {}),
+        ...(typeof item.servingUnit === 'string' ? { servingUnit: item.servingUnit } : {}),
+        ...(typeof item.servingSize === 'number' ? { servingSize: item.servingSize } : {}),
+        kcal: item.kcal,
+        protein: item.protein,
+        carbs: item.carbs,
+        fat: item.fat,
+        ...(typeof item.fiber === 'number' ? { fiber: item.fiber } : {}),
+        confidence: item.confidence,
+        isAiEstimated: item.isAiEstimated,
+      }));
+      return {
+        transcript: result.transcript,
+        detectedLanguage: result.detectedLanguage,
+        items,
+        confidence: result.confidence,
+        totalKcal: result.totalKcal,
+        totalProteinGrams: result.totalProteinGrams,
+        totalCarbsGrams: result.totalCarbsGrams,
+        totalFatGrams: result.totalFatGrams,
+        ...(typeof result.totalFiberGrams === 'number' ? { totalFiberGrams: result.totalFiberGrams } : {}),
+        ...(result.unclearReason ? { unclearReason: result.unclearReason } : {}),
+        parsedAt: result.parsedAt,
+      };
+    } catch (error) {
+      if (hasAudio) {
+        try {
+          defaultAiMetrics.recordMultimodalProcessing({
+            modality: 'audio',
+            durationMs: Math.round(performance.now() - startedAt),
+            processingError: true,
+            byteSize: approxBytes,
+          });
+        } catch {
+          // Fail-open observability
+        }
+      }
+      throw error;
+    }
   }
 }

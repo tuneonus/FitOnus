@@ -288,6 +288,7 @@ export function createContainer(
   const knowledge = createKnowledgeModule(database, pythonAi, {
     adminBasePath: `${API_PREFIX}/admin/knowledge`,
     uploadLimiter: rateLimiters.adminImageUploads,
+    ...(logger ? { logger } : {}),
   });
 
   const coach = createCoachModule({

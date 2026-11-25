@@ -3,16 +3,16 @@
 Why this exists: under uvicorn nothing configures the `onusfit_ai.*` loggers, so the metadata lines
 the use cases write (model, outcome, tokens, durations) were being dropped. Render collects stdout,
 so this installs one stdout handler. Lines are JSON with the same field names the Node API writes
-(`time`, `level`, `service`, `event`, `msg`, `correlationId`, `aiRequestId`, `feature`, ...), so one
-search in Render's log viewer finds both services' lines for one request.
+(`time`, `level`, `service`, `event`, `msg`, `correlationId`, `aiRequestId`, `feature`, `traceId`,
+`spanId`, ...), so one search in Render's log viewer finds both services' lines for one request.
 
 Rules (also enforced by tests): events carry metadata only, never prompts, user data, replies,
 images, audio, tokens or keys. Three layers keep that true:
   1. `log_event` is the way to write an event; call sites pass enums, numbers and booleans.
   2. `clean_fields` drops what is not a primitive, truncates text, and replaces the value of any
-     field whose NAME is sensitive (message, prompt, context, base64, token, ...).
-  3. `redact` masks anything that still looks like a Google API key, bearer token or JWT in the
-     final line, in case a library ever includes one.
+     field whose NAME is sensitive (message, prompt, context, base64, token, health data, ...).
+  3. `redact` masks anything that still looks like a Google API key, secret key, bearer token,
+     JWT, or e-mail address in the final line, in case a library ever includes one.
 JSON also escapes newlines, so a user cannot forge a log line.
 """
 
@@ -36,11 +36,24 @@ ai_request_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "ai_request_id", default=None
 )
 feature_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("feature", default=None)
+trace_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("trace_id", default=None)
+span_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("span_id", default=None)
+parent_span_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "parent_span_id", default=None
+)
+llm_metrics_recorded_var: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "llm_metrics_recorded", default=False
+)
 
 _REDACTIONS = (
     (re.compile(r"AIza[0-9A-Za-z_\-]{20,}"), "[redacted-api-key]"),
+    (re.compile(r"\bsk-[A-Za-z0-9_\-]{16,}\b"), "[redacted-secret-key]"),
     (re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/\-]+=*"), "Bearer [redacted]"),
     (re.compile(r"eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]*"), "[redacted-jwt]"),
+    (
+        re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b"),
+        "[redacted-email]",
+    ),
 )
 
 # Field names whose value is replaced, compared after lower-casing and removing `_`/`-`.
@@ -49,9 +62,14 @@ _SENSITIVE_FIELD_NAMES: Final = frozenset(
     {
         "authorization", "cookie", "setcookie", "token", "accesstoken", "refreshtoken", "idtoken",
         "servicetoken", "jwt", "bearer", "password", "passwd", "secret", "servicesecret", "apikey",
-        "key", "prompt", "message", "messages", "text", "reply", "response", "transcript",
-        "context", "history", "memories", "notes", "image", "audio", "base64", "imagebase64",
-        "audiobase64", "email", "phone", "displayname", "user", "userid", "sub",
+        "xapikey", "secretkey", "privatekey", "credentials", "authheader", "key",
+        "prompt", "rawprompt", "systemprompt", "message", "messages", "text", "reply", "response",
+        "transcript", "transcripts", "context", "history", "memories", "notes", "query",
+        "rawinput", "rawoutput", "image", "audio", "base64", "imagebase64", "audiobase64",
+        "email", "phone", "displayname", "user", "userid", "sub", "dob", "dateofbirth",
+        "healthdata", "healthrecord", "medical", "medicalnote", "diagnosis", "symptoms",
+        "injury", "injuries", "allergies", "medications", "weight", "height", "patient",
+        "userprofile",
     }
 )  # fmt: skip
 
@@ -85,13 +103,21 @@ def redact(text: str) -> str:
     return text
 
 
+def sanitize_error_summary(error: BaseException | str, *, max_length: int = 120) -> str:
+    """Return a privacy-safe error summary: exception class only or redacted short label."""
+    if isinstance(error, BaseException):
+        return type(error).__name__
+    cleaned = redact(str(error)).replace("\n", " ").replace("\r", " ").strip()
+    return cleaned[:max_length] if cleaned else "unknown_error"
+
+
 def _clean_value(value: Any) -> Any:
     if value is None or isinstance(value, bool | int):
         return value
     if isinstance(value, float):
         return value if math.isfinite(value) else None
     if isinstance(value, str):
-        return value[:_MAX_TEXT_LENGTH]
+        return redact(value)[:_MAX_TEXT_LENGTH]
     if isinstance(value, list | tuple):
         return [_clean_value(item) for item in value[:_MAX_LIST_ITEMS] if _is_scalar(item)]
     return (
@@ -136,6 +162,9 @@ class ContextFilter(logging.Filter):
             "correlationId": correlation_id_var.get(),
             "aiRequestId": ai_request_id_var.get(),
             "feature": feature_var.get(),
+            "traceId": trace_id_var.get(),
+            "spanId": span_id_var.get(),
+            "parentSpanId": parent_span_id_var.get(),
         }
         record.context = {k: v for k, v in context.items() if v is not None}
         return True

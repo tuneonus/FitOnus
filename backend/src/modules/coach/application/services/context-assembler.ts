@@ -11,6 +11,7 @@
  */
 
 import type { Logger } from '../../../../shared/logging/logger.js';
+import { withAiSpan } from '../../../../shared/ai/ai-tracing.js';
 import type { KnowledgeService } from '../../../knowledge/index.js';
 import type {
   ConversationRepository,
@@ -115,36 +116,39 @@ export class CoachContextAssembler {
     let candidateKnowledge: KnowledgeContextPayloadItem[] = [];
     if (routing.shouldRetrieveRag && this.deps.knowledgeService) {
       try {
-        const hybridChunks = await this.deps.knowledgeService.searchHybrid(
-          trimmedMessage,
-          {
-            limit: 3,
-            minSimilarity: 0.35,
+        await withAiSpan(
+          'coach.rag.retrieve',
+          { attributes: { intent: routing.intent } },
+          async (span) => {
+            const hybridChunks = await this.deps.knowledgeService!.searchHybrid(trimmedMessage, {
+              limit: 3,
+              minSimilarity: 0.35,
+            });
+
+            if (hybridChunks.length > 0) {
+              const ragContext = this.deps.knowledgeService!.buildRagContext(hybridChunks, {
+                maxTokens: 900,
+                maxChunks: 3,
+                minSimilarity: 0.35,
+              });
+              span.setAttribute('citationsCount', ragContext.citations.length);
+              candidateKnowledge = ragContext.items.map((item) => ({
+                documentSlug: item.documentSlug,
+                documentTitle: item.documentTitle,
+                category: item.category,
+                chunkIndex: item.chunkIndex,
+                content: item.content,
+                citation: item.citation,
+              }));
+            }
+            span.setAttribute('returnedCount', candidateKnowledge.length);
           },
         );
-
-        if (hybridChunks.length > 0) {
-          const ragContext = this.deps.knowledgeService.buildRagContext(
-            hybridChunks,
-            {
-              maxTokens: 900,
-              maxChunks: 3,
-              minSimilarity: 0.35,
-            },
-          );
-          candidateKnowledge = ragContext.items.map((item) => ({
-            documentSlug: item.documentSlug,
-            documentTitle: item.documentTitle,
-            category: item.category,
-            chunkIndex: item.chunkIndex,
-            content: item.content,
-            citation: item.citation,
-          }));
-        }
       } catch (err) {
-        // Safe fallback: log without leaking user PII, proceed with ungrounded chat
+        const errorType = err instanceof Error ? err.name : 'Error';
+        // Safe fallback: log without leaking user PII or raw error details, proceed with ungrounded chat
         this.deps.logger?.warn?.(
-          `[CoachRAG] Knowledge retrieval failed; falling back to ungrounded coach chat. Error: ${err instanceof Error ? err.message : String(err)}`,
+          `[CoachRAG] Knowledge retrieval failed; falling back to ungrounded coach chat. ErrorType: ${errorType}`,
         );
         candidateKnowledge = [];
       }

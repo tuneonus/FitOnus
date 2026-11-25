@@ -1,5 +1,10 @@
 import crypto from 'node:crypto';
 import { AppError } from '../../../shared/errors/app-error.js';
+import type { Logger } from '../../../shared/logging/logger.js';
+import { currentCorrelationId } from '../../../shared/logging/request-correlation.js';
+import { defaultAiMetrics } from '../../../shared/ai/ai-metrics.js';
+import { ragGroundingFields, ragRetrievalFields } from '../../../shared/ai/ai-observability.js';
+import { withAiSpan } from '../../../shared/ai/ai-tracing.js';
 import type { PythonAiClient } from '../../../shared/ai/python-ai-client.js';
 import { SemanticChunker } from '../domain/semantic-chunker.js';
 import {
@@ -61,6 +66,7 @@ export class KnowledgeService {
     private readonly repository: KnowledgeRepository,
     private readonly pythonAi: PythonAiClient,
     chunker?: SemanticChunker,
+    private readonly logger?: Pick<Logger, 'info' | 'warn'>,
   ) {
     this.chunker = chunker ?? new SemanticChunker();
   }
@@ -290,27 +296,90 @@ export class KnowledgeService {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
-    // 1. Embed query with RETRIEVAL_QUERY task type
-    const embedResult = await this.pythonAi.embed({
-      userId: 'system',
-      requestId: `query-${Date.now()}`,
-      texts: [cleanQuery],
-      taskType: 'RETRIEVAL_QUERY',
-      dimensions: 768,
-      correlationId: options.correlationId,
-    });
+    const startedAt = performance.now();
+    const correlationId = options.correlationId ?? currentCorrelationId();
+    return withAiSpan('rag.search_similar', { attributes: { mode: 'vector' } }, async (span) => {
+      try {
+        // 1. Embed query with RETRIEVAL_QUERY task type
+        const embedResult = await this.pythonAi.embed({
+          userId: 'system',
+          requestId: `query-${Date.now()}`,
+          texts: [cleanQuery],
+          taskType: 'RETRIEVAL_QUERY',
+          dimensions: 768,
+          correlationId,
+        });
 
-    const queryEmbedding = embedResult.embeddings[0];
-    if (!queryEmbedding || queryEmbedding.length !== 768) {
-      throw new AppError('internal', 'INTERNAL_ERROR', 'Failed to generate query embedding vector.');
-    }
+        const queryEmbedding = embedResult.embeddings[0];
+        if (!queryEmbedding || queryEmbedding.length !== 768) {
+          throw new AppError('internal', 'INTERNAL_ERROR', 'Failed to generate query embedding vector.');
+        }
 
-    // 2. Query repository via pgvector similarity search
-    return this.repository.findSimilarChunks({
-      embedding: queryEmbedding,
-      limit: options.limit ?? 5,
-      minSimilarity: options.minSimilarity ?? 0.0,
-      category: options.category,
+        // 2. Query repository via pgvector similarity search
+        const results = await this.repository.findSimilarChunks({
+          embedding: queryEmbedding,
+          limit: options.limit ?? 5,
+          minSimilarity: options.minSimilarity ?? 0.0,
+          category: options.category,
+        });
+        const durationMs = performance.now() - startedAt;
+        const scores = results.map((r) => r.similarity).filter((s) => Number.isFinite(s));
+        const topScore = scores.length > 0 ? Math.max(...scores) : undefined;
+        const avgScore =
+          scores.length > 0 ? scores.reduce((acc, s) => acc + s, 0) / scores.length : undefined;
+        span.setAttribute('returnedCount', results.length);
+        try {
+          defaultAiMetrics.recordRagRetrieval({
+            mode: 'vector',
+            durationMs,
+            candidateCount: results.length,
+            returnedCount: results.length,
+            topScore,
+            avgScore,
+          });
+          this.logger?.info(
+            ragRetrievalFields({
+              correlationId,
+              mode: 'vector',
+              durationMs,
+              candidateCount: results.length,
+              returnedCount: results.length,
+              topScore,
+              avgScore,
+              success: true,
+            }),
+            'RAG vector search completed',
+          );
+        } catch {
+          // Fail-open observability
+        }
+        return results;
+      } catch (err) {
+        const durationMs = performance.now() - startedAt;
+        span.markError('internal_error');
+        try {
+          defaultAiMetrics.recordRagRetrieval({
+            mode: 'vector',
+            durationMs,
+            failed: true,
+          });
+          this.logger?.warn(
+            ragRetrievalFields({
+              correlationId,
+              mode: 'vector',
+              durationMs,
+              candidateCount: 0,
+              returnedCount: 0,
+              success: false,
+              errorCategory: 'internal_error',
+            }),
+            'RAG vector search failed',
+          );
+        } catch {
+          // Fail-open observability
+        }
+        throw err;
+      }
     });
   }
 
@@ -321,11 +390,62 @@ export class KnowledgeService {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
-    return this.repository.findTextChunks({
-      query: cleanQuery,
-      limit: options.limit ?? 5,
-      minRank: options.minRank ?? 0.0,
-      category: options.category,
+    const startedAt = performance.now();
+    const correlationId = currentCorrelationId();
+    return withAiSpan('rag.search_lexical', { attributes: { mode: 'lexical' } }, async (span) => {
+      try {
+        const results = await this.repository.findTextChunks({
+          query: cleanQuery,
+          limit: options.limit ?? 5,
+          minRank: options.minRank ?? 0.0,
+          category: options.category,
+        });
+        const durationMs = performance.now() - startedAt;
+        const ranks = results.map((r) => r.rank).filter((s) => Number.isFinite(s));
+        const topScore = ranks.length > 0 ? Math.max(...ranks) : undefined;
+        const avgScore =
+          ranks.length > 0 ? ranks.reduce((acc, s) => acc + s, 0) / ranks.length : undefined;
+        span.setAttribute('returnedCount', results.length);
+        try {
+          defaultAiMetrics.recordRagRetrieval({
+            mode: 'lexical',
+            durationMs,
+            candidateCount: results.length,
+            returnedCount: results.length,
+            topScore,
+            avgScore,
+          });
+          this.logger?.info(
+            ragRetrievalFields({
+              correlationId,
+              mode: 'lexical',
+              durationMs,
+              candidateCount: results.length,
+              returnedCount: results.length,
+              topScore,
+              avgScore,
+              success: true,
+            }),
+            'RAG lexical search completed',
+          );
+        } catch {
+          // Fail-open observability
+        }
+        return results;
+      } catch (err) {
+        const durationMs = performance.now() - startedAt;
+        span.markError('internal_error');
+        try {
+          defaultAiMetrics.recordRagRetrieval({
+            mode: 'lexical',
+            durationMs,
+            failed: true,
+          });
+        } catch {
+          // Fail-open observability
+        }
+        throw err;
+      }
     });
   }
 
@@ -337,31 +457,99 @@ export class KnowledgeService {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
-    // 1. Embed query with RETRIEVAL_QUERY task type via Python AI / Gemini
-    const embedResult = await this.pythonAi.embed({
-      userId: 'system',
-      requestId: `hybrid-${Date.now()}`,
-      texts: [cleanQuery],
-      taskType: 'RETRIEVAL_QUERY',
-      dimensions: 768,
-      correlationId: options.correlationId,
-    });
+    const startedAt = performance.now();
+    const correlationId = options.correlationId ?? currentCorrelationId();
+    return withAiSpan('rag.search_hybrid', { attributes: { mode: 'hybrid' } }, async (span) => {
+      try {
+        // 1. Embed query with RETRIEVAL_QUERY task type via Python AI / Gemini
+        const embedResult = await this.pythonAi.embed({
+          userId: 'system',
+          requestId: `hybrid-${Date.now()}`,
+          texts: [cleanQuery],
+          taskType: 'RETRIEVAL_QUERY',
+          dimensions: 768,
+          correlationId,
+        });
 
-    const queryEmbedding = embedResult.embeddings[0];
-    if (!queryEmbedding || queryEmbedding.length !== 768) {
-      throw new AppError('internal', 'INTERNAL_ERROR', 'Failed to generate query embedding vector.');
-    }
+        const queryEmbedding = embedResult.embeddings[0];
+        if (!queryEmbedding || queryEmbedding.length !== 768) {
+          throw new AppError('internal', 'INTERNAL_ERROR', 'Failed to generate query embedding vector.');
+        }
 
-    // 2. Query repository with hybrid retrieval + RRF
-    return this.repository.findHybridChunks({
-      query: cleanQuery,
-      embedding: queryEmbedding,
-      limit: options.limit ?? 5,
-      minSimilarity: options.minSimilarity ?? 0.0,
-      category: options.category,
-      rrfK: options.rrfK,
-      vectorWeight: options.vectorWeight,
-      textWeight: options.textWeight,
+        // 2. Query repository with hybrid retrieval + RRF
+        const results = await this.repository.findHybridChunks({
+          query: cleanQuery,
+          embedding: queryEmbedding,
+          limit: options.limit ?? 5,
+          minSimilarity: options.minSimilarity ?? 0.0,
+          category: options.category,
+          rrfK: options.rrfK,
+          vectorWeight: options.vectorWeight,
+          textWeight: options.textWeight,
+        });
+        const durationMs = performance.now() - startedAt;
+        const scores = results
+          .map((r) => (r.similarity > 0 ? r.similarity : r.rrfScore))
+          .filter((s) => Number.isFinite(s));
+        const topScore = scores.length > 0 ? Math.max(...scores) : undefined;
+        const avgScore =
+          scores.length > 0 ? scores.reduce((acc, s) => acc + s, 0) / scores.length : undefined;
+        span.setAttribute('returnedCount', results.length);
+        try {
+          defaultAiMetrics.recordRagRetrieval({
+            mode: 'hybrid',
+            durationMs,
+            candidateCount: results.length,
+            returnedCount: results.length,
+            topScore,
+            avgScore,
+            reranked: true,
+          });
+          this.logger?.info(
+            ragRetrievalFields({
+              correlationId,
+              mode: 'hybrid',
+              durationMs,
+              candidateCount: results.length,
+              returnedCount: results.length,
+              topScore,
+              avgScore,
+              reranked: true,
+              success: true,
+            }),
+            'RAG hybrid search completed',
+          );
+        } catch {
+          // Fail-open observability
+        }
+        return results;
+      } catch (err) {
+        const durationMs = performance.now() - startedAt;
+        span.markError('internal_error');
+        try {
+          defaultAiMetrics.recordRagRetrieval({
+            mode: 'hybrid',
+            durationMs,
+            failed: true,
+          });
+          this.logger?.warn(
+            ragRetrievalFields({
+              correlationId,
+              mode: 'hybrid',
+              durationMs,
+              candidateCount: 0,
+              returnedCount: 0,
+              reranked: true,
+              success: false,
+              errorCategory: 'internal_error',
+            }),
+            'RAG hybrid search failed',
+          );
+        } catch {
+          // Fail-open observability
+        }
+        throw err;
+      }
     });
   }
 
@@ -372,7 +560,22 @@ export class KnowledgeService {
     chunks: readonly (HybridChunk | SimilarChunk)[],
     options?: RagContextBuilderOptions,
   ): RagContextResult {
-    return RagContextBuilder.buildContext(chunks, options);
+    const result = RagContextBuilder.buildContext(chunks, options);
+    try {
+      this.logger?.info(
+        ragGroundingFields({
+          correlationId: currentCorrelationId(),
+          inputChunks: chunks.length,
+          keptChunks: result.items.length,
+          citationsCount: result.citations.length,
+          totalTokens: result.totalTokens,
+        }),
+        'RAG context grounded',
+      );
+    } catch {
+      // Fail-open observability
+    }
+    return result;
   }
 
   /** Deletes a document by slug or id, with automatic cascade to all vector chunks. */

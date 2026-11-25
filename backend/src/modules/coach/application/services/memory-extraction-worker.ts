@@ -1,4 +1,4 @@
-import type { Logger } from '../../../../shared/logging/logger.js';
+import { sanitizeErrorText, type Logger } from '../../../../shared/logging/logger.js';
 import type {
   ChatMessageTurn,
   ConversationRepository,
@@ -117,7 +117,7 @@ export class MemoryExtractionWorker {
     if (!this.enabled) return;
     void this.drain().catch((err: unknown) => {
       this.deps.logger?.warn?.(
-        `[MemoryExtractionWorker] Background drain pass failed: ${err instanceof Error ? err.message : String(err)}`,
+        `[MemoryExtractionWorker] Background drain pass failed: ${sanitizeErrorText(err)}`,
       );
     });
   }
@@ -185,7 +185,7 @@ export class MemoryExtractionWorker {
     const consented = await this.deps.memoryRepo.isMemoryEnabled(job.userId);
     if (!consented) {
       this.deps.logger?.info?.(
-        `[MemoryExtractionWorker] User ${job.userId} revoked memory consent; skipping job ${job.id}.`,
+        `[MemoryExtractionWorker] Memory consent revoked; skipping job ${job.id}.`,
       );
       return;
     }
@@ -238,7 +238,7 @@ export class MemoryExtractionWorker {
         isSensitiveHealthContent(cand.category, cand.text, cand.sourceQuote)
       ) {
         this.deps.logger?.info?.(
-          `[MemoryExtractionWorker] Rejected sensitive health memory candidate (${cand.category}) for user ${job.userId}.`,
+          `[MemoryExtractionWorker] Rejected sensitive health memory candidate (${cand.category}) for job ${job.id}.`,
         );
         continue;
       }

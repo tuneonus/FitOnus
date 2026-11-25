@@ -1,5 +1,6 @@
 import { isSupportedAudioMime, MAX_AUDIO_BASE64_CHARS } from '../../../../shared/ai/audio-input.js';
 import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
+import { defaultAiMetrics } from '../../../../shared/ai/ai-metrics.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type {
   VoiceMealParseInput,
@@ -30,12 +31,31 @@ export class ParseVoiceMealUseCase {
     }
 
     if (hasAudio) {
+      const valStart = performance.now();
+      const approxBytes = Math.floor(((input.audioBase64?.length ?? 0) * 3) / 4);
+      const recordValidationReject = (reason: string) => {
+        try {
+          defaultAiMetrics.recordMultimodalProcessing({
+            modality: 'audio',
+            durationMs: Math.round(performance.now() - valStart),
+            validationDurationMs: Math.round(performance.now() - valStart),
+            validationFailed: true,
+            validationReason: reason,
+            byteSize: approxBytes,
+          });
+        } catch {
+          // Fail-open observability
+        }
+      };
+
       if ((input.audioBase64?.length ?? 0) > MAX_AUDIO_BASE64_CHARS) {
+        recordValidationReject('oversize');
         throw new AppError('payload_too_large', 'PAYLOAD_TOO_LARGE', 'Audio size exceeds the 15MB limit.');
       }
 
       const mimeType = input.mimeType || 'audio/m4a';
       if (!isSupportedAudioMime(mimeType)) {
+        recordValidationReject('invalid_mime');
         throw new AppError(
           'bad_request',
           'BAD_REQUEST',

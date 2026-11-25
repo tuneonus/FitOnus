@@ -19,10 +19,21 @@ from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from onusfit_ai.shared.logging.logging import (
+    SERVICE_NAME,
     ai_request_id_var,
+    clean_fields,
     correlation_id_var,
     feature_var,
+    llm_metrics_recorded_var,
     log_event,
+)
+from onusfit_ai.shared.logging.metrics import metrics_registry
+from onusfit_ai.shared.logging.tracing import (
+    SpanRecord,
+    bind_trace_context,
+    create_root_trace_context,
+    default_span_recorder,
+    reset_trace_context,
 )
 
 logger = logging.getLogger("onusfit_ai.http")
@@ -78,6 +89,7 @@ FEATURE_BY_PATH: Final[dict[str, str]] = {
     "/internal/v1/ai/coach/memories/extract": "coach_memory_extract",
     "/internal/v1/ai/meals/parse-voice": "voice_meal",
     "/internal/v1/ai/meals/analyze-photo": "meal_photo",
+    "/internal/v1/ai/meals/analyze-multimodal": "multimodal_meal",
     "/internal/v1/ai/speech/transcribe": "transcribe",
     "/internal/v1/ai/embed": "knowledge_embed",
     "/internal/v1/ai/workout-planner/generate": "workout_planner",
@@ -116,6 +128,7 @@ def log_ai_failure(
     dispatched: bool,
     retry_after_seconds: int | None = None,
     invalid_fields: list[str] | None = None,
+    usage: Any | None = None,
 ) -> None:
     """One `ai.request.failed` event for an error the service is about to answer with.
 
@@ -127,13 +140,39 @@ def log_ai_failure(
         optional["retryAfterSeconds"] = retry_after_seconds
     if invalid_fields is not None:
         optional["invalidFields"] = invalid_fields
+    category = category_for_error_code(code)
+    if not llm_metrics_recorded_var.get():
+        try:
+            if usage is not None:
+                metrics_registry.record_llm_call(
+                    feature=feature_var.get() or "_other",
+                    model=str(getattr(usage, "model", "_other")),
+                    duration_ms=float(getattr(usage, "duration_ms", 0)),
+                    success=False,
+                    input_tokens=int(getattr(usage, "input_tokens", 0)),
+                    output_tokens=int(getattr(usage, "output_tokens", 0)),
+                    cached_tokens=int(getattr(usage, "cached_tokens", 0)),
+                    thinking_tokens=int(getattr(usage, "thinking_tokens", 0)),
+                    total_tokens=int(getattr(usage, "total_tokens", 0)),
+                    is_fallback=bool(getattr(usage, "is_fallback", False)),
+                    error_category=category,
+                    timeout=(category == "gemini_timeout"),
+                )
+                llm_metrics_recorded_var.set(True)
+            else:
+                metrics_registry.record_request_failure(
+                    feature=feature_var.get(),
+                    error_category=category,
+                )
+        except Exception:  # noqa: BLE001 - observability must never break error responses
+            pass
     log_event(
         logger,
         "ai.request.failed",
         level=_level_for_status(status),
         success=False,
         errorCode=code,
-        errorCategory=category_for_error_code(code),
+        errorCategory=category,
         httpStatus=status,
         dispatched=dispatched,
         **optional,
@@ -160,13 +199,24 @@ class RequestObservabilityMiddleware:
 
         headers = Headers(scope=scope)
         path = str(scope["path"])
-        tokens = (
-            correlation_id_var.set(safe_id(headers.get("x-correlation-id"))),
-            ai_request_id_var.set(safe_id(headers.get("x-request-id"))),
-            feature_var.set(FEATURE_BY_PATH.get(path)),
+        correlation_id = safe_id(headers.get("x-correlation-id"))
+        ai_request_id = safe_id(headers.get("x-request-id"))
+        feature = FEATURE_BY_PATH.get(path)
+        trace_ctx = create_root_trace_context(
+            correlation_id=correlation_id,
+            ai_request_id=ai_request_id,
+            traceparent=headers.get("traceparent"),
         )
+        tokens = (
+            correlation_id_var.set(correlation_id),
+            ai_request_id_var.set(ai_request_id),
+            feature_var.set(feature),
+            llm_metrics_recorded_var.set(False),
+        )
+        trace_tokens = bind_trace_context(trace_ctx)
         started = time.perf_counter()
         status = 500  # what Starlette answers if the application raises before responding
+        unhandled_error_type: str | None = None
 
         async def send_wrapper(message: Message) -> None:
             nonlocal status
@@ -177,18 +227,43 @@ class RequestObservabilityMiddleware:
         try:
             await self.app(scope, receive, send_wrapper)
         except Exception as exc:
+            unhandled_error_type = type(exc).__name__
             log_event(
                 logger,
                 "http.unhandled_error",
                 level=logging.ERROR,
                 success=False,
                 errorCategory="internal_error",
-                errorType=type(exc).__name__,  # the class only: exception text can hold user data
+                errorType=unhandled_error_type,  # class only: exception text can hold user data
             )
             raise
         finally:
+            duration_ms = round((time.perf_counter() - started) * 1000)
             # Health checks are polled constantly; logging them would bury the real traffic.
             if not path.startswith("/health"):
+                if not path.endswith("/observability"):
+                    try:
+                        metrics_registry.record_http_request(feature, status)
+                        default_span_recorder.record(
+                            SpanRecord(
+                                trace_id=trace_ctx.trace_id,
+                                span_id=trace_ctx.span_id,
+                                parent_span_id=trace_ctx.parent_span_id,
+                                service=SERVICE_NAME,
+                                operation=f"http.{str(scope['method']).lower()}",
+                                status="error" if status >= 500 or unhandled_error_type else "ok",
+                                duration_ms=float(duration_ms),
+                                started_at_monotonic=started,
+                                correlation_id=correlation_id,
+                                ai_request_id=ai_request_id,
+                                error_category=("internal_error" if unhandled_error_type else None),
+                                attributes=clean_fields(
+                                    {"path": path, "httpStatus": status, "feature": feature}
+                                ),
+                            )
+                        )
+                    except Exception:  # noqa: BLE001 - fail-open observability
+                        pass
                 log_event(
                     logger,
                     "http.request",
@@ -196,8 +271,10 @@ class RequestObservabilityMiddleware:
                     method=str(scope["method"]),
                     path=path,
                     httpStatus=status,
-                    durationMs=round((time.perf_counter() - started) * 1000),
+                    durationMs=duration_ms,
                 )
+            reset_trace_context(trace_tokens)
             correlation_id_var.reset(tokens[0])
             ai_request_id_var.reset(tokens[1])
             feature_var.reset(tokens[2])
+            llm_metrics_recorded_var.reset(tokens[3])

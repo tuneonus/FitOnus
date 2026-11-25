@@ -619,6 +619,7 @@ async def final_synthesis_node(
 
     ctx.telemetry.llm_calls_count = snap.llm_calls
     ctx.telemetry.tool_calls_count = snap.tool_calls
+    ctx.telemetry.tool_failures_count = ctx.gateway.tool_failures
     ctx.telemetry.tool_cache_hits = ctx.gateway.cache_hits
     ctx.telemetry.input_tokens = snap.input_tokens
     ctx.telemetry.output_tokens = snap.output_tokens

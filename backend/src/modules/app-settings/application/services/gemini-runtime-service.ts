@@ -1,4 +1,5 @@
 import { decryptSecret } from '../../../../shared/security/encryption.js';
+import { defaultAiMetrics } from '../../../../shared/ai/ai-metrics.js';
 import type { AppSettingsRepository } from '../ports.js';
 import type { GeminiConfigRecord, GeminiFeature, GeminiModelInfo } from '../../domain/gemini-config.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
@@ -140,6 +141,17 @@ export class GeminiRuntimeService {
     errorCategory?: string | null;
   }): Promise<void> {
     await this.ensureFreshConfig().catch(() => undefined); // pricing is optional; defaults apply
+    const estimatedCostUsd = this.calculateCostUsd(
+      event.model,
+      event.inputTokens,
+      event.outputTokens,
+      event.cachedTokens,
+    );
+    try {
+      defaultAiMetrics.recordCostUsd(event.feature, event.model, estimatedCostUsd);
+    } catch {
+      // Fail-open observability
+    }
     await this.config.repo.recordGeminiUsage({
       requestId: event.requestId,
       userId: event.userId,
@@ -150,12 +162,7 @@ export class GeminiRuntimeService {
       outputTokens: event.outputTokens,
       cachedTokens: event.cachedTokens,
       totalTokens: event.totalTokens,
-      estimatedCostUsd: this.calculateCostUsd(
-        event.model,
-        event.inputTokens,
-        event.outputTokens,
-        event.cachedTokens,
-      ),
+      estimatedCostUsd,
       durationMs: event.durationMs,
       errorCategory: event.errorCategory ?? (event.isFallback ? 'FALLBACK_SUCCESS' : null),
       providerRequestId: null,

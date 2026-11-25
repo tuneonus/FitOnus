@@ -16,6 +16,7 @@ from onusfit_ai.shared.auth.auth import mint_internal_tool_token
 from onusfit_ai.shared.config.config import Settings, get_settings
 from onusfit_ai.shared.contracts.tools import TOOL_ARG_SCHEMAS, TOOL_ENDPOINT_PATHS
 from onusfit_ai.shared.llm.ports import sanitize_tool_error
+from onusfit_ai.shared.logging import build_propagation_headers, start_async_span
 
 logger = logging.getLogger("onusfit_ai.tools_client")
 
@@ -75,27 +76,35 @@ class InternalToolsClient:
 
         url = f"{self._node_api_url}{endpoint_path}"
         headers = {
+            "X-Correlation-Id": request_id,
+            **build_propagation_headers(ai_request_id=request_id),
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
-            "X-Correlation-Id": request_id,
         }
 
         # 3. Execute HTTP call to Node Gateway
         try:
-            if self._client:
-                response = await self._client.post(
-                    url,
-                    json=payload,
-                    headers=headers,
-                    timeout=self._timeout_s,
-                )
-            else:
-                async with httpx.AsyncClient(timeout=self._timeout_s) as client:
-                    response = await client.post(
+            async with start_async_span(
+                f"tools.http.{name}",
+                attributes={"tool": name, "endpoint": endpoint_path},
+            ) as span:
+                if self._client:
+                    response = await self._client.post(
                         url,
                         json=payload,
                         headers=headers,
+                        timeout=self._timeout_s,
                     )
+                else:
+                    async with httpx.AsyncClient(timeout=self._timeout_s) as client:
+                        response = await client.post(
+                            url,
+                            json=payload,
+                            headers=headers,
+                        )
+                span.set_attribute("httpStatus", response.status_code)
+                if response.status_code != 200:
+                    span.mark_error(f"http_{response.status_code}")
 
             if response.status_code == 200:
                 body = response.json()

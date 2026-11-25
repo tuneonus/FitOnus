@@ -31,6 +31,7 @@ from onusfit_ai.features.mcp.domain.errors import (
     McpTimeoutError,
     McpToolExecutionError,
 )
+from onusfit_ai.shared.logging import log_event, metrics_registry, start_async_span
 
 logger = logging.getLogger("onusfit_ai.mcp.orchestrator")
 
@@ -354,24 +355,48 @@ class AgentToolOrchestrator:
                         payload_hash=payload_hash,
                     )
                     if existing:
+                        elapsed_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.info("Returning idempotent cached result for tool '%s'", tool_name)
+                        try:
+                            metrics_registry.record_tool_call(
+                                tool_name=tool_name,
+                                duration_ms=elapsed_ms,
+                                success=True,
+                                cached=True,
+                            )
+                            log_event(
+                                logger,
+                                "mcp.tool.completed",
+                                message="MCP tool served from idempotency cache",
+                                aiRequestId=call.request_id,
+                                tool=tool_name,
+                                cached=True,
+                                durationMs=round(elapsed_ms, 2),
+                                success=True,
+                            )
+                        except Exception:  # noqa: BLE001 - fail-open observability
+                            pass
                         return McpToolResult(
                             tool_name=tool_name,
                             content=json.dumps(existing.result),
                             structured_data=existing.result,
                             is_error=False,
-                            execution_time_ms=(time.perf_counter() - start_time) * 1000.0,
+                            execution_time_ms=elapsed_ms,
                         )
 
             # 5. Execute handler with timeout ceiling
             timeout = call.timeout_seconds or self.config.per_tool_timeout_seconds
-            try:
-                raw_result = await asyncio.wait_for(
-                    handler(validated_args, call.user_id, call.request_id),
-                    timeout=timeout,
-                )
-            except TimeoutError as exc:
-                raise McpTimeoutError(tool_name, timeout) from exc
+            async with start_async_span(
+                f"mcp.orchestrator.{tool_name}",
+                attributes={"tool": tool_name, "isWrite": definition.is_write},
+            ):
+                try:
+                    raw_result = await asyncio.wait_for(
+                        handler(validated_args, call.user_id, call.request_id),
+                        timeout=timeout,
+                    )
+                except TimeoutError as exc:
+                    raise McpTimeoutError(tool_name, timeout) from exc
 
             # 6. Idempotency store on successful write
             if definition.is_write:
@@ -392,6 +417,25 @@ class AgentToolOrchestrator:
             sanitized_content = self.guardrails.sanitize_tool_output(tool_name, content_str)
 
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+            try:
+                metrics_registry.record_tool_call(
+                    tool_name=tool_name,
+                    duration_ms=elapsed_ms,
+                    success=True,
+                    cached=False,
+                )
+                log_event(
+                    logger,
+                    "mcp.tool.completed",
+                    message="MCP tool execution completed",
+                    aiRequestId=call.request_id,
+                    tool=tool_name,
+                    cached=False,
+                    durationMs=round(elapsed_ms, 2),
+                    success=True,
+                )
+            except Exception:  # noqa: BLE001 - fail-open observability
+                pass
             return McpToolResult(
                 tool_name=tool_name,
                 content=sanitized_content,
@@ -403,12 +447,26 @@ class AgentToolOrchestrator:
         except Exception as exc:
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
             safe_error = self.guardrails.sanitize_tool_output(tool_name, str(exc))
-            logger.warning(
-                "Tool '%s' execution error (%s)",
-                tool_name,
-                type(exc).__name__,
-                extra={"tool": tool_name, "requestId": call.request_id},
-            )
+            try:
+                metrics_registry.record_tool_call(
+                    tool_name=tool_name,
+                    duration_ms=elapsed_ms,
+                    success=False,
+                    cached=False,
+                )
+                log_event(
+                    logger,
+                    "mcp.tool.failed",
+                    level=logging.WARNING,
+                    message="MCP tool execution failed",
+                    aiRequestId=call.request_id,
+                    tool=tool_name,
+                    errorType=type(exc).__name__,
+                    durationMs=round(elapsed_ms, 2),
+                    success=False,
+                )
+            except Exception:  # noqa: BLE001 - fail-open observability
+                pass
             return McpToolResult(
                 tool_name=tool_name,
                 content=json.dumps({"error": safe_error, "tool": tool_name}),

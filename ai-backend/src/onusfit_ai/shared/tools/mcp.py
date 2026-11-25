@@ -13,6 +13,7 @@ from typing import Any
 
 from onusfit_ai.shared.contracts.tools import TOOL_ARG_SCHEMAS
 from onusfit_ai.shared.llm.gemini import create_gemini_tools_from_schemas
+from onusfit_ai.shared.logging import log_event
 from onusfit_ai.shared.tools.client import InternalToolsClient
 
 logger = logging.getLogger("onusfit_ai.shared.tools.mcp")
@@ -68,12 +69,15 @@ class McpTelemetry:
         else:
             self.failed_invocations += 1
 
-        logger.info(
-            "MCP Tool Call: tool=%s status=%s ms=%.2f reqId=%s",
-            tool_name,
-            "SUCCESS" if success else "FAILED",
-            duration_ms,
-            request_id,
+        log_event(
+            logger,
+            "mcp.client.tool_call",
+            level=logging.INFO if success else logging.WARNING,
+            message=f"MCP Tool Call: tool={tool_name} status={'SUCCESS' if success else 'FAILED'}",
+            tool=tool_name,
+            success=success,
+            durationMs=round(max(0.0, duration_ms), 2),
+            aiRequestId=request_id or None,
         )
 
     def record_cache_lookup(self, hit: bool) -> None:
@@ -82,7 +86,15 @@ class McpTelemetry:
 
     def record_fallback(self, tool_name: str, reason: str, request_id: str = "") -> None:
         self.fallbacks_triggered += 1
-        logger.warning("MCP Fallback: tool=%s reason=%s reqId=%s", tool_name, reason, request_id)
+        log_event(
+            logger,
+            "mcp.client.fallback",
+            level=logging.WARNING,
+            message="MCP tool fell back to native InternalToolsClient",
+            tool=tool_name,
+            fallbackReason=reason,
+            aiRequestId=request_id or None,
+        )
 
     def get_summary(self) -> dict[str, Any]:
         avg = self.total_latency_ms / self.total_invocations if self.total_invocations > 0 else 0.0

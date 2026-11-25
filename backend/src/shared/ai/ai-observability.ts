@@ -1,3 +1,4 @@
+import { currentTraceContext } from '../logging/request-correlation.js';
 import type { GeminiFeature } from './gemini-feature.js';
 import type { PythonAiError } from './python-ai-client.js';
 
@@ -140,7 +141,27 @@ export const AI_EVENTS = {
   callFailed: 'ai.call.failed',
   cache: 'ai.cache',
   deterministicFallback: 'ai.deterministic_fallback',
+  ragRetrieval: 'ai.rag.retrieval',
+  ragGrounding: 'ai.rag.grounding',
+  agentExecution: 'ai.agent.execution',
+  multimodalProcessing: 'ai.multimodal.processing',
+  monitoringAlert: 'ai.monitoring.alert',
 } as const;
+
+/** Active distributed trace IDs from AsyncLocalStorage, if bound. */
+export function traceMetadataFields(): {
+  traceId?: string;
+  spanId?: string;
+  parentSpanId?: string;
+} {
+  const ctx = currentTraceContext();
+  if (!ctx) return {};
+  return {
+    traceId: ctx.traceId,
+    spanId: ctx.spanId,
+    ...(ctx.parentSpanId ? { parentSpanId: ctx.parentSpanId } : {}),
+  };
+}
 
 /** The ids that join a log line to everything else about the same request. */
 export interface AiCorrelation {
@@ -265,6 +286,135 @@ export function deterministicFallbackFields(input: {
     reason: input.reason,
     /** False for `insufficient_data`: no Python call was made. */
     aiCalled: input.reason !== 'insufficient_data',
+    ...(input.errorCategory ? { errorCategory: input.errorCategory } : {}),
+  };
+}
+
+/** Metadata-only RAG retrieval log fields (never includes query text or chunk contents). */
+export function ragRetrievalFields(input: {
+  correlationId?: string | undefined;
+  mode: 'vector' | 'lexical' | 'hybrid' | 'reranked';
+  durationMs: number;
+  candidateCount: number;
+  returnedCount: number;
+  topScore?: number | undefined;
+  avgScore?: number | undefined;
+  reranked?: boolean | undefined;
+  grounded?: boolean | undefined;
+  citationsCount?: number | undefined;
+  success: boolean;
+  errorCategory?: AiErrorCategory | undefined;
+}) {
+  const emptyResult = input.success && input.returnedCount === 0;
+  return {
+    event: AI_EVENTS.ragRetrieval,
+    feature: 'rag' as const,
+    ...(input.correlationId ? { correlationId: input.correlationId } : {}),
+    ...traceMetadataFields(),
+    mode: input.mode,
+    durationMs: Math.round(Math.max(0, input.durationMs) * 100) / 100,
+    candidateCount: Math.max(0, input.candidateCount),
+    returnedCount: Math.max(0, input.returnedCount),
+    emptyResult,
+    reranked: Boolean(input.reranked),
+    grounded: Boolean(input.grounded ?? input.returnedCount > 0),
+    citationsCount: Math.max(0, input.citationsCount ?? 0),
+    success: input.success,
+    ...(input.topScore !== undefined ? { topScore: Math.round(input.topScore * 10_000) / 10_000 } : {}),
+    ...(input.avgScore !== undefined ? { avgScore: Math.round(input.avgScore * 10_000) / 10_000 } : {}),
+    ...(input.errorCategory ? { errorCategory: input.errorCategory } : {}),
+  };
+}
+
+/** Metadata-only RAG context grounding and token-budget log fields. */
+export function ragGroundingFields(input: {
+  correlationId?: string | undefined;
+  inputChunks: number;
+  keptChunks: number;
+  citationsCount: number;
+  totalTokens: number;
+}) {
+  return {
+    event: AI_EVENTS.ragGrounding,
+    feature: 'rag' as const,
+    ...(input.correlationId ? { correlationId: input.correlationId } : {}),
+    ...traceMetadataFields(),
+    inputChunks: Math.max(0, input.inputChunks),
+    keptChunks: Math.max(0, input.keptChunks),
+    droppedChunks: Math.max(0, input.inputChunks - input.keptChunks),
+    citationsCount: Math.max(0, input.citationsCount),
+    grounded: input.keptChunks > 0,
+    totalTokens: Math.max(0, input.totalTokens),
+  };
+}
+
+/** Metadata-only agent orchestration log fields. */
+export function agentExecutionFields(input: {
+  correlationId?: string | undefined;
+  aiRequestId: string;
+  engine: 'native' | 'langgraph' | 'multi_agent' | 'workout_planner';
+  routingDecision: string;
+  durationMs: number;
+  toolCallsCount: number;
+  toolFailuresCount: number;
+  iterations: number;
+  replans: number;
+  limitHit?: string | undefined;
+  fallbackUsed: boolean;
+  success: boolean;
+  errorCategory?: AiErrorCategory | undefined;
+}) {
+  return {
+    event: AI_EVENTS.agentExecution,
+    feature: 'coach_agent' as const,
+    ...(input.correlationId ? { correlationId: input.correlationId } : {}),
+    ...traceMetadataFields(),
+    aiRequestId: input.aiRequestId,
+    engine: input.engine,
+    routingDecision: safeLabel(input.routingDecision),
+    durationMs: Math.round(Math.max(0, input.durationMs) * 100) / 100,
+    toolCallsCount: Math.max(0, input.toolCallsCount),
+    toolFailuresCount: Math.max(0, input.toolFailuresCount),
+    iterations: Math.max(0, input.iterations),
+    replans: Math.max(0, input.replans),
+    ...(input.limitHit ? { limitHit: safeLabel(input.limitHit) } : {}),
+    fallbackUsed: input.fallbackUsed,
+    success: input.success,
+    ...(input.errorCategory ? { errorCategory: input.errorCategory } : {}),
+  };
+}
+
+/** Metadata-only multimodal processing log fields (never includes raw bytes or transcripts). */
+export function multimodalProcessingFields(input: {
+  correlationId?: string | undefined;
+  aiRequestId: string;
+  modality: 'image' | 'audio' | 'multimodal';
+  feature: GeminiFeature | 'transcribe';
+  model?: string | undefined;
+  durationMs: number;
+  validationDurationMs?: number | undefined;
+  validationFailed: boolean;
+  validationReason?: string | undefined;
+  byteSize: number;
+  success: boolean;
+  errorCategory?: AiErrorCategory | undefined;
+}) {
+  return {
+    event: AI_EVENTS.multimodalProcessing,
+    feature: input.feature,
+    ...(input.correlationId ? { correlationId: input.correlationId } : {}),
+    ...traceMetadataFields(),
+    aiRequestId: input.aiRequestId,
+    modality: input.modality,
+    ...(input.model ? { model: safeLabel(input.model) } : {}),
+    durationMs: Math.round(Math.max(0, input.durationMs) * 100) / 100,
+    ...(input.validationDurationMs !== undefined
+      ? { validationDurationMs: Math.round(Math.max(0, input.validationDurationMs) * 100) / 100 }
+      : {}),
+    validationFailed: input.validationFailed,
+    ...(input.validationReason ? { validationReason: safeLabel(input.validationReason) } : {}),
+    byteSize: Math.max(0, input.byteSize),
+    success: input.success,
     ...(input.errorCategory ? { errorCategory: input.errorCategory } : {}),
   };
 }

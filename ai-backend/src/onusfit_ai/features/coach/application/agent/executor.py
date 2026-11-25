@@ -57,6 +57,7 @@ from onusfit_ai.shared.llm.ports import (
     ToolExecutionResult,
     sanitize_tool_error,
 )
+from onusfit_ai.shared.logging import AgentObservabilityTracker
 from onusfit_ai.shared.utils.js_compat import strict_json_loads, strip_code_fences
 
 logger = logging.getLogger("onusfit_ai.agent")
@@ -188,13 +189,19 @@ class AgentExecutor:
         """Executes the full agent lifecycle."""
         actual_start_time = start_time if start_time is not None else self._clock()
         actual_deadline = (
-            deadline
-            if deadline is not None
-            else actual_start_time + (request.deadline_ms / 1000.0)
+            deadline if deadline is not None else actual_start_time + (request.deadline_ms / 1000.0)
         )
 
         # 1. Goal Interpretation
         goal = self._planner.interpret_goal(request.message, request.context)
+        obs_tracker = AgentObservabilityTracker(
+            engine="native",
+            trace_id=trace_id,
+        )
+        obs_tracker.record_routing(
+            intent=str(goal.goal_type.value),
+            requires_agent=goal.requires_agent_execution and tool_handler is not None,
+        )
 
         if initial_state is not None:
             state = initial_state
@@ -222,6 +229,7 @@ class AgentExecutor:
         if not goal.requires_agent_execution or tool_handler is None:
             state.status = AgentExecutionStatus.BYPASSED
             state.termination_reason = AgentTerminationReason.SIMPLE_QUERY_BYPASS
+            obs_tracker.finalize(outcome="bypassed")
             return await self._synthesize_final_reply(
                 request=request,
                 llm=llm,
@@ -247,18 +255,21 @@ class AgentExecutor:
             if remaining_time < (self._budget.deadline_margin_s + _MIN_DEADLINE_MARGIN_S):
                 state.status = AgentExecutionStatus.DEADLINE_EXCEEDED
                 state.termination_reason = AgentTerminationReason.DEADLINE_APPROACHING
+                obs_tracker.record_limit_hit("deadline")
                 break
 
             # Check iteration limit
             if state.iteration >= self._budget.max_iterations:
                 state.status = AgentExecutionStatus.BUDGET_EXCEEDED
                 state.termination_reason = AgentTerminationReason.MAX_ITERATIONS_REACHED
+                obs_tracker.record_limit_hit("max_iterations")
                 break
 
             # Check tool call limit
             if state.total_tool_calls >= self._budget.max_tool_calls:
                 state.status = AgentExecutionStatus.BUDGET_EXCEEDED
                 state.termination_reason = AgentTerminationReason.MAX_TOOL_CALLS_REACHED
+                obs_tracker.record_limit_hit("max_tool_calls")
                 break
 
             # Find pending steps
@@ -299,6 +310,12 @@ class AgentExecutor:
                     obs = self._observer.process_tool_result(
                         step.step_id, tool_name, raw_args, cached_result
                     )
+                    obs_tracker.record_tool_call(
+                        tool_name=tool_name,
+                        duration_ms=0.0,
+                        success=not obs.has_error,
+                        cached=True,
+                    )
                     step.status = StepStatus.COMPLETED
                     step.observation = obs
                     return step, obs, None
@@ -312,6 +329,7 @@ class AgentExecutor:
                     obs = self._observer.process_tool_result(
                         step.step_id, tool_name, raw_args, err_res
                     )
+                    obs_tracker.record_limit_hit("max_tool_calls")
                     step.status = StepStatus.SKIPPED
                     step.error = "Max tool calls limit reached"
                     step.observation = obs
@@ -321,14 +339,23 @@ class AgentExecutor:
                 state.total_tool_calls += 1
                 state.executed_tools.append(action_sig)
 
+                tool_t0 = self._clock()
                 try:
                     async with semaphore:
                         res = await tool_handler(tool_name, raw_args)
                 except Exception as exc:
                     res = sanitize_tool_error(tool_name, exc)
+                tool_ms = max(0.0, (self._clock() - tool_t0) * 1000.0)
 
                 tool_cache[action_sig] = res
                 obs = self._observer.process_tool_result(step.step_id, tool_name, raw_args, res)
+                obs_tracker.record_tool_call(
+                    tool_name=tool_name,
+                    duration_ms=tool_ms,
+                    success=not obs.has_error,
+                    cached=False,
+                    error_category="tool_error" if obs.has_error else None,
+                )
                 step.status = StepStatus.FAILED if obs.has_error else StepStatus.COMPLETED
                 step.observation = obs
                 step.error = obs.error_message
@@ -381,6 +408,9 @@ class AgentExecutor:
             state.iteration += 1
 
         # 6. Final Grounded Synthesis
+        obs_tracker.iterations = state.iteration
+        obs_tracker.replans = state.replans_count
+        obs_tracker.finalize(outcome=str(state.status.value))
         return await self._synthesize_final_reply(
             request=request,
             llm=llm,

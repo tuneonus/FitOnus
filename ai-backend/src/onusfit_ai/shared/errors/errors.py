@@ -78,6 +78,7 @@ def register_error_handlers(app: FastAPI) -> None:
             status=status_code,
             dispatched=exc.dispatched,
             retry_after_seconds=exc.retry_after_seconds,
+            usage=exc.usage,
         )
         body: dict[str, object] = {
             "code": exc.code,

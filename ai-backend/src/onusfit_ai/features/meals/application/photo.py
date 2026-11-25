@@ -5,6 +5,7 @@ and the decision "may this user do this now" stay in Node.
 """
 
 import logging
+import time
 from datetime import UTC, datetime
 
 from onusfit_ai.features.meals.application.parsing import now_iso, one_decimal
@@ -31,10 +32,27 @@ from onusfit_ai.features.meals.domain.sanitize import sanitize_photo_result
 from onusfit_ai.shared.contracts.common import Usage
 from onusfit_ai.shared.llm.ports import LlmServiceError, MediaInput, TextGenerator
 from onusfit_ai.shared.llm.telemetry import log_ai_call
+from onusfit_ai.shared.logging import (
+    MultimodalObservabilityTracker,
+    classify_media_validation_error,
+)
 from onusfit_ai.shared.utils.image import decode_image_base64
 from onusfit_ai.shared.utils.js_compat import js_round, strict_json_loads, strip_code_fences
+from onusfit_ai.shared.utils.media import InvalidMediaError
 
 logger = logging.getLogger("onusfit_ai.meal_photo")
+
+
+def _error_category_for_llm_code(code: str) -> str:
+    return {
+        "PROVIDER_TIMEOUT": "gemini_timeout",
+        "PROVIDER_RATE_LIMITED": "gemini_rate_limited",
+        "PROVIDER_QUOTA_EXHAUSTED": "gemini_quota_exhausted",
+        "PROVIDER_UNAVAILABLE": "gemini_unavailable",
+        "AI_UNAVAILABLE": "gemini_unavailable",
+        "PROVIDER_AUTH_ERROR": "gemini_auth",
+        "PROVIDER_NOT_CONFIGURED": "gemini_auth",
+    }.get(code, "gemini_error")
 
 
 async def analyze_meal_photo(
@@ -45,25 +63,58 @@ async def analyze_meal_photo(
     Validates base64 image bytes up front (fails 422 before calling Gemini), calls multimodal LLM,
     parses items, and bounds all macros and calories to realistic human nutritional limits.
     """
+    tracker = MultimodalObservabilityTracker(
+        modality="image",
+        feature="meal_photo",
+        trace_id=trace_id,
+    )
     # Refuses corrupt images (422, dispatched=False) before any Gemini call.
-    media = MediaInput(
-        mime_type=request.image.mime_type, data=decode_image_base64(request.image.base64)
+    val_started = time.monotonic()
+    try:
+        raw_bytes = decode_image_base64(request.image.base64)
+    except InvalidMediaError as exc:
+        tracker.record_validation_failure(
+            duration_ms=(time.monotonic() - val_started) * 1000.0,
+            reason=classify_media_validation_error(str(exc)),
+        )
+        raise
+    media = MediaInput(mime_type=request.image.mime_type, data=raw_bytes)
+    tracker.record_validation_success(
+        duration_ms=(time.monotonic() - val_started) * 1000.0,
+        byte_size=len(media.data),
+        mime_type=request.image.mime_type,
+        exif_stripped=False,
     )
 
     use_structured = is_meal_photo_structured_output_enabled()
     schema = GeminiPhotoMealOutput if use_structured else None
 
-    llm_result = await llm.generate_text(
-        build_prompt(request.meal_type, request.notes),
-        primary_model=request.model.primary,
-        fallback_model=request.model.fallback,
-        deadline_s=request.deadline_ms / 1000,
-        media=media,
-        schema=schema,
-    )
+    try:
+        llm_result = await llm.generate_text(
+            build_prompt(request.meal_type, request.notes),
+            primary_model=request.model.primary,
+            fallback_model=request.model.fallback,
+            deadline_s=request.deadline_ms / 1000,
+            media=media,
+            schema=schema,
+        )
+    except LlmServiceError as exc:
+        tracker.record_processing_completed(
+            model=exc.usage.model if exc.usage else request.model.primary,
+            outcome="error",
+            processing_error=True,
+            error_category=_error_category_for_llm_code(exc.code),
+        )
+        raise
 
     # 1. Defensively handle safety-blocked content
     if llm_result.finish_reason == "SAFETY":
+        tracker.record_processing_completed(
+            model=llm_result.usage.model,
+            outcome="safety_blocked",
+            processing_error=True,
+            error_category="gemini_unavailable",
+        )
         raise LlmServiceError(
             code="PROVIDER_UNAVAILABLE",
             message="Meal photo analysis was blocked by safety policies.",
@@ -73,6 +124,12 @@ async def analyze_meal_photo(
 
     # 2. Defensively handle token truncation
     if llm_result.finish_reason == "MAX_TOKENS":
+        tracker.record_processing_completed(
+            model=llm_result.usage.model,
+            outcome="max_tokens",
+            processing_error=True,
+            error_category="gemini_error",
+        )
         raise LlmServiceError(
             code="PROVIDER_ERROR",
             message="Meal photo analysis exceeded maximum token limit.",
@@ -103,6 +160,12 @@ async def analyze_meal_photo(
                 parsed_output = None
 
         if parsed_output is None:
+            tracker.record_processing_completed(
+                model=llm_result.usage.model,
+                outcome="parse_failed",
+                processing_error=True,
+                error_category="invalid_ai_response",
+            )
             log_ai_call(
                 logger,
                 feature="meal_photo",
@@ -217,6 +280,12 @@ async def analyze_meal_photo(
         usage=usage,
         items=len(result.items),
         image_bytes=len(media.data),
+    )
+    tracker.record_processing_completed(
+        model=usage.model,
+        outcome=outcome,
+        processing_error=(outcome == "parse_failed"),
+        error_category=("invalid_ai_response" if outcome == "parse_failed" else None),
     )
     return AnalyzeMealPhotoResponse(
         outcome=outcome,

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { defaultAiMetrics } from '../../../shared/ai/ai-metrics.js';
 import { callPythonAi, pythonUsageSchema } from '../../../shared/ai/python-ai-call.js';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
 import type { Logger } from '../../../shared/logging/logger.js';
@@ -49,28 +50,51 @@ export class PythonSpeechTranscriber implements SpeechTranscriber {
   ): Promise<{ transcript: string; detectedLanguage: string }> {
     const models = await this.deps.resolveModels();
     const timeoutMs = this.deps.pythonTimeoutMs;
-
-    const { result } = await callPythonAi({
-      client: this.deps.client,
-      path: TRANSCRIBE_PATH,
-      scope: TRANSCRIBE_SCOPE,
-      userId,
-      requestId: `stt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-      timeoutMs,
-      body: {
-        audio: { mimeType: audio.mimeType, base64: audio.base64 },
-        model: { primary: models.primary, fallback: models.fallback },
-        deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
-      },
-      schema: pythonTranscribeResponseSchema,
-      // Same ledger label the Node implementation used (the model setting is the coach model too).
-      feature: 'coach_chat',
-      usageRecorder: this.deps.usageRecorder,
-      logger: this.deps.logger,
-      label: 'Python transcription',
-      unavailableMessage: TRANSCRIBE_UNAVAILABLE_MESSAGE,
-    });
-
-    return { transcript: result.transcript, detectedLanguage: result.detectedLanguage };
+    const startedAt = performance.now();
+    const approxBytes = Math.floor(((audio.base64?.length ?? 0) * 3) / 4);
+    try {
+      const { result } = await callPythonAi({
+        client: this.deps.client,
+        path: TRANSCRIBE_PATH,
+        scope: TRANSCRIBE_SCOPE,
+        userId,
+        requestId: `stt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+        timeoutMs,
+        body: {
+          audio: { mimeType: audio.mimeType, base64: audio.base64 },
+          model: { primary: models.primary, fallback: models.fallback },
+          deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
+        },
+        schema: pythonTranscribeResponseSchema,
+        // Same ledger label the Node implementation used (the model setting is the coach model too).
+        feature: 'coach_chat',
+        usageRecorder: this.deps.usageRecorder,
+        logger: this.deps.logger,
+        label: 'Python transcription',
+        unavailableMessage: TRANSCRIBE_UNAVAILABLE_MESSAGE,
+      });
+      try {
+        defaultAiMetrics.recordMultimodalProcessing({
+          modality: 'audio',
+          durationMs: Math.round(performance.now() - startedAt),
+          byteSize: approxBytes,
+        });
+      } catch {
+        // Fail-open observability
+      }
+      return { transcript: result.transcript, detectedLanguage: result.detectedLanguage };
+    } catch (error) {
+      try {
+        defaultAiMetrics.recordMultimodalProcessing({
+          modality: 'audio',
+          durationMs: Math.round(performance.now() - startedAt),
+          processingError: true,
+          byteSize: approxBytes,
+        });
+      } catch {
+        // Fail-open observability
+      }
+      throw error;
+    }
   }
 }

@@ -12,6 +12,7 @@ import asyncio
 import copy
 import json
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from typing import Any, Final
 
@@ -39,6 +40,7 @@ from onusfit_ai.shared.contracts.tools import (
     TOOL_VALIDATE_WORKOUT_PLAN,
 )
 from onusfit_ai.shared.llm.ports import sanitize_tool_error
+from onusfit_ai.shared.logging import metrics_registry, start_async_span
 
 logger = logging.getLogger("onusfit_ai.coach.multi_agent.mcp_gateway")
 
@@ -177,6 +179,7 @@ class MultiAgentMcpGateway:
         self._inflight_locks: dict[str, asyncio.Lock] = {}
         self._locks_guard = asyncio.Lock()
         self.cache_hits = 0
+        self.tool_failures = 0
         self.fallbacks_triggered = 0
         self.executed_tools: list[str] = []
 
@@ -281,6 +284,12 @@ class MultiAgentMcpGateway:
         async with lock:
             if sig in self._cache:
                 self.cache_hits += 1
+                try:
+                    metrics_registry.record_tool_call(
+                        tool_name=tool_name, duration_ms=0.0, success=True, cached=True
+                    )
+                except Exception:  # noqa: BLE001 - fail-open observability
+                    pass
                 return copy.deepcopy(self._cache[sig])
 
             # 6. Centralized cumulative quota reservation
@@ -289,55 +298,81 @@ class MultiAgentMcpGateway:
             except MultiAgentBudgetExceededError as exc:
                 return {"error": exc.message}
 
+            exec_started = time.monotonic()
             raw_result: dict[str, Any] | None = None
             mcp_security_blocked = False
 
-            # 7. Execute via MCP handler first if present, with budget-aware native fallback
-            if self._mcp_handler is not None:
-                try:
-                    raw_result = await self._mcp_handler(tool_name, validated_args)
-                    if isinstance(raw_result, dict) and "error" in raw_result:
-                        err_lower = str(raw_result["error"]).lower()
-                        if any(
-                            tok in err_lower
-                            for tok in (
-                                "forbidden",
-                                "security",
-                                "unauthorized",
-                                "allowlist",
-                                "validation",
-                                "approval",
-                            )
-                        ):
-                            mcp_security_blocked = True
-                except Exception as exc:
-                    logger.warning(
-                        "MCP gateway call failed (%s); checking native fallback",
-                        type(exc).__name__,
-                        extra={"requestId": request_id},
+            async with start_async_span(
+                f"multi_agent.tool.{tool_name}",
+                attributes={"agentRole": agent_role.value, "tool": tool_name},
+            ) as span:
+                # 7. Execute via MCP handler first if present, with budget-aware native fallback
+                if self._mcp_handler is not None:
+                    try:
+                        raw_result = await self._mcp_handler(tool_name, validated_args)
+                        if isinstance(raw_result, dict) and "error" in raw_result:
+                            err_lower = str(raw_result["error"]).lower()
+                            if any(
+                                tok in err_lower
+                                for tok in (
+                                    "forbidden",
+                                    "security",
+                                    "unauthorized",
+                                    "allowlist",
+                                    "validation",
+                                    "approval",
+                                )
+                            ):
+                                mcp_security_blocked = True
+                    except Exception as exc:
+                        logger.warning(
+                            "MCP gateway call failed (%s); checking native fallback",
+                            type(exc).__name__,
+                            extra={"requestId": request_id},
+                        )
+                        raw_result = None
+
+                needs_fallback = (
+                    not mcp_security_blocked
+                    and (
+                        raw_result is None
+                        or (isinstance(raw_result, dict) and "error" in raw_result)
                     )
-                    raw_result = None
+                    and self._native_handler is not None
+                    and not self._budget.is_deadline_approaching()
+                    and not self._budget.is_cancelled
+                )
+                if needs_fallback and self._native_handler is not None:
+                    self.fallbacks_triggered += 1
+                    try:
+                        raw_result = await self._native_handler(tool_name, validated_args)
+                    except Exception as exc:
+                        raw_result = sanitize_tool_error(tool_name, exc)
 
-            needs_fallback = (
-                not mcp_security_blocked
-                and (raw_result is None or (isinstance(raw_result, dict) and "error" in raw_result))
-                and self._native_handler is not None
-                and not self._budget.is_deadline_approaching()
-                and not self._budget.is_cancelled
-            )
-            if needs_fallback and self._native_handler is not None:
-                self.fallbacks_triggered += 1
-                try:
-                    raw_result = await self._native_handler(tool_name, validated_args)
-                except Exception as exc:
-                    raw_result = sanitize_tool_error(tool_name, exc)
+                if raw_result is None:
+                    raw_result = {"error": f"Tool '{tool_name}' unavailable"}
 
-            if raw_result is None:
-                raw_result = {"error": f"Tool '{tool_name}' unavailable"}
+                sanitized = self._sanitize_dict(raw_result)
+                if not isinstance(sanitized, dict):
+                    sanitized = {"result": sanitized}
 
-            sanitized = self._sanitize_dict(raw_result)
-            if not isinstance(sanitized, dict):
-                sanitized = {"result": sanitized}
+                tool_ok = "error" not in sanitized
+                if not tool_ok:
+                    self.tool_failures += 1
+                    span.mark_error("tool_error")
+                span.set_attribute("fallbackUsed", bool(needs_fallback))
+                span.set_attribute("success", tool_ok)
+
+            elapsed_ms = round(max(0.0, (time.monotonic() - exec_started) * 1000.0), 2)
+            try:
+                metrics_registry.record_tool_call(
+                    tool_name=tool_name,
+                    duration_ms=elapsed_ms,
+                    success=("error" not in sanitized),
+                    cached=False,
+                )
+            except Exception:  # noqa: BLE001 - fail-open observability
+                pass
 
             self.executed_tools.append(tool_name)
             if "error" not in sanitized:

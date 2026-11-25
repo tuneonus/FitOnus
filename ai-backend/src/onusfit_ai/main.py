@@ -31,6 +31,7 @@ from onusfit_ai.shared.errors import register_error_handlers
 from onusfit_ai.shared.health import router as health_router
 from onusfit_ai.shared.logging import configure_logging, log_event
 from onusfit_ai.shared.observability import RequestObservabilityMiddleware
+from onusfit_ai.shared.observability.router import router as observability_router
 from onusfit_ai.shared.request_limits import MAX_REQUEST_BODY_BYTES, RequestBodyLimitMiddleware
 from onusfit_ai.shared.tools import set_multi_agent_providers, set_shared_mcp_server
 
@@ -214,6 +215,7 @@ def create_app() -> FastAPI:
 
     # Mount modular feature routers
     app.include_router(health_router)
+    app.include_router(observability_router)
     app.include_router(coach_router)
     app.include_router(meals_router)
     app.include_router(speech_router)

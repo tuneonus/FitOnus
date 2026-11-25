@@ -2,7 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { RequestHandler } from 'express';
 import { pinoHttp } from 'pino-http';
 import type { Logger } from '../shared/logging/logger.js';
-import { isSafeCorrelationId, runWithCorrelationId } from '../shared/logging/request-correlation.js';
+import {
+  createRootTraceContext,
+  isSafeCorrelationId,
+  runWithCorrelationId,
+  runWithTraceContext,
+} from '../shared/logging/request-correlation.js';
 
 const REQUEST_ID_HEADER = 'x-request-id';
 
@@ -48,9 +53,10 @@ export function requestContext(logger: Logger): RequestHandler {
  */
 export const bindRequestCorrelation: RequestHandler = (req, _res, next) => {
   const id: unknown = req.id;
+  const traceCtx = createRootTraceContext(req.headers['traceparent']);
   if (typeof id === 'string' || typeof id === 'number') {
-    runWithCorrelationId(String(id), next);
+    runWithCorrelationId(String(id), () => runWithTraceContext(traceCtx, next));
     return;
   }
-  next();
+  runWithTraceContext(traceCtx, next);
 };

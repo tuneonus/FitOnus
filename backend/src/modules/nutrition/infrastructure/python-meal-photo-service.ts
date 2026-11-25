@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { defaultAiMetrics } from '../../../shared/ai/ai-metrics.js';
 import { currentAiRequestContext } from '../../../shared/ai/ai-usage.js';
 import { callPythonAi, pythonUsageSchema, requireGateUserId } from '../../../shared/ai/python-ai-call.js';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
@@ -68,58 +69,84 @@ export class PythonMealPhotoService implements MealPhotoAnalyzer {
 
     const models = await this.deps.resolveModels();
     const timeoutMs = Math.min(this.deps.pythonTimeoutMs, MEAL_PHOTO_MAX_TIMEOUT_MS);
-    const { result } = await callPythonAi({
-      client: this.deps.client,
-      path: MEAL_PHOTO_PATH,
-      scope: MEAL_PHOTO_SCOPE,
-      userId,
-      requestId: `photo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-      timeoutMs,
-      body: {
-        image: { mimeType: image.mimeType, base64: image.base64 },
-        // Optional fields that are undefined are dropped by JSON.stringify.
-        mealType,
-        notes,
-        model: { primary: models.primary, fallback: models.fallback },
-        deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
-      },
-      schema: pythonMealPhotoResponseSchema,
-      feature: 'meal_photo',
-      usageRecorder: this.deps.usageRecorder,
-      logger: this.deps.logger,
-      label: 'Python meal photo',
-      unavailableMessage: MEAL_PHOTO_UNAVAILABLE_MESSAGE,
-    });
+    const startedAt = performance.now();
+    const approxBytes = Math.floor((image.base64.length * 3) / 4);
+    try {
+      const { result } = await callPythonAi({
+        client: this.deps.client,
+        path: MEAL_PHOTO_PATH,
+        scope: MEAL_PHOTO_SCOPE,
+        userId,
+        requestId: `photo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+        timeoutMs,
+        body: {
+          image: { mimeType: image.mimeType, base64: image.base64 },
+          // Optional fields that are undefined are dropped by JSON.stringify.
+          mealType,
+          notes,
+          model: { primary: models.primary, fallback: models.fallback },
+          deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
+        },
+        schema: pythonMealPhotoResponseSchema,
+        feature: 'meal_photo',
+        usageRecorder: this.deps.usageRecorder,
+        logger: this.deps.logger,
+        label: 'Python meal photo',
+        unavailableMessage: MEAL_PHOTO_UNAVAILABLE_MESSAGE,
+      });
 
-    // The exact shape the mobile app has always received (optional keys are absent, never null).
-    const items: DetectedFoodItem[] = result.items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      ...(item.brand ? { brand: item.brand } : {}),
-      serving: item.serving,
-      ...(typeof item.servingWeightG === 'number' ? { servingWeightG: item.servingWeightG } : {}),
-      ...(typeof item.servingUnit === 'string' ? { servingUnit: item.servingUnit } : {}),
-      ...(typeof item.servingSize === 'number' ? { servingSize: item.servingSize } : {}),
-      kcal: item.kcal,
-      protein: item.protein,
-      carbs: item.carbs,
-      fat: item.fat,
-      ...(typeof item.fiber === 'number' ? { fiber: item.fiber } : {}),
-      confidence: item.confidence,
-      isAiEstimated: item.isAiEstimated,
-    }));
-    return {
-      isFood: result.isFood,
-      summary: result.summary,
-      items,
-      overallConfidence: result.overallConfidence,
-      totalKcal: result.totalKcal,
-      totalProteinGrams: result.totalProteinGrams,
-      totalCarbsGrams: result.totalCarbsGrams,
-      totalFatGrams: result.totalFatGrams,
-      totalFiberGrams: result.totalFiberGrams,
-      ...(result.unclearReason ? { unclearReason: result.unclearReason } : {}),
-      analyzedAt: result.analyzedAt,
-    };
+      try {
+        defaultAiMetrics.recordMultimodalProcessing({
+          modality: 'image',
+          durationMs: Math.round(performance.now() - startedAt),
+          byteSize: approxBytes,
+        });
+      } catch {
+        // Fail-open observability
+      }
+
+      // The exact shape the mobile app has always received (optional keys are absent, never null).
+      const items: DetectedFoodItem[] = result.items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        ...(item.brand ? { brand: item.brand } : {}),
+        serving: item.serving,
+        ...(typeof item.servingWeightG === 'number' ? { servingWeightG: item.servingWeightG } : {}),
+        ...(typeof item.servingUnit === 'string' ? { servingUnit: item.servingUnit } : {}),
+        ...(typeof item.servingSize === 'number' ? { servingSize: item.servingSize } : {}),
+        kcal: item.kcal,
+        protein: item.protein,
+        carbs: item.carbs,
+        fat: item.fat,
+        ...(typeof item.fiber === 'number' ? { fiber: item.fiber } : {}),
+        confidence: item.confidence,
+        isAiEstimated: item.isAiEstimated,
+      }));
+      return {
+        isFood: result.isFood,
+        summary: result.summary,
+        items,
+        overallConfidence: result.overallConfidence,
+        totalKcal: result.totalKcal,
+        totalProteinGrams: result.totalProteinGrams,
+        totalCarbsGrams: result.totalCarbsGrams,
+        totalFatGrams: result.totalFatGrams,
+        totalFiberGrams: result.totalFiberGrams,
+        ...(result.unclearReason ? { unclearReason: result.unclearReason } : {}),
+        analyzedAt: result.analyzedAt,
+      };
+    } catch (error) {
+      try {
+        defaultAiMetrics.recordMultimodalProcessing({
+          modality: 'image',
+          durationMs: Math.round(performance.now() - startedAt),
+          processingError: true,
+          byteSize: approxBytes,
+        });
+      } catch {
+        // Fail-open observability
+      }
+      throw error;
+    }
   }
 }

@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 import type { Database } from '../../database/transaction.js';
 import type { PythonAiClient } from '../../shared/ai/python-ai-client.js';
 import type { RouteGroup } from '../../shared/http/route.js';
+import type { Logger } from '../../shared/logging/logger.js';
 import { KnowledgeService } from './application/knowledge-service.js';
 import { SemanticChunker } from './domain/semantic-chunker.js';
 import { PgKnowledgeRepository } from './infrastructure/pg-knowledge-repository.js';
@@ -33,6 +34,7 @@ export interface KnowledgeModule {
 export interface CreateKnowledgeModuleOptions {
   adminBasePath?: string | undefined;
   uploadLimiter?: RequestHandler | undefined;
+  logger?: Pick<Logger, 'info' | 'warn'> | undefined;
 }
 
 export function createKnowledgeModule(
@@ -42,7 +44,7 @@ export function createKnowledgeModule(
 ): KnowledgeModule {
   const repository = new PgKnowledgeRepository(db);
   const chunker = new SemanticChunker();
-  const service = new KnowledgeService(repository, pythonAi, chunker);
+  const service = new KnowledgeService(repository, pythonAi, chunker, options?.logger);
 
   const adminController = createKnowledgeAdminController(service);
   const adminRoutes = options?.adminBasePath

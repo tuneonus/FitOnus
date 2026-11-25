@@ -1,8 +1,10 @@
-"""Zero-PII telemetry and audit logging for LangGraph Workout Planning."""
+"""Zero-PII structured telemetry and audit logging for LangGraph Workout Planning."""
 
 import logging
 import time
 from typing import Any
+
+from onusfit_ai.shared.logging import clean_fields, log_event, metrics_registry
 
 logger = logging.getLogger("onusfit_ai.workout_planner.graph.telemetry")
 
@@ -19,20 +21,33 @@ class WorkoutPlannerTelemetry:
         status: str = "success",
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        event = {
+        del user_id  # Never retain or log raw user identifiers in telemetry payloads.
+        safe_meta = clean_fields(metadata or {})
+        rounded_ms = round(max(0.0, duration_ms), 2)
+        event: dict[str, Any] = {
             "node": node_name,
-            "user_id": user_id,
             "trace_id": trace_id,
-            "duration_ms": round(duration_ms, 2),
+            "duration_ms": rounded_ms,
             "status": status,
             "timestamp": time.time(),
-            "metadata": metadata or {},
+            "metadata": safe_meta,
         }
-        logger.info(
-            "workout_planner.graph_event node=%s status=%s duration_ms=%.2f trace_id=%s",
-            node_name,
-            status,
-            duration_ms,
-            trace_id,
+        try:
+            metrics_registry.record_tool_call(
+                tool_name=f"wp_{node_name}",
+                duration_ms=rounded_ms,
+                success=status == "success",
+            )
+        except Exception:  # noqa: BLE001 - fail-open observability
+            pass
+        log_event(
+            logger,
+            "workout_planner.graph.node",
+            level=logging.WARNING if status != "success" else logging.INFO,
+            message="workout planner node completed",
+            aiRequestId=trace_id,
+            node=node_name,
+            status=status,
+            durationMs=rounded_ms,
         )
         return event

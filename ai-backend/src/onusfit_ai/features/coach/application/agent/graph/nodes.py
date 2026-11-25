@@ -60,6 +60,7 @@ from onusfit_ai.shared.llm.ports import (
     TextGenerator,
     sanitize_tool_error,
 )
+from onusfit_ai.shared.logging import metrics_registry
 from onusfit_ai.shared.utils.js_compat import strict_json_loads, strip_code_fences
 
 logger = logging.getLogger("onusfit_ai.agent.graph.nodes")
@@ -260,6 +261,15 @@ async def tool_execution_node(
             obs = ctx.observer.process_tool_result(
                 step_copy.step_id, tool_name, raw_args, cached_result
             )
+            try:
+                metrics_registry.record_tool_call(
+                    tool_name=tool_name,
+                    duration_ms=0.0,
+                    success=not obs.has_error,
+                    cached=True,
+                )
+            except Exception:  # noqa: BLE001 - fail-open observability
+                pass
             step_copy.status = StepStatus.COMPLETED
             step_copy.observation = obs
             return step_copy, obs, None, None, False
@@ -280,14 +290,25 @@ async def tool_execution_node(
         step_copy.status = StepStatus.RUNNING
         new_call_count += 1
 
+        tool_t0 = ctx.clock()
         try:
             async with semaphore:
                 res = await tool_handler(tool_name, raw_args)
         except Exception as exc:
             res = sanitize_tool_error(tool_name, exc)
+        tool_ms = max(0.0, (ctx.clock() - tool_t0) * 1000.0)
 
         ctx.tool_cache[action_sig] = res
         obs = ctx.observer.process_tool_result(step_copy.step_id, tool_name, raw_args, res)
+        try:
+            metrics_registry.record_tool_call(
+                tool_name=tool_name,
+                duration_ms=tool_ms,
+                success=not obs.has_error,
+                cached=False,
+            )
+        except Exception:  # noqa: BLE001 - fail-open observability
+            pass
         step_copy.status = StepStatus.FAILED if obs.has_error else StepStatus.COMPLETED
         step_copy.observation = obs
         step_copy.error = obs.error_message

@@ -5,6 +5,7 @@ No HTTP and no database. Authentication and rate limiting stay in Node.
 
 import logging
 import os
+import time
 
 from onusfit_ai.features.speech.application.contracts import (
     TranscribeRequest,
@@ -20,7 +21,12 @@ from onusfit_ai.features.speech.application.schemas import GeminiTranscribeOutpu
 from onusfit_ai.shared.contracts.common import Usage
 from onusfit_ai.shared.llm.ports import LlmServiceError, MediaInput, TextGenerator
 from onusfit_ai.shared.llm.telemetry import log_ai_call
+from onusfit_ai.shared.logging import (
+    MultimodalObservabilityTracker,
+    classify_media_validation_error,
+)
 from onusfit_ai.shared.utils.audio import decode_audio_base64
+from onusfit_ai.shared.utils.media import InvalidMediaError
 
 logger = logging.getLogger("onusfit_ai.transcribe")
 
@@ -43,24 +49,56 @@ async def transcribe_audio(
     Uses native Gemini Structured Outputs (GeminiTranscribeOutput) when enabled,
     with defensive safety-check, truncation-check, and legacy fallback handling.
     """
-    media = MediaInput(
-        mime_type=request.audio.mime_type, data=decode_audio_base64(request.audio.base64)
+    tracker = MultimodalObservabilityTracker(
+        modality="audio",
+        feature="transcribe",
+        trace_id=trace_id,
+    )
+    val_started = time.monotonic()
+    try:
+        decoded_audio = decode_audio_base64(request.audio.base64)
+    except InvalidMediaError as exc:
+        tracker.record_validation_failure(
+            duration_ms=(time.monotonic() - val_started) * 1000.0,
+            reason=classify_media_validation_error(str(exc)),
+        )
+        raise
+    media = MediaInput(mime_type=request.audio.mime_type, data=decoded_audio)
+    tracker.record_validation_success(
+        duration_ms=(time.monotonic() - val_started) * 1000.0,
+        byte_size=len(decoded_audio),
+        mime_type=request.audio.mime_type,
     )
 
     use_structured = is_speech_structured_output_enabled()
     schema = GeminiTranscribeOutput if use_structured else None
 
-    llm_result = await llm.generate_text(
-        build_prompt(),
-        primary_model=request.model.primary,
-        fallback_model=request.model.fallback,
-        deadline_s=request.deadline_ms / 1000,
-        media=media,
-        schema=schema,
-    )
+    try:
+        llm_result = await llm.generate_text(
+            build_prompt(),
+            primary_model=request.model.primary,
+            fallback_model=request.model.fallback,
+            deadline_s=request.deadline_ms / 1000,
+            media=media,
+            schema=schema,
+        )
+    except LlmServiceError as exc:
+        tracker.record_processing_completed(
+            model=exc.usage.model if exc.usage else request.model.primary,
+            outcome="error",
+            processing_error=True,
+            error_category=exc.code.lower(),
+        )
+        raise
 
     # 1. Defensively handle safety-blocked content (do NOT pass to legacy parser)
     if llm_result.finish_reason == "SAFETY":
+        tracker.record_processing_completed(
+            model=llm_result.usage.model,
+            outcome="safety_blocked",
+            processing_error=True,
+            error_category="gemini_unavailable",
+        )
         raise LlmServiceError(
             code="PROVIDER_UNAVAILABLE",
             message="Audio transcription was blocked by safety policies.",
@@ -70,6 +108,12 @@ async def transcribe_audio(
 
     # 2. Defensively handle token truncation (do NOT pass truncated JSON to legacy parser)
     if llm_result.finish_reason == "MAX_TOKENS":
+        tracker.record_processing_completed(
+            model=llm_result.usage.model,
+            outcome="max_tokens",
+            processing_error=True,
+            error_category="gemini_error",
+        )
         raise LlmServiceError(
             code="PROVIDER_ERROR",
             message="Transcription response exceeded maximum token limit.",
@@ -112,6 +156,12 @@ async def transcribe_audio(
         outcome=outcome,
         usage=usage,
         audio_bytes=len(media.data),
+    )
+    tracker.record_processing_completed(
+        model=usage.model,
+        outcome=outcome,
+        processing_error=(outcome == "unstructured"),
+        error_category=("invalid_ai_response" if outcome == "unstructured" else None),
     )
     return TranscribeResponse(
         outcome=outcome,  # type: ignore[arg-type]

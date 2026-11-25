@@ -153,3 +153,11 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 |:---|:---|:---|:---|:---|
 | **P13-All** | [**Phase 13: Multi-Agent Systems**](../phase-13-multi-agent-systems.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/coach/domain/multi_agent.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/multi_agent/*`<br>`ai-backend/src/onusfit_ai/features/mcp/application/a2a.py`<br>`ai-backend/src/onusfit_ai/shared/tools/multi_agent.py`<br>`ai-backend/src/onusfit_ai/features/coach/application/chat.py`<br>`ai-backend/src/onusfit_ai/features/coach/presentation/coach_chat.py`<br>`ai-backend/src/onusfit_ai/main.py` | `ai-backend/tests/test_multi_agent_*.py`<br>`ai-backend/tests/evals/offline/test_multi_agent_eval.py` (42 benchmark cases)<br>`ai-backend/tests/evals/test_runner.py` (277 total benchmark cases)<br>`ai-backend/pytest -q` (1091 passed)<br>`backend` targeted unit tests (34 passed) |
 
+---
+
+## Phase 17: AI Observability
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P17-All** | [**Phase 17: AI Observability**](../phase-17-ai-observability.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/shared/logging/{logging,metrics,tracing,domain_telemetry,monitoring}.py`<br>`ai-backend/src/onusfit_ai/shared/observability/{observability,router}.py`<br>`backend/src/shared/ai/{ai-metrics,ai-tracing,ai-monitoring,ai-observability,python-ai-call,python-ai-client}.ts`<br>`backend/src/shared/logging/{request-correlation,logger}.ts` | `ai-backend/tests/test_phase17_observability.py` (80 passed)<br>`ai-backend` targeted observability/auth/arch suites (208 passed) & offline evals (329/329 passed)<br>`backend/tests/unit/ai/ai-observability-phase17.test.ts` (58 passed; 2986/2986 full backend tests passed) |
+

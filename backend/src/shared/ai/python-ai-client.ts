@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { SignJWT } from 'jose';
 import { z } from 'zod';
 import { AppError } from '../errors/app-error.js';
-import { isSafeCorrelationId } from '../logging/request-correlation.js';
+import { currentTraceContext, formatTraceparent, isSafeCorrelationId } from '../logging/request-correlation.js';
+import { defaultAiMetrics } from './ai-metrics.js';
+import { withAiSpan } from './ai-tracing.js';
 import type { GeminiFeature } from './gemini-feature.js';
 
 /**
@@ -217,6 +219,7 @@ export class PythonAiClient {
       .setJti(randomUUID())
       .sign(this.secretKey);
 
+    const activeTrace = currentTraceContext();
     let response: Response;
     try {
       response = await this.fetchImpl(`${this.baseUrl}${request.path}`, {
@@ -228,6 +231,7 @@ export class PythonAiClient {
           'x-request-id': request.requestId,
           // Re-validated here: this value ends up in an HTTP header, so it must never be attacker-shaped.
           ...(isSafeCorrelationId(request.correlationId) ? { 'x-correlation-id': request.correlationId } : {}),
+          ...(activeTrace ? { traceparent: formatTraceparent(activeTrace) } : {}),
         },
         body: JSON.stringify(request.body),
         signal: AbortSignal.timeout(request.timeoutMs),
@@ -262,28 +266,68 @@ export class PythonAiClient {
 
   /** Calls the embedding endpoint on the Python AI backend (`POST /internal/v1/ai/embed`). */
   async embed(params: PythonAiEmbedParams): Promise<PythonAiEmbedResult> {
-    const payload = await this.postJson({
-      path: '/internal/v1/ai/embed',
-      scope: 'ai:embed',
-      userId: params.userId,
-      requestId: params.requestId,
-      correlationId: params.correlationId,
-      timeoutMs: params.timeoutMs ?? 15_000,
-      body: {
-        texts: params.texts,
-        ...(params.taskType ? { taskType: params.taskType } : {}),
-        ...(params.title ? { title: params.title } : {}),
-        dimensions: params.dimensions ?? 768,
-      },
-    });
+    const startedAt = performance.now();
+    return withAiSpan(
+      'ai.embed',
+      { attributes: { feature: 'knowledge_embed', batchSize: params.texts.length } },
+      async (span) => {
+        try {
+          const payload = await this.postJson({
+            path: '/internal/v1/ai/embed',
+            scope: 'ai:embed',
+            userId: params.userId,
+            requestId: params.requestId,
+            correlationId: params.correlationId,
+            timeoutMs: params.timeoutMs ?? 15_000,
+            body: {
+              texts: params.texts,
+              ...(params.taskType ? { taskType: params.taskType } : {}),
+              ...(params.title ? { title: params.title } : {}),
+              dimensions: params.dimensions ?? 768,
+            },
+          });
 
-    const parsed = pythonAiEmbedResultSchema.safeParse(payload);
-    if (!parsed.success) {
-      throw new PythonAiError('invalid_response', 'AI backend returned an invalid embed response.', {
-        dispatched: true,
-      });
-    }
-    return parsed.data;
+          const parsed = pythonAiEmbedResultSchema.safeParse(payload);
+          if (!parsed.success) {
+            throw new PythonAiError('invalid_response', 'AI backend returned an invalid embed response.', {
+              dispatched: true,
+            });
+          }
+          try {
+            defaultAiMetrics.recordLlmCall({
+              feature: 'knowledge_embed',
+              model: parsed.data.usage.model,
+              durationMs: Math.round(performance.now() - startedAt),
+              success: true,
+              inputTokens: parsed.data.usage.inputTokens,
+              outputTokens: parsed.data.usage.outputTokens,
+              cachedTokens: parsed.data.usage.cachedTokens,
+              thinkingTokens: parsed.data.usage.thinkingTokens,
+              totalTokens: parsed.data.usage.totalTokens,
+              isFallback: parsed.data.usage.isFallback,
+            });
+          } catch {
+            // Fail-open observability
+          }
+          return parsed.data;
+        } catch (error) {
+          const cat = error instanceof PythonAiError ? error.kind : 'internal_error';
+          span.markError(cat);
+          try {
+            defaultAiMetrics.recordLlmCall({
+              feature: 'knowledge_embed',
+              durationMs: Math.round(performance.now() - startedAt),
+              success: false,
+              errorCategory: error instanceof PythonAiError && error.kind === 'timeout' ? 'python_timeout' : 'python_unavailable',
+              timeout: error instanceof PythonAiError && (error.kind === 'timeout' || error.kind === 'provider_timeout'),
+            });
+          } catch {
+            // Fail-open observability
+          }
+          throw error;
+        }
+      },
+    );
   }
 }
 

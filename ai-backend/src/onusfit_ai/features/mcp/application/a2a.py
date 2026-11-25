@@ -19,6 +19,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from onusfit_ai.shared.logging import log_event, start_async_span
+
 logger = logging.getLogger("onusfit_ai.mcp.a2a")
 
 
@@ -357,11 +359,40 @@ class A2AMediator:
         )
 
         try:
-            reply = await asyncio.wait_for(
-                self.send_message(msg), timeout=task_req.timeout_seconds
-            )
+            async with start_async_span(
+                f"a2a.delegate.{recipient}",
+                attributes={
+                    "sender": sender,
+                    "recipient": recipient,
+                    "taskType": task_req.task_type,
+                },
+            ) as span:
+                reply = await asyncio.wait_for(
+                    self.send_message(msg), timeout=task_req.timeout_seconds
+                )
+                if reply.performative in (
+                    A2APerformative.FAILURE,
+                    A2APerformative.REFUSE,
+                    A2APerformative.CANCEL,
+                ):
+                    span.mark_error(
+                        reply.performative.value
+                        if hasattr(reply.performative, "value")
+                        else str(reply.performative)
+                    )
         except TimeoutError:
             elapsed_ms = (time.perf_counter() - start) * 1000.0
+            log_event(
+                logger,
+                "a2a.task.timeout",
+                level=logging.WARNING,
+                message="A2A delegated task timed out",
+                sender=sender,
+                recipient=recipient,
+                taskType=task_req.task_type,
+                durationMs=round(elapsed_ms, 2),
+                correlationId=corr_id,
+            )
             return A2ATaskResponse(
                 task_id=task_req.task_id,
                 status="failed",
@@ -372,6 +403,27 @@ class A2AMediator:
             )
 
         elapsed_ms = (time.perf_counter() - start) * 1000.0
+        perf_str = (
+            reply.performative.value
+            if hasattr(reply.performative, "value")
+            else str(reply.performative)
+        )
+        log_event(
+            logger,
+            "a2a.task.completed",
+            level=(
+                logging.WARNING
+                if reply.performative in (A2APerformative.FAILURE, A2APerformative.REFUSE)
+                else logging.INFO
+            ),
+            message="A2A delegated task completed",
+            sender=sender,
+            recipient=recipient,
+            taskType=task_req.task_type,
+            performative=perf_str,
+            durationMs=round(elapsed_ms, 2),
+            correlationId=corr_id,
+        )
         if reply.performative == A2APerformative.CANCEL:
             return A2ATaskResponse(
                 task_id=task_req.task_id,
