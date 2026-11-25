@@ -26,6 +26,11 @@ DATASET_FILES: dict[str, str] = {
     "mcp_tools": "mcp_tools_benchmark.json",
     "multi_agent": "multi_agent_benchmark.json",
     "multimodal": "multimodal_benchmark.json",
+    "rag_evaluation": "rag_evaluation_benchmark.json",
+    "agent_advanced": "agent_advanced_benchmark.json",
+    "multimodal_advanced": "multimodal_advanced_benchmark.json",
+    "security_adversarial": "security_adversarial_benchmark.json",
+    "performance_eval": "performance_benchmark.json",
 }
 
 

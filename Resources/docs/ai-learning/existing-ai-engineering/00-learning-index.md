@@ -169,4 +169,10 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 |:---|:---|:---|:---|:---|
 | **P15-All** | [**Phase 15: Multimodal AI Engineering**](../phase-15-multimodal-ai-engineering.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/shared/llm/{ports,gemini}.py`<br>`ai-backend/src/onusfit_ai/shared/utils/{image,audio,text}.py`<br>`ai-backend/src/onusfit_ai/features/meals/{domain,application,presentation}/multimodal*`<br>`ai-backend/src/onusfit_ai/features/coach/application/multi_agent/*`<br>`backend/src/shared/ai/{audio-input,body-limits,python-ai-client,python-ai-call}.ts`<br>`backend/src/modules/nutrition/{domain,application,infrastructure,interface}/*multimodal*`<br>`mobile/src/features/ai-coach/services/multimodal-meal-api.ts` | `ai-backend/tests/test_multimodal_*.py`<br>`ai-backend/tests/evals/offline/test_multimodal_eval.py` (52 benchmark cases)<br>`ai-backend/tests/test_gemini_client.py`<br>`backend/tests/unit/nutrition/multimodal-meal-python-integration.test.ts`<br>`mobile/tests/multimodal-meal-e2e.test.ts` |
 
+---
 
+## Phase 18: Advanced AI Evaluation
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P18-All** | [**Phase 18: Advanced AI Evaluation**](../phase-18-advanced-ai-evaluation.md) | **COMPLETED** | `ai-backend/tests/evals/{schemas,gates,reporter,runner}.py`<br>`ai-backend/tests/evals/datasets/loader.py`<br>`ai-backend/tests/evals/evaluators/{rag,agent_advanced,multimodal_advanced,security,performance,judge}.py`<br>`ai-backend/tests/evals/datasets/{rag_evaluation,agent_advanced,multimodal_advanced,security_adversarial,performance}_benchmark.json`<br>`ai-backend/tests/evals/datasets/baseline_offline.json` | `ai-backend/tests/evals/runner.py` (401/401 offline passed)<br>`ai-backend/tests/evals/{test_runner,test_phase18_*}.py` (`178 passed` across Phase 18, core evals, and arch tests excluding concurrent Phase 14/16 WIP) |

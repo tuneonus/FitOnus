@@ -1,0 +1,300 @@
+[
+  {
+    "case_id": "EVAL_PERF_001",
+    "category": "performance_eval",
+    "description": "Coach chat non-streaming turn completes within 8000ms latency SLO and exact Flash-Lite cost",
+    "language": "en",
+    "input_payload": {
+      "workflow": "coach_chat",
+      "max_latency_ms": 8000.0,
+      "max_total_tokens": 4000,
+      "max_cost_usd": 0.01
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Phase 17 Operational SLO Thresholds",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-3.5-flash-lite",
+      "duration_ms": 940.0,
+      "input_tokens": 1200,
+      "output_tokens": 250,
+      "cached_tokens": 0,
+      "total_tokens": 1450,
+      "estimated_cost_usd": 0.000165
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_002",
+    "category": "performance_eval",
+    "description": "Multimodal meal photo turn meets 12000ms p95 SLO and token cap",
+    "language": "en",
+    "input_payload": {
+      "workflow": "meal_photo",
+      "max_latency_ms": 12000.0,
+      "max_total_tokens": 16384,
+      "max_cost_usd": 0.02
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Phase 15/17 Multimodal Latency SLO",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-2.5-flash",
+      "duration_ms": 2350.0,
+      "input_tokens": 2200,
+      "output_tokens": 420,
+      "cached_tokens": 0,
+      "total_tokens": 2620,
+      "estimated_cost_usd": 0.000582
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_003",
+    "category": "performance_eval",
+    "description": "RAG query embedding latency remains within 500ms budget with minimal cost",
+    "language": "en",
+    "input_payload": {
+      "workflow": "knowledge_embed",
+      "max_latency_ms": 500.0,
+      "max_total_tokens": 512,
+      "max_cost_usd": 0.001
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Phase 17 RAG Embedding SLO",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-embedding-001",
+      "duration_ms": 145.0,
+      "input_tokens": 32,
+      "output_tokens": 0,
+      "cached_tokens": 0,
+      "total_tokens": 32,
+      "estimated_cost_usd": 1e-06
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_004",
+    "category": "performance_eval",
+    "description": "Multi-agent parallel workflow honors cumulative 6000 token budget without cost blowout",
+    "language": "en",
+    "input_payload": {
+      "workflow": "coach_multi_agent",
+      "max_latency_ms": 10000.0,
+      "max_total_tokens": 6000,
+      "max_cost_usd": 0.02
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Phase 13 Cumulative Budget Policy",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-2.5-flash",
+      "duration_ms": 3420.0,
+      "input_tokens": 3200,
+      "output_tokens": 680,
+      "cached_tokens": 400,
+      "total_tokens": 3880
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_005",
+    "category": "performance_eval",
+    "description": "Context cache hits accurately reduce billed USD estimate per model pricing table",
+    "language": "en",
+    "input_payload": {
+      "workflow": "coach_chat",
+      "max_latency_ms": 5000.0,
+      "max_cost_usd": 0.005
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "shared/logging/metrics.py Pricing Table",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-2.5-flash",
+      "duration_ms": 780.0,
+      "input_tokens": 2000,
+      "output_tokens": 300,
+      "cached_tokens": 1500,
+      "total_tokens": 2300,
+      "estimated_cost_usd": 0.000311
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_006",
+    "category": "performance_eval",
+    "description": "SSE streaming turn hits TTFT <= 1200ms and emits incremental delta chunks cleanly",
+    "language": "en",
+    "input_payload": {
+      "workflow": "coach_chat_stream",
+      "max_ttft_ms": 1200.0,
+      "max_latency_ms": 8000.0,
+      "min_chunks": 5,
+      "max_total_tokens": 3000
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Phase 14 StreamSessionTracker SLO",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-2.5-flash-lite",
+      "ttft_ms": 285.0,
+      "duration_ms": 1410.0,
+      "chunks_emitted": 18,
+      "input_tokens": 900,
+      "output_tokens": 180,
+      "total_tokens": 1080
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_007",
+    "category": "performance_eval",
+    "description": "SSE multi-agent stream maintains TTFT <= 2000ms during planning status prelude",
+    "language": "en",
+    "input_payload": {
+      "workflow": "coach_multi_agent_stream",
+      "max_ttft_ms": 2000.0,
+      "max_latency_ms": 10000.0,
+      "min_chunks": 4,
+      "max_total_tokens": 5000
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Phase 14 Multi-Agent Streaming SLO",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-2.5-flash",
+      "ttft_ms": 840.0,
+      "duration_ms": 3100.0,
+      "chunks_emitted": 24,
+      "input_tokens": 1800,
+      "output_tokens": 350,
+      "total_tokens": 2150
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_008",
+    "category": "performance_eval",
+    "description": "Client disconnect aborts SSE stream cleanly within 250ms with zero trailing chunks",
+    "language": "en",
+    "input_payload": {
+      "workflow": "coach_chat_stream",
+      "max_cancellation_latency_ms": 250.0,
+      "max_latency_ms": 2000.0
+    },
+    "expected_outcome": "cancelled",
+    "ground_truth_source": "Phase 14 Stream Cancellation Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "cancelled",
+      "model": "gemini-2.5-flash-lite",
+      "duration_ms": 620.0,
+      "ttft_ms": 240.0,
+      "chunks_emitted": 4,
+      "post_cancel_chunks": 0,
+      "cancellation_latency_ms": 45.0,
+      "input_tokens": 800,
+      "output_tokens": 45,
+      "total_tokens": 845
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_009",
+    "category": "performance_eval",
+    "description": "Server timeout cancellation tears down active stream promptly with zero leaked chunks",
+    "language": "en",
+    "input_payload": {
+      "workflow": "coach_chat_stream",
+      "max_cancellation_latency_ms": 300.0,
+      "max_latency_ms": 5000.0
+    },
+    "expected_outcome": "cancelled",
+    "ground_truth_source": "Phase 14 Deadline Cancellation Policy",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "cancelled",
+      "model": "gemini-2.5-flash",
+      "duration_ms": 1850.0,
+      "ttft_ms": 510.0,
+      "chunks_emitted": 3,
+      "post_cancel_chunks": 0,
+      "cancellation_latency_ms": 82.0,
+      "input_tokens": 950,
+      "output_tokens": 30,
+      "total_tokens": 980
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_010",
+    "category": "performance_eval",
+    "description": "Voice meal parse latency stays within 6000ms SLO and small audio token envelope",
+    "language": "tanglish",
+    "input_payload": {
+      "workflow": "voice_meal",
+      "max_latency_ms": 6000.0,
+      "max_total_tokens": 4096,
+      "max_cost_usd": 0.01
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Voice Meal Runtime SLO",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-2.5-flash-lite",
+      "duration_ms": 1120.0,
+      "input_tokens": 640,
+      "output_tokens": 190,
+      "total_tokens": 830
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_011",
+    "category": "performance_eval",
+    "description": "Speech transcription completes within 5000ms SLO with Flash-Lite cost efficiency",
+    "language": "ta",
+    "input_payload": {
+      "workflow": "transcribe",
+      "max_latency_ms": 5000.0,
+      "max_total_tokens": 2048,
+      "max_cost_usd": 0.005
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Speech Transcribe SLO",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-3.5-flash-lite",
+      "duration_ms": 690.0,
+      "input_tokens": 410,
+      "output_tokens": 48,
+      "total_tokens": 458
+    }
+  },
+  {
+    "case_id": "EVAL_PERF_012",
+    "category": "performance_eval",
+    "description": "Thinking tokens included in total token budget check for workout planner adaptation",
+    "language": "en",
+    "input_payload": {
+      "workflow": "workout_planner",
+      "max_latency_ms": 9000.0,
+      "max_total_tokens": 4500,
+      "max_cost_usd": 0.01
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "Workout Planner Token Budget SLO",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "model": "gemini-2.5-flash",
+      "duration_ms": 2850.0,
+      "input_tokens": 1100,
+      "output_tokens": 750,
+      "cached_tokens": 0,
+      "total_tokens": 2350
+    }
+  }
+]
+

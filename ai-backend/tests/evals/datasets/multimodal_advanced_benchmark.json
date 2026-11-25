@@ -1,0 +1,431 @@
+[
+  {
+    "case_id": "EVAL_MM_ADV_001",
+    "category": "multimodal_advanced",
+    "description": "IFCT 2017 Idli (2 pieces) and Sambar bowl identification F1 and macro bounds",
+    "language": "en",
+    "input_payload": {
+      "modality": "image",
+      "expected_food_names": ["Idli", "Sambar"],
+      "min_food_f1": 1.0
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Idli",
+        "serving_weight_g": 120.0,
+        "serving_unit": "piece",
+        "serving_size": 2.0,
+        "calories": 156.0,
+        "protein_g": 5.0,
+        "carbs_g": 31.0,
+        "fat_g": 0.6,
+        "calorie_tolerance_pct": 0.15,
+        "macro_tolerance_pct": 0.2,
+        "weight_tolerance_pct": 0.25
+      },
+      {
+        "name": "Sambar",
+        "serving_weight_g": 150.0,
+        "serving_unit": "bowl",
+        "serving_size": 1.0,
+        "calories": 115.0,
+        "protein_g": 5.5,
+        "carbs_g": 17.0,
+        "fat_g": 2.8,
+        "calorie_tolerance_pct": 0.15,
+        "macro_tolerance_pct": 0.2,
+        "weight_tolerance_pct": 0.25
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 (ICMR-NIN)",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "items": [
+        {"name": "Idli", "calories": 158, "proteinG": 5.1, "carbsG": 31.5, "fatG": 0.6, "servingWeightG": 120},
+        {"name": "Sambar", "calories": 118, "proteinG": 5.4, "carbsG": 17.5, "fatG": 2.7, "servingWeightG": 150}
+      ],
+      "summary": "Two steamed idlis with one bowl of sambar."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_002",
+    "category": "multimodal_advanced",
+    "description": "IFCT Masala Dosa + Coconut Chutney macro tolerance verification",
+    "language": "en",
+    "input_payload": {
+      "modality": "image",
+      "expected_food_names": ["Masala Dosa", "Coconut Chutney"],
+      "min_food_f1": 1.0
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Masala Dosa",
+        "serving_weight_g": 180.0,
+        "serving_unit": "piece",
+        "calories": 385.0,
+        "protein_g": 7.5,
+        "carbs_g": 56.0,
+        "fat_g": 14.0,
+        "calorie_tolerance_pct": 0.15,
+        "macro_tolerance_pct": 0.2,
+        "weight_tolerance_pct": 0.25
+      },
+      {
+        "name": "Coconut Chutney",
+        "serving_weight_g": 45.0,
+        "serving_unit": "tbsp",
+        "calories": 92.0,
+        "protein_g": 1.5,
+        "carbs_g": 3.5,
+        "fat_g": 8.0,
+        "calorie_tolerance_pct": 0.15,
+        "macro_tolerance_pct": 0.2,
+        "weight_tolerance_pct": 0.25
+      }
+    ],
+    "ground_truth_source": "IFCT 2017",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "items": [
+        {"name": "Masala Dosa", "calories": 390, "proteinG": 7.4, "carbsG": 55.0, "fatG": 14.5, "servingWeightG": 180},
+        {"name": "Coconut Chutney", "calories": 90, "proteinG": 1.4, "carbsG": 3.6, "fatG": 7.8, "servingWeightG": 45}
+      ],
+      "summary": "One crisp masala dosa served with coconut chutney."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_003",
+    "category": "multimodal_advanced",
+    "description": "USDA Grilled Chicken Breast (150g) and 2 Boiled Eggs macro accuracy",
+    "language": "en",
+    "input_payload": {
+      "modality": "image",
+      "expected_food_names": ["Grilled Chicken Breast", "Boiled Egg"],
+      "min_food_f1": 1.0
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Grilled Chicken Breast",
+        "serving_weight_g": 150.0,
+        "serving_unit": "g",
+        "calories": 248.0,
+        "protein_g": 46.5,
+        "carbs_g": 0.0,
+        "fat_g": 5.4,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      },
+      {
+        "name": "Boiled Egg",
+        "serving_weight_g": 100.0,
+        "serving_unit": "piece",
+        "serving_size": 2.0,
+        "calories": 155.0,
+        "protein_g": 12.6,
+        "carbs_g": 1.1,
+        "fat_g": 10.6,
+        "calorie_tolerance_pct": 0.1,
+        "macro_tolerance_pct": 0.15,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "USDA FoodData Central",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "items": [
+        {"name": "Grilled Chicken Breast", "calories": 250, "proteinG": 46.0, "carbsG": 0.0, "fatG": 5.5, "servingWeightG": 150},
+        {"name": "Boiled Egg", "calories": 156, "proteinG": 12.5, "carbsG": 1.1, "fatG": 10.5, "servingWeightG": 100}
+      ],
+      "summary": "150g grilled chicken breast and two boiled eggs."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_004",
+    "category": "multimodal_advanced",
+    "description": "Tanglish voice meal phonetic normalization ('muttay'->egg, 'rendu'->2) and WER <= 0.15",
+    "language": "tanglish",
+    "input_payload": {
+      "modality": "audio",
+      "reference_transcript": "rendu egg with sambar",
+      "max_wer": 0.15,
+      "expected_entities": ["egg", "sambar"],
+      "expected_tanglish_quantity": 2
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "FitOnus Tamil/Tanglish Food Transliteration Corpus",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "transcript": "rendu muttay with sambar",
+      "detectedLanguage": "tanglish",
+      "summary": "Two eggs with sambar."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_005",
+    "category": "multimodal_advanced",
+    "description": "Tamil Unicode script voice transcription maintains script fidelity and low WER",
+    "language": "ta",
+    "input_payload": {
+      "modality": "audio",
+      "reference_transcript": "மூன்று இட்லி சாம்பார் காலை உணவு",
+      "max_wer": 0.15,
+      "expected_entities": ["இட்லி", "சாம்பார்"]
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "FitOnus Tamil Speech Evaluation Set",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "transcript": "மூன்று இட்லி சாம்பார் காலை உணவு",
+      "detectedLanguage": "ta",
+      "summary": "Three idlis with sambar for breakfast."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_006",
+    "category": "multimodal_advanced",
+    "description": "Opaque curry with unknown ghee triggers portion uncertainty disclosure and confidence <= 0.6",
+    "language": "en",
+    "input_payload": {
+      "modality": "image",
+      "requires_uncertainty": true,
+      "max_confidence": 0.6,
+      "expected_food_names": ["Chicken Curry"],
+      "min_food_f1": 1.0
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "FitOnus Ambiguous Portion Policy",
+    "is_verified_ground_truth": false,
+    "offline_candidate": {
+      "outcome": "ok",
+      "items": [{"name": "Chicken Curry", "calories": 320}],
+      "confidence": "low",
+      "overallConfidence": 0.45,
+      "unclearReason": "Hidden oil/ghee volume and bone weight cannot be observed reliably.",
+      "uncertaintyNote": "Portion sizes and hidden fats/oils are estimated from visual cues; review before saving.",
+      "summary": "Estimated bowl of chicken curry."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_007",
+    "category": "multimodal_advanced",
+    "description": "Blurry bowl of biryani calibrates confidence downward to medium with explicit uncertainty",
+    "language": "en",
+    "input_payload": {
+      "modality": "image",
+      "requires_uncertainty": true,
+      "max_confidence": 0.7,
+      "expected_food_names": ["Chicken Biryani"],
+      "min_food_f1": 1.0
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "FitOnus Visual Portion Calibration Spec",
+    "is_verified_ground_truth": false,
+    "offline_candidate": {
+      "outcome": "ok",
+      "items": [{"name": "Chicken Biryani", "calories": 480}],
+      "confidence": "medium",
+      "overallConfidence": 0.6,
+      "unclearReason": "Depth of rice bowl and ghee content are estimated.",
+      "summary": "Estimated medium plate of chicken biryani."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_008",
+    "category": "multimodal_advanced",
+    "description": "Non-food gym photo returns clean no_food outcome with zero hallucinated dishes",
+    "language": "en",
+    "input_payload": {"modality": "image"},
+    "expected_outcome": "no_food",
+    "ground_truth_source": "FitOnus Negative Visual Rejection Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "no_food",
+      "items": [],
+      "summary": "No food items detected; image shows gym equipment."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_009",
+    "category": "multimodal_advanced",
+    "description": "IFCT/USDA Paneer Bhurji (150g) and 2 Whole Wheat Chapatis vegetarian macro bounds",
+    "language": "en",
+    "input_payload": {
+      "modality": "multimodal",
+      "expected_food_names": ["Paneer Bhurji", "Whole Wheat Chapati"],
+      "min_food_f1": 1.0
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Paneer Bhurji",
+        "serving_weight_g": 150.0,
+        "serving_unit": "bowl",
+        "calories": 325.0,
+        "protein_g": 21.0,
+        "carbs_g": 8.0,
+        "fat_g": 23.0,
+        "calorie_tolerance_pct": 0.15,
+        "macro_tolerance_pct": 0.2,
+        "weight_tolerance_pct": 0.25
+      },
+      {
+        "name": "Whole Wheat Chapati",
+        "serving_weight_g": 80.0,
+        "serving_unit": "piece",
+        "serving_size": 2.0,
+        "calories": 210.0,
+        "protein_g": 7.0,
+        "carbs_g": 42.0,
+        "fat_g": 1.8,
+        "calorie_tolerance_pct": 0.15,
+        "macro_tolerance_pct": 0.2,
+        "weight_tolerance_pct": 0.2
+      }
+    ],
+    "ground_truth_source": "IFCT 2017 / USDA",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "items": [
+        {"name": "Paneer Bhurji", "calories": 330, "proteinG": 20.5, "carbsG": 8.2, "fatG": 22.5, "servingWeightG": 150},
+        {"name": "Whole Wheat Chapati", "calories": 208, "proteinG": 7.0, "carbsG": 41.5, "fatG": 1.8, "servingWeightG": 80}
+      ],
+      "summary": "Paneer bhurji with two whole wheat chapatis."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_010",
+    "category": "multimodal_advanced",
+    "description": "English gym nutrition voice transcription achieves WER <= 0.10",
+    "language": "en",
+    "input_payload": {
+      "modality": "audio",
+      "reference_transcript": "one scoop whey isolate and half banana after workout",
+      "max_wer": 0.1,
+      "expected_entities": ["whey", "banana"]
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "FitOnus Speech Accuracy Benchmark",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "transcript": "one scoop whey isolate and half banana after workout",
+      "detectedLanguage": "en",
+      "summary": "Whey isolate shake and half banana."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_011",
+    "category": "multimodal_advanced",
+    "description": "Code-switched Tanglish + English workout meal voice transcription preserves quantities & dishes",
+    "language": "tanglish",
+    "input_payload": {
+      "modality": "audio",
+      "reference_transcript": "gym mudichitu oru cup cooked brown rice and 150g chicken saapten",
+      "max_wer": 0.2,
+      "expected_entities": ["brown rice", "chicken"],
+      "expected_tanglish_quantity": 1
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "FitOnus Code-Switching Speech Benchmark",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "transcript": "gym mudichitu oru cup cooked brown rice and 150g chicken saapten",
+      "detectedLanguage": "tanglish",
+      "summary": "Brown rice and 150g chicken after gym."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_012",
+    "category": "multimodal_advanced",
+    "description": "IFCT Moong Dal Khichdi (250g) single-bowl Indian meal estimation within macro bands",
+    "language": "en",
+    "input_payload": {
+      "modality": "image",
+      "expected_food_names": ["Moong Dal Khichdi"],
+      "min_food_f1": 1.0
+    },
+    "expected_outcome": "ok",
+    "expected_nutrition": [
+      {
+        "name": "Moong Dal Khichdi",
+        "serving_weight_g": 250.0,
+        "serving_unit": "bowl",
+        "calories": 290.0,
+        "protein_g": 11.5,
+        "carbs_g": 46.0,
+        "fat_g": 6.5,
+        "calorie_tolerance_pct": 0.15,
+        "macro_tolerance_pct": 0.2,
+        "weight_tolerance_pct": 0.25
+      }
+    ],
+    "ground_truth_source": "IFCT 2017",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "items": [
+        {"name": "Moong Dal Khichdi", "calories": 295, "proteinG": 11.2, "carbsG": 45.5, "fatG": 6.6, "servingWeightG": 250}
+      ],
+      "summary": "One 250g bowl of moong dal khichdi."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_013",
+    "category": "multimodal_advanced",
+    "description": "Phonetic spelling 'dosai' and 'vadai' normalize to 'dosa' and 'vada' with Tanglish quantity 2",
+    "language": "tanglish",
+    "input_payload": {
+      "modality": "audio",
+      "reference_transcript": "rendu dosa and vada",
+      "max_wer": 0.25,
+      "expected_entities": ["dosa", "vada"],
+      "expected_tanglish_quantity": 2
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "FitOnus Phonetic Normalization Benchmark",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "ok",
+      "transcript": "rendu dosai and vadai",
+      "detectedLanguage": "tanglish",
+      "summary": "Two dosas and vada."
+    }
+  },
+  {
+    "case_id": "EVAL_MM_ADV_014",
+    "category": "multimodal_advanced",
+    "description": "Dim restaurant lighting meal photo caps confidence and discloses lighting uncertainty",
+    "language": "en",
+    "input_payload": {
+      "modality": "image",
+      "requires_uncertainty": true,
+      "max_confidence": 0.65,
+      "expected_food_names": ["Grilled Salmon"],
+      "min_food_f1": 1.0
+    },
+    "expected_outcome": "ok",
+    "ground_truth_source": "FitOnus Visual Quality Uncertainty Spec",
+    "is_verified_ground_truth": false,
+    "offline_candidate": {
+      "outcome": "ok",
+      "items": [{"name": "Grilled Salmon", "calories": 280}],
+      "confidence": "medium",
+      "overallConfidence": 0.55,
+      "unclearReason": "Low ambient lighting makes fillet thickness harder to measure.",
+      "uncertaintyNote": "Estimated visually in low lighting; verify grams if weighed.",
+      "summary": "Estimated grilled salmon fillet."
+    }
+  }
+]
+

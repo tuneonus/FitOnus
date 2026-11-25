@@ -17,13 +17,14 @@ if str(_SRC_ROOT) not in sys.path:
 
 from tests.conftest import FakeLlm
 from tests.evals.datasets.loader import load_benchmark_dataset
+from tests.evals.gates import evaluate_regression_gate, load_baseline_file
 from tests.evals.reporter import generate_json_report, generate_markdown_report
 from tests.evals.runner import main, run_live_evaluation, run_offline_evaluation
 
 
 def test_offline_evaluation_execution() -> None:
     results = run_offline_evaluation()
-    assert len(results) == 329, f"Expected exactly 329 benchmark results, got {len(results)}"
+    assert len(results) == 401, f"Expected exactly 401 benchmark results, got {len(results)}"
     failures = [r for r in results if not r["passed"]]
     assert len(failures) == 0, f"Offline evaluation failures: {failures}"
 
@@ -158,3 +159,49 @@ def test_live_evaluation_missing_credentials_safely_skips(
     assert results == []
     captured = capsys.readouterr()
     assert "LIVE BASELINE: NOT MEASURED" in captured.out
+
+
+def test_phase18_datasets_individually_executable() -> None:
+    """Verify each Phase 18 dataset loads and executes via run_offline_evaluation."""
+    expected_counts = {
+        "rag_evaluation": 16,
+        "agent_advanced": 12,
+        "multimodal_advanced": 14,
+        "security_adversarial": 18,
+        "performance_eval": 12,
+    }
+    for ds_key, expected_len in expected_counts.items():
+        results = run_offline_evaluation(ds_key)
+        assert len(results) == expected_len, f"{ds_key} count mismatch"
+        assert all(r["passed"] for r in results), f"Failures in {ds_key}: {results}"
+
+
+def test_runner_cli_passes_with_baseline_gate(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Verify full CLI run passes against committed offline baseline and populates extended sections."""
+    json_path = tmp_path / "full_report.json"
+    md_path = tmp_path / "full_report.md"
+    baseline_path = Path(__file__).resolve().parent / "datasets" / "baseline_offline.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "runner.py",
+            "--baseline",
+            str(baseline_path),
+            "--output-json",
+            str(json_path),
+            "--output-md",
+            str(md_path),
+        ],
+    )
+    assert main() == 0
+    report = generate_json_report("offline", run_offline_evaluation())
+    baseline = load_baseline_file(baseline_path)
+    gate = evaluate_regression_gate(report, baseline=baseline)
+    assert gate.passed is True
+    assert gate.critical_safety_failed is False
+    assert gate.baseline_compared is True
+    assert json_path.exists()
+    assert md_path.exists()

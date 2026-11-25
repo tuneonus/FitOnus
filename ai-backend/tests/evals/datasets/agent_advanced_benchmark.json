@@ -1,0 +1,297 @@
+[
+  {
+    "case_id": "EVAL_AGT_001",
+    "category": "agent_advanced",
+    "description": "English simple greeting triggers fast bypass with zero tool invocations",
+    "language": "en",
+    "input_payload": {
+      "message": "Hey coach, good morning!",
+      "expected_routing_mode": "bypass",
+      "expected_bypass": true,
+      "assert_no_tools": true,
+      "budget_limits": {"iterations": 1, "total_tool_calls": 0}
+    },
+    "expected_outcome": "bypassed",
+    "expected_tools": [],
+    "ground_truth_source": "Phase 13 Supervisor Routing Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "bypassed",
+      "routing_mode": "bypass",
+      "bypassed": true,
+      "executed_tools": [],
+      "iterations": 0,
+      "total_tool_calls": 0,
+      "text": "Good morning! How can I help with your workouts or meals today?"
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_002",
+    "category": "agent_advanced",
+    "description": "Tamil simple acknowledgement bypasses heavy multi-agent delegation",
+    "language": "ta",
+    "input_payload": {
+      "message": "நன்றி கோச், நாளை பேசலாம்",
+      "expected_routing_mode": "bypass",
+      "expected_bypass": true,
+      "assert_no_tools": true,
+      "budget_limits": {"iterations": 1, "total_tool_calls": 0}
+    },
+    "expected_outcome": "bypassed",
+    "expected_tools": [],
+    "ground_truth_source": "Phase 13 Multilingual Routing Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "bypassed",
+      "routing_mode": "bypass",
+      "bypassed": true,
+      "executed_tools": [],
+      "iterations": 0,
+      "total_tool_calls": 0,
+      "text": "நல்லது! நாளை தொடர்ந்து பயிற்சி செய்வோம்."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_003",
+    "category": "agent_advanced",
+    "description": "Cross-domain consistency query routes parallel to workout, nutrition, and progress agents",
+    "language": "en",
+    "input_payload": {
+      "message": "Review my workout and nutrition consistency over the last 14 days.",
+      "expected_routing_mode": "parallel",
+      "expected_agents": ["workout", "nutrition", "progress"],
+      "expected_bypass": false,
+      "budget_limits": {"iterations": 3, "total_tool_calls": 5}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [
+      {"tool_name": "get_recent_workouts", "arguments": {"days": 14}},
+      {"tool_name": "get_nutrition_summary", "arguments": {}},
+      {"tool_name": "get_weight_trend", "arguments": {"days": 14}}
+    ],
+    "ground_truth_source": "Phase 13 Multi-Agent Orchestration Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "routing_mode": "parallel",
+      "bypassed": false,
+      "selected_agents": ["workout", "nutrition", "progress"],
+      "executed_tools": [
+        {"tool_name": "get_recent_workouts", "arguments": {"days": 14}},
+        {"tool_name": "get_nutrition_summary", "arguments": {}},
+        {"tool_name": "get_weight_trend", "arguments": {"days": 14}}
+      ],
+      "iterations": 2,
+      "total_tool_calls": 3,
+      "text": "You trained consistently and averaged near target protein over 14 days."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_004",
+    "category": "agent_advanced",
+    "description": "Tool argument extraction conforms strictly to Pydantic TOOL_ARG_SCHEMAS bounds",
+    "language": "en",
+    "input_payload": {
+      "message": "Show my workouts from the last 7 days",
+      "expected_routing_mode": "native",
+      "budget_limits": {"iterations": 2, "total_tool_calls": 3}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [{"tool_name": "get_recent_workouts", "arguments": {"days": 7}}],
+    "ground_truth_source": "shared/contracts/tools.py Schema Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "routing_mode": "native",
+      "executed_tools": [{"tool_name": "get_recent_workouts", "arguments": {"days": 7}}],
+      "iterations": 1,
+      "total_tool_calls": 1,
+      "text": "You completed 4 workouts in the last 7 days."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_005",
+    "category": "agent_advanced",
+    "description": "Nutrition summary date argument strictly matches YYYY-MM-DD contract",
+    "language": "en",
+    "input_payload": {
+      "message": "Check what macros I logged on 2026-11-24",
+      "budget_limits": {"total_tool_calls": 3}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [{"tool_name": "get_nutrition_summary", "arguments": {"date": "2026-11-24"}}],
+    "ground_truth_source": "shared/contracts/tools.py Date Schema Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "executed_tools": [{"tool_name": "get_nutrition_summary", "arguments": {"date": "2026-11-24"}}],
+      "total_tool_calls": 1,
+      "text": "On 2026-11-24 you logged 1980 kcal and 142 g protein."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_006",
+    "category": "agent_advanced",
+    "description": "MCP server failure triggers native fallback tool cleanly without losing request",
+    "language": "en",
+    "input_payload": {
+      "message": "Fetch my fitness profile so we can adjust training days",
+      "expected_fallback_used": true,
+      "budget_limits": {"iterations": 3, "total_tool_calls": 4}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [{"tool_name": "get_fitness_profile", "arguments": {}}],
+    "ground_truth_source": "Phase 12/13 MCP Fallback Policy",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "fallback_used": true,
+      "executed_tools": [{"tool_name": "get_fitness_profile", "arguments": {}}],
+      "iterations": 1,
+      "total_tool_calls": 1,
+      "text": "Based on your 4-day intermediate gym profile, here is your updated split."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_007",
+    "category": "agent_advanced",
+    "description": "Tanglish soreness query routes sequentially recovery -> workout",
+    "language": "tanglish",
+    "input_payload": {
+      "message": "Legs romba sore ah irukku, inniku workout adjust pannalama?",
+      "expected_routing_mode": "sequential",
+      "expected_agents": ["recovery", "workout"],
+      "budget_limits": {"iterations": 3, "total_tool_calls": 4}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [{"tool_name": "get_recent_workouts", "arguments": {}}],
+    "ground_truth_source": "Phase 13 Sequential Dependency DAG",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "routing_mode": "sequential",
+      "selected_agents": ["recovery", "workout"],
+      "executed_tools": [{"tool_name": "get_recent_workouts", "arguments": {}}],
+      "iterations": 2,
+      "total_tool_calls": 1,
+      "text": "Heavy squat volume nadantha naala inniku light upper mobility session pannalam."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_008",
+    "category": "agent_advanced",
+    "description": "Exercise catalog search enforces valid search_exercises query and limit schema",
+    "language": "en",
+    "input_payload": {
+      "message": "Give me 5 dumbbell back exercise alternatives",
+      "budget_limits": {"total_tool_calls": 3}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [{"tool_name": "search_exercises", "arguments": {"query": "dumbbell row", "limit": 5}}],
+    "ground_truth_source": "shared/contracts/tools.py Exercise Search Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "executed_tools": [
+        {"tool_name": "search_exercises", "arguments": {"query": "dumbbell row", "limit": 5}}
+      ],
+      "total_tool_calls": 1,
+      "text": "Here are 5 dumbbell back exercises from the FitOnus catalog."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_009",
+    "category": "agent_advanced",
+    "description": "Longer 30-day weight trend inspection strictly honors max iteration and tool caps",
+    "language": "en",
+    "input_payload": {
+      "message": "How has my weight moved over the past 30 days?",
+      "budget_limits": {"iterations": 2, "total_tool_calls": 2, "replans": 0}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [{"tool_name": "get_weight_trend", "arguments": {"days": 30}}],
+    "ground_truth_source": "Phase 09 Bounded Execution Spec",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "executed_tools": [{"tool_name": "get_weight_trend", "arguments": {"days": 30}}],
+      "iterations": 1,
+      "total_tool_calls": 1,
+      "replans": 0,
+      "text": "Your 30-day weight trend dropped steadily by 1.2 kg."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_010",
+    "category": "agent_advanced",
+    "description": "Specialist partial timeout degrades gracefully into partial status with non-empty guidance",
+    "language": "en",
+    "input_payload": {
+      "message": "Give me combined progress and sleep recovery feedback",
+      "expected_routing_mode": "parallel",
+      "expected_agents": ["progress", "recovery"],
+      "budget_limits": {"iterations": 3, "total_tool_calls": 4}
+    },
+    "expected_outcome": "partial",
+    "expected_tools": [{"tool_name": "get_weight_trend", "arguments": {"days": 14}}],
+    "ground_truth_source": "Phase 13 Graceful Degradation Policy",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "partial",
+      "routing_mode": "parallel",
+      "selected_agents": ["progress", "recovery"],
+      "executed_tools": [{"tool_name": "get_weight_trend", "arguments": {"days": 14}}],
+      "iterations": 2,
+      "total_tool_calls": 1,
+      "text": "Weight progress is on track; recovery metrics were temporarily unavailable."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_011",
+    "category": "agent_advanced",
+    "description": "Workout planner delegation respects max_replans=1 ceiling on empty workout history",
+    "language": "en",
+    "input_payload": {
+      "message": "Adapt my 4-day push pull plan based on last week's missed leg day",
+      "budget_limits": {"iterations": 4, "total_tool_calls": 5, "replans": 1}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [{"tool_name": "get_recent_workouts", "arguments": {"days": 7}}],
+    "ground_truth_source": "Phase 10/11 Replan Budget Policy",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "executed_tools": [{"tool_name": "get_recent_workouts", "arguments": {"days": 7}}],
+      "iterations": 2,
+      "total_tool_calls": 1,
+      "replans": 1,
+      "text": "Since leg day was skipped last week, let's prioritize lower-body work on session one."
+    }
+  },
+  {
+    "case_id": "EVAL_AGT_012",
+    "category": "agent_advanced",
+    "description": "Hybrid mode combines nutrition retrieval and recent workout summary within tool budget",
+    "language": "en",
+    "input_payload": {
+      "message": "Check today's nutrition and retrieve protein timing science",
+      "expected_routing_mode": "hybrid",
+      "expected_agents": ["nutrition", "knowledge"],
+      "budget_limits": {"iterations": 3, "total_tool_calls": 4}
+    },
+    "expected_outcome": "completed",
+    "expected_tools": [{"tool_name": "get_nutrition_summary", "arguments": {}}],
+    "ground_truth_source": "Phase 13 Hybrid Agent Routing",
+    "is_verified_ground_truth": true,
+    "offline_candidate": {
+      "outcome": "completed",
+      "routing_mode": "hybrid",
+      "selected_agents": ["nutrition", "knowledge"],
+      "executed_tools": [{"tool_name": "get_nutrition_summary", "arguments": {}}],
+      "iterations": 2,
+      "total_tool_calls": 1,
+      "text": "You have 95 g protein so far today; aim for another 35 g evening meal per ISSN timing guidance."
+    }
+  }
+]
+

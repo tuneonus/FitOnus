@@ -30,16 +30,27 @@ from concurrent.futures import ThreadPoolExecutor
 
 from tests.evals.datasets.loader import load_all_benchmark_cases, load_benchmark_dataset
 from tests.evals.evaluators.agent import AgentFundamentalsEvaluator
+from tests.evals.evaluators.agent_advanced import AdvancedAgentEvaluator
 from tests.evals.evaluators.grounding import FactualGroundingEvaluator
 from tests.evals.evaluators.mcp import McpToolsEvaluator
 from tests.evals.evaluators.multi_agent import MultiAgentEvaluator
 from tests.evals.evaluators.multilingual import MultilingualAccuracyEvaluator
 from tests.evals.evaluators.multimodal import execute_multimodal_offline_case
+from tests.evals.evaluators.multimodal_advanced import MultimodalAdvancedEvaluator
 from tests.evals.evaluators.nutrition import NutritionToleranceEvaluator
+from tests.evals.evaluators.performance import PerformanceEvaluator
+from tests.evals.evaluators.rag import RagEvaluator
 from tests.evals.evaluators.safety import SafetyEvaluator
 from tests.evals.evaluators.schema import SchemaConformanceEvaluator
+from tests.evals.evaluators.security import SecuritySafetyEvaluator
 from tests.evals.evaluators.tools import ToolSelectionEvaluator
+from tests.evals.gates import evaluate_regression_gate, load_baseline_file
 from tests.evals.reporter import generate_json_report, generate_markdown_report
+from tests.evals.schemas import (
+    BenchmarkRunConfig,
+    RegressionGateThresholds,
+    classify_failure,
+)
 
 from onusfit_ai.features.coach.application.schemas import (
     GeminiCoachInsightsOutput,
@@ -76,8 +87,13 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
     lang_eval = MultilingualAccuracyEvaluator()
     safety_eval = SafetyEvaluator()
     agent_eval = AgentFundamentalsEvaluator()
+    agent_adv_eval = AdvancedAgentEvaluator()
     mcp_eval = McpToolsEvaluator()
     multi_eval = MultiAgentEvaluator()
+    rag_eval = RagEvaluator()
+    mm_adv_eval = MultimodalAdvancedEvaluator()
+    sec_eval = SecuritySafetyEvaluator()
+    perf_eval = PerformanceEvaluator()
 
     results: list[dict[str, Any]] = []
 
@@ -85,6 +101,7 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
         start_t = time.perf_counter()
         failure_reasons: list[str] = []
         scores: list[float] = []
+        extra_fields: dict[str, Any] = {}
 
         cand = case.offline_candidate
         if cand is None:
@@ -94,9 +111,11 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
                     "case_id": case.case_id,
                     "category": case.category,
                     "language": case.language,
+                    "expected_outcome": case.expected_outcome,
                     "is_verified_ground_truth": case.is_verified_ground_truth,
                     "passed": False,
                     "score": 0.0,
+                    "failure_classification": "missing_candidate",
                     "failure_reasons": failure_reasons,
                     "duration_ms": round((time.perf_counter() - start_t) * 1000, 2),
                 }
@@ -141,15 +160,22 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
                 failure_reasons.extend(res.failure_reasons)
 
         # 5. Safety & clinical disclaimer compliance evaluation
-        if (
-            case.category == "fitness_safety"
-            or (
-                case.category not in ("workout_planner", "mcp_tools", "multi_agent")
-                and (
-                    case.expected_safety_disclaimers
-                    or case.forbidden_terms
-                    or case.expected_outcome in ("refusal", "medical_escalation")
-                )
+        if case.category == "fitness_safety" or (
+            case.category
+            not in (
+                "workout_planner",
+                "mcp_tools",
+                "multi_agent",
+                "rag_evaluation",
+                "agent_advanced",
+                "multimodal_advanced",
+                "security_adversarial",
+                "performance_eval",
+            )
+            and (
+                case.expected_safety_disclaimers
+                or case.forbidden_terms
+                or case.expected_outcome in ("refusal", "medical_escalation")
             )
         ):
             text = cand.get("text", "")
@@ -243,8 +269,85 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
             if not res.passed:
                 failure_reasons.extend(res.failure_reasons)
 
+        # 5g. Advanced RAG Evaluation
+        if case.category == "rag_evaluation":
+            res = rag_eval.evaluate(
+                candidate=cand,
+                input_payload=case.input_payload,
+                expected_outcome=case.expected_outcome,
+                forbidden_terms=case.forbidden_terms,
+            )
+            scores.append(res.score)
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
+
+        # 5h. Advanced Agent Evaluation
+        if case.category == "agent_advanced":
+            res = agent_adv_eval.evaluate(
+                candidate=cand,
+                input_payload=case.input_payload,
+                expected_tools=case.expected_tools,
+                expected_outcome=case.expected_outcome,
+                forbidden_terms=case.forbidden_terms,
+            )
+            scores.append(res.score)
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
+
+        # 5i. Multimodal Advanced & Bilingual Speech Evaluation
+        if case.category == "multimodal_advanced":
+            res = mm_adv_eval.evaluate(
+                candidate=cand,
+                input_payload=case.input_payload,
+                expected_nutrition=case.expected_nutrition,
+                expected_language=case.language,
+                expected_outcome=case.expected_outcome,
+                forbidden_terms=case.forbidden_terms,
+            )
+            scores.append(res.score)
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
+
+        # 5j. Adversarial Security, Privacy & Bilingual Safety Evaluation
+        if case.category == "security_adversarial":
+            res = sec_eval.evaluate(
+                candidate=cand,
+                input_payload=case.input_payload,
+                expected_outcome=case.expected_outcome,
+                expected_safety_disclaimers=case.expected_safety_disclaimers,
+                forbidden_terms=case.forbidden_terms,
+            )
+            scores.append(res.score)
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
+
+        # 5k. Performance, Cost, TTFT & Cancellation Evaluation
+        if case.category == "performance_eval":
+            res = perf_eval.evaluate(
+                candidate=cand,
+                input_payload=case.input_payload,
+                expected_outcome=case.expected_outcome,
+            )
+            scores.append(res.score)
+            if "performance" in res.details:
+                perf_data = res.details["performance"]
+                extra_fields["performance"] = perf_data
+                extra_fields["token_usage"] = {
+                    "model": cand.get(
+                        "model", case.input_payload.get("model", "gemini-2.5-flash-lite")
+                    ),
+                    "input_tokens": perf_data.get("input_tokens", 0),
+                    "output_tokens": perf_data.get("output_tokens", 0),
+                    "total_tokens": perf_data.get("total_tokens", 0),
+                }
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
+
         # 6. Factual grounding against structured user context
-        if case.input_payload.get("context"):
+        if case.input_payload.get("context") and case.category not in (
+            "rag_evaluation",
+            "security_adversarial",
+        ):
             ctx = case.input_payload.get("context", {})
             text = cand.get("text", "")
             if not text and "insights" in cand:
@@ -260,17 +363,21 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
         elapsed_ms = (time.perf_counter() - start_t) * 1000
         passed = len(failure_reasons) == 0
         final_score = round(sum(scores) / max(len(scores), 1), 3) if passed else 0.0
+        failure_cls = classify_failure(case.category, failure_reasons)
 
         results.append(
             {
                 "case_id": case.case_id,
                 "category": case.category,
                 "language": case.language,
+                "expected_outcome": case.expected_outcome,
                 "is_verified_ground_truth": case.is_verified_ground_truth,
                 "passed": passed,
                 "score": final_score,
+                "failure_classification": failure_cls,
                 "failure_reasons": failure_reasons,
                 "duration_ms": round(elapsed_ms, 2),
+                **extra_fields,
             }
         )
 
@@ -540,6 +647,21 @@ def main() -> int:
     parser.add_argument(
         "--trials", type=int, default=1, help="Number of trials per test case in live mode"
     )
+    parser.add_argument(
+        "--seed", type=int, default=42, help="Deterministic seed recorded in evaluation reports"
+    )
+    parser.add_argument(
+        "--baseline",
+        type=str,
+        default="tests/evals/datasets/baseline_offline.json",
+        help="Baseline JSON artifact for regression gate comparison when --dataset all",
+    )
+    parser.add_argument(
+        "--no-baseline",
+        action="store_true",
+        default=False,
+        help="Skip baseline artifact comparison while keeping threshold/safety gates",
+    )
 
     args = parser.parse_args()
 
@@ -559,11 +681,44 @@ def main() -> int:
         print("[INFO] Executing deterministic offline evaluation (0 external API calls)...")
         case_results = run_offline_evaluation(args.dataset)
 
+    # Evaluate Regression & Critical Safety Gates before serializing final artifacts
+    run_cfg = BenchmarkRunConfig(
+        seed=args.seed,
+        mode="live" if mode == "live" else "offline",
+        judge_enabled=False,
+        strict_safety_gate=True,
+    )
+    baseline_data: dict[str, Any] | None = None
+    if not args.live and not args.no_baseline and args.dataset == "all" and args.baseline:
+        baseline_path = Path(args.baseline)
+        if not baseline_path.is_absolute():
+            candidate_rel = _TESTS_ROOT / baseline_path
+            baseline_path = baseline_path if baseline_path.exists() else candidate_rel
+        if baseline_path.exists():
+            baseline_data = load_baseline_file(baseline_path)
+
+    preliminary_report = generate_json_report(
+        eval_mode=mode,
+        case_results=case_results,
+        run_config=run_cfg,
+    )
+    gate_report = evaluate_regression_gate(
+        preliminary_report,
+        baseline=baseline_data,
+        thresholds=RegressionGateThresholds(),
+    )
+
     # Generate Reports
     json_path = Path(args.output_json) if args.output_json else None
     md_path = Path(args.output_md) if args.output_md else None
 
-    report = generate_json_report(eval_mode=mode, case_results=case_results, output_path=json_path)
+    report = generate_json_report(
+        eval_mode=mode,
+        case_results=case_results,
+        output_path=json_path,
+        run_config=run_cfg,
+        regression_gate=gate_report.model_dump(),
+    )
     generate_markdown_report(report, output_path=md_path)
 
     print("\n" + "=" * 60)
@@ -572,6 +727,11 @@ def main() -> int:
         f"Total Cases: {report['summary']['total_cases']} | Passed: {report['summary']['passed_cases']} | Failed: {report['summary']['failed_cases']}"
     )
     print(f"Pass Rate: {report['summary']['pass_rate_pct']}%")
+    print(
+        f"Regression Gate: {'PASSED' if gate_report.passed else 'FAILED'} | Critical Safety Failed: {gate_report.critical_safety_failed}"
+    )
+    if gate_report.regressions:
+        print(f"Gate Regressions: {gate_report.regressions}")
     print(f"Live Baseline Status: {report['live_baseline_status']}")
     if json_path:
         print(f"JSON Report: {json_path}")
@@ -579,7 +739,7 @@ def main() -> int:
         print(f"Markdown Report: {md_path}")
     print("=" * 60 + "\n")
 
-    return 0 if report["summary"]["failed_cases"] == 0 else 1
+    return 0 if (report["summary"]["failed_cases"] == 0 and gate_report.passed) else 1
 
 
 if __name__ == "__main__":
