@@ -15,10 +15,10 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from onusfit_ai.shared.errors.errors import AiError
 from onusfit_ai.shared.observability.observability import log_ai_failure
 from onusfit_ai.shared.utils.audio import MAX_AUDIO_BASE64_CHARS
+from onusfit_ai.shared.utils.image import MAX_IMAGE_BASE64_CHARS
 
-# The biggest legitimate request is a voice clip: up to MAX_AUDIO_BASE64_CHARS of base64 (ASCII, so
-# one byte per character) plus a few KB of JSON around it. Everything else is far smaller.
-MAX_REQUEST_BODY_BYTES = MAX_AUDIO_BASE64_CHARS + 512 * 1024
+# Largest request carries a full voice clip and meal photo plus JSON envelope.
+MAX_REQUEST_BODY_BYTES = MAX_AUDIO_BASE64_CHARS + MAX_IMAGE_BASE64_CHARS + 512 * 1024
 
 
 class RequestBodyLimitMiddleware:

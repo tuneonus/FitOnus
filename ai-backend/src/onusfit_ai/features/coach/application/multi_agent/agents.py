@@ -44,6 +44,7 @@ from onusfit_ai.features.coach.domain.multi_agent import (
     DelegatedTaskStatus,
     EvidenceItem,
     MinimalAgentContextView,
+    MultimodalMealPort,
     SharedExecutionContext,
     WorkoutPlannerPort,
 )
@@ -59,7 +60,7 @@ from onusfit_ai.shared.contracts.tools import (
     TOOL_SOURCE_LABELS,
     TOOL_VALIDATE_WORKOUT_PLAN,
 )
-from onusfit_ai.shared.llm.ports import LlmResult, LlmServiceError, TextGenerator
+from onusfit_ai.shared.llm.ports import LlmResult, LlmServiceError, MediaInput, TextGenerator
 from onusfit_ai.shared.utils.js_compat import strict_json_loads, strip_code_fences
 
 
@@ -524,7 +525,22 @@ class NutritionAgent(BaseSpecialistAgent):
     capabilities = [
         AgentCapability.NUTRITION_ANALYSIS,
         AgentCapability.NUTRITION_PLANNING,
+        AgentCapability.MULTIMODAL_ANALYSIS,
     ]
+
+    def __init__(
+        self,
+        *,
+        gateway: MultiAgentMcpGateway,
+        budget: CumulativeBudgetTracker,
+        multimodal_port: MultimodalMealPort | None = None,
+        request: CoachChatRequest | None = None,
+        llm: TextGenerator | None = None,
+    ) -> None:
+        super().__init__(gateway=gateway, budget=budget)
+        self._multimodal_port = multimodal_port
+        self._request = request
+        self._llm = llm
 
     async def execute_task(
         self,
@@ -538,6 +554,8 @@ class NutritionAgent(BaseSpecialistAgent):
         t0 = time.perf_counter()
         evidence: list[EvidenceItem] = []
         used_tools: list[str] = []
+        multimodal_metrics: dict[str, Any] = {}
+        attachment_summary_note: str | None = None
 
         # Safety floor check if user asks for an extreme calorie target
         cal_match = re.search(r"\b(\d{3,4})\s*kcal\b", context_view.user_message, re.IGNORECASE)
@@ -552,6 +570,69 @@ class NutritionAgent(BaseSpecialistAgent):
                     status=DelegatedTaskStatus.REFUSED,
                     error_message=unsafe_msg,
                     duration_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+                )
+
+        if (
+            (input_data.get("has_multimodal_attachment") or context_view.attachment_modalities)
+            and self._multimodal_port is not None
+            and self._request is not None
+            and self._llm is not None
+            and (self._request.image is not None or self._request.audio is not None)
+        ):
+            try:
+                await self._budget.reserve_llm_call()
+                mm_resp = await self._multimodal_port.analyze_meal_attachment(
+                    user_id=context_view.user_id,
+                    transcript=context_view.user_message,
+                    image_mime_type=self._request.image.mime_type if self._request.image else None,
+                    image_base64=self._request.image.base64 if self._request.image else None,
+                    audio_mime_type=self._request.audio.mime_type if self._request.audio else None,
+                    audio_base64=self._request.audio.base64 if self._request.audio else None,
+                    diet_type=str(context_view.domain_data.get("diet_type") or "") or None,
+                    model_primary=self._request.model.primary,
+                    model_fallback=self._request.model.fallback,
+                    deadline_ms=max(1000, int(self._budget.remaining_seconds() * 1000)),
+                    trace_id=context_view.trace_id,
+                    llm=self._llm,
+                )
+                mm_usage = mm_resp.get("usage", {})
+                if isinstance(mm_usage, dict):
+                    await self._budget.record_tokens(
+                        input_tokens=int(mm_usage.get("inputTokens", 0) or 0),
+                        output_tokens=int(mm_usage.get("outputTokens", 0) or 0),
+                        total=int(mm_usage.get("totalTokens", 0) or 0),
+                    )
+                mm_res = mm_resp.get("result", {})
+                if isinstance(mm_res, dict):
+                    kcal = mm_res.get("totalKcal", 0)
+                    protein = mm_res.get("totalProteinGrams", 0)
+                    conf = mm_res.get("confidence", "low")
+                    uncertainty = mm_res.get("uncertaintyNote") or (
+                        "Nutritional values are AI estimates; portions may vary."
+                    )
+                    summary_txt = str(mm_res.get("summary") or "Analyzed meal attachment.")
+                    attachment_summary_note = (
+                        f"{summary_txt} (~{kcal} kcal, ~{protein}g P; "
+                        f"confidence: {conf}). {uncertainty}"
+                    )
+                    multimodal_metrics = {
+                        "total_kcal": kcal,
+                        "total_protein_g": protein,
+                        "confidence": conf,
+                        "is_food": mm_res.get("isFood", True),
+                    }
+                    evidence.append(
+                        EvidenceItem(
+                            source_agent=self.role,
+                            source_tool="multimodal_meal_analyzer",
+                            summary=sanitize_multi_agent_text(attachment_summary_note),
+                            metrics=multimodal_metrics,
+                            confidence=float(mm_res.get("overallConfidence", 0.5) or 0.5),
+                        )
+                    )
+            except MultiAgentBudgetExceededError:
+                attachment_summary_note = (
+                    "Multimodal attachment analysis skipped due to request budget limit."
                 )
 
         nut_res = await self._call_tool(
@@ -619,15 +700,21 @@ class NutritionAgent(BaseSpecialistAgent):
             agent_role=self.role,
             domain="nutrition",
             summary=(
-                f"Nutrition adherence reviewed (recent avg ~{avg_cal or 0:.0f} kcal, "
-                f"{avg_pro or 0:.0f}g protein)."
+                attachment_summary_note
+                or (
+                    f"Nutrition adherence reviewed (recent avg ~{avg_cal or 0:.0f} kcal, "
+                    f"{avg_pro or 0:.0f}g protein)."
+                )
             ),
             action_items=[
                 "Prioritize consistent daily protein intake and adequate hydration."
             ],
             priority=2,
-            constraints_applied=["safe_caloric_floor_1200kcal"],
-            structured_payload={"nutrition_preview": preview_res.get("nutrition_plan", {})},
+            constraints_applied=["safe_caloric_floor_1200kcal", "non_medical_estimates"],
+            structured_payload={
+                "nutrition_preview": preview_res.get("nutrition_plan", {}),
+                **({"multimodal_meal": multimodal_metrics} if multimodal_metrics else {}),
+            },
         )
         return AgentExecutionResultItem(
             task_id=task_id,
@@ -638,6 +725,7 @@ class NutritionAgent(BaseSpecialistAgent):
                 "avg_calories": avg_cal or 0.0,
                 "avg_protein_g": avg_pro or 0.0,
                 "nutrition_preview": preview_res.get("nutrition_plan", {}),
+                **({"multimodal_meal": multimodal_metrics} if multimodal_metrics else {}),
             },
             recommendations=[rec],
             evidence=evidence,
@@ -1004,11 +1092,16 @@ class SupervisorAgent:
         executed_tools: list[str],
         llm: TextGenerator,
         budget: CumulativeBudgetTracker,
+        media: list[MediaInput] | None = None,
     ) -> tuple[CoachChatResult, LlmResult | None]:
         """Execute final single-call synthesis with deterministic safety fallback."""
         has_medical = bool(shared_ctx.medical_red_flags) or any(
             r.requires_medical_caution for r in recommendations
         )
+        already_analyzed_mm = any(e.source_tool == "multimodal_meal_analyzer" for e in evidence)
+        synth_media: MediaInput | list[MediaInput] | None = None
+        if media and not already_analyzed_mm:
+            synth_media = media[0] if len(media) == 1 else media
 
         # If medical red flag was detected, synthesize safely without relying purely on LLM
         try:
@@ -1026,7 +1119,9 @@ class SupervisorAgent:
                 primary_model=request.model.primary,
                 fallback_model=request.model.fallback,
                 deadline_s=remaining,
+                media=synth_media,
                 schema=GeminiCoachReplyOutput,
+                user_id=shared_ctx.user_id,
             )
             await budget.record_tokens(
                 input_tokens=llm_res.usage.input_tokens,

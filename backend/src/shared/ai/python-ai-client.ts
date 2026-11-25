@@ -110,6 +110,8 @@ export interface PythonAiRequest {
   correlationId?: string | undefined;
   body: unknown;
   timeoutMs: number;
+  /** Optional caller abort signal (e.g. client disconnect) combined with timeoutMs. */
+  signal?: AbortSignal | undefined;
 }
 
 /** Records tokens/cost of a Python-served call in the existing `gemini_usage_events` ledger. */
@@ -220,6 +222,13 @@ export class PythonAiClient {
       .sign(this.secretKey);
 
     const activeTrace = currentTraceContext();
+    if (request.signal?.aborted) {
+      throw new PythonAiError('timeout', 'AI backend request was cancelled.', { dispatched: false });
+    }
+    const timeoutSignal = AbortSignal.timeout(request.timeoutMs);
+    const requestSignal = request.signal
+      ? AbortSignal.any([timeoutSignal, request.signal])
+      : timeoutSignal;
     let response: Response;
     try {
       response = await this.fetchImpl(`${this.baseUrl}${request.path}`, {
@@ -234,9 +243,12 @@ export class PythonAiClient {
           ...(activeTrace ? { traceparent: formatTraceparent(activeTrace) } : {}),
         },
         body: JSON.stringify(request.body),
-        signal: AbortSignal.timeout(request.timeoutMs),
+        signal: requestSignal,
       });
     } catch (error) {
+      if (request.signal?.aborted) {
+        throw new PythonAiError('timeout', 'AI backend request was cancelled.', { dispatched: true });
+      }
       if (isTimeout(error)) {
         throw new PythonAiError('timeout', 'AI backend request timed out.', { dispatched: true });
       }
@@ -250,6 +262,9 @@ export class PythonAiClient {
     try {
       payload = await response.json();
     } catch (error) {
+      if (request.signal?.aborted) {
+        throw new PythonAiError('timeout', 'AI backend request was cancelled.', { dispatched: true });
+      }
       if (isTimeout(error)) throw new PythonAiError('timeout', 'AI backend request timed out.', { dispatched: true });
       payload = undefined;
     }

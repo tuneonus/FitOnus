@@ -1,4 +1,8 @@
-import { isSupportedAudioMime, MAX_AUDIO_BASE64_CHARS } from '../../../../shared/ai/audio-input.js';
+import {
+  inspectSafeBase64Payload,
+  isSupportedAudioMime,
+  MAX_AUDIO_BASE64_CHARS,
+} from '../../../../shared/ai/audio-input.js';
 import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { defaultAiMetrics } from '../../../../shared/ai/ai-metrics.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
@@ -60,6 +64,18 @@ export class ParseVoiceMealUseCase {
           'bad_request',
           'BAD_REQUEST',
           `Unsupported audio format (${mimeType}). Supported formats: m4a, mp4, aac, wav, webm, ogg.`,
+        );
+      }
+
+      const audioInspection = inspectSafeBase64Payload(input.audioBase64!, 'audio');
+      if (!audioInspection.ok) {
+        recordValidationReject(audioInspection.reason === 'empty' ? 'empty_payload' : 'polyglot');
+        throw new AppError(
+          'validation',
+          'VALIDATION_FAILED',
+          audioInspection.reason === 'empty'
+            ? 'Audio data is empty or unreadable.'
+            : 'Audio payload contains unsupported or unsafe content.',
         );
       }
 

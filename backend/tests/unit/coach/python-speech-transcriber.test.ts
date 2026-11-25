@@ -202,6 +202,16 @@ describe('PythonSpeechTranscriber (POST /coach/transcribe)', () => {
       expect(server.requests).toHaveLength(0);
     });
 
+    it('disguised SVG/HTML audio payload: 400 VALIDATION_FAILED before calling Python', async () => {
+      const res = await post(appFor(build()), {
+        mimeType: 'audio/m4a',
+        base64: Buffer.from('<svg onload=alert(1)>').toString('base64'),
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_FAILED');
+      expect(server.requests).toHaveLength(0);
+    });
+
     it('Python unavailable: 503 envelope with the existing message', async () => {
       const res = await post(appFor(build({ baseUrl: await closedPortUrl() })));
       expect(res.status).toBe(503);

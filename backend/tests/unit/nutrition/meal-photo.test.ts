@@ -146,4 +146,25 @@ describe('AnalyzeMealPhotoUseCase', () => {
     expect(result.items).toHaveLength(0);
     expect(result.unclearReason).toContain('no recognizable food items');
   });
+
+  it('rejects disguised non-image payloads before calling Gemini or charging quota', async () => {
+    const svgBase64 = Buffer.from('<svg onload=alert(1)></svg>').toString('base64');
+    await expect(
+      useCase.execute({
+        userId: 'user-123',
+        imageBase64: svgBase64,
+        mimeType: 'image/jpeg',
+      }),
+    ).rejects.toThrow('unsupported or unsafe content');
+
+    await expect(
+      useCase.execute({
+        userId: 'user-123',
+        imageBase64: '!!!!',
+        mimeType: 'image/png',
+      }),
+    ).rejects.toThrow('empty or unreadable');
+
+    expect(mockService.analyzePhoto).not.toHaveBeenCalled();
+  });
 });

@@ -26,12 +26,15 @@ _SRC_ROOT = _TESTS_ROOT / "src"
 if str(_SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(_SRC_ROOT))
 
+from concurrent.futures import ThreadPoolExecutor
+
 from tests.evals.datasets.loader import load_all_benchmark_cases, load_benchmark_dataset
 from tests.evals.evaluators.agent import AgentFundamentalsEvaluator
 from tests.evals.evaluators.grounding import FactualGroundingEvaluator
 from tests.evals.evaluators.mcp import McpToolsEvaluator
 from tests.evals.evaluators.multi_agent import MultiAgentEvaluator
 from tests.evals.evaluators.multilingual import MultilingualAccuracyEvaluator
+from tests.evals.evaluators.multimodal import execute_multimodal_offline_case
 from tests.evals.evaluators.nutrition import NutritionToleranceEvaluator
 from tests.evals.evaluators.safety import SafetyEvaluator
 from tests.evals.evaluators.schema import SchemaConformanceEvaluator
@@ -222,6 +225,20 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
                 forbidden_terms=case.forbidden_terms,
                 input_payload=case.input_payload,
             )
+            scores.append(res.score)
+            if not res.passed:
+                failure_reasons.extend(res.failure_reasons)
+
+        # 5f. Multimodal AI (Phase 15) executable offline benchmark
+        if case.category == "multimodal":
+            try:
+                asyncio.get_running_loop()
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    res = pool.submit(
+                        asyncio.run, execute_multimodal_offline_case(case.input_payload)
+                    ).result()
+            except RuntimeError:
+                res = asyncio.run(execute_multimodal_offline_case(case.input_payload))
             scores.append(res.score)
             if not res.passed:
                 failure_reasons.extend(res.failure_reasons)

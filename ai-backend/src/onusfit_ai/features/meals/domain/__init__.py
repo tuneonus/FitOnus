@@ -2,6 +2,13 @@
 
 from onusfit_ai.features.meals.domain import limits
 from onusfit_ai.features.meals.domain.detected_food import Confidence, DetectedFoodItem
+from onusfit_ai.features.meals.domain.multimodal import (
+    AnalyzeMultimodalMealRequest,
+    AnalyzeMultimodalMealResponse,
+    Modality,
+    MultimodalContextHint,
+    MultimodalMealResult,
+)
 from onusfit_ai.features.meals.domain.photo import (
     AnalyzeMealPhotoRequest,
     AnalyzeMealPhotoResponse,
@@ -22,9 +29,14 @@ from onusfit_ai.features.meals.domain.voice import (
 __all__ = [
     "AnalyzeMealPhotoRequest",
     "AnalyzeMealPhotoResponse",
+    "AnalyzeMultimodalMealRequest",
+    "AnalyzeMultimodalMealResponse",
     "Confidence",
     "DetectedFoodItem",
     "MealPhotoResult",
+    "Modality",
+    "MultimodalContextHint",
+    "MultimodalMealResult",
     "ParseVoiceMealRequest",
     "ParseVoiceMealResponse",
     "VoiceMealResult",

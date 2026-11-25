@@ -8,11 +8,15 @@ export const VOICE_MAX_SECONDS = 60;
 export const VOICE_MIN_SECONDS = 1;
 /** The longest typed or transcribed meal text the backend accepts. */
 export const VOICE_TRANSCRIPT_MAX_LENGTH = 2000;
+/** Shared audio base64 limit matching backend shared/ai/audio-input.ts. */
+export const VOICE_MAX_AUDIO_BASE64_CHARS = 15 * 1024 * 1024;
 
 export const VOICE_TOO_SHORT_MESSAGE =
   'That was too short to understand. Tap the mic, then say what you ate.';
 export const VOICE_LIMIT_NOTICE = `Recording stopped at ${VOICE_MAX_SECONDS} seconds.`;
 export const VOICE_TEXT_TOO_LONG_MESSAGE = `Please keep it under ${VOICE_TRANSCRIPT_MAX_LENGTH} characters.`;
+export const VOICE_AUDIO_TOO_LARGE_MESSAGE =
+  'That voice recording is too large to upload. Keep recordings under 60 seconds.';
 
 export type RecordingVerdict = 'ok' | 'too_short';
 
@@ -22,6 +26,11 @@ export function judgeRecording(durationMs: number): RecordingVerdict {
 
 export function hasReachedRecordingLimit(durationMs: number): boolean {
   return durationMs >= VOICE_MAX_SECONDS * 1000;
+}
+
+export function isAudioPayloadWithinLimit(base64: string): boolean {
+  const trimmed = base64.trim();
+  return trimmed.length > 0 && trimmed.length <= VOICE_MAX_AUDIO_BASE64_CHARS;
 }
 
 /** 7_400 -> "0:07"; never past the limit, so a late status update cannot show 1:02. */

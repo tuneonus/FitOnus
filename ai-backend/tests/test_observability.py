@@ -48,6 +48,45 @@ from test_transcribe_api import body as stt_body
 from test_voice_meal_api import GOOD_REPLY as VOICE_REPLY
 from test_voice_meal_api import body as voice_body
 
+MULTIMODAL_REPLY = json.dumps(
+    {
+        "isFood": True,
+        "summary": "2 Idlis with sambar",
+        "transcript": "rendu idli sambar",
+        "detectedLanguage": "tanglish",
+        "confidence": "high",
+        "items": [
+            {
+                "name": "Idli with Sambar",
+                "portionDescription": "2 pieces · 160 g",
+                "servingWeightG": 160,
+                "servingUnit": "piece",
+                "servingSize": 2,
+                "calories": 210,
+                "proteinG": 6.0,
+                "carbsG": 38.0,
+                "fatG": 3.0,
+                "fiberG": 2.5,
+                "confidence": "high",
+            }
+        ],
+    }
+)
+
+
+def multimodal_body() -> dict[str, Any]:
+    pb = photo_body(mealType="breakfast", notes="hospital diet plan number 4471")
+    return {
+        "image": pb["image"],
+        "transcript": "rendu idli sambar",
+        "context": {
+            "mealType": pb["mealType"],
+            "notes": pb["notes"],
+        },
+        "model": pb["model"],
+        "deadlineMs": pb["deadlineMs"],
+    }
+
 # Built at runtime so the repository never contains a literal that looks like a real key.
 GOOGLE_KEY = "AI" + "za" + "SyFAKE-FAKE-FAKE-FAKE-FAKE-1234567"
 FAKE_JWT = ".".join(
@@ -86,6 +125,12 @@ ENDPOINTS: dict[str, dict[str, Any]] = {
         "scope": "ai:meals:photo",
         "request": lambda: photo_body(mealType="breakfast", notes="hospital diet plan number 4471"),
         "reply": PHOTO_REPLY,
+    },
+    "multimodal_meal": {
+        "url": "/internal/v1/ai/meals/analyze-multimodal",
+        "scope": "ai:meals:multimodal",
+        "request": multimodal_body,
+        "reply": MULTIMODAL_REPLY,
     },
     "transcribe": {
         "url": "/internal/v1/ai/speech/transcribe",
@@ -364,6 +409,7 @@ class TestCompletedCallEvent:
             ("coach_insights", "not json at all"),
             ("voice_meal", "not json at all"),
             ("meal_photo", "not json at all"),
+            ("multimodal_meal", "not json at all"),
             ("transcribe", "not json at all"),
         ],
     )

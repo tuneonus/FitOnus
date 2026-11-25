@@ -15,6 +15,9 @@ export const MEAL_PHOTO_QUALITY = 0.5;
 
 /** The server's limit on the base64 text of a photo (backend shared/ai/body-limits.ts, ai-backend core/image.py). */
 export const MEAL_PHOTO_MAX_BASE64_CHARS = 10 * 1024 * 1024;
+export const MEAL_PHOTO_MAX_DIMENSION_PX = 8192;
+export const MEAL_PHOTO_MAX_PIXELS = 40_000_000;
+export const MEAL_PHOTO_MAX_NOTES_LENGTH = 300;
 
 const SUPPORTED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
 export type MealPhotoMimeType = (typeof SUPPORTED)[number];
@@ -36,6 +39,8 @@ const BY_EXTENSION: Record<string, MealPhotoMimeType> = {
 
 export const MEAL_PHOTO_TOO_LARGE_MESSAGE =
   'That photo is too large to analyze. Take it again with a lower camera resolution, or pick a smaller photo.';
+export const MEAL_PHOTO_DIMENSIONS_MESSAGE =
+  'That photo resolution is too large to process reliably. Pick a smaller image or retake the photo.';
 export const MEAL_PHOTO_UNREADABLE_MESSAGE = 'We couldn’t read that photo. Please try again.';
 export const MEAL_PHOTO_UNSUPPORTED_MESSAGE = 'Use a JPEG, PNG, WebP or HEIC photo.';
 
@@ -43,6 +48,8 @@ export interface PickedMealPhoto {
   uri?: string | null | undefined;
   base64?: string | null | undefined;
   mimeType?: string | null | undefined;
+  width?: number | null | undefined;
+  height?: number | null | undefined;
 }
 
 export type PreparedMealPhoto =
@@ -71,5 +78,28 @@ export function prepareMealPhoto(photo: PickedMealPhoto): PreparedMealPhoto {
   if (base64.length > MEAL_PHOTO_MAX_BASE64_CHARS) {
     return { ok: false, message: MEAL_PHOTO_TOO_LARGE_MESSAGE };
   }
+
+  if (
+    typeof photo.width === 'number' &&
+    typeof photo.height === 'number' &&
+    photo.width > 0 &&
+    photo.height > 0 &&
+    (photo.width > MEAL_PHOTO_MAX_DIMENSION_PX ||
+      photo.height > MEAL_PHOTO_MAX_DIMENSION_PX ||
+      photo.width * photo.height > MEAL_PHOTO_MAX_PIXELS)
+  ) {
+    return { ok: false, message: MEAL_PHOTO_DIMENSIONS_MESSAGE };
+  }
+
   return { ok: true, base64, mimeType };
+}
+
+/** Normalize optional user meal correction notes before sending to the backend. */
+export function normalizeMealPhotoNotes(notes: string): string {
+  return notes
+    .replace(/[\x00-\x1f\x7f]/g, ' ')
+    .replace(/"/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MEAL_PHOTO_MAX_NOTES_LENGTH);
 }

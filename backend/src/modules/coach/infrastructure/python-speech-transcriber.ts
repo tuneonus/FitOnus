@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import { defaultAiMetrics } from '../../../shared/ai/ai-metrics.js';
+import {
+  inspectSafeBase64Payload,
+  isSupportedAudioMime,
+  MAX_AUDIO_BASE64_CHARS,
+} from '../../../shared/ai/audio-input.js';
 import { callPythonAi, pythonUsageSchema } from '../../../shared/ai/python-ai-call.js';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
+import { AppError } from '../../../shared/errors/app-error.js';
 import type { Logger } from '../../../shared/logging/logger.js';
 import type { SpeechTranscriber } from '../application/ports.js';
 
@@ -48,10 +54,55 @@ export class PythonSpeechTranscriber implements SpeechTranscriber {
     userId: string,
     audio: { mimeType: string; base64: string },
   ): Promise<{ transcript: string; detectedLanguage: string }> {
+    const valStart = performance.now();
+    const approxBytes = Math.floor(((audio.base64?.length ?? 0) * 3) / 4);
+    const recordValidationReject = (reason: string) => {
+      try {
+        defaultAiMetrics.recordMultimodalProcessing({
+          modality: 'audio',
+          durationMs: Math.round(performance.now() - valStart),
+          validationDurationMs: Math.round(performance.now() - valStart),
+          validationFailed: true,
+          validationReason: reason,
+          byteSize: approxBytes,
+        });
+      } catch {
+        // Fail-open observability
+      }
+    };
+
+    const mimeType = audio.mimeType || 'audio/m4a';
+    if (!isSupportedAudioMime(mimeType)) {
+      recordValidationReject('invalid_mime');
+      throw new AppError(
+        'bad_request',
+        'BAD_REQUEST',
+        `Unsupported audio format (${mimeType}). Supported formats: m4a, mp4, aac, wav, webm, ogg.`,
+      );
+    }
+    if (!audio.base64 || audio.base64.length > MAX_AUDIO_BASE64_CHARS) {
+      recordValidationReject(audio.base64 ? 'oversize' : 'empty_payload');
+      throw new AppError(
+        audio.base64 ? 'payload_too_large' : 'validation',
+        audio.base64 ? 'PAYLOAD_TOO_LARGE' : 'VALIDATION_FAILED',
+        audio.base64 ? 'Audio size exceeds the 15MB limit.' : 'Audio data is required.',
+      );
+    }
+    const inspection = inspectSafeBase64Payload(audio.base64, 'audio');
+    if (!inspection.ok) {
+      recordValidationReject(inspection.reason === 'empty' ? 'empty_payload' : 'polyglot');
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        inspection.reason === 'empty'
+          ? 'Audio data is empty or unreadable.'
+          : 'Audio payload contains unsupported or unsafe content.',
+      );
+    }
+
     const models = await this.deps.resolveModels();
     const timeoutMs = this.deps.pythonTimeoutMs;
     const startedAt = performance.now();
-    const approxBytes = Math.floor(((audio.base64?.length ?? 0) * 3) / 4);
     try {
       const { result } = await callPythonAi({
         client: this.deps.client,
@@ -73,6 +124,7 @@ export class PythonSpeechTranscriber implements SpeechTranscriber {
         label: 'Python transcription',
         unavailableMessage: TRANSCRIBE_UNAVAILABLE_MESSAGE,
       });
+
       try {
         defaultAiMetrics.recordMultimodalProcessing({
           modality: 'audio',
@@ -82,6 +134,7 @@ export class PythonSpeechTranscriber implements SpeechTranscriber {
       } catch {
         // Fail-open observability
       }
+
       return { transcript: result.transcript, detectedLanguage: result.detectedLanguage };
     } catch (error) {
       try {

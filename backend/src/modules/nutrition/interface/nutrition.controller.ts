@@ -1,4 +1,4 @@
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
@@ -18,10 +18,13 @@ import type { ManageFoodFavoritesUseCase } from '../application/use-cases/manage
 import type { SearchFoodsUseCase } from '../application/use-cases/search-foods.js';
 import type { UpdateMealUseCase } from '../application/use-cases/update-meal.js';
 import type { AnalyzeMealPhotoUseCase } from '../application/use-cases/analyze-meal-photo.js';
+import type { AnalyzeMultimodalMealUseCase } from '../application/use-cases/analyze-multimodal-meal.js';
 import type { ParseVoiceMealUseCase } from '../application/use-cases/parse-voice-meal.js';
 import type { MealPhotoAnalysisResult } from '../domain/meal-photo.types.js';
+import type { MultimodalMealAnalysisResult } from '../domain/multimodal-meal.types.js';
 import type { VoiceMealParseResult } from '../domain/voice-meal.types.js';
 import { analyzeMealPhotoRequest } from './meal-photo.schemas.js';
+import { analyzeMultimodalMealRequest } from './multimodal-meal.schemas.js';
 import { parseVoiceMealRequest } from './voice-meal.schemas.js';
 import { AppError } from '../../../shared/errors/app-error.js';
 import type {
@@ -70,6 +73,7 @@ export interface NutritionMemberUseCases {
   manageFoodFavorites: ManageFoodFavoritesUseCase;
   analyzeMealPhoto?: AnalyzeMealPhotoUseCase;
   parseVoiceMeal?: ParseVoiceMealUseCase;
+  analyzeMultimodalMeal?: AnalyzeMultimodalMealUseCase;
 }
 
 export type NutritionMemberController = ReturnType<typeof createNutritionMemberController>;
@@ -350,6 +354,65 @@ export function createNutritionMemberController(useCases: NutritionMemberUseCase
         data,
         message: 'Voice meal parsed successfully',
       };
+    },
+
+    analyzeMultimodalMeal: async (
+      req: Request,
+      res: Response,
+    ): Promise<RouteResult<MultimodalMealAnalysisResult>> => {
+      const actor = requireActor(req);
+      const { body } = getValidated(req, analyzeMultimodalMealRequest);
+      if (!useCases.analyzeMultimodalMeal) {
+        throw new AppError(
+          'unavailable',
+          'SERVICE_UNAVAILABLE',
+          'Multimodal meal analysis service is not available.',
+        );
+      }
+      const abortController = new AbortController();
+      const onClose = () => {
+        if (!res.writableEnded) {
+          abortController.abort();
+        }
+      };
+      res.on('close', onClose);
+      try {
+        const hasContext =
+          body.mealType !== undefined ||
+          body.lang !== undefined ||
+          body.notes !== undefined ||
+          body.dietaryGoal !== undefined ||
+          body.allergies !== undefined ||
+          body.dailyCalorieTarget !== undefined;
+        const data = await useCases.analyzeMultimodalMeal.execute({
+          userId: actor.userId,
+          ...(body.image !== undefined ? { imageBase64: body.image, imageMimeType: body.imageMimeType } : {}),
+          ...(body.audio !== undefined ? { audioBase64: body.audio, audioMimeType: body.audioMimeType } : {}),
+          ...(body.transcript !== undefined ? { transcript: body.transcript } : {}),
+          ...(hasContext
+            ? {
+                context: {
+                  ...(body.mealType !== undefined ? { mealType: body.mealType } : {}),
+                  ...(body.lang !== undefined ? { lang: body.lang } : {}),
+                  ...(body.notes !== undefined ? { notes: body.notes } : {}),
+                  ...(body.dietaryGoal !== undefined ? { dietaryGoal: body.dietaryGoal } : {}),
+                  ...(body.allergies !== undefined ? { allergies: body.allergies } : {}),
+                  ...(body.dailyCalorieTarget !== undefined
+                    ? { dailyCalorieTarget: body.dailyCalorieTarget }
+                    : {}),
+                },
+              }
+            : {}),
+          signal: abortController.signal,
+        });
+        return {
+          status: 200,
+          data,
+          message: 'Multimodal meal analyzed successfully',
+        };
+      } finally {
+        res.off('close', onClose);
+      }
     },
   };
 }

@@ -20,7 +20,9 @@ import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { showToast } from '@/shared/stores/toastStore';
 import { useTheme } from '@/hooks/use-theme';
+import { normalizeMobileApiError } from '@/services/error-normalizer';
 import { MealPhotoApi } from '../../ai-coach/services/meal-photo-api';
+import { MultimodalMealApi } from '../../ai-coach/services/multimodal-meal-api';
 import { useHealthStore } from '../../health-integration/store/healthStore';
 import { scaleFood, sumNutrients, useNutritionStore } from '../store/nutritionStore';
 import { useQuery } from '@tanstack/react-query';
@@ -28,6 +30,7 @@ import { nutritionApi } from '../api/nutrition-api';
 import { TextField } from '@/shared/components/ui/TextField';
 import { mealLabels, mealOrder } from '../constants/meals';
 import { LOW_CONFIDENCE_THRESHOLD } from '../utils/detected-food';
+import { normalizeMealPhotoNotes, type MealPhotoMimeType } from '../utils/meal-photo-upload';
 import type { FoodItem, MealType } from '../types/nutrition';
 
 type Row = { base: FoodItem; factor: number };
@@ -66,30 +69,48 @@ export function MealAnalysisScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [unclearWarning, setUnclearWarning] = useState<string | null>(null);
+  const [uncertaintyNotice, setUncertaintyNotice] = useState<string | null>(null);
+  const [correctionNotes, setCorrectionNotes] = useState('');
+  const analyzeLockRef = useRef(false);
+  const requestSeqRef = useRef(0);
 
-  const run = async () => {
-    setPhase('analyzing');
-    setErrorMessage(null);
-    setUnclearWarning(null);
-
+  const run = async (notesOverride?: string) => {
+    if (analyzeLockRef.current) return;
     if (offline) {
       setErrorMessage('You are offline. Reconnect to analyze meal photos.');
       setPhase('error');
       return;
     }
+    if (!params.imageBase64) {
+      setErrorMessage('No meal photo data provided. Please retake the photo.');
+      setPhase('error');
+      return;
+    }
+
+    analyzeLockRef.current = true;
+    const seq = ++requestSeqRef.current;
+    setPhase('analyzing');
+    setErrorMessage(null);
+    setUnclearWarning(null);
+    setUncertaintyNotice(null);
 
     try {
-      if (!params.imageBase64) {
-        setErrorMessage('No meal photo data provided. Please retake the photo.');
-        setPhase('error');
-        return;
-      }
+      const cleanedNotes = notesOverride ? normalizeMealPhotoNotes(notesOverride) : undefined;
+      const resolvedMime = (params.mimeType as MealPhotoMimeType | undefined) || 'image/jpeg';
+      const res = cleanedNotes
+        ? await MultimodalMealApi.analyzeMultimodalMeal({
+            image: params.imageBase64,
+            imageMimeType: resolvedMime,
+            mealType: meal,
+            notes: cleanedNotes,
+          })
+        : await MealPhotoApi.analyzeMealPhoto({
+            image: params.imageBase64,
+            mimeType: resolvedMime,
+            mealType: meal,
+          });
 
-      const res = await MealPhotoApi.analyzeMealPhoto({
-        image: params.imageBase64,
-        mimeType: (params.mimeType as any) || 'image/jpeg',
-        mealType: meal,
-      });
+      if (seq !== requestSeqRef.current) return;
 
       if (!res.isFood || res.items.length === 0) {
         setUnclearWarning(res.unclearReason || 'No recognizable food detected in the photo.');
@@ -98,18 +119,37 @@ export function MealAnalysisScreen() {
         return;
       }
 
+      const mmUncertainty =
+        'uncertaintyNote' in res && typeof res.uncertaintyNote === 'string'
+          ? res.uncertaintyNote
+          : undefined;
+
       setRows(res.items.map((base) => ({ base, factor: 1 })));
+      if (res.unclearReason) {
+        setUncertaintyNotice(res.unclearReason);
+      } else if (mmUncertainty) {
+        setUncertaintyNotice(mmUncertainty);
+      } else if (res.overallConfidence < LOW_CONFIDENCE_THRESHOLD) {
+        setUncertaintyNotice(
+          'Visual portion and hidden-ingredient estimates are uncertain. Please review servings.',
+        );
+      }
       setPhase('review');
-    } catch (err: any) {
-      setErrorMessage(
-        err?.message || 'The analysis service didn’t respond. Your photo wasn’t uploaded.',
+    } catch (err: unknown) {
+      if (seq !== requestSeqRef.current) return;
+      const normalized = normalizeMobileApiError(
+        err,
+        'The analysis service didn’t respond. Your photo wasn’t uploaded.',
       );
+      setErrorMessage(normalized.userMessage);
       setPhase('error');
+    } finally {
+      analyzeLockRef.current = false;
     }
   };
 
   useEffect(() => {
-    run();
+    void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -121,7 +161,7 @@ export function MealAnalysisScreen() {
     saveLock.current = true;
     try {
       setIsSaving(true);
-      const id = await logMeal({
+      await logMeal({
         mealType: meal,
         items,
         method: 'photo',
@@ -131,9 +171,10 @@ export function MealAnalysisScreen() {
         message: `Meal saved to ${mealLabels[meal]}`,
       });
       popTo('nutrition');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const normalized = normalizeMobileApiError(err, 'Failed to save meal.');
       showToast({
-        message: err?.message || 'Failed to save meal.',
+        message: normalized.userMessage,
       });
     } finally {
       saveLock.current = false;
@@ -227,6 +268,16 @@ export function MealAnalysisScreen() {
                 body={unclearWarning}
                 actionLabel="Retake Photo"
                 onAction={() => replace('mealPhoto', { meal })}
+              />
+            </View>
+          )}
+
+          {uncertaintyNotice && !unclearWarning && (
+            <View style={{ marginBottom: 16 }}>
+              <StatusBanner
+                tone="warning"
+                title="Estimate Uncertainty"
+                body={uncertaintyNotice}
               />
             </View>
           )}
@@ -336,6 +387,26 @@ export function MealAnalysisScreen() {
             title="Add a missing food"
             onPress={() => setAddingFood(true)}
           />
+
+          <View style={styles.correctionBox}>
+            <TextField
+              appearance="premium"
+              label="Correct or clarify ingredients (optional)"
+              placeholder="e.g. 2 dosas with ghee, no sugar in coffee"
+              value={correctionNotes}
+              onChangeText={setCorrectionNotes}
+            />
+            {correctionNotes.trim().length > 0 && (
+              <Button
+                appearance="premium"
+                variant="secondary"
+                title="Re-analyze with note"
+                onPress={() => {
+                  void run(correctionNotes);
+                }}
+              />
+            )}
+          </View>
 
           {/* Macro Summary Hero */}
           <View style={[styles.macroHero, { backgroundColor: colors.surface2 }]}>
@@ -602,5 +673,8 @@ const styles = StyleSheet.create({
   confirmFootnote: {
     ...premium.type.caption,
     marginTop: 12,
+  },
+  correctionBox: {
+    gap: 10,
   },
 });

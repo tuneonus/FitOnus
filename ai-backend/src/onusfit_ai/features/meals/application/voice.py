@@ -43,7 +43,11 @@ logger = logging.getLogger("onusfit_ai.voice_meal")
 
 
 async def parse_voice_meal(
-    request: ParseVoiceMealRequest, llm: TextGenerator, *, trace_id: str
+    request: ParseVoiceMealRequest,
+    llm: TextGenerator,
+    *,
+    trace_id: str,
+    user_id: str | None = None,
 ) -> ParseVoiceMealResponse:
     """Orchestrate voice meal parsing from audio clip and/or text transcript.
 
@@ -86,6 +90,9 @@ async def parse_voice_meal(
             deadline_s=request.deadline_ms / 1000,
             media=media,
             schema=schema,
+            max_total_tokens=16_384,
+            max_output_tokens=2048,
+            user_id=user_id,
         )
     except LlmServiceError as exc:
         if tracker is not None:

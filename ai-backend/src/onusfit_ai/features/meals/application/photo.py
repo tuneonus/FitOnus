@@ -36,7 +36,7 @@ from onusfit_ai.shared.logging import (
     MultimodalObservabilityTracker,
     classify_media_validation_error,
 )
-from onusfit_ai.shared.utils.image import decode_image_base64
+from onusfit_ai.shared.utils.image import decode_image_base64, strip_jpeg_exif_metadata
 from onusfit_ai.shared.utils.js_compat import js_round, strict_json_loads, strip_code_fences
 from onusfit_ai.shared.utils.media import InvalidMediaError
 
@@ -56,7 +56,11 @@ def _error_category_for_llm_code(code: str) -> str:
 
 
 async def analyze_meal_photo(
-    request: AnalyzeMealPhotoRequest, llm: TextGenerator, *, trace_id: str
+    request: AnalyzeMealPhotoRequest,
+    llm: TextGenerator,
+    *,
+    trace_id: str,
+    user_id: str | None = None,
 ) -> AnalyzeMealPhotoResponse:
     """Orchestrate meal photo analysis using Gemini vision models.
 
@@ -68,22 +72,26 @@ async def analyze_meal_photo(
         feature="meal_photo",
         trace_id=trace_id,
     )
-    # Refuses corrupt images (422, dispatched=False) before any Gemini call.
+    # Refuses corrupt/oversized/polyglot images (422, dispatched=False)
+    # and strips JPEG EXIF/GPS before Gemini.
     val_started = time.monotonic()
     try:
         raw_bytes = decode_image_base64(request.image.base64)
+        stripped = strip_jpeg_exif_metadata(raw_bytes)
     except InvalidMediaError as exc:
+        val_ms = (time.monotonic() - val_started) * 1000.0
         tracker.record_validation_failure(
-            duration_ms=(time.monotonic() - val_started) * 1000.0,
+            duration_ms=val_ms,
             reason=classify_media_validation_error(str(exc)),
         )
         raise
-    media = MediaInput(mime_type=request.image.mime_type, data=raw_bytes)
+    val_ms = (time.monotonic() - val_started) * 1000.0
+    media = MediaInput(mime_type=request.image.mime_type, data=stripped)
     tracker.record_validation_success(
-        duration_ms=(time.monotonic() - val_started) * 1000.0,
+        duration_ms=val_ms,
         byte_size=len(media.data),
         mime_type=request.image.mime_type,
-        exif_stripped=False,
+        exif_stripped=(len(stripped) != len(raw_bytes)),
     )
 
     use_structured = is_meal_photo_structured_output_enabled()
@@ -97,6 +105,9 @@ async def analyze_meal_photo(
             deadline_s=request.deadline_ms / 1000,
             media=media,
             schema=schema,
+            max_total_tokens=16_384,
+            max_output_tokens=2048,
+            user_id=user_id,
         )
     except LlmServiceError as exc:
         tracker.record_processing_completed(

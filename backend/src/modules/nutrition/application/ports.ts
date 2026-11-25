@@ -2,6 +2,7 @@ import type { Food, FoodDataSource, FoodProps, VerificationStatus } from '../dom
 import type { Meal } from '../domain/meal.js';
 import type { WaterIntake } from '../domain/water.js';
 import type { MealPhotoAnalysisResult } from '../domain/meal-photo.types.js';
+import type { MultimodalContextHint, MultimodalMealAnalysisResult } from '../domain/multimodal-meal.types.js';
 import type { VoiceMealParseResult } from '../domain/voice-meal.types.js';
 
 export interface FoodSearchFilter {
@@ -134,4 +135,15 @@ export interface VoiceMealParser {
     lang?: string;
     mealType?: string;
   }): Promise<VoiceMealParseResult>;
+}
+
+/** Unified multimodal (image + audio + text) meal analyzer. Implemented by `PythonMultimodalMealService`. */
+export interface MultimodalMealAnalyzer {
+  analyzeMultimodal(params: {
+    image?: { mimeType: string; base64: string };
+    audio?: { mimeType: string; base64: string };
+    transcript?: string;
+    context?: MultimodalContextHint;
+    signal?: AbortSignal;
+  }): Promise<MultimodalMealAnalysisResult>;
 }

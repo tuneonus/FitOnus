@@ -25,6 +25,7 @@ DATASET_FILES: dict[str, str] = {
     "workout_planner": "workout_planner_benchmark.json",
     "mcp_tools": "mcp_tools_benchmark.json",
     "multi_agent": "multi_agent_benchmark.json",
+    "multimodal": "multimodal_benchmark.json",
 }
 
 
@@ -37,11 +38,33 @@ def load_benchmark_dataset(dataset_key: str) -> list[BenchmarkCase]:
     with open(file_path, encoding="utf-8") as f:
         raw_list = json.load(f)
 
+    if dataset_key == "multimodal":
+        cases: list[BenchmarkCase] = []
+        for item in raw_list:
+            expected = item.get("expected", {})
+            raw_lang = expected.get("language", item.get("input", {}).get("lang", "en"))
+            lang = raw_lang if raw_lang in ("en", "ta", "tanglish", "mixed") else "en"
+            outcome = expected.get("outcome") or expected.get("raises") or "ok"
+            cases.append(
+                BenchmarkCase(
+                    case_id=item["case_id"],
+                    category="multimodal",
+                    description=item["description"],
+                    language=lang,
+                    input_payload=item,
+                    expected_outcome=str(outcome),
+                    ground_truth_source="IFCT 2017 / USDA / Multimodal Security Suite",
+                    is_verified_ground_truth=bool(expected.get("nutrition_targets")),
+                    offline_candidate=item.get("mock_llm") or {"outcome": str(outcome)},
+                )
+            )
+        return cases
+
     return [BenchmarkCase.model_validate(item) for item in raw_list]
 
 
 def load_all_benchmark_cases() -> list[BenchmarkCase]:
-    """Load all benchmark cases across all 6 benchmark datasets."""
+    """Load all benchmark cases across all benchmark datasets."""
     all_cases: list[BenchmarkCase] = []
     for key in DATASET_FILES:
         all_cases.extend(load_benchmark_dataset(key))

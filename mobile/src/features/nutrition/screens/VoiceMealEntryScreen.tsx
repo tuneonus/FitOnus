@@ -23,9 +23,10 @@ import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { showToast } from '@/shared/stores/toastStore';
 import { VoiceWaveform } from '../../voice-coach/components/VoiceWaveform';
 import { useVoiceStore } from '../../voice-coach/store/voiceStore';
-import { useNutritionStore } from '../store/nutritionStore';
+import { scaleFood, useNutritionStore } from '../store/nutritionStore';
 import { mealLabels, mealOrder } from '../constants/meals';
 import { useTheme } from '@/hooks/use-theme';
+import { normalizeMobileApiError } from '@/services/error-normalizer';
 import type { FoodItem, MealType } from '../types/nutrition';
 import { VoiceMealApi } from '../../ai-coach/services/voice-meal-api';
 import {
@@ -37,7 +38,9 @@ import {
 import {
   formatRecordingClock,
   hasReachedRecordingLimit,
+  isAudioPayloadWithinLimit,
   judgeRecording,
+  VOICE_AUDIO_TOO_LARGE_MESSAGE,
   VOICE_LIMIT_NOTICE,
   VOICE_MAX_SECONDS,
   VOICE_TEXT_TOO_LONG_MESSAGE,
@@ -60,12 +63,17 @@ export function VoiceMealEntryScreen() {
 
   const [phase, setPhase] = useState<Phase>('idle');
   const [transcript, setTranscript] = useState('');
+  const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
   const [manualText, setManualText] = useState('');
-  const [items, setItems] = useState<FoodItem[]>([]);
+  const [baseItems, setBaseItems] = useState<FoodItem[]>([]);
+  const [itemFactors, setItemFactors] = useState<Record<string, number>>({});
   const [meal, setMeal] = useState<MealType>(mealParam ?? 'lunch');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [unclearReason, setUnclearReason] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const inFlightRef = useRef(false);
+
+  const items = baseItems.map((base) => scaleFood(base, itemFactors[base.id] ?? 1));
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 250);
@@ -113,8 +121,26 @@ export function VoiceMealEntryScreen() {
     }
   };
 
+  const applyParseResult = (
+    result: Awaited<ReturnType<typeof VoiceMealApi.parseVoiceMeal>>,
+    fallbackTranscript: string,
+  ) => {
+    setTranscript(result.transcript || fallbackTranscript);
+    setDetectedLanguage(result.detectedLanguage || null);
+    setBaseItems(result.items);
+    setItemFactors({});
+    setUnclearReason(
+      result.unclearReason ||
+        (result.confidence === 'low'
+          ? 'Nutrition and portions are estimated from unclear speech. Review or edit below.'
+          : null),
+    );
+    setPhase('review');
+  };
+
   const handleStopListening = async () => {
-    if (!isRecordingRef.current) return;
+    if (!isRecordingRef.current || inFlightRef.current) return;
+    inFlightRef.current = true;
     try {
       isRecordingRef.current = false;
       const durationMs = recorder.getStatus().durationMillis;
@@ -134,6 +160,11 @@ export function VoiceMealEntryScreen() {
       }
 
       const audioBase64 = await new File(uri).base64();
+      if (!isAudioPayloadWithinLimit(audioBase64)) {
+        setPhase('error');
+        setErrorMessage(VOICE_AUDIO_TOO_LARGE_MESSAGE);
+        return;
+      }
 
       const result = await VoiceMealApi.parseVoiceMeal({
         audio: audioBase64,
@@ -149,15 +180,16 @@ export function VoiceMealEntryScreen() {
         return;
       }
 
-      setTranscript(result.transcript || 'Spoken meal entry');
-      setItems(result.items);
-      setUnclearReason(result.unclearReason || null);
-      setPhase('review');
+      applyParseResult(result, 'Spoken meal entry');
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : 'Failed to analyze voice input. Please try again.';
+      const normalized = normalizeMobileApiError(
+        err,
+        'Failed to analyze voice input. Please try again.',
+      );
       setPhase('error');
-      setErrorMessage(msg);
+      setErrorMessage(normalized.userMessage);
+    } finally {
+      inFlightRef.current = false;
     }
   };
 
@@ -166,15 +198,16 @@ export function VoiceMealEntryScreen() {
     stopRef.current = handleStopListening;
   });
 
-  const handleParseManualText = async () => {
-    const text = manualText.trim();
-    if (!text) return;
+  const handleParseTextInput = async (rawText: string) => {
+    const text = rawText.trim();
+    if (!text || inFlightRef.current) return;
     if (text.length > VOICE_TRANSCRIPT_MAX_LENGTH) {
       setPhase('error');
       setErrorMessage(VOICE_TEXT_TOO_LONG_MESSAGE);
       return;
     }
 
+    inFlightRef.current = true;
     try {
       setErrorMessage(null);
       setUnclearReason(null);
@@ -194,16 +227,17 @@ export function VoiceMealEntryScreen() {
         return;
       }
 
-      setTranscript(result.transcript || text);
-      setItems(result.items);
-      setUnclearReason(result.unclearReason || null);
-      setPhase('review');
+      applyParseResult(result, text);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to parse text description.';
+      const normalized = normalizeMobileApiError(err, 'Failed to parse text description.');
       setPhase('error');
-      setErrorMessage(msg);
+      setErrorMessage(normalized.userMessage);
+    } finally {
+      inFlightRef.current = false;
     }
   };
+
+  const handleParseManualText = async () => handleParseTextInput(manualText);
 
   const total = items.reduce(
     (a, i) => ({ kcal: a.kcal + i.kcal, protein: a.protein + i.protein }),
@@ -293,8 +327,36 @@ export function VoiceMealEntryScreen() {
             style={styles.reviewContainer}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={[styles.reviewLabel, { color: colors.muted }]}>You said</Text>
-            <Text style={[styles.reviewPhrase, { color: colors.ink }]}>“{transcript}”</Text>
+            <Text style={[styles.reviewLabel, { color: colors.muted }]}>
+              You said{detectedLanguage ? ` · ${detectedLanguage.toUpperCase()}` : ''}
+            </Text>
+            <View style={styles.editTranscriptBox}>
+              <TextInput
+                style={[
+                  styles.transcriptInput,
+                  { color: colors.ink, borderColor: colors.line, backgroundColor: colors.surface },
+                ]}
+                value={transcript}
+                onChangeText={setTranscript}
+                multiline
+                accessibilityLabel="Recognized meal transcript"
+              />
+              {transcript.trim().length > 0 && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    void handleParseTextInput(transcript);
+                  }}
+                  style={[styles.reparseBtn, { backgroundColor: colors.surface2 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Re-parse corrected meal text"
+                >
+                  <Text style={[styles.reparseBtnText, { color: colors.ink }]}>
+                    Re-parse edit
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
             {unclearReason && (
               <StatusBanner
@@ -342,11 +404,38 @@ export function VoiceMealEntryScreen() {
                         Portion unclear — check amount
                       </Text>
                     )}
+                    <View style={styles.voiceFactorRow}>
+                      {[0.5, 1, 1.5, 2].map((f) => {
+                        const active = (itemFactors[i.id] ?? 1) === f;
+                        return (
+                          <TouchableOpacity
+                            key={f}
+                            activeOpacity={0.7}
+                            onPress={() =>
+                              setItemFactors((prev) => ({ ...prev, [i.id]: f }))
+                            }
+                            style={[
+                              styles.voiceFactorChip,
+                              { backgroundColor: active ? colors.ink : colors.surface2 },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.voiceFactorText,
+                                { color: active ? colors.bg : colors.ink },
+                              ]}
+                            >
+                              {f}×
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   </View>
                   <Text style={[styles.itemKcal, { color: colors.ink }]}>{i.kcal}</Text>
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    onPress={() => setItems(items.filter((x) => x.id !== i.id))}
+                    onPress={() => setBaseItems(baseItems.filter((x) => x.id !== i.id))}
                     style={styles.itemDeleteBtn}
                     accessibilityLabel={`Remove ${i.name}`}
                   >
@@ -622,6 +711,40 @@ const styles = StyleSheet.create({
   },
   reviewLabel: {
     ...premium.type.caption,
+  },
+  editTranscriptBox: {
+    marginTop: 6,
+    gap: 8,
+  },
+  transcriptInput: {
+    ...premium.type.body,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  reparseBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  reparseBtnText: {
+    ...premium.type.caption,
+  },
+  voiceFactorRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 6,
+  },
+  voiceFactorChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  voiceFactorText: {
+    ...premium.type.caption,
+    fontVariant: ['tabular-nums'],
   },
   reviewPhrase: {
     ...premium.type.label,

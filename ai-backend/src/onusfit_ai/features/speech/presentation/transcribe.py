@@ -28,4 +28,4 @@ async def transcribe(
     Enforces JWT scope 'ai:speech:transcribe', injects the LLM client, and propagates trace ID.
     """
     trace_id = x_request_id or claims.request_id or str(uuid.uuid4())
-    return await transcribe_audio(body, llm, trace_id=trace_id)
+    return await transcribe_audio(body, llm, trace_id=trace_id, user_id=claims.user_id)

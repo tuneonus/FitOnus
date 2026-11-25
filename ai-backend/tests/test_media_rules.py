@@ -8,12 +8,16 @@ Regression tests for two audit findings:
 """
 
 import base64
+import struct
 
 import pytest
 from fastapi.testclient import TestClient
 
 from conftest import FakeLlm, make_token
-from onusfit_ai.shared.utils.audio import decode_audio_base64
+from onusfit_ai.shared.utils.audio import (
+    decode_audio_base64,
+    estimate_audio_duration_seconds,
+)
 from onusfit_ai.shared.utils.image import decode_image_base64
 from onusfit_ai.shared.utils.media import InvalidMediaError
 
@@ -90,4 +94,56 @@ def test_corrupt_image_keeps_its_exact_422_body(client: TestClient, fake_llm: Fa
             "dispatched": False,
         }
     }
+    assert fake_llm.calls == []
+
+
+def _wav_bytes(duration_seconds: float, byte_rate: int = 32_000) -> bytes:
+    data_size = int(duration_seconds * byte_rate)
+    fmt_chunk = b"fmt " + struct.pack("<IHHIIHH", 16, 1, 1, 16_000, byte_rate, 2, 16)
+    data_chunk = b"data" + struct.pack("<I", data_size) + (b"\x00" * 16)
+    riff_size = 4 + len(fmt_chunk) + len(data_chunk)
+    return b"RIFF" + struct.pack("<I", riff_size) + b"WAVE" + fmt_chunk + data_chunk
+
+
+@pytest.mark.parametrize(
+    "payload_bytes", [b"%PDF-1.7\nfoo", b"<svg onload=alert(1)>", b"\xff\xd8\xff\xe0JFIF"]
+)
+def test_disguised_non_audio_payload_is_rejected_before_gemini(
+    client: TestClient, fake_llm: FakeLlm, payload_bytes: bytes
+) -> None:
+    encoded = base64.b64encode(payload_bytes).decode()
+    response = client.post(
+        VOICE_URL,
+        json={
+            "audio": {"mimeType": "audio/wav", "base64": encoded},
+            "model": MODEL,
+            "deadlineMs": 20000,
+        },
+        headers=auth("ai:meals:voice"),
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["dispatched"] is False
+    assert fake_llm.calls == []
+
+
+def test_excessive_wav_duration_is_rejected_before_gemini(
+    client: TestClient, fake_llm: FakeLlm
+) -> None:
+    too_long = _wav_bytes(90.0)
+    assert estimate_audio_duration_seconds(too_long) == pytest.approx(90.0, abs=0.1)
+
+    encoded = base64.b64encode(too_long).decode()
+    response = client.post(
+        STT_URL,
+        json={
+            "audio": {"mimeType": "audio/wav", "base64": encoded},
+            "model": MODEL,
+            "deadlineMs": 20000,
+        },
+        headers=auth("ai:speech:transcribe"),
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["dispatched"] is False
     assert fake_llm.calls == []

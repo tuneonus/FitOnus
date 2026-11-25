@@ -28,4 +28,4 @@ async def analyze_photo(
     Enforces JWT scope 'ai:meals:photo', injects the LLM client, and propagates the trace ID.
     """
     trace_id = x_request_id or claims.request_id or str(uuid.uuid4())
-    return await analyze_meal_photo(body, llm, trace_id=trace_id)
+    return await analyze_meal_photo(body, llm, trace_id=trace_id, user_id=claims.user_id)

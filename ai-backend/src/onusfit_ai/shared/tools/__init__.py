@@ -12,6 +12,7 @@ from onusfit_ai.shared.tools.mcp import (
 )
 from onusfit_ai.shared.tools.multi_agent import (
     create_a2a_mediator,
+    create_multimodal_meal_port,
     create_workout_planner_port,
     set_multi_agent_providers,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "McpDiscoveryCache",
     "McpTelemetry",
     "create_a2a_mediator",
+    "create_multimodal_meal_port",
     "create_workout_planner_port",
     "get_mcp_client_adapter",
     "get_shared_mcp_server",

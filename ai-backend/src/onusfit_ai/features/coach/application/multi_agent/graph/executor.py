@@ -56,12 +56,15 @@ from onusfit_ai.features.coach.domain.multi_agent import (
     MultiAgentFinalResult,
     MultiAgentTerminationReason,
     MultiAgentWorkflowStatus,
+    MultimodalMealPort,
     OrchestrationMode,
     RoutingDecision,
     WorkoutPlannerPort,
 )
 from onusfit_ai.shared.contracts.common import Usage
-from onusfit_ai.shared.llm.ports import TextGenerator
+from onusfit_ai.shared.llm.ports import MediaInput, TextGenerator
+from onusfit_ai.shared.utils.audio import decode_audio_base64
+from onusfit_ai.shared.utils.image import decode_image_base64, strip_jpeg_exif_metadata
 
 logger = logging.getLogger("onusfit_ai.coach.multi_agent.executor")
 
@@ -267,6 +270,7 @@ class MultiAgentCoachExecutor:
         discovered_tools: list[str] | None = None,
         a2a_mediator: A2AMediatorProtocol | None = None,
         workout_planner: WorkoutPlannerPort | None = None,
+        multimodal_port: MultimodalMealPort | None = None,
         available_agents: set[AgentRole] | None = None,
         memory_consent_granted: bool = True,
         allow_mutations: bool = False,
@@ -274,6 +278,26 @@ class MultiAgentCoachExecutor:
         cancel_event: asyncio.Event | None = None,
     ) -> MultiAgentFinalResult:
         """Run bounded LangGraph multi-agent orchestration for one request."""
+        # Pre-validate & EXIF-strip attachments before budget/LLM spend.
+        validated_media: list[MediaInput] = []
+        if request.audio is not None:
+            validated_media.append(
+                MediaInput(
+                    mime_type=request.audio.mime_type,
+                    data=decode_audio_base64(request.audio.base64),
+                )
+            )
+        if request.image is not None:
+            raw_img = decode_image_base64(
+                request.image.base64, claimed_mime_type=request.image.mime_type
+            )
+            validated_media.append(
+                MediaInput(
+                    mime_type=request.image.mime_type,
+                    data=strip_jpeg_exif_metadata(raw_img),
+                )
+            )
+
         start = self._clock()
         deadline_s = min(self._budget.deadline_seconds, request.deadline_ms / 1000.0)
         deadline = start + max(1.0, deadline_s)
@@ -315,7 +339,13 @@ class MultiAgentCoachExecutor:
                 budget=tracker,
                 workout_planner=planner_port,
             ),
-            AgentRole.NUTRITION: NutritionAgent(gateway=gateway, budget=tracker),
+            AgentRole.NUTRITION: NutritionAgent(
+                gateway=gateway,
+                budget=tracker,
+                multimodal_port=multimodal_port,
+                request=request,
+                llm=llm,
+            ),
             AgentRole.PROGRESS: ProgressAgent(gateway=gateway, budget=tracker),
             AgentRole.RECOVERY: RecoveryAgent(gateway=gateway, budget=tracker),
             AgentRole.KNOWLEDGE: KnowledgeAgent(gateway=gateway, budget=tracker),
@@ -335,6 +365,7 @@ class MultiAgentCoachExecutor:
             telemetry=telemetry,
             available_agents=eff_available,
             clock=self._clock,
+            media=validated_media or None,
         )
 
         initial_state = create_initial_multi_agent_state(

@@ -18,6 +18,7 @@ from onusfit_ai.shared.llm.ports import TextGenerator
 from onusfit_ai.shared.tools import (
     InternalToolsClient,
     create_a2a_mediator,
+    create_multimodal_meal_port,
     create_workout_planner_port,
     get_mcp_client_adapter,
     get_tools_client,
@@ -57,6 +58,7 @@ async def coach_chat(
     discovered_tools = None
     a2a_mediator = None
     workout_planner = None
+    multimodal_port = None
     multi_agent_on = is_multi_agent_enabled()
 
     if is_coach_chat_tools_enabled() or is_mcp_enabled() or multi_agent_on:
@@ -93,6 +95,7 @@ async def coach_chat(
         if multi_agent_on:
             a2a_mediator = create_a2a_mediator()
             workout_planner = create_workout_planner_port()
+            multimodal_port = create_multimodal_meal_port()
             # Keep native tool handler distinct from MCP handler so gateway can fall back
             if mcp_handler is not None:
                 tool_handler = _native_tool_handler
@@ -108,4 +111,5 @@ async def coach_chat(
         discovered_tools=discovered_tools,
         a2a_mediator=a2a_mediator,
         workout_planner=workout_planner,
+        multimodal_port=multimodal_port,
     )

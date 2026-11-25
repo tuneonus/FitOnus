@@ -161,3 +161,12 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 |:---|:---|:---|:---|:---|
 | **P17-All** | [**Phase 17: AI Observability**](../phase-17-ai-observability.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/shared/logging/{logging,metrics,tracing,domain_telemetry,monitoring}.py`<br>`ai-backend/src/onusfit_ai/shared/observability/{observability,router}.py`<br>`backend/src/shared/ai/{ai-metrics,ai-tracing,ai-monitoring,ai-observability,python-ai-call,python-ai-client}.ts`<br>`backend/src/shared/logging/{request-correlation,logger}.ts` | `ai-backend/tests/test_phase17_observability.py` (80 passed)<br>`ai-backend` targeted observability/auth/arch suites (208 passed) & offline evals (329/329 passed)<br>`backend/tests/unit/ai/ai-observability-phase17.test.ts` (58 passed; 2986/2986 full backend tests passed) |
 
+---
+
+## Phase 15: Multimodal AI Engineering
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P15-All** | [**Phase 15: Multimodal AI Engineering**](../phase-15-multimodal-ai-engineering.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/shared/llm/{ports,gemini}.py`<br>`ai-backend/src/onusfit_ai/shared/utils/{image,audio,text}.py`<br>`ai-backend/src/onusfit_ai/features/meals/{domain,application,presentation}/multimodal*`<br>`ai-backend/src/onusfit_ai/features/coach/application/multi_agent/*`<br>`backend/src/shared/ai/{audio-input,body-limits,python-ai-client,python-ai-call}.ts`<br>`backend/src/modules/nutrition/{domain,application,infrastructure,interface}/*multimodal*`<br>`mobile/src/features/ai-coach/services/multimodal-meal-api.ts` | `ai-backend/tests/test_multimodal_*.py`<br>`ai-backend/tests/evals/offline/test_multimodal_eval.py` (52 benchmark cases)<br>`ai-backend/tests/test_gemini_client.py`<br>`backend/tests/unit/nutrition/multimodal-meal-python-integration.test.ts`<br>`mobile/tests/multimodal-meal-e2e.test.ts` |
+
+

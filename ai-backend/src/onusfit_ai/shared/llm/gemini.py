@@ -11,10 +11,11 @@ modules/app-settings/.../gemini-runtime-service.ts):
 """
 
 import asyncio
+import hashlib
 import json
 import logging
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Any
 
 from google import genai
@@ -47,6 +48,7 @@ from onusfit_ai.shared.llm.ports import (
 )
 from onusfit_ai.shared.logging.logging import log_event
 from onusfit_ai.shared.observability.observability import category_for_gemini_kind
+from onusfit_ai.shared.utils.audio import estimate_audio_duration_seconds
 
 logger = logging.getLogger("onusfit_ai.llm")
 
@@ -67,6 +69,72 @@ _BUSY_MESSAGE = (
 )
 
 
+def _normalize_media_inputs(
+    media: MediaInput | Sequence[MediaInput] | None,
+) -> tuple[MediaInput, ...]:
+    if media is None:
+        return ()
+    if isinstance(media, MediaInput):
+        return (media,)
+    return tuple(media)
+
+
+def estimate_multimodal_input_tokens(
+    prompt: str,
+    media: MediaInput | Sequence[MediaInput] | None = None,
+    system_instruction: str | None = None,
+) -> int:
+    """Estimate pre-flight input tokens across text and image/audio parts for budget guards."""
+    text_chars = len(prompt) + (len(system_instruction) if system_instruction else 0)
+    tokens = max(1, (text_chars + 3) // 4)
+    for item in _normalize_media_inputs(media):
+        mime = item.mime_type.lower()
+        if mime.startswith("image/"):
+            # Base tile cost + bounded binary scaling for high-resolution images.
+            tokens += 258 + min(1548, (len(item.data) // (512 * 1024)) * 258)
+        elif mime.startswith("audio/"):
+            duration_s = estimate_audio_duration_seconds(item.data)
+            if duration_s is not None:
+                tokens += max(32, int(duration_s * 32))
+            else:
+                tokens += max(32, len(item.data) // 1000)
+        else:
+            tokens += max(64, len(item.data) // 1024)
+    return tokens
+
+
+def _fingerprint_request(
+    *,
+    user_id: str | None,
+    primary_model: str,
+    fallback_model: str | None,
+    prompt: str,
+    media_items: tuple[MediaInput, ...],
+    schema: type[BaseModel] | None,
+    max_total_tokens: int | None,
+    max_output_tokens: int | None,
+    system_instruction: str | None,
+) -> str:
+    hasher = hashlib.sha256()
+    hasher.update((f"user:{user_id}" if user_id is not None else "user:__none__").encode())
+    hasher.update(b"\x00")
+    hasher.update(primary_model.encode())
+    hasher.update(b"\x00")
+    hasher.update((fallback_model or "").encode())
+    hasher.update(b"\x00")
+    hasher.update((system_instruction or "").encode())
+    hasher.update(b"\x00")
+    hasher.update(prompt.encode())
+    hasher.update(b"\x00")
+    hasher.update((schema.__name__ if schema is not None else "").encode())
+    hasher.update(f"\x00{max_total_tokens}\x00{max_output_tokens}".encode())
+    for item in media_items:
+        hasher.update(b"\x00")
+        hasher.update(item.mime_type.encode())
+        hasher.update(hashlib.sha256(item.data).digest())
+    return hasher.hexdigest()
+
+
 class GeminiClient:
     """The real `TextGenerator` (Protocol: ports.py; FastAPI wiring: dependencies.py)."""
 
@@ -84,6 +152,8 @@ class GeminiClient:
         self._sdk = sdk_client  # injected in tests; created lazily from the key otherwise
         self._cooldown = cooldown or ModelCooldown(clock)
         self._clock = clock
+        self._inflight: dict[str, asyncio.Task[LlmResult]] = {}
+        self._inflight_waiters: dict[str, int] = {}
 
     def _sdk_client(self) -> Any:
         if self._sdk is None:
@@ -103,30 +173,157 @@ class GeminiClient:
         primary_model: str,
         fallback_model: str | None,
         deadline_s: float,
-        media: MediaInput | None = None,
+        media: MediaInput | Sequence[MediaInput] | None = None,
         schema: type[BaseModel] | None = None,
         tools: list[Any] | None = None,
         tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
         max_tool_rounds: int = _DEFAULT_MAX_TOOL_ROUNDS,
         max_total_tool_calls: int = _DEFAULT_MAX_TOOL_CALLS,
         max_total_tokens: int | None = None,
+        max_output_tokens: int | None = None,
+        system_instruction: str | None = None,
+        user_id: str | None = None,
     ) -> LlmResult:
-        """Execute text generation with deadline enforcement, cooldown tracking, and fallback.
+        """Execute text or multimodal generation with budget checks, dedup, cooldown, and fallback.
 
         Flow:
         1. Verifies SDK initialization (fails fast if GEMINI_API_KEY is not configured).
-        2. Determines execution plan: primary model first; fallback if primary is cooling down.
-        3. Enforces total deadline budget; attempts are clamped to GEMINI_ATTEMPT_TIMEOUT_S.
-        4. If primary fails with retryable error, tries fallback before deadline expires.
-        5. Records model failures into cooldown tracker (circuit breaker).
-        6. When schema is supplied, configures response_schema and response_mime_type.
-        7. When tools and tool_handler are supplied, coordinates multi-turn function
+        2. Checks pre-flight multimodal token budget when ``max_total_tokens`` is specified.
+        3. Coalesces concurrent identical single-turn calls to prevent duplicate Gemini spend.
+        4. Determines execution plan: primary model first; fallback if primary is cooling down.
+        5. Enforces total deadline budget; attempts are clamped to GEMINI_ATTEMPT_TIMEOUT_S.
+        6. If primary fails with retryable error, tries fallback before deadline expires.
+        7. Records model failures into cooldown tracker (circuit breaker).
+        8. When schema is supplied, configures response_schema and response_mime_type.
+        9. When tools and tool_handler are supplied, coordinates multi-turn function
            calling loop with bounded concurrency, request-scoped caching, error sanitization,
            and token budgeting.
         """
         sdk = (
             self._sdk_client()
         )  # raises PROVIDER_NOT_CONFIGURED (dispatched=False) before any call
+        media_items = _normalize_media_inputs(media)
+
+        if max_total_tokens is not None:
+            estimated_input = estimate_multimodal_input_tokens(
+                prompt,
+                media_items,
+                system_instruction=system_instruction,
+            )
+            if estimated_input > max_total_tokens:
+                raise LlmServiceError(
+                    code="INVALID_REQUEST",
+                    message="Request exceeds the allowed AI token budget.",
+                    dispatched=False,
+                )
+
+        # Normalize empty/whitespace user_id so unauthenticated strings never coalesce accidentally.
+        scoped_user_id = user_id.strip() if user_id is not None else None
+        if (not tools or tool_handler is None) and (user_id is None or bool(scoped_user_id)):
+            dedup_key = _fingerprint_request(
+                user_id=scoped_user_id,
+                primary_model=primary_model,
+                fallback_model=fallback_model,
+                prompt=prompt,
+                media_items=media_items,
+                schema=schema,
+                max_total_tokens=max_total_tokens,
+                max_output_tokens=max_output_tokens,
+                system_instruction=system_instruction,
+            )
+            existing = self._inflight.get(dedup_key)
+            if existing is not None and not existing.done():
+                log_event(
+                    logger,
+                    "ai.gemini.request_deduplicated",
+                    level=logging.INFO,
+                    message="coalesced duplicate concurrent gemini request",
+                    model=primary_model,
+                )
+                task = existing
+            else:
+
+                async def _run_single() -> LlmResult:
+                    try:
+                        return await self._execute_plan(
+                            sdk=sdk,
+                            prompt=prompt,
+                            primary_model=primary_model,
+                            fallback_model=fallback_model,
+                            deadline_s=deadline_s,
+                            media_items=media_items,
+                            schema=schema,
+                            tools=None,
+                            tool_handler=None,
+                            max_tool_rounds=max_tool_rounds,
+                            max_total_tool_calls=max_total_tool_calls,
+                            max_total_tokens=max_total_tokens,
+                            max_output_tokens=max_output_tokens,
+                            system_instruction=system_instruction,
+                        )
+                    finally:
+                        if self._inflight.get(dedup_key) is task:
+                            self._inflight.pop(dedup_key, None)
+
+                task = asyncio.create_task(_run_single())
+                self._inflight[dedup_key] = task
+
+            self._inflight_waiters[dedup_key] = self._inflight_waiters.get(dedup_key, 0) + 1
+            try:
+                res = await asyncio.shield(task)
+                return LlmResult(
+                    text=res.text,
+                    usage=res.usage,
+                    parsed=res.parsed,
+                    finish_reason=res.finish_reason,
+                    tool_calls=list(res.tool_calls),
+                )
+            finally:
+                remaining_waiters = self._inflight_waiters.get(dedup_key, 1) - 1
+                if remaining_waiters <= 0:
+                    self._inflight_waiters.pop(dedup_key, None)
+                    if not task.done():
+                        task.cancel()
+                        if self._inflight.get(dedup_key) is task:
+                            self._inflight.pop(dedup_key, None)
+                else:
+                    self._inflight_waiters[dedup_key] = remaining_waiters
+
+        return await self._execute_plan(
+            sdk=sdk,
+            prompt=prompt,
+            primary_model=primary_model,
+            fallback_model=fallback_model,
+            deadline_s=deadline_s,
+            media_items=media_items,
+            schema=schema,
+            tools=tools,
+            tool_handler=tool_handler,
+            max_tool_rounds=max_tool_rounds,
+            max_total_tool_calls=max_total_tool_calls,
+            max_total_tokens=max_total_tokens,
+            max_output_tokens=max_output_tokens,
+            system_instruction=system_instruction,
+        )
+
+    async def _execute_plan(
+        self,
+        *,
+        sdk: Any,
+        prompt: str,
+        primary_model: str,
+        fallback_model: str | None,
+        deadline_s: float,
+        media_items: tuple[MediaInput, ...],
+        schema: type[BaseModel] | None,
+        tools: list[Any] | None,
+        tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None,
+        max_tool_rounds: int,
+        max_total_tool_calls: int,
+        max_total_tokens: int | None,
+        max_output_tokens: int | None,
+        system_instruction: str | None,
+    ) -> LlmResult:
         started = self._clock()
         deadline = started + deadline_s
 
@@ -180,7 +377,7 @@ class GeminiClient:
                         model,
                         prompt,
                         deadline=deadline,
-                        media=media,
+                        media_items=media_items,
                         schema=schema,
                         tools=tools,
                         tool_handler=tool_handler,
@@ -188,6 +385,8 @@ class GeminiClient:
                         max_tool_rounds=max_tool_rounds,
                         max_total_tool_calls=max_total_tool_calls,
                         max_total_tokens=max_total_tokens,
+                        max_output_tokens=max_output_tokens,
+                        system_instruction=system_instruction,
                     )
                 else:
                     response = await self._call(
@@ -195,8 +394,10 @@ class GeminiClient:
                         model,
                         prompt,
                         min(remaining, self._attempt_timeout_s),
-                        media,
+                        media_items=media_items,
                         schema=schema,
+                        max_output_tokens=max_output_tokens,
+                        system_instruction=system_instruction,
                     )
                     executed_tool_results = []
                     turn_usage = None
@@ -279,7 +480,7 @@ class GeminiClient:
         prompt: str,
         *,
         deadline: float,
-        media: MediaInput | None = None,
+        media_items: tuple[MediaInput, ...] = (),
         schema: type[BaseModel] | None = None,
         tools: list[Any],
         tool_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]],
@@ -287,6 +488,8 @@ class GeminiClient:
         max_tool_rounds: int = _DEFAULT_MAX_TOOL_ROUNDS,
         max_total_tool_calls: int = _DEFAULT_MAX_TOOL_CALLS,
         max_total_tokens: int | None = None,
+        max_output_tokens: int | None = None,
+        system_instruction: str | None = None,
     ) -> tuple[Any, list[ToolExecutionResult], dict[str, int]]:
         round_count = 0
         total_tool_calls = 0
@@ -301,9 +504,9 @@ class GeminiClient:
         semaphore = asyncio.Semaphore(_TOOL_CONCURRENCY_LIMIT)
 
         # Build initial contents
-        initial_parts: list[types.Part] = []
-        if media:
-            initial_parts.append(types.Part.from_bytes(data=media.data, mime_type=media.mime_type))
+        initial_parts: list[types.Part] = [
+            types.Part.from_bytes(data=item.data, mime_type=item.mime_type) for item in media_items
+        ]
         initial_parts.append(types.Part.from_text(text=prompt))
         contents: list[types.Content] = [types.Content(role="user", parts=initial_parts)]
 
@@ -332,6 +535,10 @@ class GeminiClient:
                     retry_options=types.HttpRetryOptions(attempts=1),
                 )
             }
+            if max_output_tokens is not None:
+                config_kwargs["max_output_tokens"] = max_output_tokens
+            if system_instruction is not None:
+                config_kwargs["system_instruction"] = system_instruction
 
             if tools_enabled:
                 config_kwargs["tools"] = tools
@@ -449,8 +656,10 @@ class GeminiClient:
         model: str,
         prompt: str,
         timeout_s: float,
-        media: MediaInput | None = None,
+        media_items: tuple[MediaInput, ...] = (),
         schema: type[BaseModel] | None = None,
+        max_output_tokens: int | None = None,
+        system_instruction: str | None = None,
     ) -> Any:
         config_kwargs: dict[str, Any] = {
             "http_options": types.HttpOptions(
@@ -461,18 +670,62 @@ class GeminiClient:
         if schema is not None:
             config_kwargs["response_mime_type"] = "application/json"
             config_kwargs["response_schema"] = schema
+        if max_output_tokens is not None:
+            config_kwargs["max_output_tokens"] = max_output_tokens
+        if system_instruction is not None:
+            config_kwargs["system_instruction"] = system_instruction
         config = types.GenerateContentConfig(**config_kwargs)
 
-        # Same content order as the former Node client: the clip first, then the prompt.
+        # Same content order as the former Node client: media clips first, then the prompt.
         contents: Any = (
-            [types.Part.from_bytes(data=media.data, mime_type=media.mime_type), prompt]
-            if media
+            [
+                *[
+                    types.Part.from_bytes(data=item.data, mime_type=item.mime_type)
+                    for item in media_items
+                ],
+                prompt,
+            ]
+            if media_items
             else prompt
         )
         async with asyncio.timeout(timeout_s):
             return await sdk.aio.models.generate_content(
                 model=model, contents=contents, config=config
             )
+
+    def _build_model_plan(
+        self,
+        primary_model: str,
+        fallback_model: str | None,
+    ) -> list[tuple[str, bool]]:
+        fallback = fallback_model if fallback_model and fallback_model != primary_model else None
+        fallback_ok = fallback is not None and self._cooldown.is_available(fallback)
+        if self._cooldown.is_available(primary_model):
+            plan: list[tuple[str, bool]] = [(primary_model, False)]
+            if fallback is not None and fallback_ok:
+                plan.append((fallback, True))
+            return plan
+        if fallback is not None and fallback_ok:
+            log_event(
+                logger,
+                "ai.gemini.model_skipped",
+                level=logging.WARNING,
+                message="primary model is cooling down; using the fallback model",
+                model=primary_model,
+                reason="cooldown",
+                cooldownRemainingSeconds=self._cooldown.remaining_seconds(primary_model),
+            )
+            return [(fallback, True)]
+        wait = max(
+            self._cooldown.remaining_seconds(primary_model),
+            self._cooldown.remaining_seconds(fallback or primary_model),
+        )
+        raise LlmServiceError(
+            code="AI_UNAVAILABLE",
+            message=_BUSY_MESSAGE,
+            retry_after_seconds=wait or 20,
+            dispatched=False,
+        )
 
     async def embed_content(
         self,

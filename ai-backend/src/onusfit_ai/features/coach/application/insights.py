@@ -39,7 +39,11 @@ def is_coach_insights_structured_output_enabled() -> bool:
 
 
 async def generate_coach_insights(
-    request: CoachInsightsRequest, llm: TextGenerator, *, trace_id: str
+    request: CoachInsightsRequest,
+    llm: TextGenerator,
+    *,
+    trace_id: str,
+    user_id: str | None = None,
 ) -> CoachInsightsResponse:
     """Orchestrate insights generation from member profile and activity context.
 
@@ -55,6 +59,7 @@ async def generate_coach_insights(
         fallback_model=request.model.fallback,
         deadline_s=request.deadline_ms / 1000,
         schema=schema,
+        user_id=user_id,
     )
 
     # 1. Defensively handle safety-blocked content

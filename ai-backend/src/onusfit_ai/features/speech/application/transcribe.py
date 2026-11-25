@@ -27,6 +27,7 @@ from onusfit_ai.shared.logging import (
 )
 from onusfit_ai.shared.utils.audio import decode_audio_base64
 from onusfit_ai.shared.utils.media import InvalidMediaError
+from onusfit_ai.shared.utils.text import clean_text, redact_sensitive_text
 
 logger = logging.getLogger("onusfit_ai.transcribe")
 
@@ -42,7 +43,11 @@ def is_speech_structured_output_enabled() -> bool:
 
 
 async def transcribe_audio(
-    request: TranscribeRequest, llm: TextGenerator, *, trace_id: str
+    request: TranscribeRequest,
+    llm: TextGenerator,
+    *,
+    trace_id: str,
+    user_id: str | None = None,
 ) -> TranscribeResponse:
     """Orchestrate audio transcription: decode audio bytes, invoke Gemini, and parse result.
 
@@ -81,6 +86,9 @@ async def transcribe_audio(
             deadline_s=request.deadline_ms / 1000,
             media=media,
             schema=schema,
+            max_total_tokens=12_288,
+            max_output_tokens=1024,
+            user_id=user_id,
         )
     except LlmServiceError as exc:
         tracker.record_processing_completed(
@@ -127,7 +135,7 @@ async def transcribe_audio(
 
     if isinstance(llm_result.parsed, GeminiTranscribeOutput):
         result = TranscribeResult(
-            transcript=llm_result.parsed.transcript.strip(),
+            transcript=clean_text(redact_sensitive_text(llm_result.parsed.transcript)),
             detected_language=llm_result.parsed.detected_language,
         )
         outcome = "ok"
@@ -135,7 +143,7 @@ async def transcribe_audio(
         try:
             validated = GeminiTranscribeOutput.model_validate(llm_result.parsed)
             result = TranscribeResult(
-                transcript=validated.transcript.strip(),
+                transcript=clean_text(redact_sensitive_text(validated.transcript)),
                 detected_language=validated.detected_language,
             )
             outcome = "ok"
@@ -145,6 +153,10 @@ async def transcribe_audio(
     else:
         # parsed is None: fallback to safe string parsing
         result, outcome = parse_transcription(llm_result.text)
+        result = TranscribeResult(
+            transcript=redact_sensitive_text(result.transcript),
+            detected_language=result.detected_language,
+        )
 
     usage = llm_result.usage
     # Metadata only: the audio and the transcript are never logged.

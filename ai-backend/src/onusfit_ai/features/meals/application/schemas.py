@@ -74,3 +74,20 @@ class GeminiPhotoMealOutput(BaseModel):
     confidence: Literal["high", "medium", "low"] = "medium"
     unclear_reason: str | None = None
     items: list[GeminiDetectedFoodItemOutput] = Field(default_factory=list)
+
+
+class GeminiMultimodalMealOutput(BaseModel):
+    """Structured schema for unified text + audio + image meal analysis."""
+
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+
+    is_food: bool = Field(default=True)
+    summary: str = Field(default="")
+    transcript: str = Field(default="")
+    detected_language: Literal["en", "ta", "tanglish"] = "en"
+    confidence: Literal["high", "medium", "low"] = "medium"
+    unclear_reason: str | None = None
+    items: list[GeminiDetectedFoodItemOutput] = Field(default_factory=list)

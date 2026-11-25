@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { AUDIO_BODY_LIMIT, MEAL_PHOTO_BODY_LIMIT } from '../../../shared/ai/body-limits.js';
+import {
+  AUDIO_BODY_LIMIT,
+  MEAL_PHOTO_BODY_LIMIT,
+  MULTIMODAL_MEAL_BODY_LIMIT,
+} from '../../../shared/ai/body-limits.js';
 import { defineRoute, type RouteGroup } from '../../../shared/http/route.js';
 import type { NutritionMemberController } from './nutrition.controller.js';
 import {
@@ -36,6 +40,10 @@ import {
   analyzeMealPhotoRequest,
   mealPhotoResponseSchema,
 } from './meal-photo.schemas.js';
+import {
+  analyzeMultimodalMealRequest,
+  multimodalMealResponseSchema,
+} from './multimodal-meal.schemas.js';
 import {
   parseVoiceMealRequest,
   voiceMealResponseSchema,
@@ -443,6 +451,26 @@ export function createNutritionMemberRoutes(
           schema: voiceMealResponseSchema,
         },
         handler: controller.parseVoiceMeal,
+      }),
+
+      // 17. Analyze Multimodal Meal (photo + voice + text)
+      defineRoute({
+        method: 'post',
+        path: '/multimodal/analyze',
+        summary: 'Analyze combined food photo, voice audio, and text context using Gemini multimodal AI',
+        description:
+          'Fuses image, voice audio, and text inputs across English, Tamil, and Tanglish with safety validation and non-medical uncertainty reporting.',
+        tags,
+        access: { kind: 'authenticated' },
+        bodyLimit: MULTIMODAL_MEAL_BODY_LIMIT,
+        request: analyzeMultimodalMealRequest,
+        response: {
+          status: 200,
+          description: 'Multimodal meal analysis result',
+          message: 'Multimodal meal analyzed successfully',
+          schema: multimodalMealResponseSchema,
+        },
+        handler: controller.analyzeMultimodalMeal,
       }),
     ],
   };

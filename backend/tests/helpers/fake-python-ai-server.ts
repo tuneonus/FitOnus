@@ -142,6 +142,60 @@ export const okMealPhotoReply = (overrides: Record<string, unknown> = {}): Recor
   ...overrides,
 });
 
+/** A successful multimodal meal reply matching ai-backend/src/onusfit_ai/features/meals/domain/multimodal.py. */
+export const okMultimodalMealReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  outcome: 'ok',
+  result: {
+    modalitiesUsed: ['image', 'audio', 'text'],
+    isFood: true,
+    summary: 'Two dosas with sambar',
+    transcript: 'two dosa with sambar',
+    detectedLanguage: 'tanglish',
+    items: [
+      {
+        id: 'mm-food-1700000000000-0',
+        name: 'Dosa',
+        brand: 'AI Estimate',
+        serving: '2 pieces',
+        servingWeightG: 160,
+        servingUnit: 'piece',
+        servingSize: 2,
+        kcal: 260,
+        protein: 6,
+        carbs: 44,
+        fat: 7,
+        fiber: 2,
+        confidence: 'high',
+        isAiEstimated: true,
+      },
+    ],
+    overallConfidence: 0.88,
+    confidence: 'high',
+    totalKcal: 260,
+    totalProteinGrams: 6,
+    totalCarbsGrams: 44,
+    totalFatGrams: 7,
+    totalFiberGrams: 2,
+    unclearReason: null,
+    uncertaintyNote: 'Visual estimate (~260 kcal); adjust if cooked with extra oil.',
+    medicalDisclaimer:
+      'Nutritional values are AI estimates for informational tracking only, not medical or clinical dietary advice.',
+    analyzedAt: '2026-11-19T10:00:00.000Z',
+  },
+  usage: {
+    model: 'gemini-3.5-flash-lite',
+    isFallback: false,
+    inputTokens: 1300,
+    outputTokens: 170,
+    cachedTokens: 0,
+    thinkingTokens: 20,
+    totalTokens: 1490,
+    durationMs: 2000,
+  },
+  traceId: 'trace-multimodal-1',
+  ...overrides,
+});
+
 /** A successful coach insights reply in the shape of ai-backend/src/onusfit_ai/features/coach/domain/insights.py. */
 export const okInsightsReply = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   outcome: 'ok',

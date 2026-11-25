@@ -5,11 +5,13 @@ import {
   JSON_ENVELOPE_BYTES,
   MAX_IMAGE_BASE64_CHARS,
   MEAL_PHOTO_BODY_LIMIT,
+  MULTIMODAL_MEAL_BODY_LIMIT,
 } from '../../../src/shared/ai/body-limits.js';
 import { MAX_AUDIO_BASE64_CHARS } from '../../../src/shared/ai/audio-input.js';
 import { createCoachRoutes } from '../../../src/modules/coach/interface/coach.routes.js';
 import { createNutritionMemberRoutes } from '../../../src/modules/nutrition/interface/nutrition.routes.js';
 import { analyzeMealPhotoRequest } from '../../../src/modules/nutrition/interface/meal-photo.schemas.js';
+import { analyzeMultimodalMealRequest } from '../../../src/modules/nutrition/interface/multimodal-meal.schemas.js';
 import { parseVoiceMealRequest } from '../../../src/modules/nutrition/interface/voice-meal.schemas.js';
 import { transcribeAudioSchema } from '../../../src/modules/coach/interface/coach.schemas.js';
 import type { AnyRouteSpec } from '../../../src/shared/http/route.js';
@@ -63,6 +65,22 @@ describe('the request body limits of the AI routes that carry base64', () => {
   it('are far smaller than a limit that would admit anything much bigger than the caps', () => {
     expect(bytesOf(MEAL_PHOTO_BODY_LIMIT)).toBeLessThanOrEqual(12 * MIB);
     expect(bytesOf(AUDIO_BODY_LIMIT)).toBeLessThanOrEqual(17 * MIB);
+    expect(MULTIMODAL_MEAL_BODY_LIMIT).toBe('26mb');
+  });
+
+  it('multimodal meal holds max photo + max audio + transcript + context within its limit', () => {
+    const mm = JSON.stringify({
+      image: 'A'.repeat(MAX_IMAGE_BASE64_CHARS),
+      imageMimeType: 'image/jpeg',
+      audio: 'B'.repeat(MAX_AUDIO_BASE64_CHARS),
+      audioMimeType: 'audio/m4a',
+      transcript: 't'.repeat(2000),
+      mealType: 'm'.repeat(50),
+      lang: 'l'.repeat(50),
+      notes: 'n'.repeat(250),
+    });
+    expect(Buffer.byteLength(mm)).toBeLessThan(bytesOf(MULTIMODAL_MEAL_BODY_LIMIT));
+    expect(analyzeMultimodalMealRequest.body.safeParse(JSON.parse(mm)).success).toBe(true);
   });
 });
 
@@ -74,8 +92,9 @@ describe('which routes declare a bigger limit', () => {
   const nutrition = createNutritionMemberRoutes('/api/v1/nutrition', stubs as never).routes;
   const coach = createCoachRoutes('/api/v1/coach', stubs as never, (_req, _res, next) => next()).routes;
 
-  it('meal photo gets the photo limit', () => {
+  it('meal photo and multimodal get their respective limits', () => {
     expect(find(nutrition, '/meal-photo/analyze')?.bodyLimit).toBe(MEAL_PHOTO_BODY_LIMIT);
+    expect(find(nutrition, '/multimodal/analyze')?.bodyLimit).toBe(MULTIMODAL_MEAL_BODY_LIMIT);
   });
 
   it('voice meal and transcription get the audio limit', () => {
@@ -89,6 +108,7 @@ describe('which routes declare a bigger limit', () => {
       .map((spec) => `${spec.method} ${spec.path}`);
     expect(declared.sort()).toEqual([
       'post /meal-photo/analyze',
+      'post /multimodal/analyze',
       'post /transcribe',
       'post /voice-meal/parse',
     ]);

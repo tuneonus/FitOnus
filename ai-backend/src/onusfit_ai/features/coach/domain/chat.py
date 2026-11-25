@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 from pydantic import AfterValidator, Field
 
 from onusfit_ai.shared.contracts._base import ContractModel
-from onusfit_ai.shared.contracts.common import ModelSelection, Usage
+from onusfit_ai.shared.contracts.common import AudioInput, ImageInput, ModelSelection, Usage
 from onusfit_ai.shared.utils.text import clean_text
 
 # All domain contracts inherit from ContractModel (extra='forbid') to prevent silent contract
@@ -125,6 +125,8 @@ class CoachChatRequest(ContractModel):
     history: list[ChatTurn] = Field(default_factory=list, max_length=20)
     memories: list[Memory] = Field(default_factory=list, max_length=30)
     knowledge: list[KnowledgeContextItem] = Field(default_factory=list, max_length=10)
+    image: ImageInput | None = None
+    audio: AudioInput | None = None
     model: ModelSelection
     # Total time budget (primary + fallback model) chosen by Node.
     deadline_ms: int = Field(ge=1000, le=30000)

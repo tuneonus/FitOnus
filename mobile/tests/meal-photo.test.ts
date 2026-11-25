@@ -14,6 +14,12 @@ import {
   mapDetectedFoodItem,
   type DetectedFoodItemDto,
 } from '../src/features/nutrition/utils/detected-food';
+import {
+  MEAL_PHOTO_DIMENSIONS_MESSAGE,
+  MEAL_PHOTO_MAX_DIMENSION_PX,
+  normalizeMealPhotoNotes,
+  prepareMealPhoto,
+} from '../src/features/nutrition/utils/meal-photo-upload';
 import { mealPhotoResponseSchema } from '../../backend/src/modules/nutrition/interface/meal-photo.schemas';
 
 const salmon = (overrides: Partial<DetectedFoodItemDto> = {}): DetectedFoodItemDto => ({
@@ -169,5 +175,29 @@ describe('MealPhotoApi (real client, canned HTTP)', () => {
     })) as never;
 
     await assert.rejects(MealPhotoApi.analyzeMealPhoto({ image: 'aGVsbG8=' }), /Invalid response/);
+  });
+
+  it('supports optional correction notes and blocks oversized image dimensions', async () => {
+    reply(response([salmon()]));
+    const cleaned = normalizeMealPhotoNotes('  cooked\nwith "ghee"\t ');
+    assert.equal(cleaned, "cooked with 'ghee'");
+
+    await MealPhotoApi.analyzeMealPhoto({
+      image: 'aGVsbG8=',
+      mimeType: 'image/jpeg',
+      mealType: 'dinner',
+      notes: cleaned,
+    });
+    assert.equal(posted!.body.notes, "cooked with 'ghee'");
+
+    assert.deepEqual(
+      prepareMealPhoto({
+        base64: 'aGVsbG8=',
+        mimeType: 'image/jpeg',
+        width: MEAL_PHOTO_MAX_DIMENSION_PX + 10,
+        height: 500,
+      }),
+      { ok: false, message: MEAL_PHOTO_DIMENSIONS_MESSAGE },
+    );
   });
 });

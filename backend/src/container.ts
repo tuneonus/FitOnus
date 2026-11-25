@@ -12,7 +12,12 @@ import {
 } from './modules/auth/index.js';
 import { createHealthRoutes } from './modules/health/health.routes.js';
 import { createProfileModule } from './modules/profile/index.js';
-import { createNutritionModule, PythonMealPhotoService, PythonVoiceMealService } from './modules/nutrition/index.js';
+import {
+  createNutritionModule,
+  PythonMealPhotoService,
+  PythonMultimodalMealService,
+  PythonVoiceMealService,
+} from './modules/nutrition/index.js';
 import { createProgressModule } from './modules/progress/index.js';
 import { createGoalsModule } from './modules/goals/index.js';
 import { createChallengesModule } from './modules/challenges/index.js';
@@ -244,6 +249,13 @@ export function createContainer(
     mealPhotoAnalyzer: new PythonMealPhotoService({
       client: pythonAi,
       resolveModels: resolveModelsFor('meal_photo'),
+      usageRecorder: appSettings.runtimeService,
+      pythonTimeoutMs: aiBackend.timeoutMs,
+      ...(logger ? { logger } : {}),
+    }),
+    multimodalMealAnalyzer: new PythonMultimodalMealService({
+      client: pythonAi,
+      resolveModels: (feature) => resolveModelsFor(feature)(),
       usageRecorder: appSettings.runtimeService,
       pythonTimeoutMs: aiBackend.timeoutMs,
       ...(logger ? { logger } : {}),

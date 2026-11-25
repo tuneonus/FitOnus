@@ -29,4 +29,4 @@ async def coach_insights(
     extracts the correlation trace ID, and delegates to the application use case.
     """
     trace_id = x_request_id or claims.request_id or str(uuid.uuid4())
-    return await generate_coach_insights(body, llm, trace_id=trace_id)
+    return await generate_coach_insights(body, llm, trace_id=trace_id, user_id=claims.user_id)

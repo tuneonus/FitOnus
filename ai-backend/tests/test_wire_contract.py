@@ -29,6 +29,8 @@ from onusfit_ai.features.coach.domain import (
 from onusfit_ai.features.meals.domain import (
     AnalyzeMealPhotoRequest,
     AnalyzeMealPhotoResponse,
+    AnalyzeMultimodalMealRequest,
+    AnalyzeMultimodalMealResponse,
     ParseVoiceMealRequest,
     ParseVoiceMealResponse,
 )
@@ -41,6 +43,7 @@ ENDPOINTS: dict[str, tuple[type[BaseModel], type[BaseModel]]] = {
     "coach_insights": (CoachInsightsRequest, CoachInsightsResponse),
     "voice_meal": (ParseVoiceMealRequest, ParseVoiceMealResponse),
     "meal_photo": (AnalyzeMealPhotoRequest, AnalyzeMealPhotoResponse),
+    "multimodal_meal": (AnalyzeMultimodalMealRequest, AnalyzeMultimodalMealResponse),
     "transcribe": (TranscribeRequest, TranscribeResponse),
 }
 
@@ -120,4 +123,9 @@ def test_the_snapshot_describes_the_fields_the_node_adapters_rely_on() -> None:
     assert chat["request"]["fields"]["context.recentWorkouts[].name"] is True
     assert "result.blocks[]" in chat["response"]["open"]
     assert snapshot["voice_meal"]["response"]["fields"]["result.items[].kcal"] is True
+    mm = snapshot["multimodal_meal"]
+    assert mm["request"]["fields"]["transcript"] is False
+    assert mm["request"]["fields"]["context.notes"] is False
+    assert mm["response"]["fields"]["result.medicalDisclaimer"] is True
+    assert mm["response"]["fields"]["result.modalitiesUsed"] is True
     assert set(snapshot) == set(ENDPOINTS)

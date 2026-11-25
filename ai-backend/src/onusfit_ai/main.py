@@ -12,6 +12,11 @@ from onusfit_ai.features.knowledge.presentation import router as knowledge_route
 from onusfit_ai.features.mcp.application.a2a import A2AMediator
 from onusfit_ai.features.mcp.presentation import router as mcp_router
 from onusfit_ai.features.mcp.presentation.server import get_fitonus_mcp_server
+from onusfit_ai.features.meals.application.multimodal import analyze_multimodal_meal
+from onusfit_ai.features.meals.domain.multimodal import (
+    AnalyzeMultimodalMealRequest,
+    MultimodalContextHint,
+)
 from onusfit_ai.features.meals.presentation import router as meals_router
 from onusfit_ai.features.speech.presentation import router as speech_router
 from onusfit_ai.features.workout_planner.application.context import AssembledWorkoutContext
@@ -27,6 +32,7 @@ from onusfit_ai.features.workout_planner.domain.contracts import (
 from onusfit_ai.features.workout_planner.domain.safety import WorkoutSafetyValidator
 from onusfit_ai.features.workout_planner.presentation import router as workout_planner_router
 from onusfit_ai.shared.config import Settings, configuration_problems, get_settings, is_production
+from onusfit_ai.shared.contracts.common import AudioInput, ImageInput, ModelSelection
 from onusfit_ai.shared.errors import register_error_handlers
 from onusfit_ai.shared.health import router as health_router
 from onusfit_ai.shared.logging import configure_logging, log_event
@@ -140,6 +146,54 @@ class _WorkoutPlannerPortAdapter:
         return WorkoutSafetyValidator.check_medical_red_flags(limitations, user_notes)
 
 
+class _MultimodalMealPortAdapter:
+    """Composition-root adapter bridging Coach NutritionAgent to Phase 15 multimodal workflow."""
+
+    async def analyze_meal_attachment(
+        self,
+        *,
+        user_id: str,
+        transcript: str | None,
+        image_mime_type: str | None,
+        image_base64: str | None,
+        audio_mime_type: str | None,
+        audio_base64: str | None,
+        diet_type: str | None,
+        model_primary: str,
+        model_fallback: str | None,
+        deadline_ms: int,
+        trace_id: str,
+        llm: object,
+    ) -> dict[str, object]:
+        img = (
+            ImageInput(mime_type=image_mime_type, base64=image_base64)
+            if image_mime_type and image_base64
+            else None
+        )
+        aud = (
+            AudioInput(mime_type=audio_mime_type, base64=audio_base64)
+            if audio_mime_type and audio_base64
+            else None
+        )
+        hint = MultimodalContextHint(dietary_goal=diet_type) if diet_type else None
+        req = AnalyzeMultimodalMealRequest(
+            image=img,
+            audio=aud,
+            transcript=transcript,
+            context=hint,
+            model=ModelSelection(primary=model_primary, fallback=model_fallback),
+            deadline_ms=max(1000, min(30_000, deadline_ms)),
+        )
+        res = await analyze_multimodal_meal(
+            req,
+            llm,  # type: ignore[arg-type]
+            trace_id=trace_id,
+            user_id=user_id,
+            record_llm_metrics=False,
+        )
+        return res.model_dump(by_alias=True)
+
+
 def run_startup_checks() -> None:
     """Validate the environment and start logging; raise RuntimeError if it must not start.
 
@@ -229,6 +283,7 @@ def create_app() -> FastAPI:
     set_multi_agent_providers(
         a2a_factory=A2AMediator,
         workout_planner_factory=_WorkoutPlannerPortAdapter,
+        multimodal_meal_factory=_MultimodalMealPortAdapter,
     )
 
     return app

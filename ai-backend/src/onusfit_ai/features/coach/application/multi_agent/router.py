@@ -136,9 +136,18 @@ class SupervisorRouter:
             AgentRole.KNOWLEDGE,
         }
         eff_budget = budget or MultiAgentExecutionBudget()
+        has_attachments = shared_ctx.has_image_attachment or shared_ctx.has_audio_attachment
+        attachment_input: dict[str, object] = (
+            {
+                "has_multimodal_attachment": True,
+                "modalities": list(shared_ctx.attachment_modalities),
+            }
+            if has_attachments
+            else {}
+        )
 
         # 1. Bypass simple greetings and local today-metric queries (0 agents, 0 tools)
-        if _is_simple_bypass_query(msg):
+        if not has_attachments and _is_simple_bypass_query(msg):
             return RoutingDecision(
                 mode=OrchestrationMode.BYPASS,
                 goal_type="simple_bypass",
@@ -156,7 +165,7 @@ class SupervisorRouter:
         has_plan_create = bool(_RE_WORKOUT_PLAN_CREATE.search(msg))
         has_plan_adapt = bool(_RE_WORKOUT_ADAPT.search(msg))
         has_recovery = bool(_RE_RECOVERY_SIGNAL.search(msg))
-        has_nutrition = bool(_RE_NUTRITION_SIGNAL.search(msg))
+        has_nutrition = bool(_RE_NUTRITION_SIGNAL.search(msg)) or has_attachments
         has_progress = bool(_RE_PROGRESS_SIGNAL.search(msg))
         has_workout = bool(_RE_WORKOUT_SIGNAL.search(msg)) or has_plan_create or has_plan_adapt
         has_knowledge = bool(_RE_KNOWLEDGE_SIGNAL.search(msg))
@@ -305,7 +314,15 @@ class SupervisorRouter:
                         target_agent=AgentRole.NUTRITION,
                         task_type="analyze_nutrition",
                         instructions="Analyze calorie, protein, and hydration adherence.",
-                        required_capabilities=[AgentCapability.NUTRITION_ANALYSIS],
+                        input_data=dict(attachment_input),
+                        required_capabilities=(
+                            [
+                                AgentCapability.NUTRITION_ANALYSIS,
+                                AgentCapability.MULTIMODAL_ANALYSIS,
+                            ]
+                            if has_attachments
+                            else [AgentCapability.NUTRITION_ANALYSIS]
+                        ),
                         priority=1,
                     )
                 )
@@ -401,8 +418,17 @@ class SupervisorRouter:
                     task_id="task_nutrition_only",
                     target_agent=AgentRole.NUTRITION,
                     task_type="analyze_nutrition",
-                    instructions="Analyze nutrition summary and macro alignment.",
-                    required_capabilities=[AgentCapability.NUTRITION_ANALYSIS],
+                    instructions=(
+                        "Analyze attached meal photo/audio and nutrition macro alignment."
+                        if has_attachments
+                        else "Analyze nutrition summary and macro alignment."
+                    ),
+                    input_data=dict(attachment_input),
+                    required_capabilities=(
+                        [AgentCapability.NUTRITION_ANALYSIS, AgentCapability.MULTIMODAL_ANALYSIS]
+                        if has_attachments
+                        else [AgentCapability.NUTRITION_ANALYSIS]
+                    ),
                     priority=1,
                 )
             )

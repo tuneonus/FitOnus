@@ -1,5 +1,6 @@
 import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { defaultAiMetrics } from '../../../../shared/ai/ai-metrics.js';
+import { inspectSafeBase64Payload } from '../../../../shared/ai/audio-input.js';
 import { MAX_IMAGE_BASE64_CHARS } from '../../../../shared/ai/body-limits.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type {
@@ -47,7 +48,9 @@ export class AnalyzeMealPhotoUseCase {
       throw new AppError('payload_too_large', 'PAYLOAD_TOO_LARGE', 'Image size exceeds the 10MB limit.');
     }
 
-    const mimeType = input.mimeType || 'image/jpeg';
+    const rawMime = (input.mimeType || 'image/jpeg').split(';', 1)[0]?.trim().toLowerCase() ?? 'image/jpeg';
+    const mimeType =
+      rawMime === 'image/jpg' ? 'image/jpeg' : rawMime === 'image/heif' ? 'image/heic' : rawMime;
     const supportedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
     if (!supportedMimes.includes(mimeType)) {
       recordValidationReject('invalid_mime', approxBytes);
@@ -55,6 +58,18 @@ export class AnalyzeMealPhotoUseCase {
         'bad_request',
         'BAD_REQUEST',
         `Unsupported image format. Allowed formats: ${supportedMimes.join(', ')}`,
+      );
+    }
+
+    const inspection = inspectSafeBase64Payload(input.imageBase64, 'image');
+    if (!inspection.ok) {
+      recordValidationReject(inspection.reason === 'empty' ? 'empty_payload' : 'polyglot', approxBytes);
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        inspection.reason === 'empty'
+          ? 'Image data is empty or unreadable.'
+          : 'Image payload contains unsupported or unsafe content.',
       );
     }
 

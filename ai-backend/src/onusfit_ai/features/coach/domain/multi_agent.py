@@ -39,6 +39,7 @@ class AgentCapability(StrEnum):
     EXERCISE_CATALOG = "exercise_catalog"
     NUTRITION_ANALYSIS = "nutrition_analysis"
     NUTRITION_PLANNING = "nutrition_planning"
+    MULTIMODAL_ANALYSIS = "multimodal_analysis"
     PROGRESS_TRACKING = "progress_tracking"
     WEIGHT_ANALYSIS = "weight_analysis"
     RECOVERY_GUIDANCE = "recovery_guidance"
@@ -234,6 +235,9 @@ class SharedExecutionContext(BaseModel):
     medical_red_flags: list[str] = Field(default_factory=list)
     physical_limitations: list[str] = Field(default_factory=list)
     available_equipment: list[str] = Field(default_factory=list)
+    has_image_attachment: bool = False
+    has_audio_attachment: bool = False
+    attachment_modalities: list[str] = Field(default_factory=list)
     evidence: list[EvidenceItem] = Field(default_factory=list)
     recommendations: list[AgentRecommendation] = Field(default_factory=list)
     conflicts_resolved: list[ContextConflict] = Field(default_factory=list)
@@ -255,6 +259,7 @@ class MinimalAgentContextView(BaseModel):
     relevant_knowledge: list[dict[str, Any]] = Field(default_factory=list)
     physical_limitations: list[str] = Field(default_factory=list)
     medical_red_flags: list[str] = Field(default_factory=list)
+    attachment_modalities: list[str] = Field(default_factory=list)
     upstream_outputs: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -447,5 +452,26 @@ class McpToolGatewayPort(Protocol):
         arguments: dict[str, Any],
         user_id: str,
         request_id: str,
+    ) -> dict[str, Any]: ...
+
+
+class MultimodalMealPort(Protocol):
+    """Protocol decoupling Coach/NutritionAgent from features.meals multimodal workflow."""
+
+    async def analyze_meal_attachment(
+        self,
+        *,
+        user_id: str,
+        transcript: str | None,
+        image_mime_type: str | None,
+        image_base64: str | None,
+        audio_mime_type: str | None,
+        audio_base64: str | None,
+        diet_type: str | None,
+        model_primary: str,
+        model_fallback: str | None,
+        deadline_ms: int,
+        trace_id: str,
+        llm: Any,
     ) -> dict[str, Any]: ...
 

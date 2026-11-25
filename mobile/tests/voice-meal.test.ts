@@ -4,6 +4,10 @@ import { apiClient } from '../src/services/api-client';
 import { useAuthStore } from '../src/features/auth/stores/auth-store';
 import { queryClient } from '../src/providers/query-provider';
 import { VoiceMealApi } from '../src/features/ai-coach/services/voice-meal-api';
+import {
+  VOICE_MAX_AUDIO_BASE64_CHARS,
+  isAudioPayloadWithinLimit,
+} from '../src/features/nutrition/utils/voice-recording-limit';
 import { voiceMealResponseSchema } from '../../backend/src/modules/nutrition/interface/voice-meal.schemas';
 
 const dosa = {
@@ -141,5 +145,12 @@ describe('VoiceMealApi (real client, canned HTTP)', () => {
     })) as never;
 
     await assert.rejects(VoiceMealApi.parseVoiceMeal({ transcript: 'x' }), /Invalid response/);
+  });
+
+  it('rejects empty or oversized audio payloads via client limit helper', () => {
+    assert.equal(isAudioPayloadWithinLimit(''), false);
+    assert.equal(isAudioPayloadWithinLimit('   '), false);
+    assert.equal(isAudioPayloadWithinLimit('YXVkaW8='), true);
+    assert.equal(isAudioPayloadWithinLimit('A'.repeat(VOICE_MAX_AUDIO_BASE64_CHARS + 1)), false);
   });
 });

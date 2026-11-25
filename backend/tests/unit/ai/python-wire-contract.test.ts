@@ -6,6 +6,7 @@ import { PythonCoachChatService } from '../../../src/modules/coach/infrastructur
 import { PythonCoachInsightsService } from '../../../src/modules/coach/infrastructure/python-coach-insights-service.js';
 import { PythonSpeechTranscriber } from '../../../src/modules/coach/infrastructure/python-speech-transcriber.js';
 import { PythonMealPhotoService } from '../../../src/modules/nutrition/infrastructure/python-meal-photo-service.js';
+import { PythonMultimodalMealService } from '../../../src/modules/nutrition/infrastructure/python-multimodal-meal-service.js';
 import { PythonVoiceMealService } from '../../../src/modules/nutrition/infrastructure/python-voice-meal-service.js';
 import { runWithAiRequestContext } from '../../../src/shared/ai/ai-usage.js';
 import { PythonAiClient } from '../../../src/shared/ai/python-ai-client.js';
@@ -14,6 +15,7 @@ import {
   okCoachReply,
   okInsightsReply,
   okMealPhotoReply,
+  okMultimodalMealReply,
   okTranscribeReply,
   okVoiceReply,
   startFakePythonServer,
@@ -211,6 +213,29 @@ describe('Node <-> Python wire contract (ai-backend/tests/fixtures/contracts/wir
             'lunch',
             'no sugar',
           ),
+        ),
+    },
+    {
+      name: 'multimodal_meal',
+      reply: okMultimodalMealReply,
+      call: () =>
+        asUser(() =>
+          new PythonMultimodalMealService({
+            ...deps(),
+            resolveModels: () => Promise.resolve({ primary: 'primary-model', fallback: 'fallback-model' }),
+          }).analyzeMultimodal({
+            image: { mimeType: 'image/jpeg', base64: '/9j/AAAA' },
+            audio: { mimeType: 'audio/m4a', base64: 'AAECAw==' },
+            transcript: 'two dosa with sambar',
+            context: {
+              mealType: 'breakfast',
+              lang: 'tanglish',
+              notes: 'extra chutney',
+              dietaryGoal: 'lean_gain',
+              allergies: ['peanut'],
+              dailyCalorieTarget: 2200,
+            },
+          }),
         ),
     },
     {

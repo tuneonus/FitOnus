@@ -9,17 +9,20 @@ from typing import Any
 
 _a2a_mediator_factory: Callable[[], Any] | None = None
 _workout_planner_factory: Callable[[], Any] | None = None
+_multimodal_meal_factory: Callable[[], Any] | None = None
 
 
 def set_multi_agent_providers(
     *,
     a2a_factory: Callable[[], Any] | None = None,
     workout_planner_factory: Callable[[], Any] | None = None,
+    multimodal_meal_factory: Callable[[], Any] | None = None,
 ) -> None:
     """Register factory callables at the composition root (`create_app`)."""
-    global _a2a_mediator_factory, _workout_planner_factory
+    global _a2a_mediator_factory, _workout_planner_factory, _multimodal_meal_factory
     _a2a_mediator_factory = a2a_factory
     _workout_planner_factory = workout_planner_factory
+    _multimodal_meal_factory = multimodal_meal_factory
 
 
 def create_a2a_mediator() -> Any | None:
@@ -34,4 +37,11 @@ def create_workout_planner_port() -> Any | None:
     if _workout_planner_factory is None:
         return None
     return _workout_planner_factory()
+
+
+def create_multimodal_meal_port() -> Any | None:
+    """Instantiate a MultimodalMealPort adapter if registered at startup."""
+    if _multimodal_meal_factory is None:
+        return None
+    return _multimodal_meal_factory()
 

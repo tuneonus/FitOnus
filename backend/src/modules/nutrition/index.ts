@@ -4,6 +4,7 @@ export * from './domain/water.js';
 export * from './domain/favorite.js';
 export * from './domain/nutrition-calculator.js';
 export * from './domain/meal-photo.types.js';
+export * from './domain/multimodal-meal.types.js';
 export * from './domain/voice-meal.types.js';
 export * from './application/ports.js';
 export * from './application/nutrition-view.js';
@@ -26,6 +27,7 @@ export * from './application/use-cases/get-recent-foods.js';
 export * from './application/use-cases/admin-manage-food.js';
 export * from './application/use-cases/admin-get-nutrition-stats.js';
 export * from './application/use-cases/analyze-meal-photo.js';
+export * from './application/use-cases/analyze-multimodal-meal.js';
 export * from './application/use-cases/parse-voice-meal.js';
 export * from './infrastructure/pg-food-repository.js';
 export * from './infrastructure/pg-meal-repository.js';
@@ -35,11 +37,13 @@ export * from './infrastructure/pg-user-profile-target-adapter.js';
 export * from './infrastructure/pg-nutrition-settings-repository.js';
 export * from './infrastructure/nutrition-audit-logger.js';
 export * from './infrastructure/python-meal-photo-service.js';
+export * from './infrastructure/python-multimodal-meal-service.js';
 export * from './infrastructure/python-voice-meal-service.js';
 export * from './interface/nutrition.schemas.js';
 export * from './interface/nutrition.controller.js';
 export * from './interface/nutrition.routes.js';
 export * from './interface/meal-photo.schemas.js';
+export * from './interface/multimodal-meal.schemas.js';
 export * from './interface/voice-meal.schemas.js';
 export * from './interface/admin-nutrition.schemas.js';
 export * from './interface/admin-nutrition.controller.js';
@@ -49,8 +53,9 @@ import type { SqlExecutor } from '../../database/transaction.js';
 import type { UnitOfWork } from '../../shared/application/unit-of-work.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
-import type { MealPhotoAnalyzer, VoiceMealParser } from './application/ports.js';
+import type { MealPhotoAnalyzer, MultimodalMealAnalyzer, VoiceMealParser } from './application/ports.js';
 import { AnalyzeMealPhotoUseCase } from './application/use-cases/analyze-meal-photo.js';
+import { AnalyzeMultimodalMealUseCase } from './application/use-cases/analyze-multimodal-meal.js';
 import { ParseVoiceMealUseCase } from './application/use-cases/parse-voice-meal.js';
 import { GetDailyNutritionUseCase } from './application/use-cases/get-daily-nutrition.js';
 import { SearchFoodsUseCase } from './application/use-cases/search-foods.js';
@@ -100,9 +105,11 @@ export interface CreateNutritionModuleOptions {
   uow: UnitOfWork;
   /** Meal photo analysis (the Python AI backend: `PythonMealPhotoService`). */
   mealPhotoAnalyzer?: MealPhotoAnalyzer;
+  /** Unified multimodal meal analysis (`PythonMultimodalMealService`). */
+  multimodalMealAnalyzer?: MultimodalMealAnalyzer;
   /** Voice meal parsing (the Python AI backend: `PythonVoiceMealService`). */
   voiceMealParser?: VoiceMealParser;
-  /** Required: photo and voice analysis must never reach Gemini without the flag / quota gate. */
+  /** Required: photo, voice, and multimodal analysis must never reach Gemini without the flag / quota gate. */
   aiUsageGate: AiUsageGate;
 }
 
@@ -117,6 +124,9 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
 
   const analyzeMealPhotoUseCase = deps.mealPhotoAnalyzer
     ? new AnalyzeMealPhotoUseCase(deps.mealPhotoAnalyzer, deps.aiUsageGate)
+    : undefined;
+  const analyzeMultimodalMealUseCase = deps.multimodalMealAnalyzer
+    ? new AnalyzeMultimodalMealUseCase(deps.multimodalMealAnalyzer, deps.aiUsageGate)
     : undefined;
   const parseVoiceMealUseCase = deps.voiceMealParser
     ? new ParseVoiceMealUseCase(deps.voiceMealParser, deps.aiUsageGate)
@@ -139,6 +149,7 @@ export function createNutritionModule(deps: CreateNutritionModuleOptions): Nutri
     getNutritionAnalytics: new GetNutritionAnalyticsUseCase(mealRepo, targetAdapter),
     manageFoodFavorites: new ManageFoodFavoritesUseCase(favoriteRepo, foodRepo),
     analyzeMealPhoto: analyzeMealPhotoUseCase,
+    analyzeMultimodalMeal: analyzeMultimodalMealUseCase,
     parseVoiceMeal: parseVoiceMealUseCase,
   });
 

@@ -46,7 +46,7 @@ from onusfit_ai.features.coach.domain.multi_agent import (
     OrchestrationMode,
 )
 from onusfit_ai.shared.contracts.common import Usage
-from onusfit_ai.shared.llm.ports import TextGenerator
+from onusfit_ai.shared.llm.ports import MediaInput, TextGenerator
 
 logger = logging.getLogger("onusfit_ai.coach.multi_agent.nodes")
 
@@ -68,6 +68,7 @@ class MultiAgentRuntimeContext:
     telemetry: MultiAgentTelemetry
     available_agents: set[AgentRole]
     clock: Callable[[], float]
+    media: list[MediaInput] | None = None
 
 
 def _get_ctx(config: RunnableConfig) -> MultiAgentRuntimeContext:
@@ -582,6 +583,7 @@ async def final_synthesis_node(
             executed_tools=executed_tools,
             llm=ctx.llm,
             budget=ctx.budget,
+            media=ctx.media,
         )
         status = state.get("status", MultiAgentWorkflowStatus.COMPLETED)
         if status in (

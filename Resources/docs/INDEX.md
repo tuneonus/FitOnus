@@ -39,6 +39,7 @@ Keep the context needed to maintain the application: agent instructions, product
 - [Phase 12 Learning Guide](../../PHASE_12_LEARNING_GUIDE.md)
 - [Phase 13: Multi-Agent Systems](ai-learning/phase-13-multi-agent-systems.md)
 - [Phase 17: AI Observability](ai-learning/phase-17-ai-observability.md)
+- [Phase 15: Multimodal AI Engineering](ai-learning/phase-15-multimodal-ai-engineering.md)
 
 The architecture proposal and roadmap describe planned work. They do not indicate that the proposed services or integrations exist.
 

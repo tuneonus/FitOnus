@@ -33,3 +33,25 @@ export const pythonTotals = {
   macroG: z.number().min(0).max(L.maxItems * L.itemMacroG),
   fiberG: z.number().min(0).max(L.maxItems * L.itemFiberG),
 } as const;
+
+export type PythonDetectedFoodItem = z.output<typeof pythonDetectedFoodItemSchema>;
+
+/** Convert Python food items into the member-facing DetectedFoodItem shape (omitting absent optionals). */
+export function mapPythonDetectedFoodItems(items: readonly PythonDetectedFoodItem[]) {
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    ...(item.brand ? { brand: item.brand } : {}),
+    serving: item.serving,
+    ...(typeof item.servingWeightG === 'number' ? { servingWeightG: item.servingWeightG } : {}),
+    ...(typeof item.servingUnit === 'string' ? { servingUnit: item.servingUnit } : {}),
+    ...(typeof item.servingSize === 'number' ? { servingSize: item.servingSize } : {}),
+    kcal: item.kcal,
+    protein: item.protein,
+    carbs: item.carbs,
+    fat: item.fat,
+    ...(typeof item.fiber === 'number' ? { fiber: item.fiber } : {}),
+    confidence: item.confidence,
+    isAiEstimated: item.isAiEstimated,
+  }));
+}

@@ -209,4 +209,33 @@ describe('ParseVoiceMealUseCase', () => {
     expect(result.confidence).toBe('low');
     expect(result.unclearReason).toContain('Could not identify any food items');
   });
+
+  it('rejects disguised or empty audio payloads before charging quota', async () => {
+    const pdfAudio = Buffer.from('%PDF-1.7 fake').toString('base64');
+    await expect(
+      useCase.execute({
+        userId: 'user-123',
+        audioBase64: pdfAudio,
+        mimeType: 'audio/m4a',
+      }),
+    ).rejects.toThrow('unsupported or unsafe content');
+
+    await expect(
+      useCase.execute({
+        userId: 'user-123',
+        audioBase64: '!!!!',
+        mimeType: 'audio/wav',
+      }),
+    ).rejects.toThrow('empty or unreadable');
+
+    await expect(
+      useCase.execute({
+        userId: 'user-123',
+        audioBase64: 'YWJjZA==',
+        mimeType: 'image/mp4',
+      }),
+    ).rejects.toThrow('Unsupported audio format');
+
+    expect(mockService.parseVoiceMeal).not.toHaveBeenCalled();
+  });
 });

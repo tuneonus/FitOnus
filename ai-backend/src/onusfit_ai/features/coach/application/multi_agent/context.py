@@ -187,6 +187,10 @@ def build_shared_execution_context(
     )
     red_flags = detect_medical_red_flags_text(sanitized_msg, limitations)
 
+    has_img = request.image is not None
+    has_aud = request.audio is not None
+    modalities = [m for m, flag in (("image", has_img), ("audio", has_aud)) if flag]
+
     return SharedExecutionContext(
         trace_id=trace_id,
         request_id=trace_id,
@@ -204,6 +208,9 @@ def build_shared_execution_context(
         medical_red_flags=red_flags,
         physical_limitations=limitations,
         available_equipment=equipment,
+        has_image_attachment=has_img,
+        has_audio_attachment=has_aud,
+        attachment_modalities=modalities,
     )
 
 
@@ -276,6 +283,11 @@ def build_agent_context_view(
         relevant_knowledge=relevant_knowledge,
         physical_limitations=list(shared.physical_limitations),
         medical_red_flags=list(shared.medical_red_flags),
+        attachment_modalities=(
+            list(shared.attachment_modalities)
+            if role in (AgentRole.NUTRITION, AgentRole.SUPERVISOR)
+            else []
+        ),
         upstream_outputs=dict(upstream_outputs or {}),
     )
 

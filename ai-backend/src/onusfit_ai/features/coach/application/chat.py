@@ -6,6 +6,7 @@ Everything stateful (conversation storage, quota, memory consent) stays in Node.
 
 import logging
 import os
+import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -28,13 +29,21 @@ from onusfit_ai.features.coach.domain.chat import (
 )
 from onusfit_ai.features.coach.domain.multi_agent import (
     A2AMediatorProtocol,
+    MultimodalMealPort,
     WorkoutPlannerPort,
 )
 from onusfit_ai.shared.contracts.common import Usage
 from onusfit_ai.shared.contracts.tools import TOOL_SOURCE_LABELS
-from onusfit_ai.shared.llm.ports import LlmServiceError, LlmUsage, TextGenerator
+from onusfit_ai.shared.llm.ports import LlmServiceError, LlmUsage, MediaInput, TextGenerator
 from onusfit_ai.shared.llm.telemetry import log_ai_call
+from onusfit_ai.shared.logging import (
+    MultimodalObservabilityTracker,
+    classify_media_validation_error,
+)
+from onusfit_ai.shared.utils.audio import decode_audio_base64
+from onusfit_ai.shared.utils.image import decode_image_base64, strip_jpeg_exif_metadata
 from onusfit_ai.shared.utils.js_compat import strict_json_loads, strip_code_fences
+from onusfit_ai.shared.utils.media import InvalidMediaError
 
 logger = logging.getLogger("onusfit_ai.coach_chat")
 
@@ -102,12 +111,73 @@ async def generate_coach_reply(
     discovered_tools: list[str] | None = None,
     a2a_mediator: A2AMediatorProtocol | None = None,
     workout_planner: WorkoutPlannerPort | None = None,
+    multimodal_port: MultimodalMealPort | None = None,
 ) -> CoachChatResponse:
     """Orchestrate coach reply generation: format prompt, call LLM with fallback, and parse reply.
 
     The LLM client is injected via the TextGenerator protocol to keep the use case testable
     without real network calls or Gemini credentials.
     """
+    # Validate and EXIF-strip optional multimodal attachments once up front (422 before LLM/quota).
+    validated_media: list[MediaInput] = []
+    mm_tracker: MultimodalObservabilityTracker | None = None
+    if request.audio is not None or request.image is not None:
+        att_modality = (
+            "multimodal"
+            if request.audio is not None and request.image is not None
+            else ("image" if request.image is not None else "audio")
+        )
+        mm_tracker = MultimodalObservabilityTracker(
+            modality=att_modality,
+            feature="coach_chat",
+            trace_id=trace_id,
+        )
+        val_started = time.monotonic()
+        total_media_bytes = 0
+        exif_stripped = False
+        last_mime = (
+            request.image.mime_type
+            if request.image
+            else (request.audio.mime_type if request.audio else "application/octet-stream")
+        )
+        try:
+            if request.audio is not None:
+                decoded_audio = decode_audio_base64(request.audio.base64)
+                total_media_bytes += len(decoded_audio)
+                validated_media.append(
+                    MediaInput(
+                        mime_type=request.audio.mime_type,
+                        data=decoded_audio,
+                    )
+                )
+            if request.image is not None:
+                raw_img = decode_image_base64(
+                    request.image.base64, claimed_mime_type=request.image.mime_type
+                )
+                safe_img = strip_jpeg_exif_metadata(raw_img)
+                total_media_bytes += len(safe_img)
+                exif_stripped = len(safe_img) != len(raw_img)
+                validated_media.append(
+                    MediaInput(
+                        mime_type=request.image.mime_type,
+                        data=safe_img,
+                    )
+                )
+        except InvalidMediaError as exc:
+            mm_tracker.record_validation_failure(
+                duration_ms=(time.monotonic() - val_started) * 1000.0,
+                reason=classify_media_validation_error(str(exc)),
+                byte_size=total_media_bytes,
+            )
+            raise
+        if not is_multi_agent_enabled():
+            mm_tracker.record_validation_success(
+                duration_ms=(time.monotonic() - val_started) * 1000.0,
+                byte_size=total_media_bytes,
+                mime_type=last_mime,
+                exif_stripped=exif_stripped,
+            )
+
     # Phase 13: Coordinated Multi-Agent System behind validated disabled-by-default feature flag.
     if is_multi_agent_enabled():
         ma_exec = multi_agent_executor or MultiAgentCoachExecutor()
@@ -121,6 +191,7 @@ async def generate_coach_reply(
             discovered_tools=discovered_tools,
             a2a_mediator=a2a_mediator,
             workout_planner=workout_planner,
+            multimodal_port=multimodal_port,
             memory_consent_granted=bool(request.memories),
         )
         llm_usage = LlmUsage(
@@ -219,19 +290,54 @@ async def generate_coach_reply(
 
     effective_tools = tools if is_coach_chat_tools_enabled() else None
     effective_tool_handler = tool_handler if is_coach_chat_tools_enabled() else None
-
-    llm_result = await llm.generate_text(
-        prompt,
-        primary_model=request.model.primary,
-        fallback_model=request.model.fallback,
-        deadline_s=request.deadline_ms / 1000,
-        schema=schema,
-        tools=effective_tools,
-        tool_handler=effective_tool_handler,
+    media_arg: MediaInput | list[MediaInput] | None = (
+        validated_media[0] if len(validated_media) == 1 else (validated_media or None)
     )
+    if media_arg is not None:
+        prompt += (
+            "\n[An attached meal image/audio clip is included; inspect it accurately "
+            "and note estimation uncertainty.]"
+        )
+
+    try:
+        llm_result = await llm.generate_text(
+            prompt,
+            primary_model=request.model.primary,
+            fallback_model=request.model.fallback,
+            deadline_s=request.deadline_ms / 1000,
+            media=media_arg,
+            schema=schema,
+            tools=effective_tools,
+            tool_handler=effective_tool_handler,
+            user_id=user_id,
+        )
+    except LlmServiceError as exc:
+        if mm_tracker is not None:
+            mm_tracker.record_processing_completed(
+                model=exc.usage.model if exc.usage else request.model.primary,
+                outcome="error",
+                processing_error=True,
+                error_category={
+                    "PROVIDER_TIMEOUT": "gemini_timeout",
+                    "PROVIDER_RATE_LIMITED": "gemini_rate_limited",
+                    "PROVIDER_QUOTA_EXHAUSTED": "gemini_quota_exhausted",
+                    "PROVIDER_UNAVAILABLE": "gemini_unavailable",
+                    "AI_UNAVAILABLE": "gemini_unavailable",
+                    "PROVIDER_AUTH_ERROR": "gemini_auth",
+                    "PROVIDER_NOT_CONFIGURED": "gemini_auth",
+                }.get(exc.code, "gemini_error"),
+            )
+        raise
 
     # 1. Defensively handle safety-blocked content
     if llm_result.finish_reason == "SAFETY":
+        if mm_tracker is not None:
+            mm_tracker.record_processing_completed(
+                model=llm_result.usage.model,
+                outcome="safety_blocked",
+                processing_error=True,
+                error_category="gemini_unavailable",
+            )
         raise LlmServiceError(
             code="PROVIDER_UNAVAILABLE",
             message="Coach reply was blocked by safety policies.",
@@ -241,6 +347,13 @@ async def generate_coach_reply(
 
     # 2. Defensively handle token truncation
     if llm_result.finish_reason == "MAX_TOKENS":
+        if mm_tracker is not None:
+            mm_tracker.record_processing_completed(
+                model=llm_result.usage.model,
+                outcome="max_tokens",
+                processing_error=True,
+                error_category="gemini_error",
+            )
         raise LlmServiceError(
             code="PROVIDER_ERROR",
             message="Coach reply exceeded maximum token limit.",
@@ -275,6 +388,13 @@ async def generate_coach_reply(
                 parsed_output = None
 
         if parsed_output is None:
+            if mm_tracker is not None:
+                mm_tracker.record_processing_completed(
+                    model=llm_result.usage.model,
+                    outcome="parse_failed",
+                    processing_error=True,
+                    error_category="invalid_ai_response",
+                )
             # Observability: log the unparseable attempt before raising controlled error
             log_ai_call(
                 logger,
@@ -392,6 +512,13 @@ async def generate_coach_reply(
         knowledge_count=len(request.knowledge),
         history_turns=len(request.history),
     )
+    if mm_tracker is not None and not is_multi_agent_enabled():
+        mm_tracker.record_processing_completed(
+            model=usage.model,
+            outcome=outcome,
+            processing_error=(outcome == "unstructured"),
+            error_category=("invalid_ai_response" if outcome == "unstructured" else None),
+        )
     return CoachChatResponse(
         outcome=outcome,  # type: ignore[arg-type]
         result=result,

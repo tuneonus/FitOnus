@@ -26,3 +26,6 @@ export const MEAL_PHOTO_BODY_LIMIT = bodyLimitFor(MAX_IMAGE_BASE64_CHARS);
 
 /** POST /nutrition/voice-meal/parse and POST /coach/transcribe: base64 audio, at most 15 MiB of text. */
 export const AUDIO_BODY_LIMIT = bodyLimitFor(MAX_AUDIO_BASE64_CHARS);
+
+/** POST /nutrition/multimodal/analyze: optional 10 MiB photo + optional 15 MiB audio + JSON envelope. */
+export const MULTIMODAL_MEAL_BODY_LIMIT = bodyLimitFor(MAX_IMAGE_BASE64_CHARS + MAX_AUDIO_BASE64_CHARS);

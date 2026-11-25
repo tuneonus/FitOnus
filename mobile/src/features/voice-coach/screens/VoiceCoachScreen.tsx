@@ -29,6 +29,12 @@ import { voiceCommands } from '../constants/commands';
 import { VoiceWaveform } from '../components/VoiceWaveform';
 import { useTheme } from '@/hooks/use-theme';
 import { normalizeMobileApiError } from '@/services/error-normalizer';
+import {
+  isAudioPayloadWithinLimit,
+  judgeRecording,
+  VOICE_AUDIO_TOO_LARGE_MESSAGE,
+  VOICE_MAX_SECONDS,
+} from '@/features/nutrition/utils/voice-recording-limit';
 
 type Phase = 'idle' | 'listening' | 'processing' | 'response' | 'error';
 
@@ -50,6 +56,7 @@ export function VoiceCoachScreen() {
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const sentParam = useRef(false);
+  const inFlightRef = useRef(false);
 
   // Stop recording, speech and reset audio mode when unmounting
   useEffect(() => {
@@ -85,6 +92,8 @@ export function VoiceCoachScreen() {
   };
 
   const askCoach = async (queryText: string) => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setErrorMessage(null);
     setResponse(null);
     setTranscript(queryText);
@@ -110,13 +119,15 @@ export function VoiceCoachScreen() {
           onError: () => setIsSpeaking(false),
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const normalized = normalizeMobileApiError(
         err,
         'Unable to reach AI Coach right now. Please check your network connection.'
       );
       setErrorMessage(normalized.userMessage);
       setPhase('error');
+    } finally {
+      inFlightRef.current = false;
     }
   };
 
@@ -144,6 +155,7 @@ export function VoiceCoachScreen() {
   };
 
   const listen = async () => {
+    if (inFlightRef.current) return;
     let granted = micPermission === 'granted';
     if (!granted) {
       granted = await handleRequestPermission();
@@ -160,19 +172,30 @@ export function VoiceCoachScreen() {
         playsInSilentMode: true,
       });
       await recorder.prepareToRecordAsync();
-      recorder.record();
+      recorder.record({ forDuration: VOICE_MAX_SECONDS });
       setPhase('listening');
       setTranscript('');
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Could not start microphone recording.');
+    } catch (err: unknown) {
+      const normalized = normalizeMobileApiError(err, 'Could not start microphone recording.');
+      setErrorMessage(normalized.userMessage);
       setPhase('error');
     }
   };
 
   const stop = async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setPhase('processing');
+    let handedOffToCoach = false;
     try {
+      const durationMs = recorder.getStatus().durationMillis;
       await recorder.stop();
+      if (durationMs > 0 && judgeRecording(durationMs) === 'too_short') {
+        setErrorMessage('Recording was too short. Tap the mic and speak clearly.');
+        setPhase('error');
+        return;
+      }
+
       const uri = recorder.uri;
       if (!uri) {
         setPhase('idle');
@@ -183,6 +206,11 @@ export function VoiceCoachScreen() {
       const base64 = await file.base64();
       if (!base64) {
         setErrorMessage('Voice recording was empty. Please try speaking again.');
+        setPhase('error');
+        return;
+      }
+      if (!isAudioPayloadWithinLimit(base64)) {
+        setErrorMessage(VOICE_AUDIO_TOO_LARGE_MESSAGE);
         setPhase('error');
         return;
       }
@@ -200,14 +228,20 @@ export function VoiceCoachScreen() {
       }
 
       setTranscript(heardText);
+      handedOffToCoach = true;
+      inFlightRef.current = false;
       await askCoach(heardText);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const normalized = normalizeMobileApiError(
         err,
         'Could not transcribe voice audio. Please try again.'
       );
       setErrorMessage(normalized.userMessage);
       setPhase('error');
+    } finally {
+      if (!handedOffToCoach) {
+        inFlightRef.current = false;
+      }
     }
   };
 

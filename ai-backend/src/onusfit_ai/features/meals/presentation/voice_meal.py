@@ -28,4 +28,4 @@ async def parse_voice(
     Enforces JWT scope 'ai:meals:voice', injects the LLM client, and propagates the trace ID.
     """
     trace_id = x_request_id or claims.request_id or str(uuid.uuid4())
-    return await parse_voice_meal(body, llm, trace_id=trace_id)
+    return await parse_voice_meal(body, llm, trace_id=trace_id, user_id=claims.user_id)
