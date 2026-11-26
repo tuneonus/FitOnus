@@ -12,3 +12,46 @@
 ffc0fec33751d9ec2a14695b58a6ef53a879ce2e:backend/BACKEND_AUDIT/API_ENDPOINT_INVENTORY.md:generic-api-key:103
 ffc0fec33751d9ec2a14695b58a6ef53a879ce2e:backend/BACKEND_AUDIT/API_ENDPOINT_INVENTORY.md:generic-api-key:104
 ffc0fec33751d9ec2a14695b58a6ef53a879ce2e:backend/BACKEND_AUDIT/API_ENDPOINT_INVENTORY.md:generic-api-key:114
+
+# Verified 2026-11-26: synthetic fixtures / false positives (exact fingerprints only)
+
+# backend/tests/unit/coach/coach-streaming.test.ts - Synthetic idempotency key fixture (idem-key-12345)
+e1db0c8a5e0db26dbad13f8846f143739ba1f0f3:backend/tests/unit/coach/coach-streaming.test.ts:generic-api-key:414
+e1db0c8a5e0db26dbad13f8846f143739ba1f0f3:backend/tests/unit/coach/coach-streaming.test.ts:generic-api-key:422
+e1db0c8a5e0db26dbad13f8846f143739ba1f0f3:backend/tests/unit/coach/coach-streaming.test.ts:generic-api-key:433
+e1db0c8a5e0db26dbad13f8846f143739ba1f0f3:backend/tests/unit/coach/coach-streaming.test.ts:generic-api-key:443
+
+# backend/tests/unit/ai/ai-observability-phase17.test.ts - Truncated public jwt.io sample token used to test JWT redaction
+78b01659100f181b67c18556bd5e9ea03d6eea89:backend/tests/unit/ai/ai-observability-phase17.test.ts:jwt:540
+
+# ai-backend/tests/evals/datasets/mcp_tools_benchmark.json - Eval dataset prompt-injection fixture ("eyJ...dummy" token)
+2f9581825d2f58122f91541aa0831bd09515658e:ai-backend/tests/evals/datasets/mcp_tools_benchmark.json:generic-api-key:866
+
+# ai-backend/tests/test_phase17_observability.py - Truncated public jwt.io sample token used to test JWT redaction
+78b01659100f181b67c18556bd5e9ea03d6eea89:ai-backend/tests/test_phase17_observability.py:jwt:794
+
+# Resources/docs/architecture/PROJECT_STRUCTURE.md - Architecture prose ("authentication, quotas/billing ledger"), not a key
+0d4da1b9b0235264e3385c1d60cd7d494ec26283:Resources/docs/architecture/PROJECT_STRUCTURE.md:generic-api-key:170
+
+# backend/tests/unit/notifications/fcm-config.test.ts - Fake PEM; body is base64 of "fake-key-material-for-unit-tests"
+a5f47fb725a20092c0bd68ba190bbc0cc3d76a9b:backend/tests/unit/notifications/fcm-config.test.ts:private-key:14
+
+# backend/tests/unit/auth/support/password-reset-harness.ts - Test-only JWT secret literal (test-secret-at-least-32-chars-long-...)
+066ca355ab83d15cb7c920aa8aca9ec753ad76ba:backend/tests/unit/auth/support/password-reset-harness.ts:generic-api-key:140
+
+# backend/tests/integration/http/notifications.http.test.ts - Synthetic Idempotency-Key header fixture (campaign-key-0001)
+a5f47fb725a20092c0bd68ba190bbc0cc3d76a9b:backend/tests/integration/http/notifications.http.test.ts:generic-api-key:482
+a5f47fb725a20092c0bd68ba190bbc0cc3d76a9b:backend/tests/integration/http/notifications.http.test.ts:generic-api-key:487
+a5f47fb725a20092c0bd68ba190bbc0cc3d76a9b:backend/tests/integration/http/notifications.http.test.ts:generic-api-key:496
+
+# backend/tests/unit/admin/admin-cors-preflight.test.ts - Test-only JWT secret literal (test-secret-at-least-32-chars-long-...)
+4b51946cc5eb5293d19f6457c3dcd872d6d11bc5:backend/tests/unit/admin/admin-cors-preflight.test.ts:generic-api-key:24
+
+# backend/scripts/verify-gemini-live.ts - Fake Gemini-shaped key for an encryption round-trip (LIVE_TEST_KEY_FOR_VERIFICATION)
+3378bc11354fcc714b3c568d1176c94afe78f047:backend/scripts/verify-gemini-live.ts:generic-api-key:97
+
+# backend/tests/unit/app-settings/gemini-ai-management.test.ts - Fake test encryption key and fake Gemini-shaped keys (SecretKey/KeyV1/KeyV2)
+3378bc11354fcc714b3c568d1176c94afe78f047:backend/tests/unit/app-settings/gemini-ai-management.test.ts:generic-api-key:32
+3378bc11354fcc714b3c568d1176c94afe78f047:backend/tests/unit/app-settings/gemini-ai-management.test.ts:generic-api-key:332
+3378bc11354fcc714b3c568d1176c94afe78f047:backend/tests/unit/app-settings/gemini-ai-management.test.ts:generic-api-key:400
+3378bc11354fcc714b3c568d1176c94afe78f047:backend/tests/unit/app-settings/gemini-ai-management.test.ts:generic-api-key:405
