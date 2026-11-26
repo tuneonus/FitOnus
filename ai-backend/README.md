@@ -14,7 +14,7 @@ parsing, meal photo analysis and speech transcription. The Node API has no Gemin
 down, `POST /coach/chat`, the voice-meal and meal-photo endpoints and `POST /coach/transcribe` return a
 controlled 503 and the quota unit is handled by Node's usual refund rules (transcription has no quota gate, as
 before). `GET /coach/insights` instead keeps its Node *deterministic* fallback (data-backed insights, no AI) and
-still answers 200. Node refuses to start without `AI_BACKEND_URL` and `AI_BACKEND_SERVICE_SECRET`. Not deployed.
+still answers 200. Node refuses to start without `AI_BACKEND_URL` and `AI_BACKEND_SERVICE_SECRET`.
 
 Learning guides: [01 integration](../docs/ai/learning/01-python-chat-integration.md) (historical: describes the fallback that was removed), [02 Python-only architecture](../docs/ai/learning/02-python-only-ai-architecture.md) and [03 voice meal](../docs/ai/learning/03-voice-meal-python-migration.md), [04 speech transcription](../docs/ai/learning/04-python-speech-transcription.md), [05 meal photo](../docs/ai/learning/05-python-meal-photo-analysis.md) and [06 coach insights](../docs/ai/learning/06-python-coach-insights.md).
 Plan and decisions: [docs/ai/PYTHON_MIGRATION_READINESS.md](../docs/ai/PYTHON_MIGRATION_READINESS.md).
@@ -107,7 +107,7 @@ curl http://127.0.0.1:8000/health/live
 `Dockerfile` (multi-stage, Python 3.12, non-root user 10001, no secrets in the image) and `requirements.txt` (pinned runtime
 dependencies) are the production build; `.dockerignore` keeps tests, docs and `.env*` out. See
 [docs/render-deployment.md](docs/render-deployment.md) for the Render setup, the Node-to-Python connection and the limits of
-free hosting. Nothing is deployed yet.
+free hosting. Check the Render dashboard for the live service's deployment status.
 
 ```bash
 docker build -t onusfit-ai-backend .            # run from ai-backend/
@@ -133,6 +133,10 @@ curl http://127.0.0.1:10000/health/live          # needs no secrets and never ca
   blocks back, ask for them in the prompt AND validate each type with its own Pydantic model first.
 - Provider SDK code lives only in `shared/llm/` (the `google` import is in `gemini.py` alone).
 - Never log message text, memories, replies, tokens or keys; log metadata only. Write events with `log_event` (numbers, booleans, closed lists); `shared/logging/logging.py` masks fields with sensitive names and anything that looks like a key, bearer token or JWT. `tests/test_observability.py` plants sentinel user content on all five endpoints and fails if any reaches the logs.
-- Runtime dependencies are pinned in `requirements.txt` (what the image installs); change them in `pyproject.toml`, then regenerate it (see its header).
+- Declare every directly imported runtime dependency in `pyproject.toml`. Run `uv lock`, then
+  `uv export --locked --no-dev --no-emit-project --no-hashes --no-annotate --output-file requirements.txt`
+  from `ai-backend/`. This exports the production dependencies from `uv.lock` without dev extras or
+  the application itself. Docker installs that file followed by `pip install --no-deps .`; both Docker
+  and CI run `pip check` and import the installed application before any development tools are added.
 - A new folder is added when its first real file exists, never in advance.
 - Prompt changes: bump `PROMPT_VERSION` and regenerate the golden fixtures (`tests/fixtures/coach_chat/`, `voice_meal/`, `transcribe/`) in the same change.

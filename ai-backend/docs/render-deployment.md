@@ -1,6 +1,7 @@
 # Deploying the AI backend on Render
 
-**Status:** preparation only. **Nothing has been deployed**, and no Render setting or Node environment variable has been changed. This guide is what you do, by hand, when you decide to deploy.
+This guide describes the repository's Render build configuration. The live dashboard is the source
+of truth for service settings and deployment status; this repository has no `render.yaml` Blueprint.
 
 Statements marked **(verified)** were read in Render's documentation on 2026-11-19 (`render.com/docs`: free, web-services, private-network, private-services, health-checks, docker, monorepo-support). Statements marked **(unverified)** could not be confirmed from those pages: check them in your Render dashboard before relying on them. Prices are deliberately not quoted (Render's pricing page did not expose them to me): read the current numbers on render.com/pricing.
 
@@ -34,7 +35,7 @@ Phone ──HTTPS──► Node API (Render, already hosted) ──signed 30 s t
 1. **New → Private Service** (recommended) or **Web Service**, connect the GitHub repository.
 2. **Name:** e.g. `onusfit-ai-backend` (this becomes the internal host name).
 3. **Region:** the same as the Node API.
-4. **Branch:** the branch you deploy from. (Your work is on `development`, not pushed; nothing is on any remote yet.)
+4. **Branch:** `development` for the existing development service.
 5. **Root Directory:** `ai-backend`. For Docker services the Dockerfile Path and the build context are resolved **relative to the Root Directory** (verified), so:
 6. **Language / Runtime:** **Docker**. **Dockerfile Path:** `./Dockerfile`. Leave any build-context setting at its default (`.` = `ai-backend/`).
 7. **Docker Command:** leave **empty**. The image's `CMD` already runs `uvicorn onusfit_ai.main:app --host 0.0.0.0 --port ${PORT:-10000}` (see §5).
@@ -77,7 +78,11 @@ Nothing else changes on the Node side.
 
 ## 5. Build, start and port (what the image does)
 
-- **Build:** `pip install -r requirements.txt` (40 exactly pinned runtime packages: the versions the test suite ran against) and then the app itself. No compiler is needed.
+- **Build:** `pip install -r requirements.txt`, then `pip install --no-deps .`, `pip check`, and an
+  import of `onusfit_ai.main`. Only then are installer tools removed. `requirements.txt` is generated
+  from `uv.lock`; see the regeneration command in [the README](../README.md#conventions). Docker
+  does not read `uv.lock` or resolve missing dependencies from `pyproject.toml` during app installation.
+  CI checks the export and validates the production install before adding development extras.
 - **Start:** `sh -c "exec uvicorn onusfit_ai.main:app --host 0.0.0.0 --port ${PORT:-10000} --timeout-keep-alive 65 --no-server-header"`. Render requires binding to `0.0.0.0` and recommends using `PORT` (default 10000) (verified).
 - **User:** non-root (`uid 10001`, no shell, no home).
 - **Startup validation:** in production the process exits with code 3 and a message naming the wrong variable (never its value) when the secret or key is missing or invalid; Render then shows a failed deploy and keeps the previous version serving (verified: a deploy that never becomes healthy is cancelled and existing instances keep serving traffic).
@@ -125,6 +130,7 @@ Nothing else changes on the Node side.
 |---|---|
 | Deploy fails, logs say `invalid configuration: …` | The named variable is missing or invalid (see §4). The message never shows the value. |
 | Deploy fails at `pip install` | A pinned package has no wheel for the build platform: regenerate `requirements.txt` (its header explains how) and run the checks. |
+| `ModuleNotFoundError: No module named 'mcp'` | At `ea5c07f`, MCP was in `pyproject.toml` and `uv.lock` but missing from the production requirements consumed by Docker. The subsequent `--no-deps` app install could not add it; CI's dev-extra install hid the omission. Regenerate requirements from the lock and verify a clean production install. The Docker build now fails on missing dependencies or startup imports. |
 | Node logs `ai.call.failed` with `errorCategory` `python_unavailable` (`errorKind` `unreachable`) | Wrong `AI_BACKEND_URL` or port, different region/workspace, or the free service is asleep. |
 | Node logs `errorCategory` `auth_failure` (`errorKind` `auth`) | `AI_BACKEND_SERVICE_SECRET` ≠ `AI_SERVICE_JWT_SECRET`, or the service has the old secret loaded (redeploy after changing it). |
 | AI service logs `AUTH_NOT_CONFIGURED` / Node `errorCategory` `auth_failure` or `gemini_auth` (`errorKind` `misconfigured`) | The service is running without a valid secret (only possible outside production). |

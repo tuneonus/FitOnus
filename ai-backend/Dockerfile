@@ -17,11 +17,14 @@ RUN python -m venv /opt/venv
 COPY requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
-# 2. The application package itself, without re-resolving dependencies, then strip installer tools.
+# 2. Install the application without re-resolving the lock, then verify its runtime dependencies
+# and real startup imports before stripping installer tools. Any failure must stop the build.
 COPY pyproject.toml README.md ./
 COPY src ./src
 RUN /opt/venv/bin/pip install --no-cache-dir --no-deps . \
- && /opt/venv/bin/pip uninstall -y pip setuptools wheel >/dev/null 2>&1 || true \
+ && /opt/venv/bin/pip check \
+ && /opt/venv/bin/python -I -c "from onusfit_ai.main import app" \
+ && /opt/venv/bin/pip uninstall -y pip setuptools wheel \
  && chmod -R a+rX /opt/venv
 
 FROM python:3.12-slim-bookworm AS runtime
