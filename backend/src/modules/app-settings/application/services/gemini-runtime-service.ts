@@ -111,7 +111,7 @@ export class GeminiRuntimeService {
   calculateCostUsd(model: string, inputTokens: number, outputTokens: number, cachedTokens = 0): number {
     const info = this.cachedModels.get(model);
     const inputRate = info?.inputPricePerMillion ?? 0.075;
-    const outputRate = info?.outputPricePerMillion ?? 0.30;
+    const outputRate = info?.outputPricePerMillion ?? 0.3;
     const cachedRate = info?.cachedInputPricePerMillion ?? 0.01875;
 
     const inputCost = (inputTokens * inputRate) / 1_000_000;

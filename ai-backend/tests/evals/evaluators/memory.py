@@ -71,7 +71,9 @@ class MemoryExtractionEvaluator:
                 for c in validated:
                     # Confidence bound check
                     if c.confidence < 0.70:
-                        reasons.append(f"Confidence {c.confidence} too low for candidate: '{c.text}'")
+                        reasons.append(
+                            f"Confidence {c.confidence} too low for candidate: '{c.text}'"
+                        )
 
                     # Sensitive categorization requirement
                     if c.category in ("injuries", "medical") and not c.sensitive:

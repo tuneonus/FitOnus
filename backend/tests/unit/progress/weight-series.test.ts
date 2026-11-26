@@ -77,7 +77,8 @@ function repoWith(logs: WeightLog[]): { repo: IWeightRepository; listForUser: Re
   );
   return { repo: { listForUser } as unknown as IWeightRepository, listForUser };
 }
-const log = (id: string, weightKg: number, loggedAt: Date) => new WeightLog({ id, userId, weightKg, loggedAt });
+const log = (id: string, weightKg: number, loggedAt: Date) =>
+  new WeightLog({ id, userId, weightKg, loggedAt });
 
 describe('loadRawWeightSeries', () => {
   it('returns no points for an account with no weigh-ins', async () => {
@@ -87,7 +88,10 @@ describe('loadRawWeightSeries', () => {
   });
 
   it('carries a weigh-in from before the range into the days that precede the first in-range one', async () => {
-    const { repo } = repoWith([log('old', 83, new Date(buckets[0]!.startDate.getTime() - 10 * DAY)), log('new', 80, noon(3))]);
+    const { repo } = repoWith([
+      log('old', 83, new Date(buckets[0]!.startDate.getTime() - 10 * DAY)),
+      log('new', 80, noon(3)),
+    ]);
 
     const series = await loadRawWeightSeries(repo, userId, buckets);
 

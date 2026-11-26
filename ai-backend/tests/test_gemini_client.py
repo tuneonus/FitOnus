@@ -446,7 +446,9 @@ async def test_inflight_dedup_isolates_users_with_identical_requests() -> None:
     assert u1.text != u2.text
 
 
-async def test_cancelling_one_coalesced_waiter_preserves_surviving_waiter_and_cancels_on_last() -> None:
+async def test_cancelling_one_coalesced_waiter_preserves_surviving_waiter_and_cancels_on_last() -> (
+    None
+):
     started = asyncio.Event()
     cancelled = asyncio.Event()
 

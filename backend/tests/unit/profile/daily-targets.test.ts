@@ -114,7 +114,11 @@ describe('resolveDailyTargets: calories and macros', () => {
   });
 
   it('knowing nothing about the member returns the generic placeholders marked "default"', () => {
-    expect(resolveDailyTargets(nothingKnown)).toEqual({ source: 'default', ...DEFAULT_DAILY_TARGETS, water: null });
+    expect(resolveDailyTargets(nothingKnown)).toEqual({
+      source: 'default',
+      ...DEFAULT_DAILY_TARGETS,
+      water: null,
+    });
   });
 
   // The contract this whole change exists for: whichever screen asks, the four numbers are the same ones the
@@ -153,7 +157,7 @@ describe('resolveDailyTargets: calories and macros', () => {
 });
 
 describe('resolveDailyTargets: water', () => {
-  it('uses the member\'s own target when they set one, whatever their weight', () => {
+  it("uses the member's own target when they set one, whatever their weight", () => {
     expect(resolveDailyTargets({ ...profile, savedWaterTargetMl: 3200 }).water).toEqual({
       targetMl: 3200,
       source: 'saved',
@@ -161,8 +165,14 @@ describe('resolveDailyTargets: water', () => {
   });
 
   it('starts from 35 ml per kg of body weight, rounded to 50 ml, labelled as an estimate', () => {
-    expect(resolveDailyTargets({ ...nothingKnown, weightKg: 80 }).water).toEqual({ targetMl: 2800, source: 'estimated' });
-    expect(resolveDailyTargets({ ...nothingKnown, weightKg: 70 }).water).toEqual({ targetMl: 2450, source: 'estimated' });
+    expect(resolveDailyTargets({ ...nothingKnown, weightKg: 80 }).water).toEqual({
+      targetMl: 2800,
+      source: 'estimated',
+    });
+    expect(resolveDailyTargets({ ...nothingKnown, weightKg: 70 }).water).toEqual({
+      targetMl: 2450,
+      source: 'estimated',
+    });
   });
 
   it('keeps the estimate in a sensible band', () => {

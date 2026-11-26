@@ -28,4 +28,3 @@ export interface ConversationDetail {
   createdAt: string;
   updatedAt: string;
 }
-

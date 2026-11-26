@@ -7,9 +7,7 @@ export const maintenanceSettingSchema = z.strictObject({
 });
 
 export const minVersionSettingSchema = z.strictObject({
-  androidMinVersion: z
-    .string()
-    .regex(/^\d+\.\d+\.\d+$/, 'Version must be semver formatted (e.g. 1.0.0)'),
+  androidMinVersion: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must be semver formatted (e.g. 1.0.0)'),
 });
 
 export const forceUpdateSettingSchema = z.strictObject({
@@ -264,4 +262,3 @@ export const getGeminiUsageEventsResponseSchema = z.object({
   limit: z.number().int(),
   totalPages: z.number().int(),
 });
-

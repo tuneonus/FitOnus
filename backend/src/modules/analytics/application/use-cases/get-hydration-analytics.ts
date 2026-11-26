@@ -42,7 +42,9 @@ export class GetHydrationAnalyticsUseCase {
     // 35 ml/kg estimate), the same one the nutrition diary shows. 3000 ml only when nothing at all is known.
     const customTarget = input.customTargetMl && input.customTargetMl > 0 ? input.customTargetMl : null;
     const targetMl =
-      customTarget ?? (await this.bodyRepo.getUserProfileGoals(input.userId))?.dailyWaterTargetMl ?? DEFAULT_WATER_TARGET_ML;
+      customTarget ??
+      (await this.bodyRepo.getUserProfileGoals(input.userId))?.dailyWaterTargetMl ??
+      DEFAULT_WATER_TARGET_ML;
 
     const buckets = createCalendarBuckets(range, now, timezone);
     if (buckets.length === 0) {

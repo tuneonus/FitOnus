@@ -37,10 +37,8 @@ def route_after_validation(
     """Trigger bounded replanning when recoverable failures exist within limits."""
     if state.get("medical_halted") or state.get("status") in _HALT_STATUSES:
         return "final_synthesis"
-    if (
-        state.get("needs_replan")
-        and state.get("replan_attempts", 0) < state.get("max_replanning_attempts", 1)
+    if state.get("needs_replan") and state.get("replan_attempts", 0) < state.get(
+        "max_replanning_attempts", 1
     ):
         return "replan_tasks"
     return "final_synthesis"
-

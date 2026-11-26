@@ -4,13 +4,7 @@ export type CoachStreamResponse = CoachResponse & {
   readonly conversationId?: string | undefined;
 };
 
-export type CoachStreamEventType =
-  | 'start'
-  | 'status'
-  | 'delta'
-  | 'complete'
-  | 'error'
-  | 'heartbeat';
+export type CoachStreamEventType = 'start' | 'status' | 'delta' | 'complete' | 'error' | 'heartbeat';
 
 export type CoachStreamStage =
   | 'validating'
@@ -103,7 +97,8 @@ const SAFE_ERROR_MESSAGE_BY_CODE: Readonly<Record<string, string>> = {
   FEATURE_DISABLED: 'Streaming AI Coach is currently disabled.',
   RATE_LIMITED: 'Too many requests. Please slow down and try again shortly.',
   AI_QUOTA_EXCEEDED: 'Daily AI Coach limit reached. Please try again tomorrow.',
-  PROVIDER_RATE_LIMITED: 'The AI Coach is experiencing high demand right now. Please wait a moment and try again.',
+  PROVIDER_RATE_LIMITED:
+    'The AI Coach is experiencing high demand right now. Please wait a moment and try again.',
   PROVIDER_QUOTA_EXHAUSTED: 'Daily AI Coach capacity has been reached. Please check back tomorrow.',
   PROVIDER_TIMEOUT: 'AI request timed out. Please try again.',
   DEADLINE_EXCEEDED: 'AI request timed out. Please try again.',
@@ -139,7 +134,8 @@ const RE_BEARER = /\bbearer\s+[A-Za-z0-9._~+/=-]+/gi;
 const RE_JWT = /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*/g;
 const RE_INTERNAL_URL =
   /https?:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0|10\.\d+\.\d+\.\d+|172\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)[^\s'"]*/gi;
-const RE_INTERNAL_IP = /\b(?:127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(?::\d+)?\b/g;
+const RE_INTERNAL_IP =
+  /\b(?:127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(?::\d+)?\b/g;
 const RE_BREAKOUT_TAGS =
   /<\/?(?:retrieved_knowledge|knowledge_source|system|context_manifest|thought|thinking)[^>]*>/gi;
 
@@ -161,7 +157,10 @@ export function sanitizeStreamError(
   rawCode: string,
   _rawMessage?: string,
 ): { readonly code: string; readonly message: string; readonly retryable: boolean } {
-  const normalized = (rawCode || 'INTERNAL_ERROR').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+  const normalized = (rawCode || 'INTERNAL_ERROR')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_]/g, '_');
   const code = normalized in SAFE_ERROR_MESSAGE_BY_CODE ? normalized : 'INTERNAL_ERROR';
   const message =
     SAFE_ERROR_MESSAGE_BY_CODE[code] ?? 'An unexpected error occurred while streaming. Please try again.';

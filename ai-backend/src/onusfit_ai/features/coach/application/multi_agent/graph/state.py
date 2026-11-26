@@ -147,4 +147,3 @@ def create_initial_multi_agent_state(
         partial_results=False,
         medical_halted=bool(shared_context.medical_red_flags),
     )
-

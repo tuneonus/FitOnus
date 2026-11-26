@@ -30,9 +30,7 @@ describe('AI Coach Intent Router (English, Tamil, Tanglish)', () => {
 
     it('does not classify compound queries starting with a greeting as pure greeting', () => {
       // Must classify as exercise/nutrition, not pure greeting!
-      expect(classifyCoachQueryIntent('Hi coach, how do I do romanian deadlifts?')).toBe(
-        'exercise_coaching',
-      );
+      expect(classifyCoachQueryIntent('Hi coach, how do I do romanian deadlifts?')).toBe('exercise_coaching');
       expect(classifyCoachQueryIntent('Vanakkam, innaiku leg workout panna mudiyuma?')).toBe(
         'exercise_coaching',
       );
@@ -50,15 +48,11 @@ describe('AI Coach Intent Router (English, Tamil, Tanglish)', () => {
     });
 
     it('classifies exercise and movement inquiries in English, Tamil, and Tanglish', () => {
-      expect(classifyCoachQueryIntent('Shoulder pain during bench press')).toBe(
-        'exercise_coaching',
-      );
+      expect(classifyCoachQueryIntent('Shoulder pain during bench press')).toBe('exercise_coaching');
       expect(classifyCoachQueryIntent('How many sets of squats should I do for hypertrophy?')).toBe(
         'exercise_coaching',
       );
-      expect(classifyCoachQueryIntent('எனக்கு முழங்கால் வலி இருக்கிறது')).toBe(
-        'exercise_coaching',
-      );
+      expect(classifyCoachQueryIntent('எனக்கு முழங்கால் வலி இருக்கிறது')).toBe('exercise_coaching');
       expect(classifyCoachQueryIntent('tholpattai valikuthu, workout panna mudiyuma?')).toBe(
         'exercise_coaching',
       );
@@ -71,12 +65,8 @@ describe('AI Coach Intent Router (English, Tamil, Tanglish)', () => {
       expect(classifyCoachQueryIntent('Is intermittent fasting good for fat loss?')).toBe(
         'nutrition_coaching',
       );
-      expect(classifyCoachQueryIntent('முட்டை சாப்பிட்டால் கொழுப்பு கூடுமா?')).toBe(
-        'nutrition_coaching',
-      );
-      expect(classifyCoachQueryIntent('night saapadu la protein evlo irukanum?')).toBe(
-        'nutrition_coaching',
-      );
+      expect(classifyCoachQueryIntent('முட்டை சாப்பிட்டால் கொழுப்பு கூடுமா?')).toBe('nutrition_coaching');
+      expect(classifyCoachQueryIntent('night saapadu la protein evlo irukanum?')).toBe('nutrition_coaching');
     });
 
     it('defaults to general for ambiguous or multi-topic questions', () => {

@@ -67,13 +67,19 @@ def _sample_req(
                 ],
             }
         ),
-        memories=memories if memories is not None else ["Avoid behind-the-neck press due to shoulder"],
+        memories=memories
+        if memories is not None
+        else ["Avoid behind-the-neck press due to shoulder"],
     )
 
 
 def test_shared_context_respects_memory_consent_and_deduplicates_static_fields() -> None:
     req = _sample_req(
-        memories=["Arjun", "Avoid behind-the-neck press due to shoulder", "knee pain when squatting"]
+        memories=[
+            "Arjun",
+            "Avoid behind-the-neck press due to shoulder",
+            "knee pain when squatting",
+        ]
     )
     granted = build_shared_execution_context(
         req,
@@ -116,8 +122,16 @@ def test_minimal_context_view_passes_only_relevant_domain_slice() -> None:
 
 def test_evidence_deduplication_and_conflict_resolution_prioritizes_safety_and_recovery() -> None:
     dup_ev = [
-        EvidenceItem(source_agent=AgentRole.WORKOUT, source_tool="get_recent_workouts", summary="4 workouts logged"),
-        EvidenceItem(source_agent=AgentRole.PROGRESS, source_tool="get_recent_workouts", summary="4 workouts logged"),
+        EvidenceItem(
+            source_agent=AgentRole.WORKOUT,
+            source_tool="get_recent_workouts",
+            summary="4 workouts logged",
+        ),
+        EvidenceItem(
+            source_agent=AgentRole.PROGRESS,
+            source_tool="get_recent_workouts",
+            summary="4 workouts logged",
+        ),
     ]
     assert len(deduplicate_evidence(dup_ev)) == 1
 

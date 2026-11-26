@@ -278,9 +278,7 @@ async def tool_execution_node(
         if (current_calls + new_call_count) >= budget.max_tool_calls:
             limit_msg = f"Tool execution limit of {budget.max_tool_calls} calls reached."
             err_res = {"error": limit_msg}
-            obs = ctx.observer.process_tool_result(
-                step_copy.step_id, tool_name, raw_args, err_res
-            )
+            obs = ctx.observer.process_tool_result(step_copy.step_id, tool_name, raw_args, err_res)
             step_copy.status = StepStatus.SKIPPED
             step_copy.error = "Max tool calls limit reached"
             step_copy.observation = obs
@@ -316,9 +314,7 @@ async def tool_execution_node(
         return step_copy, obs, exec_res, action_sig, True
 
     try:
-        batch_outcomes = await asyncio.gather(
-            *[_execute_single_step(s) for s in pending_steps]
-        )
+        batch_outcomes = await asyncio.gather(*[_execute_single_step(s) for s in pending_steps])
 
         for step_res, obs, tool_res, sig, _executed in batch_outcomes:
             updated_steps.append(step_res)
@@ -435,8 +431,7 @@ async def observation_processing_node(
             status = AgentExecutionStatus.COMPLETED
             term_reason = AgentTerminationReason.GOAL_SATISFIED
         elif all(
-            s.status in (StepStatus.COMPLETED, StepStatus.FAILED, StepStatus.SKIPPED)
-            for s in steps
+            s.status in (StepStatus.COMPLETED, StepStatus.FAILED, StepStatus.SKIPPED) for s in steps
         ):
             status = AgentExecutionStatus.COMPLETED
             term_reason = AgentTerminationReason.ALL_STEPS_COMPLETED

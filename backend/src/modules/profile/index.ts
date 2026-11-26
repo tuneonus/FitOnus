@@ -36,11 +36,7 @@ export {
   personalFoodTargets,
   resolveDailyTargets,
 } from './domain/daily-targets.js';
-export type {
-  DailyTargetsInput,
-  DailyTargetsSource,
-  ResolvedDailyTargets,
-} from './domain/daily-targets.js';
+export type { DailyTargetsInput, DailyTargetsSource, ResolvedDailyTargets } from './domain/daily-targets.js';
 export type {
   OnboardingCompleteView,
   UserProfileView,

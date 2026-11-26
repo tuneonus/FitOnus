@@ -25,13 +25,17 @@ describe('Knowledge Base & pgvector Migrations', () => {
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS knowledge_documents (');
     expect(sql).toContain('slug        varchar(120) NOT NULL UNIQUE');
     expect(sql).toContain('title       varchar(255) NOT NULL');
-    expect(sql).toContain("category    varchar(50)  NOT NULL CHECK (category IN ('fitness', 'nutrition', 'recovery', 'app_guide'))");
+    expect(sql).toContain(
+      "category    varchar(50)  NOT NULL CHECK (category IN ('fitness', 'nutrition', 'recovery', 'app_guide'))",
+    );
     expect(sql).toContain('content     text         NOT NULL');
     expect(sql).toContain('metadata    jsonb        NOT NULL DEFAULT');
 
     // 3. knowledge_chunks table
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS knowledge_chunks (');
-    expect(sql).toContain('document_id     uuid         NOT NULL REFERENCES knowledge_documents (id) ON DELETE CASCADE');
+    expect(sql).toContain(
+      'document_id     uuid         NOT NULL REFERENCES knowledge_documents (id) ON DELETE CASCADE',
+    );
     expect(sql).toContain('chunk_index     integer      NOT NULL CHECK (chunk_index >= 0)');
     expect(sql).toContain('embedding       vector(768)  NOT NULL');
     expect(sql).toContain('CONSTRAINT uq_knowledge_chunk_doc_index UNIQUE (document_id, chunk_index)');

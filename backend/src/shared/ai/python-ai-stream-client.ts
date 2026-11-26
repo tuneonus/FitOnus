@@ -158,10 +158,13 @@ export async function streamPythonAi(
 
   const controller = new AbortController();
   let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    controller.abort(new Error('AI_STREAM_TIMEOUT'));
-  }, Math.max(500, input.timeoutMs));
+  const timer = setTimeout(
+    () => {
+      timedOut = true;
+      controller.abort(new Error('AI_STREAM_TIMEOUT'));
+    },
+    Math.max(500, input.timeoutMs),
+  );
 
   const onParentAbort = (): void => {
     controller.abort(input.signal?.reason ?? new Error('CLIENT_DISCONNECTED'));

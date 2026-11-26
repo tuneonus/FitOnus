@@ -34,7 +34,9 @@ describe('AI Memory Migration 0033', () => {
     expect(sql).toContain('ADD COLUMN IF NOT EXISTS superseded_by_id uuid');
 
     // 3. Status constraint with superseded
-    expect(sql).toContain("CHECK (status IN ('active', 'pending_approval', 'dismissed', 'archived', 'superseded'))");
+    expect(sql).toContain(
+      "CHECK (status IN ('active', 'pending_approval', 'dismissed', 'archived', 'superseded'))",
+    );
 
     // 4. Job queue table
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS ai_memory_extraction_jobs (');

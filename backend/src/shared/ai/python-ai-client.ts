@@ -2,7 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { SignJWT } from 'jose';
 import { z } from 'zod';
 import { AppError } from '../errors/app-error.js';
-import { currentTraceContext, formatTraceparent, isSafeCorrelationId } from '../logging/request-correlation.js';
+import {
+  currentTraceContext,
+  formatTraceparent,
+  isSafeCorrelationId,
+} from '../logging/request-correlation.js';
 import { defaultAiMetrics } from './ai-metrics.js';
 import { withAiSpan } from './ai-tracing.js';
 import type { GeminiFeature } from './gemini-feature.js';
@@ -151,12 +155,15 @@ const SAFE_MESSAGE_MAX = 300;
 function errorFromResponse(status: number, payload: unknown): PythonAiError {
   const error =
     typeof payload === 'object' && payload !== null && 'error' in payload
-      ? ((payload as { error: Record<string, unknown> | null }).error)
+      ? (payload as { error: Record<string, unknown> | null }).error
       : null;
   const code = typeof error?.code === 'string' ? error.code : undefined;
   const message =
-    typeof error?.message === 'string' ? error.message.slice(0, SAFE_MESSAGE_MAX) : `AI backend returned HTTP ${status}`;
-  const retryAfterSeconds = typeof error?.retryAfterSeconds === 'number' ? error.retryAfterSeconds : undefined;
+    typeof error?.message === 'string'
+      ? error.message.slice(0, SAFE_MESSAGE_MAX)
+      : `AI backend returned HTTP ${status}`;
+  const retryAfterSeconds =
+    typeof error?.retryAfterSeconds === 'number' ? error.retryAfterSeconds : undefined;
   const usage = typeof error?.usage === 'object' && error?.usage !== null ? error.usage : undefined;
   // If Python did not say, assume Gemini may have been called: the safe choice for billing.
   const dispatched = typeof error?.dispatched === 'boolean' ? error.dispatched : status >= 500;
@@ -202,7 +209,11 @@ export class PythonAiClient {
 
   constructor(config: PythonAiClientConfig) {
     if (config.serviceSecret.length < 32) {
-      throw new AppError('internal', 'INTERNAL_ERROR', 'AI backend service secret must be at least 32 characters.');
+      throw new AppError(
+        'internal',
+        'INTERNAL_ERROR',
+        'AI backend service secret must be at least 32 characters.',
+      );
     }
     this.baseUrl = config.baseUrl.replace(/\/+$/, '');
     this.secretKey = new TextEncoder().encode(config.serviceSecret);
@@ -226,9 +237,7 @@ export class PythonAiClient {
       throw new PythonAiError('timeout', 'AI backend request was cancelled.', { dispatched: false });
     }
     const timeoutSignal = AbortSignal.timeout(request.timeoutMs);
-    const requestSignal = request.signal
-      ? AbortSignal.any([timeoutSignal, request.signal])
-      : timeoutSignal;
+    const requestSignal = request.signal ? AbortSignal.any([timeoutSignal, request.signal]) : timeoutSignal;
     let response: Response;
     try {
       response = await this.fetchImpl(`${this.baseUrl}${request.path}`, {
@@ -239,7 +248,9 @@ export class PythonAiClient {
           authorization: `Bearer ${token}`,
           'x-request-id': request.requestId,
           // Re-validated here: this value ends up in an HTTP header, so it must never be attacker-shaped.
-          ...(isSafeCorrelationId(request.correlationId) ? { 'x-correlation-id': request.correlationId } : {}),
+          ...(isSafeCorrelationId(request.correlationId)
+            ? { 'x-correlation-id': request.correlationId }
+            : {}),
           ...(activeTrace ? { traceparent: formatTraceparent(activeTrace) } : {}),
         },
         body: JSON.stringify(request.body),
@@ -265,7 +276,8 @@ export class PythonAiClient {
       if (request.signal?.aborted) {
         throw new PythonAiError('timeout', 'AI backend request was cancelled.', { dispatched: true });
       }
-      if (isTimeout(error)) throw new PythonAiError('timeout', 'AI backend request timed out.', { dispatched: true });
+      if (isTimeout(error))
+        throw new PythonAiError('timeout', 'AI backend request timed out.', { dispatched: true });
       payload = undefined;
     }
 
@@ -333,8 +345,13 @@ export class PythonAiClient {
               feature: 'knowledge_embed',
               durationMs: Math.round(performance.now() - startedAt),
               success: false,
-              errorCategory: error instanceof PythonAiError && error.kind === 'timeout' ? 'python_timeout' : 'python_unavailable',
-              timeout: error instanceof PythonAiError && (error.kind === 'timeout' || error.kind === 'provider_timeout'),
+              errorCategory:
+                error instanceof PythonAiError && error.kind === 'timeout'
+                  ? 'python_timeout'
+                  : 'python_unavailable',
+              timeout:
+                error instanceof PythonAiError &&
+                (error.kind === 'timeout' || error.kind === 'provider_timeout'),
             });
           } catch {
             // Fail-open observability

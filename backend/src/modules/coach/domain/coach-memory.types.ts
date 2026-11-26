@@ -1,19 +1,7 @@
 export type MemoryCategory =
-  | 'goals'
-  | 'injuries'
-  | 'food'
-  | 'workout'
-  | 'medical'
-  | 'supplements'
-  | 'progress'
-  | 'conversations';
+  'goals' | 'injuries' | 'food' | 'workout' | 'medical' | 'supplements' | 'progress' | 'conversations';
 
-export type MemoryStatus =
-  | 'active'
-  | 'pending_approval'
-  | 'dismissed'
-  | 'archived'
-  | 'superseded';
+export type MemoryStatus = 'active' | 'pending_approval' | 'dismissed' | 'archived' | 'superseded';
 
 export interface MemoryItem {
   id: string;
@@ -36,4 +24,3 @@ export interface MemoryListResponse {
   items: MemoryItem[];
   suggestions: MemoryItem[];
 }
-

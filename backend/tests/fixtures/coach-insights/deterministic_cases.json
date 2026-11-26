@@ -81,9 +81,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -96,9 +94,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -111,9 +107,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -134,9 +128,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -149,9 +141,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -164,9 +154,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -257,9 +245,7 @@
           "severity": "positive",
           "action": "பயிற்சியைக் காண்க",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -272,9 +258,7 @@
           "severity": "info",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -287,9 +271,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -310,9 +292,7 @@
           "severity": "positive",
           "action": "பயிற்சியைக் காண்க",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -325,9 +305,7 @@
           "severity": "info",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -340,9 +318,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -433,9 +409,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -448,9 +422,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -463,9 +435,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -486,9 +456,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -501,9 +469,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -516,9 +482,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -609,9 +573,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -624,9 +586,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -639,9 +599,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -662,9 +620,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -677,9 +633,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -692,9 +646,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -785,9 +737,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -800,9 +750,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -815,9 +763,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -838,9 +784,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for Leg Day?",
-          "evidence": [
-            "Leg Day scheduled"
-          ],
+          "evidence": ["Leg Day scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -853,9 +797,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -868,9 +810,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1176,7 +1116,7 @@
         {
           "title": "Tiny",
           "category": "strength",
-          "targetValue": 1e+21,
+          "targetValue": 1e21,
           "currentValue": 0.00001,
           "unit": "x"
         }
@@ -1197,9 +1137,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1212,9 +1150,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1227,9 +1163,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1250,9 +1184,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1265,9 +1197,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1280,9 +1210,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1348,7 +1276,7 @@
         {
           "title": "Tiny",
           "category": "strength",
-          "targetValue": 1e+21,
+          "targetValue": 1e21,
           "currentValue": 0.00001,
           "unit": "x"
         }
@@ -1369,9 +1297,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1384,9 +1310,7 @@
           "severity": "info",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1399,9 +1323,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1422,9 +1344,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1437,9 +1357,7 @@
           "severity": "info",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1452,9 +1370,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1520,7 +1436,7 @@
         {
           "title": "Tiny",
           "category": "strength",
-          "targetValue": 1e+21,
+          "targetValue": 1e21,
           "currentValue": 0.00001,
           "unit": "x"
         }
@@ -1541,9 +1457,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1556,9 +1470,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1571,9 +1483,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1594,9 +1504,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1609,9 +1517,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1624,9 +1530,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1692,7 +1596,7 @@
         {
           "title": "Tiny",
           "category": "strength",
-          "targetValue": 1e+21,
+          "targetValue": 1e21,
           "currentValue": 0.00001,
           "unit": "x"
         }
@@ -1713,9 +1617,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1728,9 +1630,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1743,9 +1643,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1766,9 +1664,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1781,9 +1677,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1796,9 +1690,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1864,7 +1756,7 @@
         {
           "title": "Tiny",
           "category": "strength",
-          "targetValue": 1e+21,
+          "targetValue": 1e21,
           "currentValue": 0.00001,
           "unit": "x"
         }
@@ -1885,9 +1777,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1900,9 +1790,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1915,9 +1803,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -1938,9 +1824,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1953,9 +1837,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1234.5 / 2150.5 kcal"
-          ],
+          "evidence": ["1234.5 / 2150.5 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -1968,9 +1850,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "1500.5 ml logged"
-          ],
+          "evidence": ["1500.5 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2034,9 +1914,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2057,9 +1935,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2123,9 +1999,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2146,9 +2020,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2212,9 +2084,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2235,9 +2105,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2301,9 +2169,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2324,9 +2190,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2390,9 +2254,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2413,9 +2275,7 @@
           "severity": "positive",
           "action": "View Progress",
           "question": "What workout should I do next for balanced recovery?",
-          "evidence": [
-            "Upper Body Push completed"
-          ],
+          "evidence": ["Upper Body Push completed"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2491,9 +2351,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2506,9 +2364,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2521,9 +2377,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2544,9 +2398,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2559,9 +2411,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2574,9 +2424,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2652,9 +2500,7 @@
           "severity": "positive",
           "action": "பயிற்சியைக் காண்க",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2667,9 +2513,7 @@
           "severity": "info",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2682,9 +2526,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2705,9 +2547,7 @@
           "severity": "positive",
           "action": "பயிற்சியைக் காண்க",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2720,9 +2560,7 @@
           "severity": "info",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2735,9 +2573,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2813,9 +2649,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2828,9 +2662,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2843,9 +2675,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2866,9 +2696,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2881,9 +2709,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2896,9 +2722,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -2974,9 +2798,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -2989,9 +2811,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3004,9 +2824,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3027,9 +2845,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3042,9 +2858,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3057,9 +2871,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3135,9 +2947,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3150,9 +2960,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3165,9 +2973,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3188,9 +2994,7 @@
           "severity": "positive",
           "action": "Start Workout",
           "question": "How should I warm up for கால் பயிற்சி?",
-          "evidence": [
-            "கால் பயிற்சி scheduled"
-          ],
+          "evidence": ["கால் பயிற்சி scheduled"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3203,9 +3007,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "1400 / 2400 kcal"
-          ],
+          "evidence": ["1400 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3218,9 +3020,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3275,9 +3075,7 @@
           "severity": "watch",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3290,9 +3088,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3313,9 +3109,7 @@
           "severity": "watch",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3328,9 +3122,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3385,9 +3177,7 @@
           "severity": "watch",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3400,9 +3190,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3423,9 +3211,7 @@
           "severity": "watch",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3438,9 +3224,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3495,9 +3279,7 @@
           "severity": "watch",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3510,9 +3292,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3533,9 +3313,7 @@
           "severity": "watch",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3548,9 +3326,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3605,9 +3381,7 @@
           "severity": "watch",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3620,9 +3394,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3643,9 +3415,7 @@
           "severity": "watch",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3658,9 +3428,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3715,9 +3483,7 @@
           "severity": "watch",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3730,9 +3496,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3753,9 +3517,7 @@
           "severity": "watch",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "2600 / 2400 kcal"
-          ],
+          "evidence": ["2600 / 2400 kcal"],
           "confidence": "high",
           "requiresDevice": false
         },
@@ -3768,9 +3530,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "2000 ml logged"
-          ],
+          "evidence": ["2000 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3825,9 +3585,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3848,9 +3606,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3905,9 +3661,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3928,9 +3682,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -3985,9 +3737,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4008,9 +3758,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4065,9 +3813,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4088,9 +3834,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4145,9 +3889,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4168,9 +3910,7 @@
           "severity": "positive",
           "action": "Log Water",
           "question": "Am I drinking enough water for my workout level?",
-          "evidence": [
-            "750 ml logged"
-          ],
+          "evidence": ["750 ml logged"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4233,9 +3973,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4256,9 +3994,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4321,9 +4057,7 @@
           "severity": "info",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4344,9 +4078,7 @@
           "severity": "info",
           "action": "உணவு திட்டம்",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4409,9 +4141,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4432,9 +4162,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4497,9 +4225,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4520,9 +4246,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4585,9 +4309,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }
@@ -4608,9 +4330,7 @@
           "severity": "info",
           "action": "Plan Meals",
           "question": "How should I hit my remaining nutrition targets today?",
-          "evidence": [
-            "0 / 2000 kcal"
-          ],
+          "evidence": ["0 / 2000 kcal"],
           "confidence": "high",
           "requiresDevice": false
         }

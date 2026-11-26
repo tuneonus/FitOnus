@@ -130,7 +130,9 @@ class FitOnusMcpClient:
                 res = await self._session.list_tools()
                 discovered: list[McpToolDefinition] = []
                 for t in res.tools:
-                    schema_data = getattr(t, "input_schema", None) or getattr(t, "inputSchema", None) or {}
+                    schema_data = (
+                        getattr(t, "input_schema", None) or getattr(t, "inputSchema", None) or {}
+                    )
                     discovered.append(
                         McpToolDefinition(
                             name=t.name,
@@ -150,7 +152,9 @@ class FitOnusMcpClient:
             return []
 
         except Exception as exc:
-            raise McpError(f"Failed to list tools from MCP server: {exc}", code="TOOL_DISCOVERY_ERROR") from exc
+            raise McpError(
+                f"Failed to list tools from MCP server: {exc}", code="TOOL_DISCOVERY_ERROR"
+            ) from exc
 
     async def call_tool(
         self,
@@ -196,7 +200,9 @@ class FitOnusMcpClient:
                 return McpToolResult(
                     tool_name=name,
                     content=content_str,
-                    structured_data=structured if isinstance(structured, dict) else {"result": structured},
+                    structured_data=structured
+                    if isinstance(structured, dict)
+                    else {"result": structured},
                     is_error=is_err,
                     execution_time_ms=elapsed_ms,
                 )
@@ -235,7 +241,9 @@ class FitOnusMcpClient:
                     uri=str(r.uri),
                     name=r.name or str(r.uri),
                     description=r.description or "",
-                    mime_type=str(getattr(r, "mime_type", None) or getattr(r, "mimeType", "application/json")),
+                    mime_type=str(
+                        getattr(r, "mime_type", None) or getattr(r, "mimeType", "application/json")
+                    ),
                 )
                 for r in res.resources
             ]

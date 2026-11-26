@@ -48,7 +48,10 @@ const usage = (overrides: Partial<z.input<typeof pythonUsageSchema>> = {}) => ({
   durationMs: 120,
   ...overrides,
 });
-const reply = (overrides: Partial<z.input<typeof pythonUsageSchema>> = {}) => ({ outcome: 'ok', usage: usage(overrides) });
+const reply = (overrides: Partial<z.input<typeof pythonUsageSchema>> = {}) => ({
+  outcome: 'ok',
+  usage: usage(overrides),
+});
 const replySchema = z.object({ outcome: z.string(), usage: pythonUsageSchema });
 
 describe('AI telemetry against real PostgreSQL', () => {
@@ -138,15 +141,18 @@ describe('AI telemetry against real PostgreSQL', () => {
     ['coach insights', 'coach_chat', 'coach_insights'],
     ['meal photo', 'meal_photo', 'meal_photo'],
     ['voice meal', 'voice_meal', 'voice_meal'],
-  ] as const)('%s: recorded under operation type %s/%s for the right user', async (_name, gateAction, feature) => {
-    const postJson = vi.fn().mockResolvedValue(reply());
+  ] as const)(
+    '%s: recorded under operation type %s/%s for the right user',
+    async (_name, gateAction, feature) => {
+      const postJson = vi.fn().mockResolvedValue(reply());
 
-    await gate.run({ userId: bob, action: gateAction }, () => pythonCall(postJson, feature));
+      await gate.run({ userId: bob, action: gateAction }, () => pythonCall(postJson, feature));
 
-    const rows = await waitForEvents(1);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ user_id: bob, feature, status: 'success' });
-  });
+      const rows = await waitForEvents(1);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ user_id: bob, feature, status: 'success' });
+    },
+  );
 
   it('a call Python served with its fallback model is recorded as FALLBACK_SUCCESS', async () => {
     const postJson = vi.fn().mockResolvedValue(reply({ model: 'gemini-3.1-flash-lite', isFallback: true }));
@@ -212,7 +218,9 @@ describe('AI telemetry against real PostgreSQL', () => {
   it('a Python failure after dispatch records no event and keeps the quota unit consumed', async () => {
     const postJson = vi
       .fn()
-      .mockRejectedValue(new PythonAiError('provider_unavailable', 'Gemini overloaded', { dispatched: true }));
+      .mockRejectedValue(
+        new PythonAiError('provider_unavailable', 'Gemini overloaded', { dispatched: true }),
+      );
 
     await expect(
       gate.run({ userId: alice, action: 'coach_chat' }, () => pythonCall(postJson, 'coach_chat')),

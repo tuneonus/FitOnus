@@ -87,8 +87,7 @@ class McpToolsEvaluator:
 
         # 4. Human-In-The-Loop (HITL) approval check for write operations
         has_write_tool = any(
-            name in ("persist_workout_plan", "update_fitness_profile")
-            for name in actual_tool_names
+            name in ("persist_workout_plan", "update_fitness_profile") for name in actual_tool_names
         )
         if has_write_tool or expected_outcome == "approval_required":
             total_checks += 1
@@ -116,8 +115,7 @@ class McpToolsEvaluator:
         total_checks += 1
         found_forbidden = [term for term in forbidden_terms if term.lower() in output_text.lower()]
         has_unsanitized_delimiters = any(
-            delim in output_text
-            for delim in ("</grounding_observations>", "<system>", "```system")
+            delim in output_text for delim in ("</grounding_observations>", "<system>", "```system")
         )
 
         if not found_forbidden and not has_unsanitized_delimiters:

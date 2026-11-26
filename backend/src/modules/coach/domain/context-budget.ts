@@ -186,12 +186,7 @@ export function applyContextBudget(
   let ragTokens = knowledge.reduce((sum, k) => sum + estimateTokens(k.content), 0);
 
   let totalPromptTokens =
-    ESTIMATED_SYSTEM_BASE_TOKENS +
-    messageTokens +
-    profileTokens +
-    historyTokens +
-    memoryTokens +
-    ragTokens;
+    ESTIMATED_SYSTEM_BASE_TOKENS + messageTokens + profileTokens + historyTokens + memoryTokens + ragTokens;
 
   let overflowOccurred = false;
 

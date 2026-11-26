@@ -7,8 +7,4 @@
  * `app-settings/domain/gemini-config.ts` re-exports it so existing imports keep working.
  */
 export type GeminiFeature =
-  | 'coach_chat'
-  | 'coach_insights'
-  | 'meal_photo'
-  | 'voice_meal'
-  | 'workout_generator';
+  'coach_chat' | 'coach_insights' | 'meal_photo' | 'voice_meal' | 'workout_generator';

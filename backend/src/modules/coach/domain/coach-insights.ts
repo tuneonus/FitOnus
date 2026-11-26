@@ -14,11 +14,11 @@ import type { CoachInsightItem, CoachInsightsResponse, UserFitnessContext } from
 export function hasSufficientInsightsData(context: UserFitnessContext): boolean {
   return Boolean(
     context.recentWorkouts.length > 0 ||
-      context.todayNutrition.caloriesConsumed > 0 ||
-      context.todayNutrition.waterIntakeMl > 0 ||
-      context.latestWeightKg !== null ||
-      context.activeGoals.length > 0 ||
-      context.todayPlannedWorkout !== null,
+    context.todayNutrition.caloriesConsumed > 0 ||
+    context.todayNutrition.waterIntakeMl > 0 ||
+    context.latestWeightKg !== null ||
+    context.activeGoals.length > 0 ||
+    context.todayPlannedWorkout !== null,
   );
 }
 
@@ -44,7 +44,10 @@ export function buildWelcomeInsights(context: UserFitnessContext, lang?: string)
 }
 
 /** Data-backed insights built without AI (greeting, planned or last workout, calories, water). */
-export function buildDeterministicInsights(context: UserFitnessContext, lang?: string): CoachInsightsResponse {
+export function buildDeterministicInsights(
+  context: UserFitnessContext,
+  lang?: string,
+): CoachInsightsResponse {
   const isTa = lang === 'ta';
   const isTanglish = lang === 'tanglish';
 
@@ -78,7 +81,11 @@ export function buildDeterministicInsights(context: UserFitnessContext, lang?: s
     const last = recentWorkouts[0]!;
     items.push({
       id: 'ins-det-last-workout',
-      title: isTa ? 'உடற்பயிற்சி நிலைத்தன்மை' : isTanglish ? 'Workout Streak On Track' : 'Workout Consistency',
+      title: isTa
+        ? 'உடற்பயிற்சி நிலைத்தன்மை'
+        : isTanglish
+          ? 'Workout Streak On Track'
+          : 'Workout Consistency',
       description: isTa
         ? `${last.name} முடித்ததற்கு பாராட்டுக்கள்!`
         : isTanglish
@@ -98,9 +105,18 @@ export function buildDeterministicInsights(context: UserFitnessContext, lang?: s
   // 2. Nutrition Insight
   if (todayNutrition.calorieTarget && todayNutrition.calorieTarget > 0) {
     const remainingKcal = todayNutrition.calorieTarget - todayNutrition.caloriesConsumed;
-    const title = remainingKcal > 0
-      ? (isTa ? `${remainingKcal} கலோரிகள் மீதமுள்ளன` : isTanglish ? `${remainingKcal} kcal remaining irukku` : `${remainingKcal} kcal remaining today`)
-      : (isTa ? 'இன்றைய கலோரி இலக்கை அடைந்துவிட்டீர்கள்' : isTanglish ? 'Calorie target reached!' : 'Calorie target achieved today');
+    const title =
+      remainingKcal > 0
+        ? isTa
+          ? `${remainingKcal} கலோரிகள் மீதமுள்ளன`
+          : isTanglish
+            ? `${remainingKcal} kcal remaining irukku`
+            : `${remainingKcal} kcal remaining today`
+        : isTa
+          ? 'இன்றைய கலோரி இலக்கை அடைந்துவிட்டீர்கள்'
+          : isTanglish
+            ? 'Calorie target reached!'
+            : 'Calorie target achieved today';
 
     items.push({
       id: 'ins-det-nutrition',
@@ -126,7 +142,11 @@ export function buildDeterministicInsights(context: UserFitnessContext, lang?: s
     const liters = (todayNutrition.waterIntakeMl / 1000).toFixed(1);
     items.push({
       id: 'ins-det-water',
-      title: isTa ? `நீர் அளவு: ${liters} லிட்டர்` : isTanglish ? `Water: ${liters}L logged today` : `Water Logged: ${liters}L`,
+      title: isTa
+        ? `நீர் அளவு: ${liters} லிட்டர்`
+        : isTanglish
+          ? `Water: ${liters}L logged today`
+          : `Water Logged: ${liters}L`,
       description: isTa
         ? 'போதுமான அளவு தண்ணீர் குடிப்பது தசை மீட்பிற்கு மிகவும் அவசியம்.'
         : isTanglish

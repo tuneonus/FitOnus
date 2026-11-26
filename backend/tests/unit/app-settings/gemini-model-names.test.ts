@@ -54,6 +54,10 @@ describe('GeminiRuntimeService.resolveModelNames', () => {
   it('resolveExecutionTarget keeps returning the same models plus the key', async () => {
     const service = runtime(config(), 'env-key');
     const target = await service.resolveExecutionTarget('coach_chat');
-    expect(target).toMatchObject({ apiKey: 'env-key', primaryModel: 'coach-model', fallbackModel: 'backup-model' });
+    expect(target).toMatchObject({
+      apiKey: 'env-key',
+      primaryModel: 'coach-model',
+      fallbackModel: 'backup-model',
+    });
   });
 });

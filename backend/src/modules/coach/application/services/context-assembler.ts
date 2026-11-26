@@ -67,30 +67,18 @@ export class CoachContextAssembler {
     const routing = routeCoachQueryIntent(trimmedMessage);
 
     // 2. Load User Profile and today's local fitness metrics
-    const userContext = await this.deps.userContextRepo.getUserFitnessContext(
-      input.userId,
-      timezone,
-    );
+    const userContext = await this.deps.userContextRepo.getUserFitnessContext(input.userId, timezone);
 
     // 3. Resolve Conversation History (prioritize client history if provided, else DB)
     let candidateHistory: ChatMessageTurn[] = input.clientHistory ?? [];
-    if (
-      candidateHistory.length === 0 &&
-      this.deps.conversationRepo &&
-      input.conversationId
-    ) {
+    if (candidateHistory.length === 0 && this.deps.conversationRepo && input.conversationId) {
       const pastMessages = await this.deps.conversationRepo.getMessages(
         input.userId,
         input.conversationId,
         15,
       );
       candidateHistory = pastMessages
-        .filter(
-          (m) =>
-            m.id !== input.clientMessageId &&
-            m.text &&
-            m.text.trim().length > 0,
-        )
+        .filter((m) => m.id !== input.clientMessageId && m.text && m.text.trim().length > 0)
         .map((m) => ({
           role: m.role as 'user' | 'assistant',
           text: m.text,
@@ -116,34 +104,30 @@ export class CoachContextAssembler {
     let candidateKnowledge: KnowledgeContextPayloadItem[] = [];
     if (routing.shouldRetrieveRag && this.deps.knowledgeService) {
       try {
-        await withAiSpan(
-          'coach.rag.retrieve',
-          { attributes: { intent: routing.intent } },
-          async (span) => {
-            const hybridChunks = await this.deps.knowledgeService!.searchHybrid(trimmedMessage, {
-              limit: 3,
+        await withAiSpan('coach.rag.retrieve', { attributes: { intent: routing.intent } }, async (span) => {
+          const hybridChunks = await this.deps.knowledgeService!.searchHybrid(trimmedMessage, {
+            limit: 3,
+            minSimilarity: 0.35,
+          });
+
+          if (hybridChunks.length > 0) {
+            const ragContext = this.deps.knowledgeService!.buildRagContext(hybridChunks, {
+              maxTokens: 900,
+              maxChunks: 3,
               minSimilarity: 0.35,
             });
-
-            if (hybridChunks.length > 0) {
-              const ragContext = this.deps.knowledgeService!.buildRagContext(hybridChunks, {
-                maxTokens: 900,
-                maxChunks: 3,
-                minSimilarity: 0.35,
-              });
-              span.setAttribute('citationsCount', ragContext.citations.length);
-              candidateKnowledge = ragContext.items.map((item) => ({
-                documentSlug: item.documentSlug,
-                documentTitle: item.documentTitle,
-                category: item.category,
-                chunkIndex: item.chunkIndex,
-                content: item.content,
-                citation: item.citation,
-              }));
-            }
-            span.setAttribute('returnedCount', candidateKnowledge.length);
-          },
-        );
+            span.setAttribute('citationsCount', ragContext.citations.length);
+            candidateKnowledge = ragContext.items.map((item) => ({
+              documentSlug: item.documentSlug,
+              documentTitle: item.documentTitle,
+              category: item.category,
+              chunkIndex: item.chunkIndex,
+              content: item.content,
+              citation: item.citation,
+            }));
+          }
+          span.setAttribute('returnedCount', candidateKnowledge.length);
+        });
       } catch (err) {
         const errorType = err instanceof Error ? err.name : 'Error';
         // Safe fallback: log without leaking user PII or raw error details, proceed with ungrounded chat

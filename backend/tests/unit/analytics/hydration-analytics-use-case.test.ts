@@ -79,7 +79,7 @@ describe('GetHydrationAnalyticsUseCase', () => {
     expect(res.adherencePct).toBe(50);
   });
 
-  it('an explicit target from the caller still wins over the member\'s goal', async () => {
+  it("an explicit target from the caller still wins over the member's goal", async () => {
     vi.mocked(mockBodyRepo.getUserProfileGoals).mockResolvedValueOnce(goalsWithWater(2800));
     vi.mocked(mockNutritionRepo.getDailyWaterAggregates).mockResolvedValueOnce([]);
 

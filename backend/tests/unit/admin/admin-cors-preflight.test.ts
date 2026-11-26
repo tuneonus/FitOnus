@@ -211,9 +211,7 @@ describe('Vercel Admin → DEV Backend CORS & Preflight Regressions', () => {
     expect(preflightRes.headers['access-control-allow-origin']).toBeUndefined();
 
     // Actual request from unauthorized origin
-    const getRes = await request(app)
-      .get('/api/v1/admin/auth/me')
-      .set('Origin', UNAUTHORIZED_ORIGIN);
+    const getRes = await request(app).get('/api/v1/admin/auth/me').set('Origin', UNAUTHORIZED_ORIGIN);
 
     expect(getRes.headers['access-control-allow-origin']).toBeUndefined();
   });
@@ -223,9 +221,7 @@ describe('Vercel Admin → DEV Backend CORS & Preflight Regressions', () => {
     const app = createTestApp();
 
     // Request with no credentials from Vercel origin returns 401 (with CORS headers so frontend receives it)
-    const unauthRes = await request(app)
-      .get('/api/v1/admin/auth/me')
-      .set('Origin', VERCEL_ADMIN_ORIGIN);
+    const unauthRes = await request(app).get('/api/v1/admin/auth/me').set('Origin', VERCEL_ADMIN_ORIGIN);
 
     expect(unauthRes.status).toBe(401);
     expect(unauthRes.body.error.code).toBe('UNAUTHENTICATED');
@@ -269,17 +265,14 @@ describe('Vercel Admin → DEV Backend CORS & Preflight Regressions', () => {
     const app = createTestApp();
 
     // Native mobile app request without Origin header
-    const mobileNativeRes = await request(app)
-      .get('/api/v1/workouts');
+    const mobileNativeRes = await request(app).get('/api/v1/workouts');
 
     expect(mobileNativeRes.status).toBe(200);
     expect(mobileNativeRes.body.data.items).toEqual(['Chest Day', 'Leg Day']);
     expect(mobileNativeRes.headers['access-control-allow-origin']).toBeUndefined();
 
     // Expo web / configured local dev origin
-    const mobileWebRes = await request(app)
-      .get('/api/v1/workouts')
-      .set('Origin', MOBILE_DEV_ORIGIN);
+    const mobileWebRes = await request(app).get('/api/v1/workouts').set('Origin', MOBILE_DEV_ORIGIN);
 
     expect(mobileWebRes.status).toBe(200);
     expect(mobileWebRes.headers['access-control-allow-origin']).toBe(MOBILE_DEV_ORIGIN);

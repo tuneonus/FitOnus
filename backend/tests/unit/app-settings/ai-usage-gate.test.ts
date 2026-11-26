@@ -474,28 +474,30 @@ describe('Python-served AI usage is recorded for the authenticated user', () => 
   });
 
   it('records no event for a failed Python call, and a dispatched failure keeps the quota unit', async () => {
-    const postJson = vi.fn().mockRejectedValue(
-      new PythonAiError('provider_unavailable', 'Gemini overloaded', { dispatched: true }),
-    );
+    const postJson = vi
+      .fn()
+      .mockRejectedValue(
+        new PythonAiError('provider_unavailable', 'Gemini overloaded', { dispatched: true }),
+      );
     const { settings, gate, recorded, call } = build(postJson);
 
-    await expect(gate.run({ userId: USER, action: 'coach_chat' }, () => call('coach_chat', 'req-2'))).rejects.toBeInstanceOf(
-      AppError,
-    );
+    await expect(
+      gate.run({ userId: USER, action: 'coach_chat' }, () => call('coach_chat', 'req-2')),
+    ).rejects.toBeInstanceOf(AppError);
 
     expect(recorded).toEqual([]);
     expect(settings.store.actionCount(USER, 'coach_chat')).toBe(1);
   });
 
   it('refunds the unit when Python was never reached, because Gemini was never called', async () => {
-    const postJson = vi.fn().mockRejectedValue(
-      new PythonAiError('unreachable', 'connection refused', { dispatched: false }),
-    );
+    const postJson = vi
+      .fn()
+      .mockRejectedValue(new PythonAiError('unreachable', 'connection refused', { dispatched: false }));
     const { settings, gate, recorded, call } = build(postJson);
 
-    await expect(gate.run({ userId: USER, action: 'meal_photo' }, () => call('meal_photo', 'req-3'))).rejects.toBeInstanceOf(
-      AppError,
-    );
+    await expect(
+      gate.run({ userId: USER, action: 'meal_photo' }, () => call('meal_photo', 'req-3')),
+    ).rejects.toBeInstanceOf(AppError);
 
     expect(recorded).toEqual([]);
     expect(settings.store.actionCount(USER, 'meal_photo')).toBe(0);

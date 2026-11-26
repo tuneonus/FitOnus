@@ -1,6 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Request } from 'express';
-import { createInternalToolsController, type InternalToolsControllerDeps } from '../../../src/modules/coach/interface/internal-tools.controller.js';
+import {
+  createInternalToolsController,
+  type InternalToolsControllerDeps,
+} from '../../../src/modules/coach/interface/internal-tools.controller.js';
 import { createActor } from '../../../src/shared/auth/actor.js';
 
 describe('Internal Tools Controller', () => {
@@ -115,9 +118,7 @@ describe('Internal Tools Controller', () => {
       } as unknown as InternalToolsControllerDeps['mealRepo'],
 
       waterRepo: {
-        getTotalDateRange: vi.fn().mockResolvedValue([
-          { date: '2026-11-20', totalMl: 2500 },
-        ]),
+        getTotalDateRange: vi.fn().mockResolvedValue([{ date: '2026-11-20', totalMl: 2500 }]),
       } as unknown as InternalToolsControllerDeps['waterRepo'],
 
       targetAdapter: {
@@ -197,8 +198,16 @@ describe('Internal Tools Controller', () => {
 
     const result = await controller.getNutritionSummary(req);
 
-    expect(mockDeps.mealRepo.listDateRange).toHaveBeenCalledWith(userId, expect.any(String), expect.any(String));
-    expect(mockDeps.waterRepo.getTotalDateRange).toHaveBeenCalledWith(userId, expect.any(String), expect.any(String));
+    expect(mockDeps.mealRepo.listDateRange).toHaveBeenCalledWith(
+      userId,
+      expect.any(String),
+      expect.any(String),
+    );
+    expect(mockDeps.waterRepo.getTotalDateRange).toHaveBeenCalledWith(
+      userId,
+      expect.any(String),
+      expect.any(String),
+    );
     expect(mockDeps.targetAdapter.findTargetsByUserId).toHaveBeenCalledWith(userId);
 
     expect(result.data.days[0]).toEqual({
@@ -226,7 +235,10 @@ describe('Internal Tools Controller', () => {
     const result = await controller.getWeightTrend(req);
 
     expect(mockDeps.weightRepo.getUserWeightSummary).toHaveBeenCalledWith(userId);
-    expect(mockDeps.weightRepo.listForUser).toHaveBeenCalledWith(userId, expect.objectContaining({ limit: 30 }));
+    expect(mockDeps.weightRepo.listForUser).toHaveBeenCalledWith(
+      userId,
+      expect.objectContaining({ limit: 30 }),
+    );
 
     expect(result.data.summary).toEqual({
       currentWeightKg: 78.5,

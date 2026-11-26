@@ -973,9 +973,7 @@ class GeminiClient:
                             if turn_model_contents
                             else types.Content(
                                 role="model",
-                                parts=[
-                                    types.Part(function_call=fc) for fc in turn_function_calls
-                                ],
+                                parts=[types.Part(function_call=fc) for fc in turn_function_calls],
                             )
                         )
 
@@ -1083,9 +1081,7 @@ class GeminiClient:
                 if last.kind != "BAD_REQUEST":
                     self._cooldown.record_failure(model, last.retry_after_seconds)
                 can_try_next = last.is_retryable and not last.is_project_wide
-                will_fallback = (
-                    not emitted_any_chunk and index < len(plan) - 1 and can_try_next
-                )
+                will_fallback = not emitted_any_chunk and index < len(plan) - 1 and can_try_next
                 log_event(
                     logger,
                     "ai.gemini.attempt_failed",

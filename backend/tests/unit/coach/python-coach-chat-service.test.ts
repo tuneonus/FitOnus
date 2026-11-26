@@ -79,7 +79,13 @@ describe('PythonCoachChatService (the only coach chat implementation)', () => {
 
     it('omits optional fields Python left null (no medicalNote/blocks keys)', async () => {
       server.respond((_r, res) =>
-        json(res, 200, okCoachReply({ result: { text: 't', followUps: [], sources: [], medicalNote: null, blocks: null } })),
+        json(
+          res,
+          200,
+          okCoachReply({
+            result: { text: 't', followUps: [], sources: [], medicalNote: null, blocks: null },
+          }),
+        ),
       );
       const response: CoachResponse = await generate(build());
       expect(response).toEqual({ text: 't', followUps: [], sources: [] });
@@ -123,7 +129,10 @@ describe('PythonCoachChatService (the only coach chat implementation)', () => {
     it('sends fallback null when no fallback model is configured', async () => {
       models = { primary: 'only-model', fallback: null };
       await generate(build());
-      expect((server.requests[0]!.body as { model: unknown }).model).toEqual({ primary: 'only-model', fallback: null });
+      expect((server.requests[0]!.body as { model: unknown }).model).toEqual({
+        primary: 'only-model',
+        fallback: null,
+      });
     });
 
     it('identifies the user only through the signed token', async () => {
@@ -144,7 +153,13 @@ describe('PythonCoachChatService (the only coach chat implementation)', () => {
 
     it('records tokens, model and Python-side fallback usage in the ledger exactly once', async () => {
       server.respond((_r, res) =>
-        json(res, 200, okCoachReply({ usage: { ...(okCoachReply().usage as object), model: 'fallback-model', isFallback: true } })),
+        json(
+          res,
+          200,
+          okCoachReply({
+            usage: { ...(okCoachReply().usage as object), model: 'fallback-model', isFallback: true },
+          }),
+        ),
       );
       await generate(build());
 
@@ -197,7 +212,10 @@ describe('PythonCoachChatService (the only coach chat implementation)', () => {
 
       const error = await failure(generate(build()));
 
-      expect(isAppError(error) && [error.code, error.message]).toEqual(['SERVICE_UNAVAILABLE', AI_BACKEND_UNAVAILABLE_MESSAGE]);
+      expect(isAppError(error) && [error.code, error.message]).toEqual([
+        'SERVICE_UNAVAILABLE',
+        AI_BACKEND_UNAVAILABLE_MESSAGE,
+      ]);
       expect(aiContext.dispatched).toBe(false);
       expect(JSON.stringify(error)).not.toContain('token');
     });
@@ -205,7 +223,12 @@ describe('PythonCoachChatService (the only coach chat implementation)', () => {
     it.each([
       ['500 internal error', 500, pythonError('INTERNAL_ERROR', 'boom'), true],
       ['422 contract mismatch', 422, pythonError('INVALID_REQUEST', 'bad', { dispatched: false }), false],
-      ['503 Python has no Gemini key', 503, pythonError('PROVIDER_NOT_CONFIGURED', 'no key', { dispatched: false }), false],
+      [
+        '503 Python has no Gemini key',
+        503,
+        pythonError('PROVIDER_NOT_CONFIGURED', 'no key', { dispatched: false }),
+        false,
+      ],
       ['503 Gemini key rejected', 503, pythonError('PROVIDER_AUTH_ERROR', 'bad key'), true],
       ['503 unknown provider error', 503, pythonError('PROVIDER_ERROR', 'x'), true],
     ])('%s: controlled 503, exactly one call, dispatched=%s', async (_name, status, body, dispatched) => {
@@ -251,9 +274,14 @@ describe('PythonCoachChatService (the only coach chat implementation)', () => {
     });
 
     it('keeps retryAfterSeconds on the rate-limit error (Gemini rate-limit)', async () => {
-      server.respond((_r, res) => json(res, 429, pythonError('PROVIDER_RATE_LIMITED', 'slow', { retryAfterSeconds: 25 })));
+      server.respond((_r, res) =>
+        json(res, 429, pythonError('PROVIDER_RATE_LIMITED', 'slow', { retryAfterSeconds: 25 })),
+      );
       const error = await failure(generate(build()));
-      expect(isAppError(error) && [error.kind, error.details]).toEqual(['rate_limited', { retryAfterSeconds: 25 }]);
+      expect(isAppError(error) && [error.kind, error.details]).toEqual([
+        'rate_limited',
+        { retryAfterSeconds: 25 },
+      ]);
     });
 
     it('maps a Gemini timeout inside Python to the standard timeout error', async () => {

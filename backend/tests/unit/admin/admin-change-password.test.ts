@@ -17,7 +17,10 @@ import {
   adminChangePasswordRequest,
   adminChangePasswordResponseSchema,
 } from '../../../src/modules/admin/interface/admin.schemas.js';
-import { createAdminRoutes, type AdminRateLimiters } from '../../../src/modules/admin/interface/admin.routes.js';
+import {
+  createAdminRoutes,
+  type AdminRateLimiters,
+} from '../../../src/modules/admin/interface/admin.routes.js';
 import type { AdminController } from '../../../src/modules/admin/interface/admin.controller.js';
 import { createActor } from '../../../src/shared/auth/actor.js';
 import { AppError } from '../../../src/shared/errors/app-error.js';

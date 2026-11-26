@@ -3,9 +3,7 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { buildRouter } from '../../../src/shared/http/route.js';
 import { createAppSettingsController } from '../../../src/modules/app-settings/interface/app-settings.controller.js';
-import {
-  createAdminAiRoutes,
-} from '../../../src/modules/app-settings/interface/app-settings.routes.js';
+import { createAdminAiRoutes } from '../../../src/modules/app-settings/interface/app-settings.routes.js';
 import { GetAppSettingsUseCase } from '../../../src/modules/app-settings/application/use-cases/get-app-settings.js';
 import { UpdateAppSettingsUseCase } from '../../../src/modules/app-settings/application/use-cases/update-app-settings.js';
 import { GetPublicAppConfigUseCase } from '../../../src/modules/app-settings/application/use-cases/get-public-app-config.js';
@@ -156,10 +154,7 @@ class InMemoryAppSettingsRepo implements AppSettingsRepository {
     return { ...this.geminiConfig };
   }
 
-  async rollbackGeminiApiKey(
-    expectedVersion?: number,
-    updatedBy?: string,
-  ): Promise<GeminiConfigRecord> {
+  async rollbackGeminiApiKey(expectedVersion?: number, updatedBy?: string): Promise<GeminiConfigRecord> {
     if (!this.geminiConfig.previousEncryptedApiKey) {
       const err = new Error('No previous key') as any;
       err.status = 400;
@@ -228,15 +223,11 @@ class InMemoryAppSettingsRepo implements AppSettingsRepository {
   }
 
   async getGeminiUsageByModel() {
-    return [
-      { model: 'gemini-2.5-flash', requestCount: 15, totalTokens: 9000, estimatedCostUsd: 0.0027 },
-    ];
+    return [{ model: 'gemini-2.5-flash', requestCount: 15, totalTokens: 9000, estimatedCostUsd: 0.0027 }];
   }
 
   async getGeminiDailyTrends() {
-    return [
-      { date: '2026-11-09', requestCount: 15, totalTokens: 9000, estimatedCostUsd: 0.0027 },
-    ];
+    return [{ date: '2026-11-09', requestCount: 15, totalTokens: 9000, estimatedCostUsd: 0.0027 }];
   }
 }
 
@@ -388,12 +379,10 @@ describe('FitOnus Admin Gemini AI Management & Security Suite', () => {
 
   it('2b. PATCH /api/v1/admin/ai/configuration rejects invalid model name with 400 validation error', async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .patch('/api/v1/admin/ai/configuration')
-      .send({
-        defaultModel: 'non-existent-gpt-5-model',
-        expectedVersion: 1,
-      });
+    const res = await request(app).patch('/api/v1/admin/ai/configuration').send({
+      defaultModel: 'non-existent-gpt-5-model',
+      expectedVersion: 1,
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.error.message).toContain('not supported');
@@ -401,12 +390,10 @@ describe('FitOnus Admin Gemini AI Management & Security Suite', () => {
 
   it('2c. PATCH /api/v1/admin/ai/configuration enforces optimistic concurrency and rejects stale version with 409', async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .patch('/api/v1/admin/ai/configuration')
-      .send({
-        defaultModel: 'gemini-2.5-flash-lite',
-        expectedVersion: 99, // Stale!
-      });
+    const res = await request(app).patch('/api/v1/admin/ai/configuration').send({
+      defaultModel: 'gemini-2.5-flash-lite',
+      expectedVersion: 99, // Stale!
+    });
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('VERSION_CONFLICT');
@@ -464,13 +451,11 @@ describe('FitOnus Admin Gemini AI Management & Security Suite', () => {
 
   it('2f. PATCH /api/v1/admin/ai/configuration strictly rejects unrecognized root keys with 400', async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .patch('/api/v1/admin/ai/configuration')
-      .send({
-        defaultModel: 'gemini-3.5-flash-lite',
-        coachModel: 'gemini-3.5-flash-lite', // Disallowed flat key at root
-        expectedVersion: 1,
-      });
+    const res = await request(app).patch('/api/v1/admin/ai/configuration').send({
+      defaultModel: 'gemini-3.5-flash-lite',
+      coachModel: 'gemini-3.5-flash-lite', // Disallowed flat key at root
+      expectedVersion: 1,
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_FAILED');
@@ -478,22 +463,18 @@ describe('FitOnus Admin Gemini AI Management & Security Suite', () => {
 
   it('2g. PATCH /api/v1/admin/ai/configuration rejects non-existent models gemini-3.6-flash and gemini-3.8-flash', async () => {
     const app = createTestApp();
-    const res = await request(app)
-      .patch('/api/v1/admin/ai/configuration')
-      .send({
-        defaultModel: 'gemini-3.6-flash',
-        expectedVersion: 1,
-      });
+    const res = await request(app).patch('/api/v1/admin/ai/configuration').send({
+      defaultModel: 'gemini-3.6-flash',
+      expectedVersion: 1,
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.error.message).toContain('not supported');
 
-    const res2 = await request(app)
-      .patch('/api/v1/admin/ai/configuration')
-      .send({
-        defaultModel: 'gemini-3.8-flash',
-        expectedVersion: 1,
-      });
+    const res2 = await request(app).patch('/api/v1/admin/ai/configuration').send({
+      defaultModel: 'gemini-3.8-flash',
+      expectedVersion: 1,
+    });
 
     expect(res2.status).toBe(400);
     expect(res2.body.error.message).toContain('not supported');
@@ -544,9 +525,7 @@ describe('FitOnus Admin Gemini AI Management & Security Suite', () => {
     expect(repo.geminiConfig.keyMask).toBe('AIzaSy...9zW1');
 
     // Now Rollback
-    const rollbackRes = await request(app)
-      .post('/api/v1/admin/ai/rollback-key')
-      .send({ expectedVersion: 3 });
+    const rollbackRes = await request(app).post('/api/v1/admin/ai/rollback-key').send({ expectedVersion: 3 });
 
     expect(rollbackRes.status).toBe(200);
     expect(rollbackRes.body.data.keyMask).toBe('AIzaSy...4xQ9');

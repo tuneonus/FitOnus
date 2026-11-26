@@ -26,20 +26,18 @@ import {
   type CoachResponseDto,
   type TranscribeResponseDto,
 } from './coach.schemas.js';
-import type {
-  ConversationDetail,
-  ConversationSummary,
-} from '../domain/coach-history.types.js';
-import type {
-  MemoryItem,
-  MemoryListResponse,
-} from '../domain/coach-memory.types.js';
+import type { ConversationDetail, ConversationSummary } from '../domain/coach-history.types.js';
+import type { MemoryItem, MemoryListResponse } from '../domain/coach-memory.types.js';
 
 export interface CoachController {
   chat(req: Request): Promise<RouteResult<CoachResponseDto>>;
   streamChat(req: Request, res: Response): Promise<RouteResult<{ streamed: boolean }>>;
   getInsights(req: Request): Promise<RouteResult<CoachInsightsResponseDto>>;
-  listConversations(req: Request): Promise<RouteResult<{ conversations: ConversationSummary[]; total: number; page: number; limit: number }>>;
+  listConversations(
+    req: Request,
+  ): Promise<
+    RouteResult<{ conversations: ConversationSummary[]; total: number; page: number; limit: number }>
+  >;
   createConversation(req: Request): Promise<RouteResult<ConversationSummary>>;
   getConversation(req: Request): Promise<RouteResult<ConversationDetail>>;
   renameConversation(req: Request): Promise<RouteResult<ConversationSummary>>;
@@ -101,11 +99,7 @@ export function createCoachController(deps: {
     async streamChat(req: Request, res: Response): Promise<RouteResult<{ streamed: boolean }>> {
       const actor = requireActor(req);
       if (!deps.streamCoachChat) {
-        throw new AppError(
-          'unprocessable',
-          'FEATURE_DISABLED',
-          'Streaming AI Coach is currently disabled.',
-        );
+        throw new AppError('unprocessable', 'FEATURE_DISABLED', 'Streaming AI Coach is currently disabled.');
       }
       const { body, headers } = getValidated(req, {
         body: chatRequestSchema,

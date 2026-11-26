@@ -223,10 +223,7 @@ async function main(): Promise<void> {
     );
 
     // Terminate existing sessions to enforce re-authentication
-    await pool.query(
-      `DELETE FROM sessions WHERE user_id = $1`,
-      [APPROVED_ADMIN_ID],
-    );
+    await pool.query(`DELETE FROM sessions WHERE user_id = $1`, [APPROVED_ADMIN_ID]);
 
     // Record audit event
     await pool.query(

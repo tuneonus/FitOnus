@@ -6,10 +6,7 @@ import {
 import type { AiUsageGate } from '../../../../shared/ai/ai-usage.js';
 import { defaultAiMetrics } from '../../../../shared/ai/ai-metrics.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
-import type {
-  VoiceMealParseInput,
-  VoiceMealParseResult,
-} from '../../domain/voice-meal.types.js';
+import type { VoiceMealParseInput, VoiceMealParseResult } from '../../domain/voice-meal.types.js';
 import type { VoiceMealParser } from '../ports.js';
 
 export class ParseVoiceMealUseCase {

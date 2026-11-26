@@ -31,10 +31,7 @@ export interface TestGeminiConnectionDeps {
 export class TestGeminiConnectionUseCase {
   constructor(private readonly deps: TestGeminiConnectionDeps) {}
 
-  async execute(
-    actor: Actor,
-    input: TestGeminiConnectionInput,
-  ): Promise<TestGeminiConnectionResult> {
+  async execute(actor: Actor, input: TestGeminiConnectionInput): Promise<TestGeminiConnectionResult> {
     assertPermission(actor, 'admin:access');
 
     // Retrieve database configuration to determine default model and stored key
@@ -154,14 +151,9 @@ export class TestGeminiConnectionUseCase {
           userFriendlyMessage =
             'Gemini daily free tier quota exhausted for this model. Try Gemini 3.5 Flash Lite or check Google AI Studio quotas.';
         } else {
-          userFriendlyMessage =
-            'Gemini rate limit exceeded. Please wait a moment before testing again.';
+          userFriendlyMessage = 'Gemini rate limit exceeded. Please wait a moment before testing again.';
         }
-      } else if (
-        rawError.includes('404') ||
-        rawError.includes('NOT_FOUND') ||
-        rawError.includes('models/')
-      ) {
+      } else if (rawError.includes('404') || rawError.includes('NOT_FOUND') || rawError.includes('models/')) {
         userFriendlyMessage = `Model "${modelToUse}" not found or unsupported by this Gemini API key.`;
       } else if (
         rawError.includes('timed out') ||

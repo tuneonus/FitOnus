@@ -44,4 +44,3 @@ def create_multimodal_meal_port() -> Any | None:
     if _multimodal_meal_factory is None:
         return None
     return _multimodal_meal_factory()
-

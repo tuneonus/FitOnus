@@ -62,9 +62,11 @@ describe('MemoryExtractionWorker', () => {
       updateConversation: vi.fn(),
       deleteConversation: vi.fn(),
       addMessage: vi.fn(),
-      getMessages: vi.fn().mockResolvedValue([
-        { id: 'msg-1', role: 'user', text: 'I am allergic to peanuts and want to bench 100kg.' },
-      ]),
+      getMessages: vi
+        .fn()
+        .mockResolvedValue([
+          { id: 'msg-1', role: 'user', text: 'I am allergic to peanuts and want to bench 100kg.' },
+        ]),
       setMessageFeedback: vi.fn(),
     };
 
@@ -80,7 +82,7 @@ describe('MemoryExtractionWorker', () => {
         {
           category: 'goals',
           text: 'Goal is to bench press 100kg',
-          confidence: 0.90,
+          confidence: 0.9,
           sensitive: false,
           sourceQuote: 'want to bench 100kg',
         },
@@ -135,9 +137,7 @@ describe('MemoryExtractionWorker', () => {
 
   it('drops candidate if user revoked memory consent while extraction was running', async () => {
     // 1st check: true, 2nd check (after extract): false
-    vi.mocked(mockMemoryRepo.isMemoryEnabled)
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(false);
+    vi.mocked(mockMemoryRepo.isMemoryEnabled).mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
     const processed = await worker.processBatch();
 

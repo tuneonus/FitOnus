@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { isSupportedAudioMime, MAX_AUDIO_BASE64_CHARS, SUPPORTED_AUDIO_FORMATS } from '../../../shared/ai/audio-input.js';
+import {
+  isSupportedAudioMime,
+  MAX_AUDIO_BASE64_CHARS,
+  SUPPORTED_AUDIO_FORMATS,
+} from '../../../shared/ai/audio-input.js';
 
 export const chatRequestSchema = z.object({
-  message: z
-    .string()
-    .trim()
-    .min(1, 'Message is required')
-    .max(1000, 'Message cannot exceed 1000 characters'),
+  message: z.string().trim().min(1, 'Message is required').max(1000, 'Message cannot exceed 1000 characters'),
   timezone: z.string().max(100).optional(),
   history: z
     .array(
@@ -181,7 +181,10 @@ export const transcribeAudioSchema = z.object({
       .string()
       .min(1, 'Audio mimeType is required')
       .max(100)
-      .refine(isSupportedAudioMime, `Unsupported audio format. Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(', ')}`),
+      .refine(
+        isSupportedAudioMime,
+        `Unsupported audio format. Supported formats: ${SUPPORTED_AUDIO_FORMATS.join(', ')}`,
+      ),
     base64: z
       .string()
       .min(1, 'Audio base64 data is required')

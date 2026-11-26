@@ -2,7 +2,11 @@ import type { Request } from 'express';
 import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
-import type { IExerciseRepository, IPersonalRecordRepository, IWorkoutSessionRepository } from '../../workouts/index.js';
+import type {
+  IExerciseRepository,
+  IPersonalRecordRepository,
+  IWorkoutSessionRepository,
+} from '../../workouts/index.js';
 import type { IMealRepository, IUserProfileTargetPort, IWaterRepository } from '../../nutrition/index.js';
 import type { IWeightRepository } from '../../progress/index.js';
 import type { KnowledgeCategory, KnowledgeService } from '../../knowledge/index.js';
@@ -112,7 +116,10 @@ export function createInternalToolsController(deps: InternalToolsControllerDeps)
       ]);
 
       // Group meals by date
-      const mealsByDate = new Map<string, { calories: number; protein: number; carbs: number; fat: number; count: number }>();
+      const mealsByDate = new Map<
+        string,
+        { calories: number; protein: number; carbs: number; fat: number; count: number }
+      >();
       for (const meal of meals) {
         const d = typeof meal.date === 'string' ? meal.date : new Date(meal.date).toISOString().slice(0, 10);
         const existing = mealsByDate.get(d) ?? { calories: 0, protein: 0, carbs: 0, fat: 0, count: 0 };
@@ -325,4 +332,3 @@ export function createInternalToolsController(deps: InternalToolsControllerDeps)
     },
   };
 }
-

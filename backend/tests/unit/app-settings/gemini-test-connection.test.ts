@@ -10,7 +10,10 @@ import { requestContext } from '../../../src/middleware/request-context.js';
 import { createLogger } from '../../../src/shared/logging/logger.js';
 import { notFoundHandler } from '../../../src/middleware/error-handler.js';
 import type { Actor } from '../../../src/shared/auth/actor.js';
-import type { GeminiConfigRecord, GeminiModelInfo } from '../../../src/modules/app-settings/domain/gemini-config.js';
+import type {
+  GeminiConfigRecord,
+  GeminiModelInfo,
+} from '../../../src/modules/app-settings/domain/gemini-config.js';
 
 const TEST_SECRET = 'test-secret-key-32-chars-long!!';
 const TEST_ACTOR: Actor = {
@@ -75,21 +78,47 @@ class MockAppSettingsRepo {
   async getGeminiModelsWithPricing(): Promise<GeminiModelInfo[]> {
     return [];
   }
-  async rollbackGeminiApiKey() { return this.geminiConfig; }
-  async getAllSettings() { return []; }
-  async getSettingByKey() { return null; }
-  async updateSetting() { return {} as any; }
-  async getPublicConfig() { return {} as any; }
-  async getTodayAiUsageStats() { return {} as any; }
-  async getUserTodayAiUsage() { return 0; }
-  async reserveAiUsage() { return { allowed: true as const, usageDate: '2026-11-14', actionCount: 1, totalCount: 1 }; }
+  async rollbackGeminiApiKey() {
+    return this.geminiConfig;
+  }
+  async getAllSettings() {
+    return [];
+  }
+  async getSettingByKey() {
+    return null;
+  }
+  async updateSetting() {
+    return {} as any;
+  }
+  async getPublicConfig() {
+    return {} as any;
+  }
+  async getTodayAiUsageStats() {
+    return {} as any;
+  }
+  async getUserTodayAiUsage() {
+    return 0;
+  }
+  async reserveAiUsage() {
+    return { allowed: true as const, usageDate: '2026-11-14', actionCount: 1, totalCount: 1 };
+  }
   async releaseAiUsage() {}
   async recordGeminiUsage() {}
-  async getGeminiUsageEvents() { return { items: [], total: 0 }; }
-  async getGeminiUsageSummary() { return {} as any; }
-  async getGeminiUsageByFeature() { return []; }
-  async getGeminiUsageByModel() { return []; }
-  async getGeminiDailyTrends() { return []; }
+  async getGeminiUsageEvents() {
+    return { items: [], total: 0 };
+  }
+  async getGeminiUsageSummary() {
+    return {} as any;
+  }
+  async getGeminiUsageByFeature() {
+    return [];
+  }
+  async getGeminiUsageByModel() {
+    return [];
+  }
+  async getGeminiDailyTrends() {
+    return [];
+  }
 }
 
 describe('TestGeminiConnectionUseCase & API Contract Suite', () => {
@@ -158,7 +187,9 @@ describe('TestGeminiConnectionUseCase & API Contract Suite', () => {
     expect(result.success).toBe(false);
     expect(result.keySource).toBe('unavailable');
     expect(result.latencyMs).toBe(0);
-    expect(result.message).toContain('Database API key decryption failed and no environment fallback key is configured');
+    expect(result.message).toContain(
+      'Database API key decryption failed and no environment fallback key is configured',
+    );
     expect(result.error).toBeDefined();
   });
 
@@ -265,9 +296,7 @@ describe('TestGeminiConnectionUseCase & API Contract Suite', () => {
     app.use('/api/v1/admin/ai', buildRouter(routes.routes, { authenticate }));
     app.use(notFoundHandler);
 
-    const res = await request(app)
-      .post('/api/v1/admin/ai/test-connection')
-      .send({});
+    const res = await request(app).post('/api/v1/admin/ai/test-connection').send({});
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);

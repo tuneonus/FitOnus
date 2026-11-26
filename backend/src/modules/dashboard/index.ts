@@ -2,10 +2,7 @@ import type { SqlExecutor } from '../../database/transaction.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import { GetDashboardSummaryUseCase } from './application/use-cases/get-dashboard-summary.js';
 import { PgDashboardRepository } from './infrastructure/pg-dashboard-repository.js';
-import {
-  createDashboardController,
-  type DashboardController,
-} from './interface/dashboard.controller.js';
+import { createDashboardController, type DashboardController } from './interface/dashboard.controller.js';
 import { createDashboardRoutes } from './interface/dashboard.routes.js';
 
 export * from './domain/dashboard-summary.js';

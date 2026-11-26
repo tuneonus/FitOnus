@@ -2,11 +2,7 @@ import { z } from 'zod';
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
 import { callPythonAi, pythonUsageSchema } from '../../../shared/ai/python-ai-call.js';
 import type { Logger } from '../../../shared/logging/logger.js';
-import type {
-  ChatMessageTurn,
-  ExtractedCandidate,
-  MemoryExtractor,
-} from '../application/ports.js';
+import type { ChatMessageTurn, ExtractedCandidate, MemoryExtractor } from '../application/ports.js';
 
 export const MEMORY_EXTRACT_PATH = '/internal/v1/ai/coach/memories/extract';
 export const MEMORY_EXTRACT_SCOPE = 'ai:coach:chat';

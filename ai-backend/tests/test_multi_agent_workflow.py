@@ -251,7 +251,9 @@ async def test_compiled_graph_bypass_tamil_tanglish_and_medical_halt() -> None:
 async def test_compiled_graph_bounded_replan_budget_caps_and_cancellation() -> None:
     # 1. Partial agent failure triggers single bounded replan to KnowledgeAgent
     class _BrokenA2AMediator(A2AMediator):
-        async def execute_task_dag(self, specs: list[Any], conversation_id: str, **kwargs: Any) -> list[Any]:
+        async def execute_task_dag(
+            self, specs: list[Any], conversation_id: str, **kwargs: Any
+        ) -> list[Any]:
             res = await super().execute_task_dag(specs, conversation_id, **kwargs)
             patched = []
             for r in res:

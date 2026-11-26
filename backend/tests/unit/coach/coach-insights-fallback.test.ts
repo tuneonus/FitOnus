@@ -5,7 +5,10 @@ import {
   buildWelcomeInsights,
   hasSufficientInsightsData,
 } from '../../../src/modules/coach/domain/coach-insights.js';
-import type { CoachInsightsResponse, UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
+import type {
+  CoachInsightsResponse,
+  UserFitnessContext,
+} from '../../../src/modules/coach/domain/coach.types.js';
 
 /**
  * The deterministic insights and the welcome answer moved out of the former GeminiCoachInsightsService
@@ -26,7 +29,9 @@ const CASES = JSON.parse(
 const normalise = (r: CoachInsightsResponse) => ({ ...r, generatedAt: 'GENERATED_AT' });
 /** What the old service returned when it could not use the model: welcome for no data, else deterministic. */
 const fallbackFor = (context: UserFitnessContext, lang?: string) =>
-  hasSufficientInsightsData(context) ? buildDeterministicInsights(context, lang) : buildWelcomeInsights(context, lang);
+  hasSufficientInsightsData(context)
+    ? buildDeterministicInsights(context, lang)
+    : buildWelcomeInsights(context, lang);
 
 describe('coach insights rules that stay in Node', () => {
   it('the corpus covers every context and language', () => {
@@ -35,16 +40,23 @@ describe('coach insights rules that stay in Node', () => {
     expect(CASES.some((c) => c.name.startsWith('I_insufficient'))).toBe(true);
   });
 
-  it.each(CASES.map((c) => [c.name, c] as const))('%s: identical to what the Node Gemini service returned', (_name, c) => {
-    const actual = normalise(fallbackFor(c.context, c.lang ?? undefined));
-    expect(actual).toEqual(c.expectedOnModelError);
-    expect(actual).toEqual(c.expectedOnUnusableReply);
-  });
+  it.each(CASES.map((c) => [c.name, c] as const))(
+    '%s: identical to what the Node Gemini service returned',
+    (_name, c) => {
+      const actual = normalise(fallbackFor(c.context, c.lang ?? undefined));
+      expect(actual).toEqual(c.expectedOnModelError);
+      expect(actual).toEqual(c.expectedOnUnusableReply);
+    },
+  );
 
   it('a user with no data gets the welcome answer (never an AI call), in all three languages', () => {
     const empty = CASES.find((c) => c.name === 'I_insufficient__en')!.context;
     expect(hasSufficientInsightsData(empty)).toBe(false);
-    expect(buildWelcomeInsights(empty, 'en')).toMatchObject({ greeting: 'Welcome, Anu!', insights: [], hasSufficientData: false });
+    expect(buildWelcomeInsights(empty, 'en')).toMatchObject({
+      greeting: 'Welcome, Anu!',
+      insights: [],
+      hasSufficientData: false,
+    });
     expect(buildWelcomeInsights(empty, 'tanglish').greeting).toBe('Vanakkam, Anu!');
     expect(buildWelcomeInsights(empty, 'ta').greeting).toBe('வணக்கம், Anu!');
   });
@@ -58,7 +70,11 @@ describe('coach insights rules that stay in Node', () => {
     ['a planned workout', { todayPlannedWorkout: { name: 'p' } }],
   ])('any real data (%s) is sufficient', (_name, patch) => {
     const empty = CASES.find((c) => c.name === 'I_insufficient__en')!.context;
-    const context = { ...empty, ...patch, todayNutrition: { ...empty.todayNutrition, ...(patch as any).todayNutrition } } as UserFitnessContext;
+    const context = {
+      ...empty,
+      ...patch,
+      todayNutrition: { ...empty.todayNutrition, ...(patch as any).todayNutrition },
+    } as UserFitnessContext;
     expect(hasSufficientInsightsData(context)).toBe(true);
   });
 

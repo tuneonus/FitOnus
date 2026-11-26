@@ -32,7 +32,12 @@ const noProfile = {
 describe('toNutritionTargets (what the diary receives)', () => {
   it('passes saved calories, all macros and the water target through with where each came from', () => {
     const view = toNutritionTargets(
-      resolveDailyTargets({ ...noProfile, savedCalorieTarget: 2100, savedProteinGrams: 160, savedWaterTargetMl: 3000 }),
+      resolveDailyTargets({
+        ...noProfile,
+        savedCalorieTarget: 2100,
+        savedProteinGrams: 160,
+        savedWaterTargetMl: 3000,
+      }),
     );
 
     expect(view).toEqual({
@@ -63,7 +68,9 @@ describe('toNutritionTargets (what the diary receives)', () => {
 
 describe('SetWaterTargetUseCase', () => {
   function build(effective: { waterMl: number | null; waterSource: 'saved' | 'estimated' | null }) {
-    const settingsRepo: INutritionSettingsRepository = { saveWaterTarget: vi.fn().mockResolvedValue(undefined) };
+    const settingsRepo: INutritionSettingsRepository = {
+      saveWaterTarget: vi.fn().mockResolvedValue(undefined),
+    };
     const targetPort: IUserProfileTargetPort = {
       findTargetsByUserId: vi.fn().mockResolvedValue({
         source: null,
@@ -98,7 +105,9 @@ describe('SetWaterTargetUseCase', () => {
   it.each([499, 8001, 2500.5, Number.NaN])('refuses %s before touching the database', async (bad) => {
     const { settingsRepo, useCase } = build({ waterMl: null, waterSource: null });
 
-    await expect(useCase.execute({ userId, targetMl: bad })).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    await expect(useCase.execute({ userId, targetMl: bad })).rejects.toMatchObject({
+      code: 'VALIDATION_FAILED',
+    });
     expect(settingsRepo.saveWaterTarget).not.toHaveBeenCalled();
   });
 });

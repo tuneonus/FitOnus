@@ -111,18 +111,22 @@ async def _run_benchmark_case(
     # Handle graph panic simulation
     graph_override = None
     if case.get("force_graph_panic"):
+
         class CrashingGraph:
             async def ainvoke(self, *a, **kw):
                 raise RuntimeError("Simulated graph crash")
+
         graph_override = CrashingGraph()
 
     clock_offset = 0.0
     if case.get("facet") == "deadline_handling":
+
         def clock_fn() -> float:
             nonlocal clock_offset
             clock_offset += 2.0
             return 100.0 + clock_offset
     else:
+
         def clock_fn() -> float:
             return 100.0
 

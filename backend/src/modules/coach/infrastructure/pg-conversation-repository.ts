@@ -31,11 +31,7 @@ interface MessageRow {
 export class PgConversationRepository implements ConversationRepository {
   constructor(private readonly db: Database) {}
 
-  async createConversation(
-    userId: string,
-    title: string,
-    preview = '',
-  ): Promise<ConversationSummary> {
+  async createConversation(userId: string, title: string, preview = ''): Promise<ConversationSummary> {
     const res = await this.db.query<ConvoRow>(
       `INSERT INTO coach_conversations (user_id, title, preview)
        VALUES ($1, $2, $3)
@@ -72,10 +68,7 @@ export class PgConversationRepository implements ConversationRepository {
     };
   }
 
-  async getConversation(
-    userId: string,
-    conversationId: string,
-  ): Promise<ConversationDetail | null> {
+  async getConversation(userId: string, conversationId: string): Promise<ConversationDetail | null> {
     const convoRes = await this.db.query<ConvoRow>(
       `SELECT id, title, preview, created_at, updated_at
        FROM coach_conversations
@@ -116,10 +109,10 @@ export class PgConversationRepository implements ConversationRepository {
   }
 
   async deleteConversation(userId: string, conversationId: string): Promise<boolean> {
-    const res = await this.db.query(
-      `DELETE FROM coach_conversations WHERE id = $1 AND user_id = $2`,
-      [conversationId, userId],
-    );
+    const res = await this.db.query(`DELETE FROM coach_conversations WHERE id = $1 AND user_id = $2`, [
+      conversationId,
+      userId,
+    ]);
     return (res.rowCount ?? 0) > 0;
   }
 
@@ -134,11 +127,7 @@ export class PgConversationRepository implements ConversationRepository {
    * Throws `not_found` when the conversation is not the caller's and `conflict` when the ID is held
    * by a different user, conversation or role. Neither error carries anything about the other row.
    */
-  async addMessage(
-    userId: string,
-    conversationId: string,
-    message: StoredChatMessage,
-  ): Promise<void> {
+  async addMessage(userId: string, conversationId: string, message: StoredChatMessage): Promise<void> {
     const written = await this.db.query<{ id: string }>(
       `INSERT INTO coach_messages (id, conversation_id, user_id, role, text, blocks, sources, follow_ups, created_at)
        SELECT $1, c.id, c.user_id, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::timestamptz
@@ -167,10 +156,10 @@ export class PgConversationRepository implements ConversationRepository {
     );
 
     if (written.rows.length === 0) {
-      const owned = await this.db.query(
-        `SELECT 1 FROM coach_conversations WHERE id = $1 AND user_id = $2`,
-        [conversationId, userId],
-      );
+      const owned = await this.db.query(`SELECT 1 FROM coach_conversations WHERE id = $1 AND user_id = $2`, [
+        conversationId,
+        userId,
+      ]);
       if (owned.rows.length === 0) throw notFound('NOT_FOUND', 'Conversation not found.');
       throw conflict('CONFLICT', 'This message ID is already in use.');
     }
@@ -186,11 +175,7 @@ export class PgConversationRepository implements ConversationRepository {
     );
   }
 
-  async getMessages(
-    userId: string,
-    conversationId: string,
-    limit = 100,
-  ): Promise<StoredChatMessage[]> {
+  async getMessages(userId: string, conversationId: string, limit = 100): Promise<StoredChatMessage[]> {
     const res = await this.db.query<MessageRow>(
       `WITH recent_messages AS (
          SELECT id, conversation_id, role, text, blocks, sources, follow_ups, created_at, feedback
@@ -210,9 +195,14 @@ export class PgConversationRepository implements ConversationRepository {
       conversationId: r.conversation_id,
       role: r.role,
       text: r.text,
-      blocks: (typeof r.blocks === 'string' ? (JSON.parse(r.blocks) as Block[]) : (r.blocks as Block[]) ?? []),
-      sources: (typeof r.sources === 'string' ? (JSON.parse(r.sources) as string[]) : (r.sources as string[]) ?? []),
-      followUps: (typeof r.follow_ups === 'string' ? (JSON.parse(r.follow_ups) as string[]) : (r.follow_ups as string[]) ?? []),
+      blocks:
+        typeof r.blocks === 'string' ? (JSON.parse(r.blocks) as Block[]) : ((r.blocks as Block[]) ?? []),
+      sources:
+        typeof r.sources === 'string' ? (JSON.parse(r.sources) as string[]) : ((r.sources as string[]) ?? []),
+      followUps:
+        typeof r.follow_ups === 'string'
+          ? (JSON.parse(r.follow_ups) as string[])
+          : ((r.follow_ups as string[]) ?? []),
       feedback: r.feedback ?? null,
       createdAt: r.created_at.toISOString(),
     }));
@@ -247,4 +237,3 @@ export class PgConversationRepository implements ConversationRepository {
     };
   }
 }
-

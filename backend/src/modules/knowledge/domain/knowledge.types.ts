@@ -81,8 +81,8 @@ export interface HybridChunk {
   tokenCount: number;
   metadata: Record<string, unknown>;
   similarity: number; // Cosine similarity from dense search [0, 1]
-  textRank: number;   // Lexical score from text search
-  rrfScore: number;   // Reciprocal Rank Fusion score
+  textRank: number; // Lexical score from text search
+  rrfScore: number; // Reciprocal Rank Fusion score
   createdAt: Date;
 }
 

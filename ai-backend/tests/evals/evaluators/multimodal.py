@@ -372,7 +372,9 @@ async def execute_multimodal_offline_case(case: dict[str, Any]) -> EvaluationMet
                 if exc.code != expected["error_code"]:
                     reasons.append(f"Expected error_code={expected['error_code']}, got {exc.code}")
                 if exc.dispatched is not expected["dispatched"]:
-                    reasons.append(f"Expected dispatched={expected['dispatched']}, got {exc.dispatched}")
+                    reasons.append(
+                        f"Expected dispatched={expected['dispatched']}, got {exc.dispatched}"
+                    )
                 return EvaluationMetricResult(
                     metric_name="multimodal_benchmark",
                     passed=not reasons,
@@ -519,9 +521,7 @@ async def execute_multimodal_offline_case(case: dict[str, Any]) -> EvaluationMet
             }
         req_m = AnalyzeMultimodalMealRequest.model_validate(mm_payload)
         return (
-            await analyze_multimodal_meal(
-                req_m, llm, trace_id=case["case_id"], user_id="eval-user"
-            )
+            await analyze_multimodal_meal(req_m, llm, trace_id=case["case_id"], user_id="eval-user")
         ).model_dump(by_alias=True)
 
     if raises == "InvalidMediaError":
@@ -529,9 +529,10 @@ async def execute_multimodal_offline_case(case: dict[str, Any]) -> EvaluationMet
             await _run_op()
         except InvalidMediaError as media_exc:
             reasons = []
-            if "error_contains" in expected and expected["error_contains"].lower() not in str(
-                media_exc
-            ).lower():
+            if (
+                "error_contains" in expected
+                and expected["error_contains"].lower() not in str(media_exc).lower()
+            ):
                 reasons.append(f"Unexpected InvalidMediaError message: {media_exc}")
             if expected.get("zero_llm_calls") and llm.calls:
                 reasons.append("LLM was called despite invalid media")
@@ -556,7 +557,9 @@ async def execute_multimodal_offline_case(case: dict[str, Any]) -> EvaluationMet
             if "error_code" in expected and svc_exc.code != expected["error_code"]:
                 reasons.append(f"Expected error_code={expected['error_code']}, got {svc_exc.code}")
             if "dispatched" in expected and svc_exc.dispatched is not expected["dispatched"]:
-                reasons.append(f"Expected dispatched={expected['dispatched']}, got {svc_exc.dispatched}")
+                reasons.append(
+                    f"Expected dispatched={expected['dispatched']}, got {svc_exc.dispatched}"
+                )
             return EvaluationMetricResult(
                 metric_name="multimodal_benchmark",
                 passed=not reasons,

@@ -65,13 +65,11 @@ async function main() {
     const testEmail = `dev_settings_qa_${Date.now()}@fitonus.test`;
     const testPassword = 'Password123!';
     console.log('Registering test user:', testEmail);
-    const regRes = await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        email: testEmail,
-        password: testPassword,
-        displayName: 'Settings QA Athlete',
-      });
+    const regRes = await request(app).post('/api/v1/auth/register').send({
+      email: testEmail,
+      password: testPassword,
+      displayName: 'Settings QA Athlete',
+    });
     assert.equal(regRes.status, 201, `Registration failed: ${JSON.stringify(regRes.body)}`);
     const token = regRes.body.data.accessToken;
     const userRes = await pool.query<{ id: string }>('SELECT id FROM users WHERE email = $1', [testEmail]);

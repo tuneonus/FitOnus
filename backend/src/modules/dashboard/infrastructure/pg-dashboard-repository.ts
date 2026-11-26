@@ -1,8 +1,5 @@
 import type { SqlExecutor } from '../../../database/transaction.js';
-import {
-  formatLocalDate,
-  validateTimezone,
-} from '../../analytics/index.js';
+import { formatLocalDate, validateTimezone } from '../../analytics/index.js';
 import type { DashboardRepository } from '../application/ports.js';
 import type {
   ActivityProgress,
@@ -107,7 +104,7 @@ export class PgDashboardRepository implements DashboardRepository {
        FROM users u
        LEFT JOIN user_profiles p ON p.user_id = u.id
        WHERE u.id = $1`,
-      [userId]
+      [userId],
     );
 
     const userRow = userRows[0];
@@ -123,7 +120,7 @@ export class PgDashboardRepository implements DashboardRepository {
          COALESCE(SUM(total_fat_g), 0)::numeric AS total_fat
        FROM meals
        WHERE user_id = $1 AND date = $2::date AND deleted_at IS NULL`,
-      [userId, todayStr]
+      [userId, todayStr],
     );
     const nutRow = nutritionRows[0];
     const caloriesConsumed = Math.round(Number(nutRow?.total_calories || 0));
@@ -136,7 +133,7 @@ export class PgDashboardRepository implements DashboardRepository {
       `SELECT COALESCE(SUM(amount_ml), 0)::integer AS total_water_ml
        FROM water_intake
        WHERE user_id = $1 AND date = $2::date`,
-      [userId, todayStr]
+      [userId, todayStr],
     );
     const waterIntakeMl = waterRows[0]?.total_water_ml || 0;
     const waterIntakeLiters = Math.round((waterIntakeMl / 1000) * 10) / 10;
@@ -149,12 +146,12 @@ export class PgDashboardRepository implements DashboardRepository {
          AND is_completed = true
          AND (completed_at AT TIME ZONE $2)::date = $3::date
        ORDER BY completed_at DESC`,
-      [userId, tz, todayStr]
+      [userId, tz, todayStr],
     );
 
     const caloriesBurned = todayWorkoutRows.reduce((sum, r) => sum + (r.calories_burned || 0), 0);
     const activeMinutes = Math.round(
-      todayWorkoutRows.reduce((sum, r) => sum + (r.duration_seconds || 0), 0) / 60
+      todayWorkoutRows.reduce((sum, r) => sum + (r.duration_seconds || 0), 0) / 60,
     );
     const completedWorkoutsToday = todayWorkoutRows.length;
 
@@ -166,7 +163,7 @@ export class PgDashboardRepository implements DashboardRepository {
          AND is_completed = true
          AND (completed_at AT TIME ZONE $2)::date >= $3::date
          AND (completed_at AT TIME ZONE $2)::date <= $4::date`,
-      [userId, tz, mondayStr, todayStr]
+      [userId, tz, mondayStr, todayStr],
     );
     const workoutsCompletedThisWeek = weekRows[0]?.completed_this_week || 0;
 
@@ -180,7 +177,7 @@ export class PgDashboardRepository implements DashboardRepository {
        GROUP BY w.id, w.name, w.estimated_duration_minutes, w.user_id, w.created_at
        ORDER BY (w.user_id = $1) DESC, w.created_at ASC
        LIMIT 1`,
-      [userId]
+      [userId],
     );
 
     let todayWorkout: TodayWorkout | null = null;
@@ -203,7 +200,7 @@ export class PgDashboardRepository implements DashboardRepository {
        WHERE user_id = $1 AND deleted_at IS NULL
        ORDER BY logged_at DESC
        LIMIT 1`,
-      [userId]
+      [userId],
     );
     const latestWeight = weightRows[0] ? Number(weightRows[0].weight_kg) : null;
 
@@ -239,7 +236,7 @@ export class PgDashboardRepository implements DashboardRepository {
         LIMIT 2)
        ORDER BY timestamp DESC
        LIMIT 5`,
-      [userId]
+      [userId],
     );
 
     const recentActivity: RecentActivity[] = activityRows.map((r) => {
@@ -284,8 +281,12 @@ export class PgDashboardRepository implements DashboardRepository {
     });
 
     const weeklyTargetDays = userRow?.workout_days_per_week || 4;
-    const weeklyGoalProgress = Math.min(1, Math.round((workoutsCompletedThisWeek / weeklyTargetDays) * 100) / 100);
-    const dailyGoalProgress = completedWorkoutsToday > 0 ? 1 : Math.min(1, Math.round((caloriesBurned / 400) * 100) / 100);
+    const weeklyGoalProgress = Math.min(
+      1,
+      Math.round((workoutsCompletedThisWeek / weeklyTargetDays) * 100) / 100,
+    );
+    const dailyGoalProgress =
+      completedWorkoutsToday > 0 ? 1 : Math.min(1, Math.round((caloriesBurned / 400) * 100) / 100);
 
     // 10. AI Summary
     const localHour = getLocalHour(now, tz);
@@ -294,7 +295,8 @@ export class PgDashboardRepository implements DashboardRepository {
 
     let recommendation: string;
     if (completedWorkoutsToday > 0) {
-      recommendation = 'Great work completing your workout today! Drink plenty of water and prioritize high-protein recovery.';
+      recommendation =
+        'Great work completing your workout today! Drink plenty of water and prioritize high-protein recovery.';
     } else if (todayWorkout) {
       recommendation = `Today's recommendation:\n${todayWorkout.name} (${todayWorkout.duration} mins).`;
     } else {

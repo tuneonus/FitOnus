@@ -68,7 +68,7 @@ class LangGraphWorkflowEvaluator:
         # 3. Bypass Check
         if is_bypass is not None:
             checks += 1
-            actual_bypass = (actual_status == "bypassed")
+            actual_bypass = actual_status == "bypassed"
             if actual_bypass == is_bypass:
                 passes += 1
             else:

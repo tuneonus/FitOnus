@@ -39,12 +39,14 @@ class RecordingLlm(TextGenerator):
     async def generate_text(self, prompt: str, *args, **kwargs) -> LlmResult:
         self.prompts.append(prompt)
         return LlmResult(
-            text=json.dumps({
-                "text": "Parity test verified response.",
-                "follow_ups": ["Next step"],
-                "sources": ["Workouts", "Nutrition"],
-                "medical_note": False,
-            }),
+            text=json.dumps(
+                {
+                    "text": "Parity test verified response.",
+                    "follow_ups": ["Next step"],
+                    "sources": ["Workouts", "Nutrition"],
+                    "medical_note": False,
+                }
+            ),
             usage=LlmUsage(
                 model="mock-gemini-parity",
                 is_fallback=False,
@@ -108,7 +110,11 @@ async def test_parity_simple_query_bypass() -> None:
     )
 
     assert res_native.status == res_graph.status == AgentExecutionStatus.BYPASSED
-    assert res_native.termination_reason == res_graph.termination_reason == AgentTerminationReason.SIMPLE_QUERY_BYPASS
+    assert (
+        res_native.termination_reason
+        == res_graph.termination_reason
+        == AgentTerminationReason.SIMPLE_QUERY_BYPASS
+    )
     assert res_native.goal.goal_type == res_graph.goal.goal_type
     assert res_native.goal.language == res_graph.goal.language
 
@@ -146,7 +152,11 @@ async def test_parity_workout_and_nutrition_execution() -> None:
     )
 
     assert res_native.status == res_graph.status == AgentExecutionStatus.COMPLETED
-    assert res_native.termination_reason == res_graph.termination_reason == AgentTerminationReason.GOAL_SATISFIED
+    assert (
+        res_native.termination_reason
+        == res_graph.termination_reason
+        == AgentTerminationReason.GOAL_SATISFIED
+    )
     assert len(res_native.observations) == len(res_graph.observations) == 2
     native_tools = {tc.tool_name for tc in res_native.tool_calls}
     graph_tools = {tc.tool_name for tc in res_graph.tool_calls}

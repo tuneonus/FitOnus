@@ -89,7 +89,9 @@ describe('nutrition targets and water target (real PostgreSQL)', () => {
   describe('SetWaterTargetUseCase', () => {
     it('saving wins over the estimate, a second save replaces it, and clearing falls back to the estimate', async () => {
       const user = await seedUser(db.pool);
-      await db.pool.query(`INSERT INTO user_profiles (user_id, current_weight_kg) VALUES ($1, 80.0)`, [user.id]);
+      await db.pool.query(`INSERT INTO user_profiles (user_id, current_weight_kg) VALUES ($1, 80.0)`, [
+        user.id,
+      ]);
 
       expect(await setWaterTarget.execute({ userId: user.id, targetMl: 3200 })).toEqual({
         targetMl: 3200,
@@ -101,9 +103,10 @@ describe('nutrition targets and water target (real PostgreSQL)', () => {
         targetMl: 3500,
         source: 'saved',
       });
-      const { rows } = await db.pool.query(`SELECT count(*)::int AS n FROM user_nutrition_settings WHERE user_id = $1`, [
-        user.id,
-      ]);
+      const { rows } = await db.pool.query(
+        `SELECT count(*)::int AS n FROM user_nutrition_settings WHERE user_id = $1`,
+        [user.id],
+      );
       expect(rows[0]).toEqual({ n: 1 });
 
       expect(await setWaterTarget.execute({ userId: user.id, targetMl: null })).toEqual({
@@ -136,7 +139,10 @@ describe('nutrition targets and water target (real PostgreSQL)', () => {
 
       for (const bad of [0, 499, 8001, -5]) {
         await expect(
-          db.pool.query(`INSERT INTO user_nutrition_settings (user_id, water_target_ml) VALUES ($1, $2)`, [user.id, bad]),
+          db.pool.query(`INSERT INTO user_nutrition_settings (user_id, water_target_ml) VALUES ($1, $2)`, [
+            user.id,
+            bad,
+          ]),
         ).rejects.toMatchObject({ code: '23514' });
       }
     });
@@ -147,7 +153,9 @@ describe('nutrition targets and water target (real PostgreSQL)', () => {
 
       await db.pool.query(`DELETE FROM users WHERE id = $1`, [user.id]);
 
-      const { rows } = await db.pool.query(`SELECT 1 FROM user_nutrition_settings WHERE user_id = $1`, [user.id]);
+      const { rows } = await db.pool.query(`SELECT 1 FROM user_nutrition_settings WHERE user_id = $1`, [
+        user.id,
+      ]);
       expect(rows).toHaveLength(0);
     });
   });

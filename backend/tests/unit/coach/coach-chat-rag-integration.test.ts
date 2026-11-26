@@ -222,7 +222,9 @@ describe('AI Coach Chat RAG Grounding & Hybrid Retrieval Integration', () => {
 
     // Verifies warning was logged without sensitive user PII leaking
     expect(mockWarnLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('[CoachRAG] Knowledge retrieval failed; falling back to ungrounded coach chat.'),
+      expect.stringContaining(
+        '[CoachRAG] Knowledge retrieval failed; falling back to ungrounded coach chat.',
+      ),
     );
 
     // Verifies GeminiService was still called smoothly with standard arguments

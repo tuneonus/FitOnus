@@ -89,11 +89,7 @@ export function detectFileType(input: {
     return 'md';
   }
 
-  if (
-    mime === 'text/plain' ||
-    name.endsWith('.txt') ||
-    name.endsWith('.text')
-  ) {
+  if (mime === 'text/plain' || name.endsWith('.txt') || name.endsWith('.text')) {
     return 'txt';
   }
 
@@ -134,7 +130,7 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
     try {
       await parser.load();
       const result = await parser.getText();
-      const rawText = (result && typeof result.text === 'string') ? result.text : '';
+      const rawText = result && typeof result.text === 'string' ? result.text : '';
 
       // Strip page numbering artifacts inserted by pdf-parse: e.g. "\n\n-- 1 of 5 --\n\n"
       const cleaned = rawText
@@ -160,11 +156,7 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
           `The uploaded PDF file is damaged or malformed: ${message}`,
         );
       }
-      throw new AppError(
-        'validation',
-        'VALIDATION_FAILED',
-        `Failed to parse PDF document: ${message}`,
-      );
+      throw new AppError('validation', 'VALIDATION_FAILED', `Failed to parse PDF document: ${message}`);
     } finally {
       try {
         await parser.destroy();
@@ -227,10 +219,7 @@ export async function extractTextFromFile(input: ExtractTextInput): Promise<Extr
     if (raw.charCodeAt(0) === 0xfeff) {
       raw = raw.slice(1);
     }
-    extractedText = raw
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n')
-      .trim();
+    extractedText = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
   }
 
   // Bound extracted text to prevent memory exhaustion

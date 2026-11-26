@@ -3,7 +3,11 @@ import { ManageConversationsUseCase } from '../../../src/modules/coach/applicati
 import { ChatWithCoachUseCase } from '../../../src/modules/coach/application/use-cases/chat-with-coach.js';
 import { PgConversationRepository } from '../../../src/modules/coach/infrastructure/pg-conversation-repository.js';
 import type { Database } from '../../../src/database/transaction.js';
-import type { ConversationRepository, GeminiService, UserContextRepository } from '../../../src/modules/coach/application/ports.js';
+import type {
+  ConversationRepository,
+  GeminiService,
+  UserContextRepository,
+} from '../../../src/modules/coach/application/ports.js';
 import type { UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
 import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
@@ -251,10 +255,7 @@ describe('AI Coach Conversation History Use Case', () => {
     expect(mockGeminiService.generateCoachResponse).toHaveBeenCalledWith(
       'What should I do next?',
       expect.anything(),
-      expect.arrayContaining([
-        expect.objectContaining({ text: 'Message turn 12 with context' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ text: 'Message turn 12 with context' })]),
     );
   });
 });
-

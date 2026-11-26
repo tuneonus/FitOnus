@@ -7,7 +7,11 @@ describe('AiTimeoutError', () => {
     const error = new AiTimeoutError();
 
     expect(error).toBeInstanceOf(AppError);
-    expect(error).toMatchObject({ kind: 'unavailable', code: 'SERVICE_UNAVAILABLE', message: AI_TIMEOUT_MESSAGE });
+    expect(error).toMatchObject({
+      kind: 'unavailable',
+      code: 'SERVICE_UNAVAILABLE',
+      message: AI_TIMEOUT_MESSAGE,
+    });
     expect(AI_TIMEOUT_MESSAGE).toBe('AI request timed out. Please try again.');
   });
 

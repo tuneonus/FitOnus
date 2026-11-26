@@ -3,10 +3,7 @@ import { defaultAiMetrics } from '../../../../shared/ai/ai-metrics.js';
 import { inspectSafeBase64Payload } from '../../../../shared/ai/audio-input.js';
 import { MAX_IMAGE_BASE64_CHARS } from '../../../../shared/ai/body-limits.js';
 import { AppError } from '../../../../shared/errors/app-error.js';
-import type {
-  MealPhotoAnalysisInput,
-  MealPhotoAnalysisResult,
-} from '../../domain/meal-photo.types.js';
+import type { MealPhotoAnalysisInput, MealPhotoAnalysisResult } from '../../domain/meal-photo.types.js';
 import type { MealPhotoAnalyzer } from '../ports.js';
 
 export class AnalyzeMealPhotoUseCase {

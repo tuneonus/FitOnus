@@ -39,7 +39,11 @@ export class AnalyzeMultimodalMealUseCase {
     const transcript = hasTranscript ? input.transcript!.trim() : undefined;
 
     if (input.signal?.aborted) {
-      throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'Request was cancelled before analysis started.');
+      throw new AppError(
+        'unavailable',
+        'SERVICE_UNAVAILABLE',
+        'Request was cancelled before analysis started.',
+      );
     }
 
     // Meter against existing DB-supported AI actions without requiring schema changes.

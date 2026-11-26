@@ -208,9 +208,7 @@ def test_sanitize_error_message_and_tool_status_labels() -> None:
     assert err_msg == "AI request timed out. Please try again."
     assert safe_tool_progress_message("get_recent_workouts") == "Checking your recent workouts..."
     assert safe_tool_progress_message("unlisted_tool") == "Checking your fitness data..."
-    assert (
-        safe_agent_progress_message("nutrition") == "Evaluating nutrition and macro balance..."
-    )
+    assert safe_agent_progress_message("nutrition") == "Evaluating nutrition and macro balance..."
 
 
 def test_streaming_feature_flag_defaults_disabled_and_validates_config(
@@ -233,7 +231,9 @@ def test_streaming_feature_flag_defaults_disabled_and_validates_config(
 async def test_gemini_stream_yields_incremental_chunks_and_skips_thought_parts() -> None:
     calls: list[str] = []
 
-    async def stream_handler(model: str, _contents: Any, _config: Any) -> AsyncIterator[SimpleNamespace]:
+    async def stream_handler(
+        model: str, _contents: Any, _config: Any
+    ) -> AsyncIterator[SimpleNamespace]:
         calls.append(model)
         yield _fake_stream_chunk("Thinking secret...", thought=True)
         yield _fake_stream_chunk("Great ")
@@ -360,9 +360,7 @@ async def test_gemini_stream_handles_safety_block_and_tool_calling_loop() -> Non
     async def on_tool_status(name: str) -> None:
         statuses.append(name)
 
-    async def tool_stream_handler(
-        _m: str, _c: Any, _cfg: Any
-    ) -> AsyncIterator[SimpleNamespace]:
+    async def tool_stream_handler(_m: str, _c: Any, _cfg: Any) -> AsyncIterator[SimpleNamespace]:
         nonlocal turn
         turn += 1
         if turn == 1:

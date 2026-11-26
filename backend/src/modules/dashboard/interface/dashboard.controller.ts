@@ -3,10 +3,7 @@ import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
 import type { RouteResult } from '../../../shared/http/route.js';
 import type { GetDashboardSummaryUseCase } from '../application/use-cases/get-dashboard-summary.js';
-import {
-  getDashboardSummaryRequest,
-  type DashboardSummaryResponse,
-} from './dashboard.schemas.js';
+import { getDashboardSummaryRequest, type DashboardSummaryResponse } from './dashboard.schemas.js';
 
 export interface DashboardController {
   getSummary(req: Request): Promise<RouteResult<DashboardSummaryResponse>>;

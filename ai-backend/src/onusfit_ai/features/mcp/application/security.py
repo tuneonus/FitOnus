@@ -20,8 +20,12 @@ logger = logging.getLogger("onusfit_ai.mcp.security")
 
 # Injection header directives that attempt to hijack instruction hierarchy
 INJECTION_HEADER_PATTERNS = [
-    re.compile(r"(?i)\b(?:system\s*instructions?|critical\s*rules?|ignore\s*(?:all\s+|any\s+)?previous\s*instructions?)\s*:?"),
-    re.compile(r"(?i)\b(?:new\s*system\s*directive|override\s*rules|system\s*prompt|developer\s*(?:instruction|prompt|message))\s*:"),
+    re.compile(
+        r"(?i)\b(?:system\s*instructions?|critical\s*rules?|ignore\s*(?:all\s+|any\s+)?previous\s*instructions?)\s*:?"
+    ),
+    re.compile(
+        r"(?i)\b(?:new\s*system\s*directive|override\s*rules|system\s*prompt|developer\s*(?:instruction|prompt|message))\s*:"
+    ),
     re.compile(r"(?i)\b(?:assistant\s*:|human\s*:|user\s*:)\s*"),
 ]
 
@@ -132,7 +136,9 @@ class McpSecurityGuardrails:
                     tool_name,
                 )
                 safe_replacement = token.replace("<", "[").replace(">", "]").replace("`", "'")
-                sanitized = re.sub(re.escape(token), safe_replacement, sanitized, flags=re.IGNORECASE)
+                sanitized = re.sub(
+                    re.escape(token), safe_replacement, sanitized, flags=re.IGNORECASE
+                )
 
         # 2. Neutralize injection directive headers
         for pattern in INJECTION_HEADER_PATTERNS:
@@ -156,4 +162,3 @@ class McpSecurityGuardrails:
             match = pattern.search(text)
             if match:
                 raise McpPromptInjectionError(match.group(0))
-

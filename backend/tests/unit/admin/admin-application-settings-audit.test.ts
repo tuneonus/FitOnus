@@ -15,7 +15,10 @@ import type {
 } from '../../../src/modules/admin/application/ports.js';
 import type { AdminAuditLog, AuditAction } from '../../../src/modules/admin/domain/admin-audit-log.js';
 import type { DashboardStats } from '../../../src/modules/admin/domain/dashboard-stats.js';
-import { createAdminRoutes, type AdminRateLimiters } from '../../../src/modules/admin/interface/admin.routes.js';
+import {
+  createAdminRoutes,
+  type AdminRateLimiters,
+} from '../../../src/modules/admin/interface/admin.routes.js';
 import type { AdminController } from '../../../src/modules/admin/interface/admin.controller.js';
 import { createProfileController } from '../../../src/modules/profile/interface/profile.controller.js';
 import { createProfileRoutes } from '../../../src/modules/profile/interface/profile.routes.js';
@@ -294,7 +297,9 @@ describe('FitOnus Admin Application Settings Audit & Security Verification', () 
 
     // Public health routes
     app.get('/health/live', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
-    app.get('/health/ready', (_req, res) => res.json({ status: 'ok', checks: { database: 'up' }, timestamp: new Date().toISOString() }));
+    app.get('/health/ready', (_req, res) =>
+      res.json({ status: 'ok', checks: { database: 'up' }, timestamp: new Date().toISOString() }),
+    );
 
     app.use(notFoundHandler);
     app.use(errorHandler);
@@ -317,12 +322,10 @@ describe('FitOnus Admin Application Settings Audit & Security Verification', () 
   // 2. Settings UPDATE Verification
   it('2. POST /api/v1/admin/auth/change-password successfully updates credentials, revokes sessions, and logs audit', async () => {
     const app = createTestServer({ actorRole: 'admin' });
-    const res = await request(app)
-      .post('/api/v1/admin/auth/change-password')
-      .send({
-        currentPassword: initialPassword,
-        newPassword: 'BrandNewStrongAdminPassword2026!',
-      });
+    const res = await request(app).post('/api/v1/admin/auth/change-password').send({
+      currentPassword: initialPassword,
+      newPassword: 'BrandNewStrongAdminPassword2026!',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -377,12 +380,10 @@ describe('FitOnus Admin Application Settings Audit & Security Verification', () 
   // 5. Input Validation Verification
   it('5. rejects short password (<12 chars) with 400 validation error', async () => {
     const app = createTestServer({ actorRole: 'admin' });
-    const res = await request(app)
-      .post('/api/v1/admin/auth/change-password')
-      .send({
-        currentPassword: initialPassword,
-        newPassword: 'TooShort1!',
-      });
+    const res = await request(app).post('/api/v1/admin/auth/change-password').send({
+      currentPassword: initialPassword,
+      newPassword: 'TooShort1!',
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
@@ -391,13 +392,11 @@ describe('FitOnus Admin Application Settings Audit & Security Verification', () 
 
   it('5b. rejects unrecognized arbitrary fields with 400 validation error (strict schema)', async () => {
     const app = createTestServer({ actorRole: 'admin' });
-    const res = await request(app)
-      .post('/api/v1/admin/auth/change-password')
-      .send({
-        currentPassword: initialPassword,
-        newPassword: 'BrandNewStrongAdminPassword2026!',
-        arbitraryKey: 'malicious-payload',
-      });
+    const res = await request(app).post('/api/v1/admin/auth/change-password').send({
+      currentPassword: initialPassword,
+      newPassword: 'BrandNewStrongAdminPassword2026!',
+      arbitraryKey: 'malicious-payload',
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
@@ -427,9 +426,7 @@ describe('FitOnus Admin Application Settings Audit & Security Verification', () 
     expect(getRes.status).toBe(200);
     expect(getRes.body.data.userId).toBe(memberId);
 
-    const patchRes = await request(app)
-      .patch('/api/v1/profile/settings')
-      .send({ unitSystem: 'imperial' });
+    const patchRes = await request(app).patch('/api/v1/profile/settings').send({ unitSystem: 'imperial' });
 
     expect(patchRes.status).toBe(200);
     expect(patchRes.body.data.unitSystem).toBe('imperial');
@@ -438,12 +435,10 @@ describe('FitOnus Admin Application Settings Audit & Security Verification', () 
   // 8. Error Handling & Rate Limiting Verification
   it('8. rejects incorrect current password with 422 INVALID_CREDENTIALS', async () => {
     const app = createTestServer({ actorRole: 'admin' });
-    const res = await request(app)
-      .post('/api/v1/admin/auth/change-password')
-      .send({
-        currentPassword: 'WrongCurrentPassword123!',
-        newPassword: 'BrandNewStrongAdminPassword2026!',
-      });
+    const res = await request(app).post('/api/v1/admin/auth/change-password').send({
+      currentPassword: 'WrongCurrentPassword123!',
+      newPassword: 'BrandNewStrongAdminPassword2026!',
+    });
 
     expect(res.status).toBe(422);
     expect(res.body.success).toBe(false);
@@ -452,12 +447,10 @@ describe('FitOnus Admin Application Settings Audit & Security Verification', () 
 
   it('8b. enforces rate limit middleware on sensitive password change route', async () => {
     const app = createTestServer({ actorRole: 'admin', rateLimitExceeded: true });
-    const res = await request(app)
-      .post('/api/v1/admin/auth/change-password')
-      .send({
-        currentPassword: initialPassword,
-        newPassword: 'BrandNewStrongAdminPassword2026!',
-      });
+    const res = await request(app).post('/api/v1/admin/auth/change-password').send({
+      currentPassword: initialPassword,
+      newPassword: 'BrandNewStrongAdminPassword2026!',
+    });
 
     expect(res.status).toBe(429);
     expect(res.body.error.code).toBe('RATE_LIMITED');

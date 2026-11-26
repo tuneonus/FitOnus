@@ -71,7 +71,9 @@ async function main() {
 
     assert.equal(regRes.status, 201, `Failed to register test user: ${JSON.stringify(regRes.body)}`);
     const actionToken = regRes.body.data.accessToken;
-    const actionUserQuery = await pool.query<{ id: string }>('SELECT id FROM users WHERE email = $1', [actionUserEmail]);
+    const actionUserQuery = await pool.query<{ id: string }>('SELECT id FROM users WHERE email = $1', [
+      actionUserEmail,
+    ]);
     const actionUserId = actionUserQuery.rows[0]!.id;
     createdUserIds.push(actionUserId);
     console.log(`✓ User registered with ID: ${actionUserId}`);
@@ -281,7 +283,9 @@ async function main() {
     assert.equal(invalidWeightRes.body.success, false);
     console.log('  ✓ Invalid weight rejected with 400 Bad Request (zero records created)');
 
-    console.log('\n✓ TASK 1 COMPLETE: All 4 AI Action Database Persistence flows passed with 100% verification.\n');
+    console.log(
+      '\n✓ TASK 1 COMPLETE: All 4 AI Action Database Persistence flows passed with 100% verification.\n',
+    );
 
     // -------------------------------------------------------------
     // TASK 2: AI MEMORY & HISTORY PERSISTENCE
@@ -298,7 +302,9 @@ async function main() {
       .send({ email: userBEmail, password: userPassword, displayName: 'History User B' });
     assert.equal(regB.status, 201);
     let userBToken = regB.body.data.accessToken;
-    const userBQuery = await pool.query<{ id: string }>('SELECT id FROM users WHERE email = $1', [userBEmail]);
+    const userBQuery = await pool.query<{ id: string }>('SELECT id FROM users WHERE email = $1', [
+      userBEmail,
+    ]);
     const userBId = userBQuery.rows[0]!.id;
     createdUserIds.push(userBId);
 
@@ -310,7 +316,9 @@ async function main() {
       .send({ email: userCEmail, password: userPassword, displayName: 'Isolated User C' });
     assert.equal(regC.status, 201);
     const userCToken = regC.body.data.accessToken;
-    const userCQuery = await pool.query<{ id: string }>('SELECT id FROM users WHERE email = $1', [userCEmail]);
+    const userCQuery = await pool.query<{ id: string }>('SELECT id FROM users WHERE email = $1', [
+      userCEmail,
+    ]);
     const userCId = userCQuery.rows[0]!.id;
     createdUserIds.push(userCId);
 
@@ -363,7 +371,11 @@ async function main() {
        ORDER BY created_at ASC`,
       [convoId],
     );
-    assert.equal(dbMessagesRes.rowCount, 4, `Expected 4 messages (2 user, 2 assistant), found: ${dbMessagesRes.rowCount}`);
+    assert.equal(
+      dbMessagesRes.rowCount,
+      4,
+      `Expected 4 messages (2 user, 2 assistant), found: ${dbMessagesRes.rowCount}`,
+    );
     assert.equal(dbMessagesRes.rows[0].role, 'user');
     assert.equal(dbMessagesRes.rows[1].role, 'assistant');
     assert.equal(dbMessagesRes.rows[2].role, 'user');
@@ -385,7 +397,10 @@ async function main() {
       .set('Authorization', `Bearer ${userBToken}`);
     assert.equal(listConvosRes.status, 200);
     const userConvos = listConvosRes.body.data.conversations;
-    assert.ok(userConvos.some((c: any) => c.id === convoId), 'Previous conversation not listed');
+    assert.ok(
+      userConvos.some((c: any) => c.id === convoId),
+      'Previous conversation not listed',
+    );
     console.log(`  ✓ Previous conversation listed across sessions (Total: ${listConvosRes.body.data.total})`);
 
     // 6. Retrieve conversation detail
@@ -422,10 +437,7 @@ async function main() {
     assert.equal(renameRes.status, 200);
     assert.equal(renameRes.body.data.title, 'Advanced Chest Hypertrophy Guide');
 
-    const dbTitleRes = await pool.query(
-      `SELECT title FROM coach_conversations WHERE id = $1`,
-      [convoId],
-    );
+    const dbTitleRes = await pool.query(`SELECT title FROM coach_conversations WHERE id = $1`, [convoId]);
     assert.equal(dbTitleRes.rows[0].title, 'Advanced Chest Hypertrophy Guide');
     console.log(`  ✓ Conversation renamed to: '${dbTitleRes.rows[0].title}'`);
 
@@ -437,7 +449,9 @@ async function main() {
 
     const dbDeletedConvo = await pool.query('SELECT id FROM coach_conversations WHERE id = $1', [convoId]);
     assert.equal(dbDeletedConvo.rowCount, 0, 'Conversation should be deleted');
-    const dbDeletedMsgs = await pool.query('SELECT id FROM coach_messages WHERE conversation_id = $1', [convoId]);
+    const dbDeletedMsgs = await pool.query('SELECT id FROM coach_messages WHERE conversation_id = $1', [
+      convoId,
+    ]);
     assert.equal(dbDeletedMsgs.rowCount, 0, 'Messages must cascade delete');
     console.log('  ✓ Conversation & all associated messages cleanly deleted from Neon DB');
 
@@ -493,7 +507,10 @@ async function main() {
       .set('Authorization', `Bearer ${userBToken}`)
       .send({ text: 'Mild left shoulder impingement only on overhead barbell presses' });
     assert.equal(editMemRes.status, 200);
-    assert.equal(editMemRes.body.data.text, 'Mild left shoulder impingement only on overhead barbell presses');
+    assert.equal(
+      editMemRes.body.data.text,
+      'Mild left shoulder impingement only on overhead barbell presses',
+    );
     console.log('  ✓ Memory text successfully updated');
 
     // 4. Disable memory toggle in settings
@@ -507,14 +524,21 @@ async function main() {
     // Confirm disabled memories are NOT returned to Gemini
     const memoryRepo = container.routeGroups.find((r) => r.basePath === '/api/v1/coach');
     assert.ok(memoryRepo);
-    const dbSettings = await pool.query('SELECT ai_memory_enabled FROM user_settings WHERE user_id = $1', [userBId]);
+    const dbSettings = await pool.query('SELECT ai_memory_enabled FROM user_settings WHERE user_id = $1', [
+      userBId,
+    ]);
     assert.equal(dbSettings.rows[0].ai_memory_enabled, false);
 
     // Query approved memories using repository logic
-    const { PgMemoryRepository } = await import('../src/modules/coach/infrastructure/pg-memory-repository.js');
+    const { PgMemoryRepository } =
+      await import('../src/modules/coach/infrastructure/pg-memory-repository.js');
     const pgMemRepo = new PgMemoryRepository(container.database);
     const approvedMemoriesWhenDisabled = await pgMemRepo.getActiveMemoriesForContext(userBId);
-    assert.equal(approvedMemoriesWhenDisabled.length, 0, 'Disabled memory MUST NOT return any memories for Gemini injection');
+    assert.equal(
+      approvedMemoriesWhenDisabled.length,
+      0,
+      'Disabled memory MUST NOT return any memories for Gemini injection',
+    );
     console.log('  ✓ Verified: When memory toggle is disabled, zero memories are injected into Gemini');
 
     // 5. Re-enable memory toggle
@@ -561,7 +585,11 @@ async function main() {
     const breachConvoRes = await request(app)
       .get(`/api/v1/coach/conversations/${userCConvoId}`)
       .set('Authorization', `Bearer ${userBToken}`);
-    assert.equal(breachConvoRes.status, 404, 'User B must receive 404 Not Found when trying to access User C conversation');
+    assert.equal(
+      breachConvoRes.status,
+      404,
+      'User B must receive 404 Not Found when trying to access User C conversation',
+    );
     console.log('  ✓ Security Confirmed: User B cannot access User C conversation (404 Not Found)');
 
     // User B attempts to delete User C's conversation
@@ -587,7 +615,9 @@ async function main() {
     assert.equal(breachMemEdit.status, 404, 'User B must not be able to edit User C memory');
     console.log('  ✓ Security Confirmed: User B cannot modify User C memory');
 
-    console.log('\n✓ TASK 2 COMPLETE: Conversation history, memory lifecycle, and user isolation all verified.\n');
+    console.log(
+      '\n✓ TASK 2 COMPLETE: Conversation history, memory lifecycle, and user isolation all verified.\n',
+    );
 
     // -------------------------------------------------------------
     // TASK 3: GEMINI FAILURE HANDLING & CONTROLLED FAULT INJECTION
@@ -624,7 +654,12 @@ async function main() {
     console.log('\n2. Testing Gemini Request Timeout (>30s):');
     const timeoutClient: CoachChatService = {
       async generateCoachResponse() {
-        throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'AI coach timed out waiting for generation.', { timeoutMs: 30000 });
+        throw new AppError(
+          'unavailable',
+          'SERVICE_UNAVAILABLE',
+          'AI coach timed out waiting for generation.',
+          { timeoutMs: 30000 },
+        );
       },
     };
     try {
@@ -640,7 +675,9 @@ async function main() {
     console.log('\n3. Testing Gemini Quota Exceeded (HTTP 429):');
     const quotaClient: CoachChatService = {
       async generateCoachResponse() {
-        throw new AppError('rate_limited', 'RATE_LIMITED', 'Gemini AI rate limit or quota exceeded.', { retryAfter: 60 });
+        throw new AppError('rate_limited', 'RATE_LIMITED', 'Gemini AI rate limit or quota exceeded.', {
+          retryAfter: 60,
+        });
       },
     };
     try {
@@ -649,7 +686,10 @@ async function main() {
     } catch (err: any) {
       assert.equal(err.code, 'RATE_LIMITED');
       assert.equal(err.kind, 'rate_limited');
-      assert.ok(!JSON.stringify(err).includes('AIza'), 'Sensitive API keys must never appear in error payloads');
+      assert.ok(
+        !JSON.stringify(err).includes('AIza'),
+        'Sensitive API keys must never appear in error payloads',
+      );
       console.log('  ✓ Quota error mapped to rate_limited/429 (Zero sensitive API keys leaked)');
     }
 
@@ -660,7 +700,11 @@ async function main() {
     console.log('\n5. Testing Gemini Service Unavailable (HTTP 503):');
     const svcUnavailableClient: CoachChatService = {
       async generateCoachResponse() {
-        throw new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'Gemini service is temporarily unavailable. Please retry shortly.');
+        throw new AppError(
+          'unavailable',
+          'SERVICE_UNAVAILABLE',
+          'Gemini service is temporarily unavailable. Please retry shortly.',
+        );
       },
     };
     try {
@@ -691,7 +735,6 @@ async function main() {
     console.log('  ✓ Missing voice data rejected with 400 Bad Request');
 
     console.log('\n✓ TASK 3 COMPLETE: All 6 failure scenarios handled gracefully with zero crashes.\n');
-
   } finally {
     // -------------------------------------------------------------
     // Cleanup Test Users and Records

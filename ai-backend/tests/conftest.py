@@ -129,11 +129,7 @@ class FakeLlm:
         if self.stream_error and self.stream_error_after_chunks in (None, 0):
             raise self.stream_error
 
-        chunks = (
-            self.stream_chunks
-            if self.stream_chunks is not None
-            else [self.text]
-        )
+        chunks = self.stream_chunks if self.stream_chunks is not None else [self.text]
         for idx, chunk_text in enumerate(chunks, start=1):
             if self.stream_delay_s > 0:
                 await asyncio.sleep(self.stream_delay_s)

@@ -85,7 +85,14 @@ describe('PythonVoiceMealService', () => {
 
     it('keeps unclearReason when present', async () => {
       server.respond((_r, res) =>
-        json(res, 200, okVoiceReply({ outcome: 'no_food', result: { ...(okVoiceReply().result as object), items: [], unclearReason: 'No food mentioned.' } })),
+        json(
+          res,
+          200,
+          okVoiceReply({
+            outcome: 'no_food',
+            result: { ...(okVoiceReply().result as object), items: [], unclearReason: 'No food mentioned.' },
+          }),
+        ),
       );
       expect((await parse(build())).unclearReason).toBe('No food mentioned.');
     });
@@ -104,7 +111,9 @@ describe('PythonVoiceMealService', () => {
         unclearReason: 'AI response was not formatted correctly. Please try again.',
         parsedAt: '2026-11-18T10:00:00.000Z',
       };
-      server.respond((_r, res) => json(res, 200, okVoiceReply({ outcome: 'parse_failed', result: notFormatted })));
+      server.respond((_r, res) =>
+        json(res, 200, okVoiceReply({ outcome: 'parse_failed', result: notFormatted })),
+      );
 
       const result = await parse(build());
 
@@ -158,7 +167,12 @@ describe('PythonVoiceMealService', () => {
       await parse(build());
       expect(recorder.recordExternalUsage).toHaveBeenCalledTimes(1);
       expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: USER, feature: 'voice_meal', model: 'gemini-3.5-flash-lite', totalTokens: 800 }),
+        expect.objectContaining({
+          userId: USER,
+          feature: 'voice_meal',
+          model: 'gemini-3.5-flash-lite',
+          totalTokens: 800,
+        }),
       );
     });
 
@@ -184,20 +198,33 @@ describe('PythonVoiceMealService', () => {
     });
 
     it.each([
-      ['401 invalid service token', 401, pythonError('AUTH_INVALID_TOKEN', 'x', { dispatched: false }), false],
+      [
+        '401 invalid service token',
+        401,
+        pythonError('AUTH_INVALID_TOKEN', 'x', { dispatched: false }),
+        false,
+      ],
       ['422 contract mismatch', 422, pythonError('INVALID_REQUEST', 'x', { dispatched: false }), false],
-      ['503 Python has no Gemini key', 503, pythonError('PROVIDER_NOT_CONFIGURED', 'x', { dispatched: false }), false],
+      [
+        '503 Python has no Gemini key',
+        503,
+        pythonError('PROVIDER_NOT_CONFIGURED', 'x', { dispatched: false }),
+        false,
+      ],
       ['500 crash', 500, pythonError('INTERNAL_ERROR', 'boom'), true],
-    ])('%s: controlled 503 with the voice-meal message, one call, dispatched=%s', async (_n, status, body, dispatched) => {
-      server.respond((_r, res) => json(res, status, body));
-      const error = await failure(parse(build()));
-      expect(isAppError(error) && [error.code, error.message]).toEqual([
-        'SERVICE_UNAVAILABLE',
-        'Voice meal parsing is temporarily unavailable. Please try again shortly.',
-      ]);
-      expect(server.requests).toHaveLength(1);
-      expect(aiContext.dispatched).toBe(dispatched);
-    });
+    ])(
+      '%s: controlled 503 with the voice-meal message, one call, dispatched=%s',
+      async (_n, status, body, dispatched) => {
+        server.respond((_r, res) => json(res, status, body));
+        const error = await failure(parse(build()));
+        expect(isAppError(error) && [error.code, error.message]).toEqual([
+          'SERVICE_UNAVAILABLE',
+          'Voice meal parsing is temporarily unavailable. Please try again shortly.',
+        ]);
+        expect(server.requests).toHaveLength(1);
+        expect(aiContext.dispatched).toBe(dispatched);
+      },
+    );
 
     it('invalid Python response: controlled 503, dispatched, nothing recorded', async () => {
       server.respond((_r, res) => json(res, 200, { outcome: 'ok', result: { items: 'nope' } }));

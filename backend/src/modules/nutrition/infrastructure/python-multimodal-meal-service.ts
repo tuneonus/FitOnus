@@ -27,7 +27,10 @@ export const MULTIMODAL_MEAL_UNAVAILABLE_MESSAGE =
 const pythonMultimodalResponseSchema = z.object({
   outcome: z.enum(['ok', 'no_food', 'parse_failed']),
   result: z.object({
-    modalitiesUsed: z.array(z.enum(['text', 'audio', 'image'])).min(1).max(3),
+    modalitiesUsed: z
+      .array(z.enum(['text', 'audio', 'image']))
+      .min(1)
+      .max(3),
     isFood: z.boolean(),
     summary: z.string().max(300),
     transcript: z.string().max(AI_ESTIMATE_LIMITS.transcriptLength),
@@ -51,7 +54,9 @@ const pythonMultimodalResponseSchema = z.object({
 
 export interface PythonMultimodalMealDeps {
   client: PythonAiClient;
-  resolveModels: (feature: 'meal_photo' | 'voice_meal') => Promise<{ primary: string; fallback: string | null }>;
+  resolveModels: (
+    feature: 'meal_photo' | 'voice_meal',
+  ) => Promise<{ primary: string; fallback: string | null }>;
   usageRecorder?: AiUsageRecorder;
   pythonTimeoutMs: number;
   logger?: Pick<Logger, 'info' | 'error'>;
@@ -77,12 +82,12 @@ export class PythonMultimodalMealService implements MultimodalMealAnalyzer {
 
     const hasContext = Boolean(
       params.context &&
-        (params.context.mealType ||
-          params.context.lang ||
-          params.context.notes ||
-          params.context.dietaryGoal ||
-          params.context.allergies?.length ||
-          params.context.dailyCalorieTarget !== undefined),
+      (params.context.mealType ||
+        params.context.lang ||
+        params.context.notes ||
+        params.context.dietaryGoal ||
+        params.context.allergies?.length ||
+        params.context.dailyCalorieTarget !== undefined),
     );
 
     const { result } = await callPythonAi({

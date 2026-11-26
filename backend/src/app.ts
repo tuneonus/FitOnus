@@ -10,9 +10,7 @@ import { buildRouter, largeBodyRouteKeys, requestRouteKey } from './shared/http/
 import type { Logger } from './shared/logging/logger.js';
 import './shared/types/express.js';
 
-export const DEFAULT_ALLOWED_ORIGINS: readonly string[] = [
-  'https://fit-onus.vercel.app',
-];
+export const DEFAULT_ALLOWED_ORIGINS: readonly string[] = ['https://fit-onus.vercel.app'];
 
 export function corsMiddleware(origins: readonly string[]) {
   const allowed = new Set([...origins, ...DEFAULT_ALLOWED_ORIGINS]);

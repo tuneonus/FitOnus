@@ -501,8 +501,18 @@ describe('Nutrition Application Use Cases', () => {
       vi.mocked(mealRepo.listByDate).mockResolvedValueOnce([meal]);
       vi.mocked(waterRepo.getTotalByDate).mockResolvedValueOnce(1500);
       vi.mocked(waterRepo.listByDate).mockResolvedValueOnce([
-        new WaterIntake({ id: '77777777-7777-4777-8777-777777777771', userId: user1, date: '2026-11-05', amountMl: 1000 }),
-        new WaterIntake({ id: '77777777-7777-4777-8777-777777777772', userId: user1, date: '2026-11-05', amountMl: 500 }),
+        new WaterIntake({
+          id: '77777777-7777-4777-8777-777777777771',
+          userId: user1,
+          date: '2026-11-05',
+          amountMl: 1000,
+        }),
+        new WaterIntake({
+          id: '77777777-7777-4777-8777-777777777772',
+          userId: user1,
+          date: '2026-11-05',
+          amountMl: 500,
+        }),
       ]);
       vi.mocked(targetPort.findTargetsByUserId).mockResolvedValueOnce({
         source: 'saved',
@@ -551,9 +561,15 @@ describe('Nutrition Application Use Cases', () => {
     it('returns targets: null and remaining: null when user has no targets configured', async () => {
       vi.mocked(mealRepo.listByDate).mockResolvedValueOnce([]);
       vi.mocked(waterRepo.getTotalByDate).mockResolvedValueOnce(0);
-      vi.mocked(targetPort.findTargetsByUserId).mockResolvedValueOnce(
-        { source: null, calories: null, proteinG: null, carbsG: null, fatG: null, waterMl: null, waterSource: null },
-      );
+      vi.mocked(targetPort.findTargetsByUserId).mockResolvedValueOnce({
+        source: null,
+        calories: null,
+        proteinG: null,
+        carbsG: null,
+        fatG: null,
+        waterMl: null,
+        waterSource: null,
+      });
 
       const useCase = new GetDailyNutritionUseCase(mealRepo, waterRepo, targetPort);
       const result = await useCase.execute({ userId: user1, date: '2026-11-05' });

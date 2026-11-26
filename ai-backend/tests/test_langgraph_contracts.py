@@ -122,12 +122,12 @@ def test_reduce_steps_merges_and_updates_by_step_id() -> None:
 
 
 def test_reduce_executed_tools_accumulates_unique_signatures() -> None:
-    existing = ["tool_a:{}", "tool_b:{\"days\": 7}"]
-    incoming = ["tool_b:{\"days\": 7}", "tool_c:{}"]
+    existing = ["tool_a:{}", 'tool_b:{"days": 7}']
+    incoming = ['tool_b:{"days": 7}', "tool_c:{}"]
 
     merged = reduce_executed_tools(existing, incoming)
     assert len(merged) == 3
-    assert merged == ["tool_a:{}", "tool_b:{\"days\": 7}", "tool_c:{}"]
+    assert merged == ["tool_a:{}", 'tool_b:{"days": 7}', "tool_c:{}"]
 
 
 def test_reduce_tool_results_appends_results() -> None:

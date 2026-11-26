@@ -115,7 +115,9 @@ def _build_config(
 async def test_interpret_goal_node_english_and_tamil() -> None:
     req_en = _mock_request("Check my fitness progress over the past 2 weeks")
     config_en = _build_config(req_en)
-    state_en = create_initial_graph_state(req_en, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0)
+    state_en = create_initial_graph_state(
+        req_en, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0
+    )
 
     res_en = await interpret_goal_node(state_en, config_en)
     assert res_en["status"] == AgentExecutionStatus.PLANNING
@@ -124,7 +126,9 @@ async def test_interpret_goal_node_english_and_tamil() -> None:
 
     req_ta = _mock_request("வணக்கம் கோச்")
     config_ta = _build_config(req_ta)
-    state_ta = create_initial_graph_state(req_ta, trace_id="t2", user_id="u2", start_time=100.0, deadline=110.0)
+    state_ta = create_initial_graph_state(
+        req_ta, trace_id="t2", user_id="u2", start_time=100.0, deadline=110.0
+    )
 
     res_ta = await interpret_goal_node(state_ta, config_ta)
     assert res_ta["goal"].language == "ta"
@@ -164,7 +168,9 @@ async def test_task_planning_node() -> None:
         requires_agent_execution=True,
         target_domains=["workouts", "nutrition"],
     )
-    state = create_initial_graph_state(req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0, initial_goal=goal)
+    state = create_initial_graph_state(
+        req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0, initial_goal=goal
+    )
 
     res = await task_planning_node(state, config)
     assert res["status"] == AgentExecutionStatus.EXECUTING
@@ -186,7 +192,9 @@ async def test_tool_execution_node_argument_validation() -> None:
         action=StepAction(tool_name="get_recent_workouts", args={"days": -10}, rationale="Check"),
         status=StepStatus.PENDING,
     )
-    state = create_initial_graph_state(req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0)
+    state = create_initial_graph_state(
+        req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0
+    )
     state["steps"] = [step_invalid]
 
     res = await tool_execution_node(state, config)
@@ -212,7 +220,9 @@ async def test_tool_execution_node_duplicate_caching() -> None:
         action=StepAction(tool_name="get_recent_workouts", args={"days": 7}, rationale="r1"),
         status=StepStatus.PENDING,
     )
-    state1 = create_initial_graph_state(req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0)
+    state1 = create_initial_graph_state(
+        req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0
+    )
     state1["steps"] = [step1]
 
     # First execution
@@ -227,7 +237,9 @@ async def test_tool_execution_node_duplicate_caching() -> None:
         action=StepAction(tool_name="get_recent_workouts", args={"days": 7}, rationale="r2"),
         status=StepStatus.PENDING,
     )
-    state2 = create_initial_graph_state(req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0)
+    state2 = create_initial_graph_state(
+        req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0
+    )
     state2["steps"] = [step2]
 
     res2 = await tool_execution_node(state2, config)
@@ -247,7 +259,9 @@ async def test_observation_processing_deadline_exhaustion() -> None:
         language="en",
         requires_agent_execution=True,
     )
-    state = create_initial_graph_state(req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0, initial_goal=goal)
+    state = create_initial_graph_state(
+        req, trace_id="t1", user_id="u1", start_time=100.0, deadline=110.0, initial_goal=goal
+    )
 
     res = await observation_processing_node(state, config)
     assert res["status"] == AgentExecutionStatus.DEADLINE_EXCEEDED
@@ -280,7 +294,9 @@ async def test_observation_processing_and_replanning_loop() -> None:
         status=StepStatus.COMPLETED,
         observation=empty_obs,
     )
-    state = create_initial_graph_state(req, trace_id="t1", user_id="u1", start_time=100.0, deadline=120.0, initial_goal=goal)
+    state = create_initial_graph_state(
+        req, trace_id="t1", user_id="u1", start_time=100.0, deadline=120.0, initial_goal=goal
+    )
     state["steps"] = [step1]
     state["observations"] = [empty_obs]
 

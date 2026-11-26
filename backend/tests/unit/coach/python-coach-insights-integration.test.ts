@@ -47,7 +47,13 @@ import {
 
 const SECRET = 'unit-test-secret-unit-test-secret-1234';
 const USER = '11111111-1111-4111-8111-111111111111';
-const LIMITS = { dailyGlobalLimit: 50, coachChatDailyLimit: 20, mealPhotoDailyLimit: 10, voiceMealDailyLimit: 10, workoutGeneratorDailyLimit: 10 };
+const LIMITS = {
+  dailyGlobalLimit: 50,
+  coachChatDailyLimit: 20,
+  mealPhotoDailyLimit: 10,
+  voiceMealDailyLimit: 10,
+  workoutGeneratorDailyLimit: 10,
+};
 
 const CASES = JSON.parse(
   readFileSync(new URL('../../fixtures/coach-insights/deterministic_cases.json', import.meta.url), 'utf8'),
@@ -64,12 +70,19 @@ class Settings {
       key,
       value:
         key === 'features.flags'
-          ? { aiCoach: this.coachEnabled, mealPhotoScanner: true, voiceMealEntry: true, workoutGenerator: true }
+          ? {
+              aiCoach: this.coachEnabled,
+              mealPhotoScanner: true,
+              voiceMealEntry: true,
+              workoutGenerator: true,
+            }
           : LIMITS,
     };
   }
-  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) => this.store.reserveAiUsage(input);
-  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) => this.store.releaseAiUsage(input);
+  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) =>
+    this.store.reserveAiUsage(input);
+  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) =>
+    this.store.releaseAiUsage(input);
 }
 
 const normalise = <T extends { generatedAt: string }>(r: T) => ({ ...r, generatedAt: 'GENERATED_AT' });
@@ -82,10 +95,15 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
   let logger: { info: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
   let loadContext: ReturnType<typeof vi.fn>;
 
-  const serviceFor = (url: string, timeoutMs = 5_000, resolveModels?: () => Promise<{ primary: string; fallback: string | null }>) =>
+  const serviceFor = (
+    url: string,
+    timeoutMs = 5_000,
+    resolveModels?: () => Promise<{ primary: string; fallback: string | null }>,
+  ) =>
     new PythonCoachInsightsService({
       client: new PythonAiClient({ baseUrl: url, serviceSecret: SECRET }),
-      resolveModels: resolveModels ?? (() => Promise.resolve({ primary: 'coach-primary', fallback: 'coach-backup' })),
+      resolveModels:
+        resolveModels ?? (() => Promise.resolve({ primary: 'coach-primary', fallback: 'coach-backup' })),
       usageRecorder: recorder as unknown as AiUsageRecorder,
       pythonTimeoutMs: timeoutMs,
       logger: logger as unknown as Pick<Logger, 'info' | 'error'>,
@@ -121,7 +139,9 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
       expect(result).toEqual({
         greeting: 'Good morning Karthik!',
         recommendation: 'Target Leg Day today.',
-        insights: expect.arrayContaining([expect.objectContaining({ id: 'ins-1', category: 'workout', requiresDevice: false })]),
+        insights: expect.arrayContaining([
+          expect.objectContaining({ id: 'ins-1', category: 'workout', requiresDevice: false }),
+        ]),
         generatedAt: '2026-11-19T10:00:00.000Z',
         hasSufficientData: true,
       });
@@ -157,7 +177,10 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
     it('identifies the user only through a short-lived token scoped to coach insights', async () => {
       await useCaseFor().execute({ userId: USER });
       const token = String(server.requests[0]!.headers.authorization).replace('Bearer ', '');
-      const { payload } = await jwtVerify(token, new TextEncoder().encode(SECRET), { issuer: 'onusfit-node-api', audience: 'onusfit-ai-backend' });
+      const { payload } = await jwtVerify(token, new TextEncoder().encode(SECRET), {
+        issuer: 'onusfit-node-api',
+        audience: 'onusfit-ai-backend',
+      });
       expect(payload).toMatchObject({ sub: USER, scope: 'ai:coach:insights' });
       expect(payload.exp! - payload.iat!).toBeLessThanOrEqual(60);
     });
@@ -166,27 +189,47 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
       await useCaseFor().execute({ userId: USER });
       expect(recorder.recordExternalUsage).toHaveBeenCalledTimes(1);
       expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: USER, feature: 'coach_insights', model: 'gemini-3.5-flash-lite', totalTokens: 1015 }),
+        expect.objectContaining({
+          userId: USER,
+          feature: 'coach_insights',
+          model: 'gemini-3.5-flash-lite',
+          totalTokens: 1015,
+        }),
       );
     });
 
     it('a failing usage ledger never fails the request', async () => {
       recorder.recordExternalUsage.mockRejectedValue(new Error('db down'));
-      await expect(useCaseFor().execute({ userId: USER })).resolves.toMatchObject({ hasSufficientData: true });
+      await expect(useCaseFor().execute({ userId: USER })).resolves.toMatchObject({
+        hasSufficientData: true,
+      });
     });
 
     it('a backup-model answer is returned like any other and recorded as such', async () => {
-      server.respond((_r, res) => json(res, 200, okInsightsReply({ usage: { ...(okInsightsReply().usage as object), model: 'coach-backup', isFallback: true } })));
-      await expect(useCaseFor().execute({ userId: USER })).resolves.toMatchObject({ greeting: 'Good morning Karthik!' });
-      expect(recorder.recordExternalUsage).toHaveBeenCalledWith(expect.objectContaining({ model: 'coach-backup', isFallback: true }));
+      server.respond((_r, res) =>
+        json(
+          res,
+          200,
+          okInsightsReply({
+            usage: { ...(okInsightsReply().usage as object), model: 'coach-backup', isFallback: true },
+          }),
+        ),
+      );
+      await expect(useCaseFor().execute({ userId: USER })).resolves.toMatchObject({
+        greeting: 'Good morning Karthik!',
+      });
+      expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'coach-backup', isFallback: true }),
+      );
     });
 
     it('stays inside the mobile deadline: at most 22 s HTTP / 20.5 s Gemini, even if configured higher', async () => {
       await useCaseFor(serviceFor(server.url, 28_000)).execute({ userId: USER });
       expect(COACH_INSIGHTS_MAX_TIMEOUT_MS).toBeLessThan(25_000); // the app waits 25 s
-      expect((server.requests[0]!.body as { deadlineMs: number }).deadlineMs).toBe(COACH_INSIGHTS_MAX_TIMEOUT_MS - 1_500);
+      expect((server.requests[0]!.body as { deadlineMs: number }).deadlineMs).toBe(
+        COACH_INSIGHTS_MAX_TIMEOUT_MS - 1_500,
+      );
     });
-
   });
 
   describe('cache, de-duplication and the kill switch (unchanged use case)', () => {
@@ -294,7 +337,9 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
     });
 
     it('wrong or missing service secret (Python 401)', async () => {
-      server.respond((_r, res) => json(res, 401, pythonError('AUTH_INVALID_TOKEN', 'Invalid service token.', { dispatched: false })));
+      server.respond((_r, res) =>
+        json(res, 401, pythonError('AUTH_INVALID_TOKEN', 'Invalid service token.', { dispatched: false })),
+      );
       await expectDeterministic();
       const logged = JSON.stringify(logger.error.mock.calls);
       expect(logged).toContain('AUTH_INVALID_TOKEN'); // the cause is logged...
@@ -345,7 +390,9 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
 
     it('outcome ok with an empty insight list is treated as unusable', async () => {
       const reply = okInsightsReply();
-      server.respond((_r, res) => json(res, 200, { ...reply, result: { ...(reply.result as object), insights: [] } }));
+      server.respond((_r, res) =>
+        json(res, 200, { ...reply, result: { ...(reply.result as object), insights: [] } }),
+      );
       await expectDeterministic();
     });
 
@@ -362,7 +409,10 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
 
   describe('through the real route and controller: the public mobile contract', () => {
     const appFor = (service: PythonCoachInsightsService) => {
-      const controller = createCoachController({ chatWithCoach: { execute: vi.fn() } as never, getCoachInsights: useCaseFor(service) });
+      const controller = createCoachController({
+        chatWithCoach: { execute: vi.fn() } as never,
+        getCoachInsights: useCaseFor(service),
+      });
       const group = createCoachRoutes('/api/v1/coach', controller);
       const app = express();
       app.use(requestContext(createLogger({ level: 'silent', pretty: false })));
@@ -385,11 +435,30 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
     it('200 {success, data, message} with exactly the keys the app parses', async () => {
       const res = await get(appFor(serviceFor(server.url)), '?lang=en&timezone=Asia/Kolkata');
       expect(res.status).toBe(200);
-      expect(res.body).toMatchObject({ success: true, message: 'Personalized coach insights generated successfully' });
-      expect(Object.keys(res.body.data).sort()).toEqual(['generatedAt', 'greeting', 'hasSufficientData', 'insights', 'recommendation']);
-      expect(Object.keys(res.body.data.insights[0]).sort()).toEqual(
-        ['action', 'category', 'confidence', 'description', 'evidence', 'id', 'priority', 'question', 'requiresDevice', 'severity', 'title'],
-      );
+      expect(res.body).toMatchObject({
+        success: true,
+        message: 'Personalized coach insights generated successfully',
+      });
+      expect(Object.keys(res.body.data).sort()).toEqual([
+        'generatedAt',
+        'greeting',
+        'hasSufficientData',
+        'insights',
+        'recommendation',
+      ]);
+      expect(Object.keys(res.body.data.insights[0]).sort()).toEqual([
+        'action',
+        'category',
+        'confidence',
+        'description',
+        'evidence',
+        'id',
+        'priority',
+        'question',
+        'requiresDevice',
+        'severity',
+        'title',
+      ]);
     });
 
     it('refresh=true and lang reach the use case', async () => {
@@ -401,12 +470,15 @@ describe('Coach insights served only by Python (full use case + quota gate + cac
       expect((server.requests[0]!.body as { lang: string }).lang).toBe('ta');
     });
 
-    it.each([['lang=fr'], ['refresh=maybe']])('an invalid query (%s): 400 and Python is never called', async (query) => {
-      const res = await get(appFor(serviceFor(server.url)), `?${query}`);
-      expect(res.status).toBe(400);
-      expect(server.requests).toHaveLength(0);
-      expect(settings.store.reserveCalls).toBe(0);
-    });
+    it.each([['lang=fr'], ['refresh=maybe']])(
+      'an invalid query (%s): 400 and Python is never called',
+      async (query) => {
+        const res = await get(appFor(serviceFor(server.url)), `?${query}`);
+        expect(res.status).toBe(400);
+        expect(server.requests).toHaveLength(0);
+        expect(settings.store.reserveCalls).toBe(0);
+      },
+    );
 
     it('Python down: still 200 with deterministic insights, nothing internal in the body', async () => {
       const res = await get(appFor(serviceFor(await closedPortUrl())), '?lang=en');

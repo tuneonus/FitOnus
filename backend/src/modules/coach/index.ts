@@ -3,7 +3,11 @@ import type { Database } from '../../database/transaction.js';
 import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { RouteGroup } from '../../shared/http/route.js';
 import type { Logger } from '../../shared/logging/logger.js';
-import type { IExerciseRepository, IPersonalRecordRepository, IWorkoutSessionRepository } from '../workouts/index.js';
+import type {
+  IExerciseRepository,
+  IPersonalRecordRepository,
+  IWorkoutSessionRepository,
+} from '../workouts/index.js';
 import type { IMealRepository, IUserProfileTargetPort, IWaterRepository } from '../nutrition/index.js';
 import type { IWeightRepository } from '../progress/index.js';
 import type { KnowledgeService } from '../knowledge/index.js';
@@ -28,7 +32,10 @@ import { PgMemoryRepository } from './infrastructure/pg-memory-repository.js';
 import { PgMemoryExtractionJobQueue } from './infrastructure/pg-memory-job-queue.js';
 import { createCoachController, type CoachController } from './interface/coach.controller.js';
 import { createCoachRoutes } from './interface/coach.routes.js';
-import { createInternalToolsController, type InternalToolsController } from './interface/internal-tools.controller.js';
+import {
+  createInternalToolsController,
+  type InternalToolsController,
+} from './interface/internal-tools.controller.js';
 import { createInternalToolsRoutes } from './interface/internal-tools.routes.js';
 
 export * from './domain/coach.types.js';
@@ -153,7 +160,12 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
     memoryJobQueue,
     () => memoryWorker?.kick(),
   );
-  const insightsUseCase = new GetCoachInsightsUseCase(userContextRepo, aiService, options.aiUsageGate, options.logger);
+  const insightsUseCase = new GetCoachInsightsUseCase(
+    userContextRepo,
+    aiService,
+    options.aiUsageGate,
+    options.logger,
+  );
   const manageConversations = new ManageConversationsUseCase(conversationRepo);
   const manageMemories = new ManageMemoriesUseCase(memoryRepo);
 
@@ -209,11 +221,10 @@ export function createCoachModule(options: CreateCoachModuleOptions): CoachModul
       ...(options.knowledgeService ? { knowledgeService: options.knowledgeService } : {}),
       ...(options.profileRepo ? { profileRepo: options.profileRepo } : {}),
     });
-    internalToolsRoutes = createInternalToolsRoutes(
-      options.internalToolsBasePath,
-      internalToolsController,
-      { serviceSecret: options.serviceSecret, limiter: options.rateLimiter },
-    );
+    internalToolsRoutes = createInternalToolsRoutes(options.internalToolsBasePath, internalToolsController, {
+      serviceSecret: options.serviceSecret,
+      limiter: options.rateLimiter,
+    });
   }
 
   return {

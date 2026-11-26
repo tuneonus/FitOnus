@@ -118,20 +118,28 @@ class ApprovalManager:
         with self._lock:
             ticket = self._tickets.get(approval_id)
             if not ticket:
-                raise McpError(f"Approval ticket '{approval_id}' not found", code="TICKET_NOT_FOUND")
+                raise McpError(
+                    f"Approval ticket '{approval_id}' not found", code="TICKET_NOT_FOUND"
+                )
             if ticket.user_id != uid:
                 raise McpSecurityError("Unauthorized: ticket does not belong to user")
             if ticket.status == AgentApprovalStatus.PENDING and time.time() > ticket.expires_at:
                 ticket.status = AgentApprovalStatus.EXPIRED
             if ticket.status == AgentApprovalStatus.EXPIRED:
-                raise McpError(f"Approval ticket '{approval_id}' has expired", code="TICKET_EXPIRED")
+                raise McpError(
+                    f"Approval ticket '{approval_id}' has expired", code="TICKET_EXPIRED"
+                )
             if ticket.status != AgentApprovalStatus.PENDING:
                 raise McpSecurityError(
                     f"Approval ticket '{approval_id}' cannot be replayed (status: {ticket.status.value})"
                 )
 
-            recomputed_hash = compute_payload_hash(ticket.user_id, ticket.tool_name, ticket.arguments)
-            if ticket.payload_hash and not hmac.compare_digest(ticket.payload_hash, recomputed_hash):
+            recomputed_hash = compute_payload_hash(
+                ticket.user_id, ticket.tool_name, ticket.arguments
+            )
+            if ticket.payload_hash and not hmac.compare_digest(
+                ticket.payload_hash, recomputed_hash
+            ):
                 raise McpSecurityError("Approval ticket payload integrity check failed")
             if expected_payload_hash is not None and not hmac.compare_digest(
                 ticket.payload_hash or recomputed_hash, expected_payload_hash
@@ -147,7 +155,9 @@ class ApprovalManager:
         with self._lock:
             ticket = self._tickets.get(approval_id)
             if not ticket:
-                raise McpError(f"Approval ticket '{approval_id}' not found", code="TICKET_NOT_FOUND")
+                raise McpError(
+                    f"Approval ticket '{approval_id}' not found", code="TICKET_NOT_FOUND"
+                )
             if ticket.user_id != uid:
                 raise McpSecurityError("Unauthorized: ticket does not belong to user")
             if ticket.status != AgentApprovalStatus.APPROVED:
@@ -166,7 +176,9 @@ class ApprovalManager:
         with self._lock:
             ticket = self._tickets.get(approval_id)
             if not ticket:
-                raise McpError(f"Approval ticket '{approval_id}' not found", code="TICKET_NOT_FOUND")
+                raise McpError(
+                    f"Approval ticket '{approval_id}' not found", code="TICKET_NOT_FOUND"
+                )
             if ticket.user_id != uid:
                 raise McpSecurityError("Unauthorized: ticket does not belong to user")
             if ticket.status == AgentApprovalStatus.PENDING and time.time() > ticket.expires_at:
@@ -203,7 +215,11 @@ class IdempotencyManager:
             if record is None and not uid and not tool_name:
                 # Backward-compatible lookup only when caller passed neither user_id nor tool_name
                 record = next(
-                    (rec for (_, _, rec_key), rec in self._records.items() if rec_key == key and not rec.user_id),
+                    (
+                        rec
+                        for (_, _, rec_key), rec in self._records.items()
+                        if rec_key == key and not rec.user_id
+                    ),
                     None,
                 )
             if record is None:
@@ -211,12 +227,12 @@ class IdempotencyManager:
             if record.expires_at is not None and now > record.expires_at:
                 self._records.pop((record.user_id, record.tool_name, record.key), None)
                 return None
-            if payload_hash and record.payload_hash and not hmac.compare_digest(
-                record.payload_hash, payload_hash
+            if (
+                payload_hash
+                and record.payload_hash
+                and not hmac.compare_digest(record.payload_hash, payload_hash)
             ):
-                raise McpSecurityError(
-                    f"Idempotency key '{key}' reused with conflicting payload"
-                )
+                raise McpSecurityError(f"Idempotency key '{key}' reused with conflicting payload")
             return record.model_copy(deep=True)
 
     def record_execution(
@@ -306,7 +322,10 @@ class AgentToolOrchestrator:
                         raise McpSecurityError(
                             "Direct write confirmation is forbidden without a valid approval ticket"
                         )
-                    if not validated_args.get("confirmed", False) or self.config.strict_hitl_tickets:
+                    if (
+                        not validated_args.get("confirmed", False)
+                        or self.config.strict_hitl_tickets
+                    ):
                         summary = f"Requires human approval before executing '{tool_name}'"
                         ticket = self.approval_mgr.create_ticket(
                             tool_name=tool_name,
@@ -401,7 +420,9 @@ class AgentToolOrchestrator:
             # 6. Idempotency store on successful write
             if definition.is_write:
                 idempotency_key = validated_args.get("idempotency_key") or (
-                    f"approval-{approved_ticket.approval_id}" if approved_ticket is not None else None
+                    f"approval-{approved_ticket.approval_id}"
+                    if approved_ticket is not None
+                    else None
                 )
                 if idempotency_key:
                     self.idempotency_mgr.record_execution(
@@ -413,7 +434,9 @@ class AgentToolOrchestrator:
                     )
 
             # 7. Format content and sanitize output
-            content_str = json.dumps(raw_result) if isinstance(raw_result, (dict, list)) else str(raw_result)
+            content_str = (
+                json.dumps(raw_result) if isinstance(raw_result, (dict, list)) else str(raw_result)
+            )
             sanitized_content = self.guardrails.sanitize_tool_output(tool_name, content_str)
 
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
@@ -439,7 +462,9 @@ class AgentToolOrchestrator:
             return McpToolResult(
                 tool_name=tool_name,
                 content=sanitized_content,
-                structured_data=raw_result if isinstance(raw_result, dict) else {"result": raw_result},
+                structured_data=raw_result
+                if isinstance(raw_result, dict)
+                else {"result": raw_result},
                 is_error=False,
                 execution_time_ms=elapsed_ms,
             )

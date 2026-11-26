@@ -32,7 +32,9 @@ class StreamingEvaluator:
         if actual_outcome == expected_outcome:
             passed_checks += 1
         else:
-            reasons.append(f"Outcome mismatch: expected '{expected_outcome}', got '{actual_outcome}'")
+            reasons.append(
+                f"Outcome mismatch: expected '{expected_outcome}', got '{actual_outcome}'"
+            )
 
         checks += 1
         secrets_leaked = bool(candidate.get("secrets_leaked", False))
@@ -63,7 +65,9 @@ class StreamingEvaluator:
         combined_surface = " ".join(
             [
                 text,
-                " ".join(str(s) for s in status_messages) if isinstance(status_messages, list) else "",
+                " ".join(str(s) for s in status_messages)
+                if isinstance(status_messages, list)
+                else "",
                 str(candidate.get("error_message", "")),
             ]
         )

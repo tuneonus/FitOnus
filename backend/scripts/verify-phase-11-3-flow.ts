@@ -53,13 +53,11 @@ async function main() {
     const testEmail = `qa_phase11_3_${Date.now()}@fitonus.test`;
     const testPassword = 'Password123!';
     console.log('Registering test user:', testEmail);
-    const regRes = await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        email: testEmail,
-        password: testPassword,
-        displayName: 'Phase11 Flow QA',
-      });
+    const regRes = await request(app).post('/api/v1/auth/register').send({
+      email: testEmail,
+      password: testPassword,
+      displayName: 'Phase11 Flow QA',
+    });
     assert.equal(regRes.status, 201, `Registration failed: ${JSON.stringify(regRes.body)}`);
     const token = regRes.body.data.accessToken;
     const userRes = await pool.query<{ id: string }>('SELECT id FROM users WHERE email = $1', [testEmail]);
@@ -155,7 +153,11 @@ async function main() {
       .set('Idempotency-Key', clientSessionId)
       .send(workoutPayload);
     assert.equal(replayedSessionRes.status, 201);
-    assert.equal(replayedSessionRes.headers['idempotent-replayed'], 'true', 'Must be flagged as idempotent replay');
+    assert.equal(
+      replayedSessionRes.headers['idempotent-replayed'],
+      'true',
+      'Must be flagged as idempotent replay',
+    );
 
     const dashAfterReplay = await request(app)
       .get('/api/v1/dashboard/summary')
@@ -214,8 +216,16 @@ async function main() {
       .query({ timezone: 'UTC' });
     assert.equal(dashAfterMeal.status, 200);
     const dashM = dashAfterMeal.body.data;
-    assert.equal(dashM.summary.caloriesConsumed, Math.round(dailyNut.consumed.calories), 'Dashboard calories consumed must match daily log');
-    assert.equal(dashM.nutrition.protein, Math.round(dailyNut.consumed.proteinG), 'Dashboard protein must match daily log');
+    assert.equal(
+      dashM.summary.caloriesConsumed,
+      Math.round(dailyNut.consumed.calories),
+      'Dashboard calories consumed must match daily log',
+    );
+    assert.equal(
+      dashM.nutrition.protein,
+      Math.round(dailyNut.consumed.proteinG),
+      'Dashboard protein must match daily log',
+    );
     console.log('✓ Dashboard nutrition totals match daily logs exactly.\n');
 
     // 11. Water Logging & Verification

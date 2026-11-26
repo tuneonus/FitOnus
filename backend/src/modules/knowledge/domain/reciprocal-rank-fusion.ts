@@ -129,4 +129,3 @@ export function reciprocalRankFusion(
 
   return ranked.slice(0, topK);
 }
-

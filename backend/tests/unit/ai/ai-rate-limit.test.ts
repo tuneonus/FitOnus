@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  AiUsageGateService,
-  CheckAndRecordAiQuotaUseCase,
-} from '../../../src/modules/app-settings/index.js';
+import { AiUsageGateService, CheckAndRecordAiQuotaUseCase } from '../../../src/modules/app-settings/index.js';
 import { STATUS_BY_KIND } from '../../../src/middleware/error-handler.js';
 import {
   AI_RATE_LIMIT_MESSAGE,
@@ -38,7 +35,11 @@ describe('createAiRateLimiter', () => {
     for (let i = 0; i < 3; i += 1) await limiter.consume(ALICE, 'coach_chat');
     const error = await caught(limiter.consume(ALICE, 'coach_chat'));
 
-    expect(error).toMatchObject({ kind: 'rate_limited', code: 'RATE_LIMITED', message: AI_RATE_LIMIT_MESSAGE });
+    expect(error).toMatchObject({
+      kind: 'rate_limited',
+      code: 'RATE_LIMITED',
+      message: AI_RATE_LIMIT_MESSAGE,
+    });
     expect(STATUS_BY_KIND[error.kind]).toBe(429);
   });
 
@@ -105,7 +106,12 @@ describe('createAiRateLimiter', () => {
 
   it('ships sensible defaults: coach 30 / heavier media calls 10 per 15 minutes per user', () => {
     expect(DEFAULT_AI_RATE_LIMIT_WINDOW_MS).toBe(15 * 60 * 1000);
-    expect(DEFAULT_AI_RATE_LIMITS).toEqual({ coach_chat: 30, meal_photo: 10, voice_meal: 10, workout_generator: 10 });
+    expect(DEFAULT_AI_RATE_LIMITS).toEqual({
+      coach_chat: 30,
+      meal_photo: 10,
+      voice_meal: 10,
+      workout_generator: 10,
+    });
   });
 
   it('works with an asynchronous store (remote stores such as Redis return promises)', async () => {
@@ -165,9 +171,7 @@ describe('InMemoryAiRateLimitStore', () => {
   it('forgets idle keys, so memory is bounded by users active within one window', async () => {
     const store = new InMemoryAiRateLimitStore();
     for (let i = 0; i < 1_000; i += 1) store.hit(`user-${i}`, 1_000);
-    expect(
-      (store as unknown as { windows: Map<string, unknown> }).windows.size,
-    ).toBe(1_000);
+    expect((store as unknown as { windows: Map<string, unknown> }).windows.size).toBe(1_000);
 
     await vi.advanceTimersByTimeAsync(61_000);
     store.hit('someone-new', 1_000); // any later hit triggers the lazy sweep
@@ -181,8 +185,10 @@ describe('AiUsageGateService with the rate limiter', () => {
     const usage = new InMemoryAiUsageStore();
     const settings = {
       getSettingByKey: async () => null,
-      reserveAiUsage: (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) => usage.reserveAiUsage(input),
-      releaseAiUsage: (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) => usage.releaseAiUsage(input),
+      reserveAiUsage: (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) =>
+        usage.reserveAiUsage(input),
+      releaseAiUsage: (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) =>
+        usage.releaseAiUsage(input),
     };
     const gate = new AiUsageGateService(
       new CheckAndRecordAiQuotaUseCase(settings as never),
@@ -230,9 +236,13 @@ describe('AiUsageGateService with the rate limiter', () => {
   it('a limited user never blocks another user going through the same gate', async () => {
     const { gate } = buildGate({ limits: { meal_photo: 1 } });
     await gate.run({ userId: ALICE, action: 'meal_photo' }, async () => 'ok');
-    expect((await caught(gate.run({ userId: ALICE, action: 'meal_photo' }, async () => 'ok'))).code).toBe('RATE_LIMITED');
+    expect((await caught(gate.run({ userId: ALICE, action: 'meal_photo' }, async () => 'ok'))).code).toBe(
+      'RATE_LIMITED',
+    );
 
-    await expect(gate.run({ userId: BOB, action: 'meal_photo' }, async () => 'bob ok')).resolves.toBe('bob ok');
+    await expect(gate.run({ userId: BOB, action: 'meal_photo' }, async () => 'bob ok')).resolves.toBe(
+      'bob ok',
+    );
   });
 
   it('assertEnabled (cached reads that call no provider) is not rate limited', async () => {

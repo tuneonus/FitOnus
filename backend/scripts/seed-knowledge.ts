@@ -170,7 +170,9 @@ async function main(): Promise<void> {
     try {
       console.log(`Ingesting "${doc.title}" [slug: ${doc.slug}, category: ${doc.category}]...`);
       const res = await knowledge.service.ingestDocument(doc);
-      console.log(`  -> Saved document id: ${res.document.id} (${res.chunkCount} chunks generated & embedded).`);
+      console.log(
+        `  -> Saved document id: ${res.document.id} (${res.chunkCount} chunks generated & embedded).`,
+      );
     } catch (err) {
       console.error(`  -> Failed to ingest ${doc.slug}:`, err instanceof Error ? err.message : err);
     }

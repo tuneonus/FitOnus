@@ -112,4 +112,3 @@ export class ManageMemoriesUseCase {
     return { enabled };
   }
 }
-

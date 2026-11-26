@@ -49,7 +49,10 @@ export const notificationScheduleSchema = z.record(
     z
       .object({
         enabled: z.boolean().optional(),
-        time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be HH:MM in 24h format').optional(),
+        time: z
+          .string()
+          .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be HH:MM in 24h format')
+          .optional(),
         days: z.array(z.number().int().min(0).max(6)).optional(),
       })
       .passthrough(),

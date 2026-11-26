@@ -23,18 +23,15 @@ describe('Coach REST API HTTP Integration', () => {
     medicalNote: false,
   };
 
-  function createTestApp(options: {
-    authenticated?: boolean;
-    actingUserId?: string;
-    rateLimitBlocked?: boolean;
-    useCaseError?: AppError;
-  } = {}) {
-    const {
-      authenticated = true,
-      actingUserId = userId,
-      rateLimitBlocked = false,
-      useCaseError,
-    } = options;
+  function createTestApp(
+    options: {
+      authenticated?: boolean;
+      actingUserId?: string;
+      rateLimitBlocked?: boolean;
+      useCaseError?: AppError;
+    } = {},
+  ) {
+    const { authenticated = true, actingUserId = userId, rateLimitBlocked = false, useCaseError } = options;
 
     const mockUseCase = {
       execute: useCaseError
@@ -100,9 +97,7 @@ describe('Coach REST API HTTP Integration', () => {
 
   it('rejects unauthenticated requests with 401', async () => {
     const { app } = createTestApp({ authenticated: false });
-    const res = await request(app)
-      .post('/api/v1/coach/chat')
-      .send({ message: 'Hello coach' });
+    const res = await request(app).post('/api/v1/coach/chat').send({ message: 'Hello coach' });
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -111,9 +106,7 @@ describe('Coach REST API HTTP Integration', () => {
 
   it('rejects empty message with 400 validation error', async () => {
     const { app } = createTestApp({ authenticated: true });
-    const res = await request(app)
-      .post('/api/v1/coach/chat')
-      .send({ message: '' });
+    const res = await request(app).post('/api/v1/coach/chat').send({ message: '' });
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
@@ -133,12 +126,10 @@ describe('Coach REST API HTTP Integration', () => {
 
   it('returns 200 and structured coach response when authenticated and valid', async () => {
     const { app, mockUseCase } = createTestApp({ authenticated: true });
-    const res = await request(app)
-      .post('/api/v1/coach/chat')
-      .send({
-        message: 'Can I have some biryani tonight?',
-        timezone: 'Asia/Kolkata',
-      });
+    const res = await request(app).post('/api/v1/coach/chat').send({
+      message: 'Can I have some biryani tonight?',
+      timezone: 'Asia/Kolkata',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -162,9 +153,7 @@ describe('Coach REST API HTTP Integration', () => {
       ),
     });
 
-    const res = await request(app)
-      .post('/api/v1/coach/chat')
-      .send({ message: 'Hello' });
+    const res = await request(app).post('/api/v1/coach/chat').send({ message: 'Hello' });
 
     expect(res.status).toBe(503);
     expect(res.body.success).toBe(false);
@@ -178,9 +167,7 @@ describe('Coach REST API HTTP Integration', () => {
       rateLimitBlocked: true,
     });
 
-    const res = await request(app)
-      .post('/api/v1/coach/chat')
-      .send({ message: 'Hello again' });
+    const res = await request(app).post('/api/v1/coach/chat').send({ message: 'Hello again' });
 
     expect(res.status).toBe(429);
     expect(res.body.success).toBe(false);
@@ -261,23 +248,37 @@ describe('Coach REST API HTTP Integration', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data).toEqual({ transcript: 'Today I ran 5 kilometers', detectedLanguage: 'en' });
       // The user comes from the authenticated session, not from anything the client sent.
-      expect(mockTranscriber.transcribe).toHaveBeenCalledWith(userId, { mimeType: 'audio/m4a', base64: 'AAAA' });
+      expect(mockTranscriber.transcribe).toHaveBeenCalledWith(userId, {
+        mimeType: 'audio/m4a',
+        base64: 'AAAA',
+      });
     });
 
-    it.each(['audio/m4a', 'audio/x-m4a', 'audio/mp4', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/aac', 'audio/3gpp'])(
-      'accepts the supported format %s',
-      async (mimeType) => {
-        const { app } = createTestApp({ authenticated: true });
-        const res = await request(app).post('/api/v1/coach/transcribe').send({ audio: { mimeType, base64: 'AAAA' } });
-        expect(res.status).toBe(200);
-      },
-    );
+    it.each([
+      'audio/m4a',
+      'audio/x-m4a',
+      'audio/mp4',
+      'audio/wav',
+      'audio/webm',
+      'audio/ogg',
+      'audio/mpeg',
+      'audio/aac',
+      'audio/3gpp',
+    ])('accepts the supported format %s', async (mimeType) => {
+      const { app } = createTestApp({ authenticated: true });
+      const res = await request(app)
+        .post('/api/v1/coach/transcribe')
+        .send({ audio: { mimeType, base64: 'AAAA' } });
+      expect(res.status).toBe(200);
+    });
 
     it.each(['audio/flac', 'image/png', 'text/plain', 'video/quicktime'])(
       'rejects the unsupported format %s with 400 before any AI call',
       async (mimeType) => {
         const { app, mockTranscriber } = createTestApp({ authenticated: true });
-        const res = await request(app).post('/api/v1/coach/transcribe').send({ audio: { mimeType, base64: 'AAAA' } });
+        const res = await request(app)
+          .post('/api/v1/coach/transcribe')
+          .send({ audio: { mimeType, base64: 'AAAA' } });
         expect(res.status).toBe(400);
         expect(res.body.error.code).toBe('VALIDATION_FAILED');
         expect(mockTranscriber.transcribe).not.toHaveBeenCalled();
@@ -299,23 +300,24 @@ describe('Coach REST API HTTP Integration', () => {
       expect(
         transcribeAudioSchema.safeParse({ audio: { ...ok.audio, base64: ok.audio.base64 + 'A' } }).success,
       ).toBe(false);
-      expect(transcribeAudioSchema.safeParse({ audio: { mimeType: 'audio/flac', base64: 'AAAA' } }).success).toBe(false);
+      expect(
+        transcribeAudioSchema.safeParse({ audio: { mimeType: 'audio/flac', base64: 'AAAA' } }).success,
+      ).toBe(false);
     });
 
     it('rejects an empty clip with 400', async () => {
       const { app } = createTestApp({ authenticated: true });
-      const res = await request(app).post('/api/v1/coach/transcribe').send({ audio: { mimeType: 'audio/m4a', base64: '' } });
+      const res = await request(app)
+        .post('/api/v1/coach/transcribe')
+        .send({ audio: { mimeType: 'audio/m4a', base64: '' } });
       expect(res.status).toBe(400);
     });
 
     it('rejects missing audio payload with 400', async () => {
       const { app } = createTestApp({ authenticated: true });
-      const res = await request(app)
-        .post('/api/v1/coach/transcribe')
-        .send({});
+      const res = await request(app).post('/api/v1/coach/transcribe').send({});
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
     });
   });
 });
-

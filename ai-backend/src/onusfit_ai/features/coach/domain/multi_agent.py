@@ -474,4 +474,3 @@ class MultimodalMealPort(Protocol):
         trace_id: str,
         llm: Any,
     ) -> dict[str, Any]: ...
-

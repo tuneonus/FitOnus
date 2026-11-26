@@ -74,7 +74,9 @@ export interface PythonAiCall<S extends z.ZodType<PythonReply>> {
  * `X-Correlation-Id`, and exactly one structured event is logged per call - `ai.call.completed` or
  * `ai.call.failed` - holding ids, feature, model, durations, tokens and an error category, never content.
  */
-export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: PythonAiCall<S>): Promise<z.output<S>> {
+export async function callPythonAi<S extends z.ZodType<PythonReply>>(
+  call: PythonAiCall<S>,
+): Promise<z.output<S>> {
   const correlationId = currentCorrelationId();
   const ids = { correlationId, aiRequestId: call.requestId };
   const startedAt = performance.now();
@@ -162,7 +164,14 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
     }
 
     call.logger?.info(
-      aiCallCompletedFields({ ids, feature: call.feature, endpoint: call.path, outcome, usage, durationMs: totalMs }),
+      aiCallCompletedFields({
+        ids,
+        feature: call.feature,
+        endpoint: call.path,
+        outcome,
+        usage,
+        durationMs: totalMs,
+      }),
       `${call.label} served`,
     );
     return parsed.data;
@@ -171,7 +180,9 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
       error instanceof PythonAiError
         ? error
         : // A bug on our side before anything was sent.
-          new PythonAiError('server_error', 'Unexpected error preparing the AI backend call.', { dispatched: false });
+          new PythonAiError('server_error', 'Unexpected error preparing the AI backend call.', {
+            dispatched: false,
+          });
 
     // If Gemini may have been called, the quota unit stays consumed; otherwise the gate refunds it.
     if (failure.dispatched) markAiRequestDispatched();
@@ -228,7 +239,13 @@ export async function callPythonAi<S extends z.ZodType<PythonReply>>(call: Pytho
     }
 
     call.logger?.error(
-      aiCallFailedFields({ ids, feature: call.feature, endpoint: call.path, error: failure, durationMs: totalMs }),
+      aiCallFailedFields({
+        ids,
+        feature: call.feature,
+        endpoint: call.path,
+        error: failure,
+        durationMs: totalMs,
+      }),
       `${call.label} failed`,
     );
     // The public error keeps its shape; the category rides along out of band for callers that degrade (insights).

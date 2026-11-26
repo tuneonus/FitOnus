@@ -52,7 +52,12 @@ describe('ChatWithCoachUseCase message ID handling', () => {
     const stored: StoredChatMessage[] = [];
     const { useCase } = setup(async (_u, _c, m) => void stored.push(m));
 
-    await useCase.execute({ userId: 'u1', message: 'hi', conversationId: 'convo-1', clientMessageId: 'client-1' });
+    await useCase.execute({
+      userId: 'u1',
+      message: 'hi',
+      conversationId: 'convo-1',
+      clientMessageId: 'client-1',
+    });
 
     expect(stored.filter((m) => m.role === 'user').map((m) => m.id)).toEqual(['client-1']);
   });
@@ -100,7 +105,9 @@ describe('ChatWithCoachUseCase message ID handling', () => {
     const addMessage = vi.fn().mockRejectedValue(conflict('CONFLICT', 'This message ID is already in use.'));
     const { useCase } = setup(addMessage);
 
-    await expect(useCase.execute({ userId: 'u1', message: 'hi', clientMessageId: 'x' })).rejects.toMatchObject({
+    await expect(
+      useCase.execute({ userId: 'u1', message: 'hi', clientMessageId: 'x' }),
+    ).rejects.toMatchObject({
       kind: 'conflict',
     });
     expect(addMessage).toHaveBeenCalledTimes(2);
@@ -134,7 +141,12 @@ describe('ChatWithCoachUseCase message ID handling', () => {
       ...stored.map((m) => ({ ...m, createdAt: '' })),
     ]);
 
-    await useCase.execute({ userId: 'u1', message: 'hi', conversationId: 'convo-1', clientMessageId: 'taken' });
+    await useCase.execute({
+      userId: 'u1',
+      message: 'hi',
+      conversationId: 'convo-1',
+      clientMessageId: 'taken',
+    });
 
     expect(vi.mocked(gemini.generateCoachResponse).mock.calls[0]![2]).toEqual([
       { role: 'assistant', text: 'earlier' },

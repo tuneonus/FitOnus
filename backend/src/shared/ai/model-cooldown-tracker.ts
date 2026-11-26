@@ -51,12 +51,7 @@ export class ModelCooldownTracker {
   /**
    * Records a model failure and sets its cooldown expiration.
    */
-  recordFailure(
-    model: string,
-    reason: string,
-    cooldownSeconds: number,
-    lastError?: string,
-  ): void {
+  recordFailure(model: string, reason: string, cooldownSeconds: number, lastError?: string): void {
     const existing = this.cooldowns.get(model);
     const failureCount = (existing?.failureCount ?? 0) + 1;
     // Safe bounds: minimum 5s, maximum 86400s (24h)

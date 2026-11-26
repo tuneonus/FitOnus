@@ -24,11 +24,7 @@ import {
   type UpdateDocumentMetadataBody,
   type UpdateDocumentStatusBody,
 } from './knowledge-admin.schemas.js';
-import {
-  extractTextFromFile,
-  MAX_DOCUMENT_UPLOAD_BYTES,
-  sanitizeFileName,
-} from './text-extractor.js';
+import { extractTextFromFile, MAX_DOCUMENT_UPLOAD_BYTES, sanitizeFileName } from './text-extractor.js';
 
 export const KNOWLEDGE_ADMIN_HEADERS: Readonly<Record<string, string>> = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -68,7 +64,8 @@ export function createKnowledgeAdminController(knowledgeService: KnowledgeServic
       let buffer: Buffer;
       let contentType = req.get('content-type') || 'application/octet-stream';
       let title: string | undefined = (req.query.title as string) || req.get('x-document-title');
-      let category = ((req.query.category as string) || req.get('x-document-category')) as KnowledgeCategory | undefined;
+      let category = ((req.query.category as string) || req.get('x-document-category')) as
+        KnowledgeCategory | undefined;
       let slug: string | undefined = (req.query.slug as string) || req.get('x-document-slug');
       let author: string | undefined = (req.query.author as string) || req.get('x-document-author');
       let license: string | undefined = (req.query.license as string) || req.get('x-document-license');
@@ -121,7 +118,10 @@ export function createKnowledgeAdminController(knowledgeService: KnowledgeServic
           title = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ');
         } else {
           // Fallback: Use first non-empty line of text
-          const firstLine = extracted.text.split('\n').map((l) => l.trim()).find(Boolean);
+          const firstLine = extracted.text
+            .split('\n')
+            .map((l) => l.trim())
+            .find(Boolean);
           title = firstLine ? firstLine.slice(0, 100) : 'Ingested Document';
         }
       }
@@ -130,12 +130,7 @@ export function createKnowledgeAdminController(knowledgeService: KnowledgeServic
         category = 'fitness';
       }
 
-      const validCategories: KnowledgeCategory[] = [
-        'fitness',
-        'nutrition',
-        'recovery',
-        'app_guide',
-      ];
+      const validCategories: KnowledgeCategory[] = ['fitness', 'nutrition', 'recovery', 'app_guide'];
       if (!validCategories.includes(category)) {
         throw new AppError(
           'validation',

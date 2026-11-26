@@ -107,5 +107,10 @@ def test_coach_http_endpoint_preserves_legacy_when_disabled_and_runs_multi_agent
     assert "11111111-1111-1111-1111-111111111111" not in all_logs
     assert "Analyze my workout" not in all_logs
     events = {getattr(r, "event", None) for r in caplog.records}
-    assert "multi_agent.routing.decided" in events or "Multi-agent supervisor routing decision made" in all_logs
-    assert "multi_agent.workflow.completed" in events or "Multi-agent workflow completed" in all_logs
+    assert (
+        "multi_agent.routing.decided" in events
+        or "Multi-agent supervisor routing decision made" in all_logs
+    )
+    assert (
+        "multi_agent.workflow.completed" in events or "Multi-agent workflow completed" in all_logs
+    )

@@ -34,7 +34,9 @@ _RED_FLAG_PATTERNS: Final[list[re.Pattern[str]]] = [
     re.compile(r"\b(dizziness|dizzy|faint\w*|syncope|vertigo|blackout\w*)\b", re.IGNORECASE),
     re.compile(r"\b(post[\s-]surgery|unhealed\s+wound)\b", re.IGNORECASE),
     re.compile(r"\b(numbness|tingling|radiating\s+pain)\b", re.IGNORECASE),
-    re.compile(r"(?:நெஞ்சு\s*வலி|மார்பு\s*வலி|மூச்சு\s*த்திணறல்|மூச்சுத்\s*திணறல்|மயக்கம்|தலைச்சுற்றல்|எலும்பு\s*முறிவு|மரத்துப்\s*போதல்)"),
+    re.compile(
+        r"(?:நெஞ்சு\s*வலி|மார்பு\s*வலி|மூச்சு\s*த்திணறல்|மூச்சுத்\s*திணறல்|மயக்கம்|தலைச்சுற்றல்|எலும்பு\s*முறிவு|மரத்துப்\s*போதல்)"
+    ),
     re.compile(
         r"\b(?:nenju\s+vali\w*|marbu\s+vali\w*|moochu\s*thinaral|mayakkam|thalai\s*suth\w*|elumbu\s*murivu)\b",
         re.IGNORECASE,
@@ -278,4 +280,3 @@ class CumulativeBudgetTracker:
             elapsed_ms=elapsed_ms,
             exhausted_reason=self.exhausted_reason,
         )
-

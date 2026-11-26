@@ -192,7 +192,12 @@ async def test_mcp_gateway_enforces_allowlist_mutations_cache_isolation_and_fall
         budget_tracker=tracker,
         mcp_handler=fake_mcp,
         native_handler=fake_native,
-        discovered_tools=["get_recent_workouts", "get_nutrition_summary", "get_weight_trend", "persist_workout_plan"],
+        discovered_tools=[
+            "get_recent_workouts",
+            "get_nutrition_summary",
+            "get_weight_trend",
+            "persist_workout_plan",
+        ],
         allow_mutations=True,
         durable_node_approval_verified=False,  # Missing durable Node approval!
     )

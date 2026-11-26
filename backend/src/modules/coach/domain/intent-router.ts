@@ -7,11 +7,7 @@
  */
 
 export type CoachQueryIntent =
-  | 'greeting'
-  | 'metric_lookup'
-  | 'exercise_coaching'
-  | 'nutrition_coaching'
-  | 'general';
+  'greeting' | 'metric_lookup' | 'exercise_coaching' | 'nutrition_coaching' | 'general';
 
 export interface IntentRoutingDecision {
   intent: CoachQueryIntent;
@@ -23,8 +19,7 @@ export interface IntentRoutingDecision {
 // Regex patterns for pure greetings and acknowledgments
 const RE_PURE_GREETING_EN =
   /^(?:(?:hi|hello|hey|good\s+(?:morning|afternoon|evening|day)|thanks?(?:\s+(?:so\s+much|a\s+lot|you))?|thank\s+you(?:\s+so\s+much|\s+very\s+much)?|thx|ty|bye|goodbye|cya|ok|okay|cool|awesome|great|cheers|sup|yo)(?:[\s,]+(?:coach|bye|thanks|thank\s+you|ok|okay))?)(?:[!?.\s]*)$/i;
-const RE_GREETING_PREFIX_EN =
-  /^(?:hi|hello|hey|good\s+(?:morning|afternoon|evening))\b/i;
+const RE_GREETING_PREFIX_EN = /^(?:hi|hello|hey|good\s+(?:morning|afternoon|evening))\b/i;
 
 // Tamil script pure greetings (avoid ASCII \b which fails on Unicode Tamil)
 const RE_PURE_GREETING_TA =
@@ -57,8 +52,7 @@ const RE_INJURY_SPECIFIC =
 // Nutrition and dietary coaching patterns
 const RE_NUTRITION_EN =
   /\b(?:diet|food|eat|eating|calories?|carbs?|fat|protein|whey|creatine|supplements?|meals?|breakfast|lunch|dinner|snacks?|fasting|allergy|allergies|chicken|eggs?|rice|fish|paneer|tofu|milk|oats|nutrition|macros?)\b/i;
-const RE_NUTRITION_TA =
-  /(?:உணவு|சாப்பாடு|புரதம்|முட்டை|பால்|பசி|டயட்|கலோரி|ஊட்டச்சத்து)/u;
+const RE_NUTRITION_TA = /(?:உணவு|சாப்பாடு|புரதம்|முட்டை|பால்|பசி|டயட்|கலோரி|ஊட்டச்சத்து)/u;
 const RE_NUTRITION_TL =
   /\b(?:saapadu|unavu|muttai|diet|saapdalama|pasikuthu|protein|calorie|paruppu|kaikari)\b/i;
 
@@ -92,29 +86,17 @@ export function classifyCoachQueryIntent(message: string): CoachQueryIntent {
   }
 
   // 2. Personal metric lookups (water, weight, calories today)
-  if (
-    RE_METRICS_EN.test(trimmed) ||
-    RE_METRICS_TA.test(trimmed) ||
-    RE_METRICS_TL.test(trimmed)
-  ) {
+  if (RE_METRICS_EN.test(trimmed) || RE_METRICS_TA.test(trimmed) || RE_METRICS_TL.test(trimmed)) {
     return 'metric_lookup';
   }
 
   // 3. Exercise and injury coaching
-  if (
-    RE_EXERCISE_EN.test(trimmed) ||
-    RE_EXERCISE_TA.test(trimmed) ||
-    RE_EXERCISE_TL.test(trimmed)
-  ) {
+  if (RE_EXERCISE_EN.test(trimmed) || RE_EXERCISE_TA.test(trimmed) || RE_EXERCISE_TL.test(trimmed)) {
     return 'exercise_coaching';
   }
 
   // 4. Nutrition coaching
-  if (
-    RE_NUTRITION_EN.test(trimmed) ||
-    RE_NUTRITION_TA.test(trimmed) ||
-    RE_NUTRITION_TL.test(trimmed)
-  ) {
+  if (RE_NUTRITION_EN.test(trimmed) || RE_NUTRITION_TA.test(trimmed) || RE_NUTRITION_TL.test(trimmed)) {
     return 'nutrition_coaching';
   }
 

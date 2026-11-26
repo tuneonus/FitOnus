@@ -33,7 +33,9 @@ class MultiAgentEvaluator:
         if actual_outcome == expected_outcome:
             passed_checks += 1
         else:
-            reasons.append(f"Outcome mismatch: expected '{expected_outcome}', got '{actual_outcome}'")
+            reasons.append(
+                f"Outcome mismatch: expected '{expected_outcome}', got '{actual_outcome}'"
+            )
 
         # 2. Expected routing mode & agents if specified in input_payload
         expected_mode = input_payload.get("expected_mode")
@@ -125,4 +127,3 @@ class MultiAgentEvaluator:
             details={"checks_passed": passed_checks, "total_checks": checks},
             failure_reasons=reasons,
         )
-

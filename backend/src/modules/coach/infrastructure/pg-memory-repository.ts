@@ -94,9 +94,7 @@ export class PgMemoryRepository implements MemoryRepository {
     // Explicit manual input may pass status='active', but default safety for sensitive is pending_approval
     const status = input.status || (isSensitive ? 'pending_approval' : 'active');
     const confidence =
-      typeof input.confidence === 'number'
-        ? Math.max(0, Math.min(1, input.confidence))
-        : 1.0;
+      typeof input.confidence === 'number' ? Math.max(0, Math.min(1, input.confidence)) : 1.0;
 
     const res = await this.db.query<MemoryRow>(
       `INSERT INTO coach_memories (
@@ -123,11 +121,7 @@ export class PgMemoryRepository implements MemoryRepository {
     return this.mapItem(res.rows[0]!);
   }
 
-  async updateMemory(
-    userId: string,
-    memoryId: string,
-    text: string,
-  ): Promise<MemoryItem | null> {
+  async updateMemory(userId: string, memoryId: string, text: string): Promise<MemoryItem | null> {
     const res = await this.db.query<MemoryRow>(
       `UPDATE coach_memories
        SET text = $3, updated_at = now()
@@ -142,10 +136,10 @@ export class PgMemoryRepository implements MemoryRepository {
   }
 
   async deleteMemory(userId: string, memoryId: string): Promise<boolean> {
-    const res = await this.db.query(
-      `DELETE FROM coach_memories WHERE id = $1 AND user_id = $2`,
-      [memoryId, userId],
-    );
+    const res = await this.db.query(`DELETE FROM coach_memories WHERE id = $1 AND user_id = $2`, [
+      memoryId,
+      userId,
+    ]);
     return (res.rowCount ?? 0) > 0;
   }
 
@@ -178,10 +172,7 @@ export class PgMemoryRepository implements MemoryRepository {
   }
 
   async clearAll(userId: string): Promise<void> {
-    await this.db.query(
-      `DELETE FROM coach_memories WHERE user_id = $1`,
-      [userId],
-    );
+    await this.db.query(`DELETE FROM coach_memories WHERE user_id = $1`, [userId]);
     // Also cancel all pending jobs upon clearAll
     await this.db.query(
       `UPDATE ai_memory_extraction_jobs
@@ -192,10 +183,10 @@ export class PgMemoryRepository implements MemoryRepository {
   }
 
   async isMemoryEnabled(userId: string): Promise<boolean> {
-    const res = await this.db.query<{ ai_memory_enabled: boolean | null; ai_memory_consented_at: Date | null }>(
-      `SELECT ai_memory_enabled, ai_memory_consented_at FROM user_settings WHERE user_id = $1`,
-      [userId],
-    );
+    const res = await this.db.query<{
+      ai_memory_enabled: boolean | null;
+      ai_memory_consented_at: Date | null;
+    }>(`SELECT ai_memory_enabled, ai_memory_consented_at FROM user_settings WHERE user_id = $1`, [userId]);
     const row = res.rows[0];
     if (!row) return false;
     // Strict opt-in: MUST have explicit ai_memory_enabled === true AND non-null consent timestamp
@@ -244,11 +235,7 @@ export class PgMemoryRepository implements MemoryRepository {
     return res.rows.map((r) => r.text);
   }
 
-  async getActiveMemoriesForContext(
-    userId: string,
-    queryText?: string,
-    maxTokens = 300,
-  ): Promise<string[]> {
+  async getActiveMemoriesForContext(userId: string, queryText?: string, maxTokens = 300): Promise<string[]> {
     const enabled = await this.isMemoryEnabled(userId);
     if (!enabled) return [];
 
@@ -276,8 +263,14 @@ export class PgMemoryRepository implements MemoryRepository {
         const textLower = row.text.toLowerCase();
 
         // Safety prioritization: Injury memories are pinned/boosted for movement queries (English, Tamil, Tanglish)
-        const isWorkoutQuery = /(workout|exercise|squat|bench|deadlift|press|run|cardio|lift|pain|injury|shoulder|knee|back|leg|chest|arm|வலி|காயம்|தோள்பட்டை|முட்டி|முழங்கால்|இடுப்பு|முதுகு|சுளுக்கு|மார்பு|vali|valikuthu|kaayam|tholpattai|mutti|iduppu|mudhugu|soreness)/i.test(qLower);
-        const isNutritionQuery = /(food|eat|diet|protein|calorie|carb|fat|meal|snack|supplement|allergy|fasting|water|hydration|உணவு|சாப்பாடு|தண்ணீர்|முட்டை|பால்|புரதம்|saapadu|unavu|thanni|muttai|saapdalama|diet)/i.test(qLower);
+        const isWorkoutQuery =
+          /(workout|exercise|squat|bench|deadlift|press|run|cardio|lift|pain|injury|shoulder|knee|back|leg|chest|arm|வலி|காயம்|தோள்பட்டை|முட்டி|முழங்கால்|இடுப்பு|முதுகு|சுளுக்கு|மார்பு|vali|valikuthu|kaayam|tholpattai|mutti|iduppu|mudhugu|soreness)/i.test(
+            qLower,
+          );
+        const isNutritionQuery =
+          /(food|eat|diet|protein|calorie|carb|fat|meal|snack|supplement|allergy|fasting|water|hydration|உணவு|சாப்பாடு|தண்ணீர்|முட்டை|பால்|புரதம்|saapadu|unavu|thanni|muttai|saapdalama|diet)/i.test(
+            qLower,
+          );
 
         if (isWorkoutQuery && (row.category === 'injuries' || row.category === 'medical')) {
           score += 10;

@@ -1,9 +1,6 @@
 import type { Database } from '../../../database/transaction.js';
 import type { MemoryExtractionJobQueue } from '../application/ports.js';
-import type {
-  ExtractionJobStatus,
-  MemoryExtractionJob,
-} from '../domain/extraction-job.types.js';
+import type { ExtractionJobStatus, MemoryExtractionJob } from '../domain/extraction-job.types.js';
 
 interface JobRow {
   id: string;
@@ -22,11 +19,7 @@ interface JobRow {
 export class PgMemoryExtractionJobQueue implements MemoryExtractionJobQueue {
   constructor(private readonly db: Database) {}
 
-  async enqueue(
-    userId: string,
-    conversationId: string,
-    messageId: string,
-  ): Promise<void> {
+  async enqueue(userId: string, conversationId: string, messageId: string): Promise<void> {
     await this.db.query(
       `INSERT INTO ai_memory_extraction_jobs (user_id, conversation_id, message_id)
        VALUES ($1, $2, $3)
@@ -35,10 +28,7 @@ export class PgMemoryExtractionJobQueue implements MemoryExtractionJobQueue {
     );
   }
 
-  async claimDue(
-    limit: number,
-    leaseSeconds: number,
-  ): Promise<MemoryExtractionJob[]> {
+  async claimDue(limit: number, leaseSeconds: number): Promise<MemoryExtractionJob[]> {
     const res = await this.db.query<JobRow>(
       `WITH due AS (
          SELECT id

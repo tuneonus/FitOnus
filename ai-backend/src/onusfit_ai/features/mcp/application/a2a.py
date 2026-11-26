@@ -488,9 +488,7 @@ class A2AMediator:
         if not specs:
             return []
 
-        norm_specs = [
-            A2ADagTaskSpec.model_validate(s) if isinstance(s, dict) else s for s in specs
-        ]
+        norm_specs = [A2ADagTaskSpec.model_validate(s) if isinstance(s, dict) else s for s in specs]
         spec_map = {s.task_id: s for s in norm_specs}
         completed: dict[str, A2ATaskResponse] = {}
         remaining = dict(spec_map)
@@ -583,7 +581,9 @@ class A2AMediator:
         """Aggregate responses across delegated tasks into a structured summary."""
         completed_ids = [r.task_id for r in responses if r.status == "completed"]
         partial_ids = [r.task_id for r in responses if r.status == "partial"]
-        failed_ids = [r.task_id for r in responses if r.status in ("failed", "refused", "cancelled")]
+        failed_ids = [
+            r.task_id for r in responses if r.status in ("failed", "refused", "cancelled")
+        ]
         return {
             "total": len(responses),
             "completed": completed_ids,
@@ -591,9 +591,7 @@ class A2AMediator:
             "failed": failed_ids,
             "has_partial": bool(partial_ids or (completed_ids and failed_ids)),
             "outputs_by_task": {r.task_id: r.output_data for r in responses},
-            "errors_by_task": {
-                r.task_id: r.error_message for r in responses if r.error_message
-            },
+            "errors_by_task": {r.task_id: r.error_message for r in responses if r.error_message},
         }
 
     def get_conversation_trace(self, conversation_id: str) -> list[A2AMessage]:

@@ -75,4 +75,3 @@ def build_multi_agent_graph() -> StateGraph[MultiAgentGraphState]:
 def get_compiled_multi_agent_graph() -> Any:
     """Return the cached compiled multi-agent LangGraph executable."""
     return build_multi_agent_graph().compile()
-

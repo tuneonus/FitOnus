@@ -4,7 +4,7 @@ import { SemanticChunker } from '../../../src/modules/knowledge/domain/semantic-
 describe('SemanticChunker', () => {
   const chunker = new SemanticChunker({
     targetTokens: 100, // ~400 characters
-    overlapTokens: 10,  // ~40 characters
+    overlapTokens: 10, // ~40 characters
     minChars: 30,
   });
 
@@ -78,4 +78,3 @@ Maintain an elbow tuck angle of 45 to 75 degrees relative to the torso to protec
     expect(chunker.estimateTokens('a'.repeat(400))).toBe(100);
   });
 });
-

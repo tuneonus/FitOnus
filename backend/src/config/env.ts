@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { parsePrivateMediaConfig, type PrivateMediaConfig } from '../shared/private-media/private-media-config.js';
+import {
+  parsePrivateMediaConfig,
+  type PrivateMediaConfig,
+} from '../shared/private-media/private-media-config.js';
 
 /** Thrown when configuration is invalid. `issues` name keys and rules, never values. */
 export class ConfigError extends Error {
@@ -257,7 +260,8 @@ const MIN_AI_BACKEND_SECRET_LENGTH = 32;
 function aiBackendIssues(parsed: z.output<typeof appSchema>): string[] {
   const issues: string[] = [];
   const url = parsed.AI_BACKEND_URL?.trim();
-  if (url && !/^https?:\/\/[^\s/]+/i.test(url)) issues.push('AI_BACKEND_URL: must start with http:// or https://');
+  if (url && !/^https?:\/\/[^\s/]+/i.test(url))
+    issues.push('AI_BACKEND_URL: must start with http:// or https://');
   const secret = parsed.AI_BACKEND_SERVICE_SECRET?.trim();
   if (secret && secret.length < MIN_AI_BACKEND_SECRET_LENGTH) {
     issues.push(`AI_BACKEND_SERVICE_SECRET: must be at least ${MIN_AI_BACKEND_SECRET_LENGTH} characters`);
@@ -276,8 +280,14 @@ export function assertAiBackendConfigured(config: AppConfig): AppConfig & {
   const { url, serviceSecret, timeoutMs } = config.aiBackend;
   const streamingEnabled = Boolean(config.aiBackend.streamingEnabled);
   const issues: string[] = [];
-  if (!url) issues.push('AI_BACKEND_URL: required (AI Coach chat is served by the Python AI backend, see ai-backend/README.md)');
-  if (!serviceSecret) issues.push('AI_BACKEND_SERVICE_SECRET: required (>= 32 characters; must equal AI_SERVICE_JWT_SECRET in ai-backend)');
+  if (!url)
+    issues.push(
+      'AI_BACKEND_URL: required (AI Coach chat is served by the Python AI backend, see ai-backend/README.md)',
+    );
+  if (!serviceSecret)
+    issues.push(
+      'AI_BACKEND_SERVICE_SECRET: required (>= 32 characters; must equal AI_SERVICE_JWT_SECRET in ai-backend)',
+    );
   if (issues.length > 0 || !url || !serviceSecret) throw new ConfigError(issues);
   return { ...config, aiBackend: { url, serviceSecret, timeoutMs, streamingEnabled } };
 }

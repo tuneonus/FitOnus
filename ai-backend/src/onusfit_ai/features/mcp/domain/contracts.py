@@ -30,6 +30,7 @@ DEFAULT_ALLOWED_TOOLS: list[str] = [
 
 class AgentApprovalStatus(StrEnum):
     """Lifecycle status for human-in-the-loop approval tickets."""
+
     PENDING = "pending"
     APPROVED = "approved"
     CONSUMED = "consumed"
@@ -68,7 +69,9 @@ class IdempotencyRecord(BaseModel):
     created_at: float
     user_id: str = Field(default="", description="Owner user ID scoping this idempotency record")
     payload_hash: str = Field(default="", description="Canonical SHA-256 hash of bound arguments")
-    expires_at: float | None = Field(default=None, description="Optional expiration epoch timestamp")
+    expires_at: float | None = Field(
+        default=None, description="Optional expiration epoch timestamp"
+    )
 
 
 class McpToolDefinition(BaseModel):
@@ -243,11 +246,13 @@ class McpConfig(BaseModel):
 # Structural Protocols for Dependency Inversion across Feature Boundaries
 class PlanGeneratorProtocol(Protocol):
     """Protocol decoupling MCP from workout_planner feature."""
+
     def generate_deterministic_plan(self, request: Any, context: Any) -> Any: ...
 
 
 class CatalogIndexProtocol(Protocol):
     """Protocol decoupling MCP from exercise catalog index."""
+
     def get_all_exercises(self) -> list[Any]: ...
     def search_by_name(self, query: str, limit: int = 5) -> list[Any]: ...
 

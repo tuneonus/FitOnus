@@ -26,7 +26,10 @@ export function sanitizeUntrustedContextText(text: string, maxLength: number = 1
     // Replace multiple whitespaces/newlines with single space
     .replace(/\s+/g, ' ')
     // Neutralize XML delimiter breakouts
-    .replace(/<\/?(?:approved_memories|retrieved_knowledge|recent_dialogue|current_user_inquiry|context_manifest|system)[^>]*>/gi, '')
+    .replace(
+      /<\/?(?:approved_memories|retrieved_knowledge|recent_dialogue|current_user_inquiry|context_manifest|system)[^>]*>/gi,
+      '',
+    )
     .trim();
 
   if (cleaned.length <= maxLength) {
@@ -105,7 +108,8 @@ export function deduplicateContextMemories(
       if (normalizedDiet && (category === 'food' || category === 'preference')) {
         const isDietDuplicate =
           normText === normalizedDiet ||
-          normText.includes(normalizedDiet) && (normText.includes('diet') || normText.includes('follows') || normText.includes('prefers'));
+          (normText.includes(normalizedDiet) &&
+            (normText.includes('diet') || normText.includes('follows') || normText.includes('prefers')));
         if (isDietDuplicate) {
           continue;
         }

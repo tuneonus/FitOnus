@@ -9,7 +9,10 @@ import { AppError } from '../../../shared/errors/app-error.js';
 export const SUPPORTED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
 
 /** Validate and normalize base64 image input prior to quota consumption. */
-export function validateImageMediaInput(imageBase64: string, rawMimeType?: string): { mimeType: string; base64: string } {
+export function validateImageMediaInput(
+  imageBase64: string,
+  rawMimeType?: string,
+): { mimeType: string; base64: string } {
   if (imageBase64.length > MAX_IMAGE_BASE64_CHARS) {
     throw new AppError('payload_too_large', 'PAYLOAD_TOO_LARGE', 'Image size exceeds the 10MB limit.');
   }
@@ -36,7 +39,10 @@ export function validateImageMediaInput(imageBase64: string, rawMimeType?: strin
 }
 
 /** Validate and normalize base64 audio input prior to quota consumption. */
-export function validateAudioMediaInput(audioBase64: string, rawMimeType?: string): { mimeType: string; base64: string } {
+export function validateAudioMediaInput(
+  audioBase64: string,
+  rawMimeType?: string,
+): { mimeType: string; base64: string } {
   if (audioBase64.length > MAX_AUDIO_BASE64_CHARS) {
     throw new AppError('payload_too_large', 'PAYLOAD_TOO_LARGE', 'Audio size exceeds the 15MB limit.');
   }

@@ -41,12 +41,12 @@ class ContextEngineeringEvaluator:
         # 1. Intent routing evaluation
         actual_intent = candidate.get("intent")
         if expected_intent and actual_intent != expected_intent:
-            reasons.append(
-                f"Intent mismatch: expected '{expected_intent}', got '{actual_intent}'"
-            )
+            reasons.append(f"Intent mismatch: expected '{expected_intent}', got '{actual_intent}'")
 
         # 2. RAG retrieval gating
-        actual_rag_enabled = candidate.get("should_retrieve_rag", candidate.get("rag_retrieved", False))
+        actual_rag_enabled = candidate.get(
+            "should_retrieve_rag", candidate.get("rag_retrieved", False)
+        )
         if should_retrieve_rag is not None and actual_rag_enabled != should_retrieve_rag:
             reasons.append(
                 f"RAG gating mismatch: expected should_retrieve_rag={should_retrieve_rag}, got {actual_rag_enabled}"
@@ -70,9 +70,7 @@ class ContextEngineeringEvaluator:
         # 5. Token budget ceiling compliance
         total_tokens = candidate.get("total_tokens", candidate.get("total_prompt_tokens", 0))
         if total_tokens > max_token_ceiling:
-            reasons.append(
-                f"Token budget exceeded: {total_tokens} > ceiling {max_token_ceiling}"
-            )
+            reasons.append(f"Token budget exceeded: {total_tokens} > ceiling {max_token_ceiling}")
 
         # 6. Deduplication check
         if candidate.get("duplicate_detected_and_leaked") is True:

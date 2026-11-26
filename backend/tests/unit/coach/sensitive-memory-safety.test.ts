@@ -19,91 +19,175 @@ describe('Sensitive Memory Privacy & Safety Gate', () => {
       });
 
       it('detects joint and ligament injuries', () => {
-        expect(isSensitiveHealthContent('workout', 'Tore my ACL 2 years ago in football', 'ACL tear')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'Rotator cuff tear on the right shoulder', 'rotator cuff tear')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'Suffered meniscus tear last month', 'meniscus')).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'Tore my ACL 2 years ago in football', 'ACL tear')).toBe(
+          true,
+        );
+        expect(
+          isSensitiveHealthContent('workout', 'Rotator cuff tear on the right shoulder', 'rotator cuff tear'),
+        ).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'Suffered meniscus tear last month', 'meniscus')).toBe(
+          true,
+        );
       });
 
       it('detects chronic conditions and medical diagnoses', () => {
         expect(isSensitiveHealthContent('food', 'Diagnosed with type 2 diabetes', 'diabetes')).toBe(true);
         expect(isSensitiveHealthContent('workout', 'Has hypertension and asthma', 'asthma')).toBe(true);
-        expect(isSensitiveHealthContent('conversations', 'Suffering from severe depression and anxiety', 'depression')).toBe(true);
+        expect(
+          isSensitiveHealthContent(
+            'conversations',
+            'Suffering from severe depression and anxiety',
+            'depression',
+          ),
+        ).toBe(true);
       });
 
       it('detects allergies and adverse reactions', () => {
-        expect(isSensitiveHealthContent('food', 'Severely allergic to peanuts and shellfish', 'allergic to peanuts')).toBe(true);
-        expect(isSensitiveHealthContent('food', 'Has celiac disease and severe peanut allergy', 'peanut allergy')).toBe(true);
+        expect(
+          isSensitiveHealthContent(
+            'food',
+            'Severely allergic to peanuts and shellfish',
+            'allergic to peanuts',
+          ),
+        ).toBe(true);
+        expect(
+          isSensitiveHealthContent('food', 'Has celiac disease and severe peanut allergy', 'peanut allergy'),
+        ).toBe(true);
       });
 
       it('detects prescription medications and surgical procedures', () => {
-        expect(isSensitiveHealthContent('workout', 'Takes metformin and insulin daily', 'metformin')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'Had lumbar spine surgery 6 months ago', 'spine surgery')).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'Takes metformin and insulin daily', 'metformin')).toBe(
+          true,
+        );
+        expect(
+          isSensitiveHealthContent('workout', 'Had lumbar spine surgery 6 months ago', 'spine surgery'),
+        ).toBe(true);
       });
     });
 
     describe('Tamil script sensitive terms', () => {
       it('detects pain and injury in Tamil script', () => {
-        expect(isSensitiveHealthContent('workout', 'முழங்கால் வலி அதிகமாக உள்ளது', 'முழங்கால் வலி')).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'முழங்கால் வலி அதிகமாக உள்ளது', 'முழங்கால் வலி')).toBe(
+          true,
+        );
         expect(isSensitiveHealthContent('workout', 'தோள்பட்டை காயம் ஏற்பட்டது', 'காயம்')).toBe(true);
       });
 
       it('detects fractures, operations and surgery in Tamil script', () => {
-        expect(isSensitiveHealthContent('workout', 'எலும்பு முறிவு ஆபரேஷன் நடந்தது', 'எலும்பு முறிவு')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'முதுகுத்தண்டு அறுவை சிகிச்சை நடந்தது', 'அறுவை சிகிச்சை')).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'எலும்பு முறிவு ஆபரேஷன் நடந்தது', 'எலும்பு முறிவு')).toBe(
+          true,
+        );
+        expect(
+          isSensitiveHealthContent('workout', 'முதுகுத்தண்டு அறுவை சிகிச்சை நடந்தது', 'அறுவை சிகிச்சை'),
+        ).toBe(true);
       });
 
       it('detects allergies, sprains, swelling and medication in Tamil script', () => {
         expect(isSensitiveHealthContent('food', 'வேர்க்கடலை ஒவ்வாமை உண்டு', 'ஒவ்வாமை')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'கடுமையான சுளுக்கு மற்றும் வீக்கம்', 'சுளுக்கு')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'மருத்துவர் மருந்து கொடுத்துள்ளார்', 'மருத்துவர்')).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'கடுமையான சுளுக்கு மற்றும் வீக்கம்', 'சுளுக்கு')).toBe(
+          true,
+        );
+        expect(isSensitiveHealthContent('workout', 'மருத்துவர் மருந்து கொடுத்துள்ளார்', 'மருத்துவர்')).toBe(
+          true,
+        );
       });
     });
 
     describe('Tanglish colloquial sensitive terms', () => {
       it('detects pain phrases in Tanglish', () => {
-        expect(isSensitiveHealthContent('workout', 'knee vali romba irukku squat panna mudiyala', 'knee vali')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'shoulder valikuthu bench press pannumpothu', 'shoulder valikuthu')).toBe(true);
+        expect(
+          isSensitiveHealthContent('workout', 'knee vali romba irukku squat panna mudiyala', 'knee vali'),
+        ).toBe(true);
+        expect(
+          isSensitiveHealthContent(
+            'workout',
+            'shoulder valikuthu bench press pannumpothu',
+            'shoulder valikuthu',
+          ),
+        ).toBe(true);
         expect(isSensitiveHealthContent('workout', 'back valikithu', 'valikithu')).toBe(true);
       });
 
       it('detects injury, sprain and swelling in Tanglish', () => {
         expect(isSensitiveHealthContent('workout', 'kaayam patturukku gym pogala', 'kaayam')).toBe(true);
         expect(isSensitiveHealthContent('workout', 'ankle la sulukku pudichurukku', 'sulukku')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'kaal veengirukku nadakka mudila', 'veengirukku')).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'kaal veengirukku nadakka mudila', 'veengirukku')).toBe(
+          true,
+        );
       });
 
       it('detects doctors, medicine and surgeries in Tanglish', () => {
-        expect(isSensitiveHealthContent('workout', 'doctor kitta ponen rest edukka sonnanga', 'doctor kitta')).toBe(true);
+        expect(
+          isSensitiveHealthContent('workout', 'doctor kitta ponen rest edukka sonnanga', 'doctor kitta'),
+        ).toBe(true);
         expect(isSensitiveHealthContent('workout', 'marunthu eduthutu irukken', 'marunthu')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'ligament ku surgery panninen', 'surgery panninen')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'operation pannanga last year', 'operation pannanga')).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'ligament ku surgery panninen', 'surgery panninen')).toBe(
+          true,
+        );
+        expect(
+          isSensitiveHealthContent('workout', 'operation pannanga last year', 'operation pannanga'),
+        ).toBe(true);
       });
 
       it('detects dizziness and heart issues in Tanglish', () => {
-        expect(isSensitiveHealthContent('workout', 'heavy deadlift pannumpothu mayakkam varuthu', 'mayakkam')).toBe(true);
-        expect(isSensitiveHealthContent('workout', 'heart attack vanthuthu past la', 'heart attack')).toBe(true);
+        expect(
+          isSensitiveHealthContent('workout', 'heavy deadlift pannumpothu mayakkam varuthu', 'mayakkam'),
+        ).toBe(true);
+        expect(isSensitiveHealthContent('workout', 'heart attack vanthuthu past la', 'heart attack')).toBe(
+          true,
+        );
       });
     });
 
     describe('Allowed non-sensitive fitness and diet preferences', () => {
       it('allows vegetarian, vegan and dietary preferences', () => {
         expect(isSensitiveHealthContent('food', 'Prefers a lacto-vegetarian diet', 'vegetarian')).toBe(false);
-        expect(isSensitiveHealthContent('food', 'Eats high protein with chicken and eggs', 'high protein')).toBe(false);
-        expect(isSensitiveHealthContent('food', 'Prefers oats and fruits for breakfast', 'oats for breakfast')).toBe(false);
-        expect(isSensitiveHealthContent('food', 'Follows 16:8 intermittent fasting schedule', 'intermittent fasting')).toBe(false);
+        expect(
+          isSensitiveHealthContent('food', 'Eats high protein with chicken and eggs', 'high protein'),
+        ).toBe(false);
+        expect(
+          isSensitiveHealthContent('food', 'Prefers oats and fruits for breakfast', 'oats for breakfast'),
+        ).toBe(false);
+        expect(
+          isSensitiveHealthContent(
+            'food',
+            'Follows 16:8 intermittent fasting schedule',
+            'intermittent fasting',
+          ),
+        ).toBe(false);
       });
 
       it('allows exercise and training preferences', () => {
-        expect(isSensitiveHealthContent('workout', 'Prefers 4-day upper lower split training', 'upper lower split')).toBe(false);
-        expect(isSensitiveHealthContent('workout', 'Loves barbell back squats and overhead press', 'barbell squats')).toBe(false);
-        expect(isSensitiveHealthContent('workout', 'Prefers early morning 6am workouts', 'morning workouts')).toBe(false);
+        expect(
+          isSensitiveHealthContent(
+            'workout',
+            'Prefers 4-day upper lower split training',
+            'upper lower split',
+          ),
+        ).toBe(false);
+        expect(
+          isSensitiveHealthContent(
+            'workout',
+            'Loves barbell back squats and overhead press',
+            'barbell squats',
+          ),
+        ).toBe(false);
+        expect(
+          isSensitiveHealthContent('workout', 'Prefers early morning 6am workouts', 'morning workouts'),
+        ).toBe(false);
         expect(isSensitiveHealthContent('workout', 'Enjoys swimming on rest days', 'swimming')).toBe(false);
       });
 
       it('allows fitness goals and targets', () => {
-        expect(isSensitiveHealthContent('goals', 'Aiming to achieve 15% body fat by summer', '15% body fat')).toBe(false);
-        expect(isSensitiveHealthContent('goals', 'Goal is to run 5k in under 25 minutes', 'run 5k')).toBe(false);
-        expect(isSensitiveHealthContent('goals', 'Wants to bench press 100kg for 5 clean reps', 'bench 100kg')).toBe(false);
+        expect(
+          isSensitiveHealthContent('goals', 'Aiming to achieve 15% body fat by summer', '15% body fat'),
+        ).toBe(false);
+        expect(isSensitiveHealthContent('goals', 'Goal is to run 5k in under 25 minutes', 'run 5k')).toBe(
+          false,
+        );
+        expect(
+          isSensitiveHealthContent('goals', 'Wants to bench press 100kg for 5 clean reps', 'bench 100kg'),
+        ).toBe(false);
       });
     });
   });
@@ -156,9 +240,11 @@ describe('Sensitive Memory Privacy & Safety Gate', () => {
         updateConversation: vi.fn(),
         deleteConversation: vi.fn(),
         addMessage: vi.fn(),
-        getMessages: vi.fn().mockResolvedValue([
-          { id: 'msg-sec-1', role: 'user', text: 'Enakku knee vali irukku but I like oats.' },
-        ]),
+        getMessages: vi
+          .fn()
+          .mockResolvedValue([
+            { id: 'msg-sec-1', role: 'user', text: 'Enakku knee vali irukku but I like oats.' },
+          ]),
         setMessageFeedback: vi.fn(),
       };
 
@@ -223,7 +309,13 @@ describe('Sensitive Memory Privacy & Safety Gate', () => {
           return m && m.userId === userId ? m : null;
         }),
         createMemory: vi.fn(async (userId, input) => {
-          const mem = { id: `mem-${Date.now()}`, userId, ...input, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+          const mem = {
+            id: `mem-${Date.now()}`,
+            userId,
+            ...input,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
           memoryStore.set(mem.id, mem);
           return mem as any;
         }),

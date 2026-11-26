@@ -106,9 +106,7 @@ def get_settings() -> Settings:
             or os.environ.get("COACH_STREAMING_ENABLED"),
             default=False,
         ),
-        stream_heartbeat_interval_s=float(
-            os.environ.get("AI_STREAM_HEARTBEAT_INTERVAL_S", "5.0")
-        ),
+        stream_heartbeat_interval_s=float(os.environ.get("AI_STREAM_HEARTBEAT_INTERVAL_S", "5.0")),
     )
 
 

@@ -268,10 +268,7 @@ describe('Admin Login Authentication & RBAC Isolation', () => {
 
     let error: any;
     try {
-      await useCase.execute(
-        { email: 'admin@fitonus.com', password: 'AdminPassword123!' },
-        clientMeta,
-      );
+      await useCase.execute({ email: 'admin@fitonus.com', password: 'AdminPassword123!' }, clientMeta);
     } catch (e) {
       error = e;
     }

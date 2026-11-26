@@ -35,10 +35,7 @@ export interface CoachChatService {
 }
 
 export interface CoachInsightsService {
-  generateInsights(
-    context: UserFitnessContext,
-    lang?: string,
-  ): Promise<CoachInsightsResponse>;
+  generateInsights(context: UserFitnessContext, lang?: string): Promise<CoachInsightsResponse>;
 }
 
 /** Turns a spoken audio clip into text. Implemented by `PythonSpeechTranscriber` (the Python AI backend). */
@@ -54,9 +51,17 @@ export interface GeminiService extends CoachChatService, CoachInsightsService {}
 
 export interface ConversationRepository {
   createConversation(userId: string, title: string, preview?: string): Promise<ConversationSummary>;
-  listConversations(userId: string, limit: number, offset: number): Promise<{ conversations: ConversationSummary[]; total: number }>;
+  listConversations(
+    userId: string,
+    limit: number,
+    offset: number,
+  ): Promise<{ conversations: ConversationSummary[]; total: number }>;
   getConversation(userId: string, conversationId: string): Promise<ConversationDetail | null>;
-  updateConversation(userId: string, conversationId: string, updates: { title?: string; preview?: string }): Promise<ConversationSummary | null>;
+  updateConversation(
+    userId: string,
+    conversationId: string,
+    updates: { title?: string; preview?: string },
+  ): Promise<ConversationSummary | null>;
   deleteConversation(userId: string, conversationId: string): Promise<boolean>;
   /**
    * Stores (or idempotently re-stores) a message of `userId` in one of their own conversations.
@@ -65,7 +70,11 @@ export interface ConversationRepository {
    */
   addMessage(userId: string, conversationId: string, message: StoredChatMessage): Promise<void>;
   getMessages(userId: string, conversationId: string, limit?: number): Promise<StoredChatMessage[]>;
-  setMessageFeedback(userId: string, messageId: string, feedback: 'like' | 'dislike' | 'none'): Promise<boolean>;
+  setMessageFeedback(
+    userId: string,
+    messageId: string,
+    feedback: 'like' | 'dislike' | 'none',
+  ): Promise<boolean>;
 }
 
 export interface MemoryRepository {

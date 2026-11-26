@@ -110,7 +110,8 @@ export function createWorkoutMemberRoutes(basePath: string, controller: WorkoutM
         method: 'post',
         path: '/plans/ai/generate',
         summary: 'Generate personalized AI workout plan preview',
-        description: 'Generate an evidence-based personalized workout plan grounded in available equipment and catalog exercises.',
+        description:
+          'Generate an evidence-based personalized workout plan grounded in available equipment and catalog exercises.',
         tags,
         access: { kind: 'authenticated' },
         request: generateAiWorkoutPlanRequest,
@@ -129,7 +130,8 @@ export function createWorkoutMemberRoutes(basePath: string, controller: WorkoutM
         method: 'post',
         path: '/plans/ai/adapt',
         summary: 'Adapt existing AI workout plan',
-        description: 'Dynamically adapt an active workout plan based on missed sessions, reduced duration, or recovery feedback.',
+        description:
+          'Dynamically adapt an active workout plan based on missed sessions, reduced duration, or recovery feedback.',
         tags,
         access: { kind: 'authenticated' },
         request: adaptAiWorkoutPlanRequest,

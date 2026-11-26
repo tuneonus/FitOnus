@@ -184,18 +184,12 @@ export class MemoryExtractionWorker {
     // 1. Consent pre-check: If user has revoked consent, cancel job immediately
     const consented = await this.deps.memoryRepo.isMemoryEnabled(job.userId);
     if (!consented) {
-      this.deps.logger?.info?.(
-        `[MemoryExtractionWorker] Memory consent revoked; skipping job ${job.id}.`,
-      );
+      this.deps.logger?.info?.(`[MemoryExtractionWorker] Memory consent revoked; skipping job ${job.id}.`);
       return;
     }
 
     // 2. Fetch recent conversation messages
-    const pastMessages = await this.deps.conversationRepo.getMessages(
-      job.userId,
-      job.conversationId,
-      6,
-    );
+    const pastMessages = await this.deps.conversationRepo.getMessages(job.userId, job.conversationId, 6);
     if (pastMessages.length === 0) return;
 
     const turns: ChatMessageTurn[] = pastMessages
@@ -211,11 +205,7 @@ export class MemoryExtractionWorker {
     const existingForDedup = [...activeList, ...dismissedList];
 
     // 4. Call Python extraction endpoint
-    const candidates = await this.deps.extractor.extract(
-      job.userId,
-      turns,
-      existingForDedup,
-    );
+    const candidates = await this.deps.extractor.extract(job.userId, turns, existingForDedup);
 
     // 5. Consent recheck BEFORE persisting (prevents race conditions if user revoked while LLM ran)
     const stillConsented = await this.deps.memoryRepo.isMemoryEnabled(job.userId);
@@ -233,10 +223,7 @@ export class MemoryExtractionWorker {
     // 7. Safety gate & persistence: Reject sensitive health info; save valid preferences as 'pending_approval'
     for (const cand of candidates) {
       // NODE-SIDE SAFETY GATE: Never automatically extract/store medical diagnoses, injuries, symptoms, or allergies!
-      if (
-        cand.sensitive ||
-        isSensitiveHealthContent(cand.category, cand.text, cand.sourceQuote)
-      ) {
+      if (cand.sensitive || isSensitiveHealthContent(cand.category, cand.text, cand.sourceQuote)) {
         this.deps.logger?.info?.(
           `[MemoryExtractionWorker] Rejected sensitive health memory candidate (${cand.category}) for job ${job.id}.`,
         );

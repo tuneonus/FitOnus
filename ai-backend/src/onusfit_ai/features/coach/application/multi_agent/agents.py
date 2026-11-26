@@ -290,9 +290,7 @@ class WorkoutAgent(BaseSpecialistAgent):
             )
 
         # 2. Fetch recent workouts if useful
-        workouts_res = await self._call_tool(
-            TOOL_GET_RECENT_WORKOUTS, {"days": 14}, context_view
-        )
+        workouts_res = await self._call_tool(TOOL_GET_RECENT_WORKOUTS, {"days": 14}, context_view)
         if "error" not in workouts_res:
             used_tools.append(TOOL_GET_RECENT_WORKOUTS)
             workouts_list = workouts_res.get("workouts", [])
@@ -473,15 +471,12 @@ class WorkoutAgent(BaseSpecialistAgent):
                     )
                 )
 
-        rec_summary = (
-            f"Workout analysis complete ({w_count} recent sessions). "
-            + (
-                "Adjusted schedule with deload volume for recovery."
-                if recovery_deload
-                else f"Previewed grounded {days}-day {norm_goal} routine (preview only; not saved)."
-                if plan_payload
-                else "Training volume and consistency reviewed."
-            )
+        rec_summary = f"Workout analysis complete ({w_count} recent sessions). " + (
+            "Adjusted schedule with deload volume for recovery."
+            if recovery_deload
+            else f"Previewed grounded {days}-day {norm_goal} routine (preview only; not saved)."
+            if plan_payload
+            else "Training volume and consistency reviewed."
         )
         rec = AgentRecommendation(
             agent_role=self.role,
@@ -635,9 +630,7 @@ class NutritionAgent(BaseSpecialistAgent):
                     "Multimodal attachment analysis skipped due to request budget limit."
                 )
 
-        nut_res = await self._call_tool(
-            TOOL_GET_NUTRITION_SUMMARY, {"days": 7}, context_view
-        )
+        nut_res = await self._call_tool(TOOL_GET_NUTRITION_SUMMARY, {"days": 7}, context_view)
         if "error" not in nut_res:
             used_tools.append(TOOL_GET_NUTRITION_SUMMARY)
             days_data = nut_res.get("days", [])
@@ -706,9 +699,7 @@ class NutritionAgent(BaseSpecialistAgent):
                     f"{avg_pro or 0:.0f}g protein)."
                 )
             ),
-            action_items=[
-                "Prioritize consistent daily protein intake and adequate hydration."
-            ],
+            action_items=["Prioritize consistent daily protein intake and adequate hydration."],
             priority=2,
             constraints_applied=["safe_caloric_floor_1200kcal", "non_medical_estimates"],
             structured_payload={
@@ -870,8 +861,7 @@ class RecoveryAgent(BaseSpecialistAgent):
 
         recommend_deload = fatigue_reported or recent_count >= 6 or has_red_flag
         no_wearable_note = (
-            "No wearable/sleep/HRV sensor is connected; "
-            "guidance uses user-reported context only."
+            "No wearable/sleep/HRV sensor is connected; guidance uses user-reported context only."
         )
         evidence.append(
             EvidenceItem(
@@ -951,8 +941,7 @@ class KnowledgeAgent(BaseSpecialistAgent):
                         source_agent=self.role,
                         citation=item.get("citation"),
                         summary=(
-                            f"[{item.get('document_title')}]: "
-                            f"{str(item.get('content', ''))[:160]}"
+                            f"[{item.get('document_title')}]: {str(item.get('content', ''))[:160]}"
                         ),
                     )
                 )
@@ -1047,8 +1036,7 @@ class SupervisorAgent:
             for e in evidence
         ]
         conflict_lines = [
-            f"- Resolved ({c.topic}): {sanitize_multi_agent_text(c.resolution)}"
-            for c in conflicts
+            f"- Resolved ({c.topic}): {sanitize_multi_agent_text(c.resolution)}" for c in conflicts
         ]
 
         lang_directive = {

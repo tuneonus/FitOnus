@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetCoachInsightsUseCase } from '../../../src/modules/coach/application/use-cases/get-coach-insights.js';
 import type { UserContextRepository, GeminiService } from '../../../src/modules/coach/application/ports.js';
-import type { CoachInsightsResponse, UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
+import type {
+  CoachInsightsResponse,
+  UserFitnessContext,
+} from '../../../src/modules/coach/domain/coach.types.js';
 import { allowAllAiUsageGate } from '../../helpers/ai-usage-gate.js';
 
 describe('GetCoachInsightsUseCase', () => {
@@ -159,4 +162,3 @@ describe('GetCoachInsightsUseCase', () => {
     await expect(useCase.execute({ userId: '' })).rejects.toThrow('Authentication is required');
   });
 });
-

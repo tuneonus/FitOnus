@@ -81,7 +81,9 @@ def test_coach_chat_with_image_attachment_strips_exif_and_routes_to_nutrition_ag
         schema: Any = None,
         **kwargs: Any,
     ) -> LlmResult:
-        observed_calls.append({"prompt": prompt, "media": media, "user_id": kwargs.get("user_id"), "schema": schema})
+        observed_calls.append(
+            {"prompt": prompt, "media": media, "user_id": kwargs.get("user_id"), "schema": schema}
+        )
         if len(observed_calls) == 1:
             mm_payload = {
                 "isFood": True,

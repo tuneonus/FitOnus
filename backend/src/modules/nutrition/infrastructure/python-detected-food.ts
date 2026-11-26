@@ -29,9 +29,18 @@ export const pythonDetectedFoodItemsSchema = z.array(pythonDetectedFoodItemSchem
 
 /** A meal total can be at most every item at its own maximum. */
 export const pythonTotals = {
-  kcal: z.number().min(0).max(L.maxItems * L.itemKcal),
-  macroG: z.number().min(0).max(L.maxItems * L.itemMacroG),
-  fiberG: z.number().min(0).max(L.maxItems * L.itemFiberG),
+  kcal: z
+    .number()
+    .min(0)
+    .max(L.maxItems * L.itemKcal),
+  macroG: z
+    .number()
+    .min(0)
+    .max(L.maxItems * L.itemMacroG),
+  fiberG: z
+    .number()
+    .min(0)
+    .max(L.maxItems * L.itemFiberG),
 } as const;
 
 export type PythonDetectedFoodItem = z.output<typeof pythonDetectedFoodItemSchema>;

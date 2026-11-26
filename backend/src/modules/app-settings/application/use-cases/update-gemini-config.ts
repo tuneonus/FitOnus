@@ -101,21 +101,33 @@ export class UpdateGeminiConfigUseCase {
 
       if (fm.mealPhotoScanner) {
         if (!validModelNames.has(fm.mealPhotoScanner)) {
-          throw new AppError('bad_request', 'VALIDATION_FAILED', `Invalid Meal Photo Scanner model: ${fm.mealPhotoScanner}`);
+          throw new AppError(
+            'bad_request',
+            'VALIDATION_FAILED',
+            `Invalid Meal Photo Scanner model: ${fm.mealPhotoScanner}`,
+          );
         }
         updates.mealPhotoModel = fm.mealPhotoScanner;
       }
 
       if (fm.voiceMealEntry) {
         if (!validModelNames.has(fm.voiceMealEntry)) {
-          throw new AppError('bad_request', 'VALIDATION_FAILED', `Invalid Voice Meal Entry model: ${fm.voiceMealEntry}`);
+          throw new AppError(
+            'bad_request',
+            'VALIDATION_FAILED',
+            `Invalid Voice Meal Entry model: ${fm.voiceMealEntry}`,
+          );
         }
         updates.voiceMealModel = fm.voiceMealEntry;
       }
 
       if (fm.workoutGenerator) {
         if (!validModelNames.has(fm.workoutGenerator)) {
-          throw new AppError('bad_request', 'VALIDATION_FAILED', `Invalid Workout Generator model: ${fm.workoutGenerator}`);
+          throw new AppError(
+            'bad_request',
+            'VALIDATION_FAILED',
+            `Invalid Workout Generator model: ${fm.workoutGenerator}`,
+          );
         }
         updates.workoutGeneratorModel = fm.workoutGenerator;
       }
@@ -123,11 +135,7 @@ export class UpdateGeminiConfigUseCase {
       auditDetails.featureModels = input.featureModels;
     }
 
-    const updated = await this.deps.repo.updateGeminiConfig(
-      updates,
-      input.expectedVersion,
-      actor.userId,
-    );
+    const updated = await this.deps.repo.updateGeminiConfig(updates, input.expectedVersion, actor.userId);
 
     // Refresh runtime cache immediately
     if (this.deps.runtimeService) {
@@ -136,9 +144,7 @@ export class UpdateGeminiConfigUseCase {
 
     // 3. Write Audit Log
     if (this.deps.auditLogger) {
-      const action = updates.encryptedApiKey
-        ? 'admin.gemini_key_update'
-        : 'admin.gemini_config_update';
+      const action = updates.encryptedApiKey ? 'admin.gemini_key_update' : 'admin.gemini_config_update';
 
       await this.deps.auditLogger
         .recordAuditLog({

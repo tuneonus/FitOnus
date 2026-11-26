@@ -76,9 +76,10 @@ async function main() {
   if (coachValRes.status !== 400) throw new Error('Expected 400 for empty message in /coach/chat');
 
   // 1c. Real execution test
-  const coachExecRes = await request(app)
-    .post('/api/v1/coach/chat')
-    .send({ message: 'Hi Coach, I want a quick 1-sentence tip for chest recovery.', conversationId: testConvId });
+  const coachExecRes = await request(app).post('/api/v1/coach/chat').send({
+    message: 'Hi Coach, I want a quick 1-sentence tip for chest recovery.',
+    conversationId: testConvId,
+  });
   console.log(`  [Execution] Chat response status: ${coachExecRes.status} (Expected: 200)`);
   if (coachExecRes.status !== 200) {
     console.error('Chat error:', coachExecRes.body);
@@ -89,7 +90,7 @@ async function main() {
   // 1d. DB persistence check in Neon DEV
   const msgCheck = await pool.query(
     'SELECT id, role, text FROM coach_messages WHERE conversation_id = $1 ORDER BY created_at ASC',
-    [testConvId]
+    [testConvId],
   );
   console.log(`  [Persistence] Neon DB records found: ${msgCheck.rowCount} messages (Expected: 2)`);
 
@@ -99,21 +100,18 @@ async function main() {
   console.log('\n--- 2. Verifying POST /api/v1/nutrition/meal-photo/analyze ---');
 
   // 2a. Validation test (missing image)
-  const photoValRes = await request(app)
-    .post('/api/v1/nutrition/meal-photo/analyze')
-    .send({});
+  const photoValRes = await request(app).post('/api/v1/nutrition/meal-photo/analyze').send({});
   console.log(`  [Validation] Missing payload status: ${photoValRes.status} (Expected: 400)`);
   if (photoValRes.status !== 400) throw new Error('Expected 400 for missing payload in /meal-photo/analyze');
 
   // 2b. Real execution test with tiny valid 1x1 PNG base64
-  const sample1x1Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-  const photoExecRes = await request(app)
-    .post('/api/v1/nutrition/meal-photo/analyze')
-    .send({
-      image: sample1x1Png,
-      mimeType: 'image/png',
-      hints: 'A green apple',
-    });
+  const sample1x1Png =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  const photoExecRes = await request(app).post('/api/v1/nutrition/meal-photo/analyze').send({
+    image: sample1x1Png,
+    mimeType: 'image/png',
+    hints: 'A green apple',
+  });
   console.log(`  [Execution] Photo analysis status: ${photoExecRes.status} (Expected: 200)`);
   if (photoExecRes.status !== 200) {
     console.error('Meal photo error:', photoExecRes.body);
@@ -129,21 +127,17 @@ async function main() {
   console.log('\n--- 3. Verifying POST /api/v1/nutrition/voice-meal/parse ---');
 
   // 3a. Validation test (empty transcript and no audio)
-  const voiceValRes = await request(app)
-    .post('/api/v1/nutrition/voice-meal/parse')
-    .send({});
+  const voiceValRes = await request(app).post('/api/v1/nutrition/voice-meal/parse').send({});
   console.log(`  [Validation] Missing input status: ${voiceValRes.status} (Expected: 400)`);
   if (voiceValRes.status !== 400) throw new Error('Expected 400 for empty /voice-meal/parse');
 
   // 3b. Real execution test with speech transcript (with retry for transient upstream 503)
   let voiceExecRes: any;
   for (let attempt = 1; attempt <= 3; attempt++) {
-    voiceExecRes = await request(app)
-      .post('/api/v1/nutrition/voice-meal/parse')
-      .send({
-        transcript: 'Had 2 idlis with sambar and a cup of black coffee for breakfast',
-        mealType: 'breakfast',
-      });
+    voiceExecRes = await request(app).post('/api/v1/nutrition/voice-meal/parse').send({
+      transcript: 'Had 2 idlis with sambar and a cup of black coffee for breakfast',
+      mealType: 'breakfast',
+    });
     if (voiceExecRes.status === 200) break;
     console.log(`  [Retry ${attempt}] Upstream returned ${voiceExecRes.status}, waiting 2s...`);
     await new Promise((r) => setTimeout(r, 2000));
@@ -154,17 +148,19 @@ async function main() {
     console.error('Voice meal error:', voiceExecRes.body);
     throw new Error(`/voice-meal/parse failed with ${voiceExecRes.status}`);
   }
-  console.log(`  [Execution] Parsed items: ${voiceExecRes.body.data?.items?.map((i: any) => i.name).join(', ')}`);
+  console.log(
+    `  [Execution] Parsed items: ${voiceExecRes.body.data?.items?.map((i: any) => i.name).join(', ')}`,
+  );
   console.log(`  [Execution] Total calories: ${voiceExecRes.body.data?.totalKcal} kcal`);
 
   // -------------------------------------------------------------
   // Test 4: POST /api/v1/workouts/generate Route Discovery
   // -------------------------------------------------------------
   console.log('\n--- 4. Checking POST /api/v1/workouts/generate Route Status ---');
-  const workoutGenRes = await request(app)
-    .post('/api/v1/workouts/generate')
-    .send({});
-  console.log(`  Route status: ${workoutGenRes.status} (Expected: 404 - Architectural Design: client-side engine in workoutPlanGenerator.ts)`);
+  const workoutGenRes = await request(app).post('/api/v1/workouts/generate').send({});
+  console.log(
+    `  Route status: ${workoutGenRes.status} (Expected: 404 - Architectural Design: client-side engine in workoutPlanGenerator.ts)`,
+  );
 
   // -------------------------------------------------------------
   // Test 5: Admin Gemini Management Routes (/api/v1/admin/ai)
@@ -176,23 +172,33 @@ async function main() {
   const configRes = await request(app).get('/api/v1/admin/ai/configuration');
   console.log(`  GET /configuration status: ${configRes.status} (Expected: 200)`);
   console.log(`  Default Model: ${configRes.body.data?.defaultModel}`);
-  console.log(`  Active Key Mask: ${configRes.body.data?.keyMask || 'Not Configured (Using Environment Fallback)'}`);
+  console.log(
+    `  Active Key Mask: ${configRes.body.data?.keyMask || 'Not Configured (Using Environment Fallback)'}`,
+  );
 
   // 5b. GET /api/v1/admin/ai/models
   const modelsRes = await request(app).get('/api/v1/admin/ai/models');
-  console.log(`  GET /models status: ${modelsRes.status} (Expected: 200, Models count: ${modelsRes.body.data?.length})`);
+  console.log(
+    `  GET /models status: ${modelsRes.status} (Expected: 200, Models count: ${modelsRes.body.data?.length})`,
+  );
 
   // 5c. POST /api/v1/admin/ai/test-connection
   const testConnRes = await request(app).post('/api/v1/admin/ai/test-connection').send({});
-  console.log(`  POST /test-connection status: ${testConnRes.status} (Success: ${testConnRes.body.data?.success}, Latency: ${testConnRes.body.data?.latencyMs}ms)`);
+  console.log(
+    `  POST /test-connection status: ${testConnRes.status} (Success: ${testConnRes.body.data?.success}, Latency: ${testConnRes.body.data?.latencyMs}ms)`,
+  );
 
   // 5d. GET /api/v1/admin/ai/usage/summary
   const summaryRes = await request(app).get('/api/v1/admin/ai/usage/summary');
-  console.log(`  GET /usage/summary status: ${summaryRes.status} (Today Requests: ${summaryRes.body.data?.todayTotalRequests}, Cost: $${summaryRes.body.data?.estimatedMonthCostUsd})`);
+  console.log(
+    `  GET /usage/summary status: ${summaryRes.status} (Today Requests: ${summaryRes.body.data?.todayTotalRequests}, Cost: $${summaryRes.body.data?.estimatedMonthCostUsd})`,
+  );
 
   // 5e. GET /api/v1/admin/ai/usage/by-feature
   const featureRes = await request(app).get('/api/v1/admin/ai/usage/by-feature');
-  console.log(`  GET /usage/by-feature status: ${featureRes.status} (Features tracked: ${featureRes.body.data?.length})`);
+  console.log(
+    `  GET /usage/by-feature status: ${featureRes.status} (Features tracked: ${featureRes.body.data?.length})`,
+  );
 
   // 5f. RBAC Authorization test (Member trying to access Admin AI routes)
   currentActor = createActor({ userId: memberUserId, sessionId: 'sess-member', role: 'member' });
@@ -211,7 +217,7 @@ async function main() {
   console.log('=============================================================');
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('\n❌ PHASE 6 VERIFICATION FAILED:', err);
   process.exit(1);
 });

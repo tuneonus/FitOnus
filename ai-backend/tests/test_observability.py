@@ -87,6 +87,7 @@ def multimodal_body() -> dict[str, Any]:
         "deadlineMs": pb["deadlineMs"],
     }
 
+
 # Built at runtime so the repository never contains a literal that looks like a real key.
 GOOGLE_KEY = "AI" + "za" + "SyFAKE-FAKE-FAKE-FAKE-FAKE-1234567"
 FAKE_JWT = ".".join(

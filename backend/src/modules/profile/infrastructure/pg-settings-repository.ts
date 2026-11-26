@@ -102,8 +102,7 @@ export class PgSettingsRepository implements SettingsRepository {
     if (changes.notificationsEnabled !== undefined)
       addClause('notifications_enabled', changes.notificationsEnabled);
     if (changes.language !== undefined) addClause('language', changes.language);
-    if (changes.privacyAnalytics !== undefined)
-      addClause('privacy_analytics', changes.privacyAnalytics);
+    if (changes.privacyAnalytics !== undefined) addClause('privacy_analytics', changes.privacyAnalytics);
     if (changes.privacyPhotoRetention !== undefined)
       addClause('privacy_photo_retention', changes.privacyPhotoRetention);
     if (changes.privacyCoachSharing !== undefined)

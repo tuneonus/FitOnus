@@ -34,10 +34,17 @@ describe('PythonSpeechTranscriber (POST /coach/transcribe)', () => {
   let server: FakePythonServer;
   let recorder: { recordExternalUsage: ReturnType<typeof vi.fn> };
 
-  const build = (overrides: { baseUrl?: string; pythonTimeoutMs?: number; models?: { primary: string; fallback: string | null } } = {}) =>
+  const build = (
+    overrides: {
+      baseUrl?: string;
+      pythonTimeoutMs?: number;
+      models?: { primary: string; fallback: string | null };
+    } = {},
+  ) =>
     new PythonSpeechTranscriber({
       client: new PythonAiClient({ baseUrl: overrides.baseUrl ?? server.url, serviceSecret: SECRET }),
-      resolveModels: () => Promise.resolve(overrides.models ?? { primary: 'coach-primary', fallback: 'coach-backup' }),
+      resolveModels: () =>
+        Promise.resolve(overrides.models ?? { primary: 'coach-primary', fallback: 'coach-backup' }),
       usageRecorder: recorder as unknown as AiUsageRecorder,
       pythonTimeoutMs: overrides.pythonTimeoutMs ?? 5_000,
     });
@@ -89,18 +96,28 @@ describe('PythonSpeechTranscriber (POST /coach/transcribe)', () => {
       await build().transcribe(USER, AUDIO);
       expect(recorder.recordExternalUsage).toHaveBeenCalledTimes(1);
       expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: USER, feature: 'coach_chat', model: 'gemini-3.5-flash-lite', totalTokens: 330 }),
+        expect.objectContaining({
+          userId: USER,
+          feature: 'coach_chat',
+          model: 'gemini-3.5-flash-lite',
+          totalTokens: 330,
+        }),
       );
     });
 
     it('does not fail the request when the usage ledger write fails', async () => {
       recorder.recordExternalUsage.mockRejectedValue(new Error('db down'));
-      await expect(build().transcribe(USER, AUDIO)).resolves.toMatchObject({ transcript: expect.any(String) });
+      await expect(build().transcribe(USER, AUDIO)).resolves.toMatchObject({
+        transcript: expect.any(String),
+      });
     });
 
     it('sends a null fallback when none is configured', async () => {
       await build({ models: { primary: 'only', fallback: null } }).transcribe(USER, AUDIO);
-      expect((server.requests[0]!.body as { model: unknown }).model).toEqual({ primary: 'only', fallback: null });
+      expect((server.requests[0]!.body as { model: unknown }).model).toEqual({
+        primary: 'only',
+        fallback: null,
+      });
     });
   });
 
@@ -122,14 +139,21 @@ describe('PythonSpeechTranscriber (POST /coach/transcribe)', () => {
     });
 
     it.each([
-      ['wrong service secret (Python 401)', 401, pythonError('AUTH_INVALID_TOKEN', 'x', { dispatched: false })],
+      [
+        'wrong service secret (Python 401)',
+        401,
+        pythonError('AUTH_INVALID_TOKEN', 'x', { dispatched: false }),
+      ],
       ['contract mismatch (422)', 422, pythonError('INVALID_REQUEST', 'x', { dispatched: false })],
       ['Python has no Gemini key', 503, pythonError('PROVIDER_NOT_CONFIGURED', 'x', { dispatched: false })],
       ['Python crashed (500)', 500, pythonError('INTERNAL_ERROR', 'boom')],
     ])('%s: controlled 503, exactly one call', async (_n, status, body) => {
       server.respond((_r, res) => json(res, status, body));
       const error = await failure(build().transcribe(USER, AUDIO));
-      expect(isAppError(error) && [error.code, error.message]).toEqual(['SERVICE_UNAVAILABLE', TRANSCRIBE_UNAVAILABLE_MESSAGE]);
+      expect(isAppError(error) && [error.code, error.message]).toEqual([
+        'SERVICE_UNAVAILABLE',
+        TRANSCRIBE_UNAVAILABLE_MESSAGE,
+      ]);
       expect(server.requests).toHaveLength(1);
     });
 
@@ -215,7 +239,10 @@ describe('PythonSpeechTranscriber (POST /coach/transcribe)', () => {
     it('Python unavailable: 503 envelope with the existing message', async () => {
       const res = await post(appFor(build({ baseUrl: await closedPortUrl() })));
       expect(res.status).toBe(503);
-      expect(res.body).toMatchObject({ success: false, error: { code: 'SERVICE_UNAVAILABLE', message: TRANSCRIBE_UNAVAILABLE_MESSAGE } });
+      expect(res.body).toMatchObject({
+        success: false,
+        error: { code: 'SERVICE_UNAVAILABLE', message: TRANSCRIBE_UNAVAILABLE_MESSAGE },
+      });
     });
 
     it('wrong service secret: the same controlled 503, no internals in the body', async () => {
@@ -224,14 +251,18 @@ describe('PythonSpeechTranscriber (POST /coach/transcribe)', () => {
         resolveModels: () => Promise.resolve({ primary: 'p', fallback: null }),
         pythonTimeoutMs: 5_000,
       });
-      server.respond((_r, res) => json(res, 401, pythonError('AUTH_INVALID_TOKEN', 'Invalid service token.', { dispatched: false })));
+      server.respond((_r, res) =>
+        json(res, 401, pythonError('AUTH_INVALID_TOKEN', 'Invalid service token.', { dispatched: false })),
+      );
       const res = await post(appFor(wrong));
       expect(res.status).toBe(503);
       expect(JSON.stringify(res.body)).not.toMatch(/token|secret|401/i);
     });
 
     it('Gemini rate limit: 429 RATE_LIMITED', async () => {
-      server.respond((_r, res) => json(res, 429, pythonError('PROVIDER_RATE_LIMITED', 'Busy', { retryAfterSeconds: 25 })));
+      server.respond((_r, res) =>
+        json(res, 429, pythonError('PROVIDER_RATE_LIMITED', 'Busy', { retryAfterSeconds: 25 })),
+      );
       const res = await post(appFor(build()));
       expect(res.status).toBe(429);
       expect(res.body.error.code).toBe('RATE_LIMITED');

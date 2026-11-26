@@ -20,7 +20,8 @@ const DEADLINE_MARGIN_MS = 1_500;
 const MIN_DEADLINE_MS = 1_000;
 
 /** The wording the app has always received when transcription fails for infrastructure reasons. */
-export const TRANSCRIBE_UNAVAILABLE_MESSAGE = 'Unable to transcribe spoken audio right now. Please try again.';
+export const TRANSCRIBE_UNAVAILABLE_MESSAGE =
+  'Unable to transcribe spoken audio right now. Please try again.';
 
 /** Python's reply. Mirrors ai-backend/src/onusfit_ai/features/speech/application/contracts.py. */
 const pythonTranscribeResponseSchema = z.object({

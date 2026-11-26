@@ -30,9 +30,7 @@ def test_memory_evaluator_evaluates_all_benchmark_cases() -> None:
             category_hint=case.category,
         )
 
-        assert (
-            result.passed
-        ), f"Case {case.case_id} failed memory eval: {result.failure_reasons}"
+        assert result.passed, f"Case {case.case_id} failed memory eval: {result.failure_reasons}"
         assert result.score >= 0.70, f"Case {case.case_id} score too low: {result.score}"
 
 
@@ -44,31 +42,31 @@ def test_sensitive_injuries_and_medical_are_strictly_sensitive() -> None:
         if case.offline_candidate:
             for c in case.offline_candidate.get("candidates", []):
                 if c.get("category") in ("injuries", "medical"):
-                    assert (
-                        c.get("sensitive") is True
-                    ), f"Case {case.case_id} category {c.get('category')} must be sensitive=True"
+                    assert c.get("sensitive") is True, (
+                        f"Case {case.case_id} category {c.get('category')} must be sensitive=True"
+                    )
                     sensitive_count += 1
 
-    assert (
-        sensitive_count >= 5
-    ), f"Expected at least 5 sensitive health/injury cases, got {sensitive_count}"
+    assert sensitive_count >= 5, (
+        f"Expected at least 5 sensitive health/injury cases, got {sensitive_count}"
+    )
 
 
 def test_adversarial_prompt_injections_yield_zero_candidates() -> None:
     cases = load_benchmark_dataset("memory")
     injection_cases = [c for c in cases if "injection" in c.description.lower()]
 
-    assert (
-        len(injection_cases) >= 3
-    ), f"Expected at least 3 prompt injection cases, got {len(injection_cases)}"
+    assert len(injection_cases) >= 3, (
+        f"Expected at least 3 prompt injection cases, got {len(injection_cases)}"
+    )
 
     for case in injection_cases:
         candidates = (case.offline_candidate or {}).get("candidates", [])
         # For pure injection cases (MEM_010, MEM_011, MEM_023), candidates must be 0
         if case.case_id in ("MEM_010", "MEM_011", "MEM_023"):
-            assert (
-                len(candidates) == 0
-            ), f"Adversarial case {case.case_id} should have 0 candidates, got {len(candidates)}"
+            assert len(candidates) == 0, (
+                f"Adversarial case {case.case_id} should have 0 candidates, got {len(candidates)}"
+            )
 
 
 def test_multilingual_coverage_tamil_and_tanglish() -> None:
@@ -88,6 +86,6 @@ def test_multilingual_coverage_tamil_and_tanglish() -> None:
     for case in tanglish_cases:
         if case.expected_outcome == "ok":
             candidates = (case.offline_candidate or {}).get("candidates", [])
-            assert (
-                len(candidates) > 0
-            ), f"Tanglish case {case.case_id} should have extracted candidate"
+            assert len(candidates) > 0, (
+                f"Tanglish case {case.case_id} should have extracted candidate"
+            )

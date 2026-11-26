@@ -97,9 +97,15 @@ describe('nutrition use cases: implicit "today" is the user local day', () => {
     };
     foodRepo = { findById: vi.fn() } as unknown as IFoodRepository;
     targetPort = {
-      findTargetsByUserId: vi.fn().mockResolvedValue(
-        { source: null, calories: null, proteinG: null, carbsG: null, fatG: null, waterMl: null, waterSource: null },
-      ),
+      findTargetsByUserId: vi.fn().mockResolvedValue({
+        source: null,
+        calories: null,
+        proteinG: null,
+        carbsG: null,
+        fatG: null,
+        waterMl: null,
+        waterSource: null,
+      }),
     };
     uow = { run: vi.fn(async (work) => work()) };
   });

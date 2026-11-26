@@ -84,7 +84,11 @@ class InMemoryAppSettingsRepository implements AppSettingsRepository {
       {
         key: 'app.support',
         category: 'app',
-        value: { email: 'support@fitonus.com', website: 'https://fitonus.com/support', contactInfo: 'Available Mon-Fri' },
+        value: {
+          email: 'support@fitonus.com',
+          website: 'https://fitonus.com/support',
+          contactInfo: 'Available Mon-Fri',
+        },
         description: 'Support contact details',
         updatedBy: null,
         updatedAt: now,
@@ -93,7 +97,10 @@ class InMemoryAppSettingsRepository implements AppSettingsRepository {
       {
         key: 'app.legal',
         category: 'app',
-        value: { privacyPolicyUrl: 'https://fitonus.com/privacy', termsOfServiceUrl: 'https://fitonus.com/terms' },
+        value: {
+          privacyPolicyUrl: 'https://fitonus.com/privacy',
+          termsOfServiceUrl: 'https://fitonus.com/terms',
+        },
         description: 'Legal links',
         updatedBy: null,
         updatedAt: now,
@@ -343,9 +350,22 @@ describe('FitOnus Admin Application Settings & Public Config Endpoints', () => {
     const getAppSettings = new GetAppSettingsUseCase(repo);
     const updateAppSettings = new UpdateAppSettingsUseCase({ repo, auditLogger });
     const getPublicAppConfig = new GetPublicAppConfigUseCase(repo);
-    const getGeminiConfig = new GetGeminiConfigUseCase({ repo, fallbackApiKey: 'test-key', fallbackModel: 'gemini-2.5-flash' });
-    const updateGeminiConfig = new UpdateGeminiConfigUseCase({ repo, encryptionKey: 'test-key-32-chars-long-secret-key!!', auditLogger });
-    const testGeminiConnection = new TestGeminiConnectionUseCase({ repo, encryptionKey: 'test-key-32-chars-long-secret-key!!', fallbackApiKey: 'test-key', fallbackModel: 'gemini-2.5-flash' });
+    const getGeminiConfig = new GetGeminiConfigUseCase({
+      repo,
+      fallbackApiKey: 'test-key',
+      fallbackModel: 'gemini-2.5-flash',
+    });
+    const updateGeminiConfig = new UpdateGeminiConfigUseCase({
+      repo,
+      encryptionKey: 'test-key-32-chars-long-secret-key!!',
+      auditLogger,
+    });
+    const testGeminiConnection = new TestGeminiConnectionUseCase({
+      repo,
+      encryptionKey: 'test-key-32-chars-long-secret-key!!',
+      fallbackApiKey: 'test-key',
+      fallbackModel: 'gemini-2.5-flash',
+    });
     const rollbackGeminiKey = new RollbackGeminiKeyUseCase({ repo, auditLogger });
     const geminiUsageAnalytics = new GetGeminiUsageAnalyticsUseCases(repo);
 

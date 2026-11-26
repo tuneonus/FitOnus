@@ -4,12 +4,7 @@ import { callPythonAi, pythonUsageSchema, requireGateUserId } from '../../../sha
 import type { AiUsageRecorder, PythonAiClient } from '../../../shared/ai/python-ai-client.js';
 import type { Logger } from '../../../shared/logging/logger.js';
 import type { CoachChatService, KnowledgeContextPayloadItem } from '../application/ports.js';
-import type {
-  Block,
-  ChatMessageTurn,
-  CoachResponse,
-  UserFitnessContext,
-} from '../domain/coach.types.js';
+import type { Block, ChatMessageTurn, CoachResponse, UserFitnessContext } from '../domain/coach.types.js';
 
 /** Token scope Python requires for this endpoint. */
 export const COACH_CHAT_SCOPE = 'ai:coach:chat';
@@ -21,7 +16,8 @@ const DEADLINE_MARGIN_MS = 1_500;
 const MIN_DEADLINE_MS = 1_000;
 
 /** Shown to the user for every failure that is about the AI backend itself (nothing internal leaks). */
-export const AI_BACKEND_UNAVAILABLE_MESSAGE = 'The AI Coach is temporarily unavailable. Please try again shortly.';
+export const AI_BACKEND_UNAVAILABLE_MESSAGE =
+  'The AI Coach is temporarily unavailable. Please try again shortly.';
 
 /** Python's reply. Mirrors ai-backend/src/onusfit_ai/features/coach/domain/chat.py. */
 const pythonChatResponseSchema = z.object({

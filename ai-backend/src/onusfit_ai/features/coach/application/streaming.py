@@ -353,6 +353,7 @@ async def stream_coach_reply(
                     executed_tool_names: list[str] = []
 
                     if callable(stream_fn):
+
                         async def _on_tool(tool_name: str) -> None:
                             await _emit(
                                 StreamStatusEvent(

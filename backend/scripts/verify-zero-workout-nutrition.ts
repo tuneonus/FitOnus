@@ -13,7 +13,17 @@ async function verify() {
     await client.query('SET search_path = public;');
 
     console.log('=== 1. DATABASE RECORD COUNTS ===');
-    const tables = ['workouts', 'workout_exercises', 'exercises', 'foods', 'meals', 'meal_items', 'food_favorites', 'workout_sessions', 'workout_session_sets'];
+    const tables = [
+      'workouts',
+      'workout_exercises',
+      'exercises',
+      'foods',
+      'meals',
+      'meal_items',
+      'food_favorites',
+      'workout_sessions',
+      'workout_session_sets',
+    ];
     const counts: Record<string, number> = {};
     for (const t of tables) {
       const res = await client.query(`SELECT count(*)::int as c FROM public."${t}"`);
@@ -60,7 +70,6 @@ async function verify() {
         (SELECT count(*) FROM public.schema_migrations) as migrations_count
     `);
     console.table(preserved.rows[0]);
-
   } finally {
     await pool.end();
   }

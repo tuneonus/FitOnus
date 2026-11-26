@@ -20,10 +20,7 @@ export class RollbackGeminiKeyUseCase {
   ): Promise<GeminiAdminConfigView> {
     assertPermission(actor, 'admin:access');
 
-    const updated = await this.deps.repo.rollbackGeminiApiKey(
-      expectedVersion,
-      actor.userId,
-    );
+    const updated = await this.deps.repo.rollbackGeminiApiKey(expectedVersion, actor.userId);
 
     // Refresh runtime cache immediately
     if (this.deps.runtimeService) {

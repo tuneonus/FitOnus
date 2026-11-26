@@ -16,11 +16,7 @@ export const processingStatusSchema = z.enum([
   'pending',
 ]) as z.ZodType<ProcessingStatus>;
 
-export const reindexStatusSchema = z.enum([
-  'processing',
-  'failed',
-  'completed',
-]) as z.ZodType<ReindexStatus>;
+export const reindexStatusSchema = z.enum(['processing', 'failed', 'completed']) as z.ZodType<ReindexStatus>;
 
 export const knowledgeDocumentViewSchema = z.object({
   id: z.string(),
@@ -80,7 +76,10 @@ export const createDocumentAdminBodySchema = z.object({
     .trim()
     .min(3)
     .max(120)
-    .regex(/^[a-z0-9_-]+$/, 'Slug must only contain lowercase alphanumeric characters, hyphens, and underscores.')
+    .regex(
+      /^[a-z0-9_-]+$/,
+      'Slug must only contain lowercase alphanumeric characters, hyphens, and underscores.',
+    )
     .optional(),
   category: knowledgeCategorySchema,
   content: z.string().trim().min(20, 'Content must be at least 20 characters.'),

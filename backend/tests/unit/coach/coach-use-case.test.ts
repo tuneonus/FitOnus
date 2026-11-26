@@ -136,9 +136,11 @@ describe('ChatWithCoachUseCase', () => {
   });
 
   it('propagates service unavailable errors gracefully', async () => {
-    mockGeminiService.generateCoachResponse = vi.fn().mockRejectedValue(
-      new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'AI coaching service is temporarily unavailable.'),
-    );
+    mockGeminiService.generateCoachResponse = vi
+      .fn()
+      .mockRejectedValue(
+        new AppError('unavailable', 'SERVICE_UNAVAILABLE', 'AI coaching service is temporarily unavailable.'),
+      );
 
     await expect(
       useCase.execute({
@@ -148,4 +150,3 @@ describe('ChatWithCoachUseCase', () => {
     ).rejects.toThrow('AI coaching service is temporarily unavailable.');
   });
 });
-

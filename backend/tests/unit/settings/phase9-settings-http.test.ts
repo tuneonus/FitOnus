@@ -134,9 +134,7 @@ describe('Phase 9.2: Settings, Preferences & Secure Account Deletion HTTP API', 
     // Scenario 2: PATCH /profile/settings with language 'ta' persists correctly
     it('Scenario 2: PATCH /api/v1/profile/settings with language: "ta" updates correctly', async () => {
       const { app, profileUseCases } = createTestApp();
-      const res = await request(app)
-        .patch('/api/v1/profile/settings')
-        .send({ language: 'ta' });
+      const res = await request(app).patch('/api/v1/profile/settings').send({ language: 'ta' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -150,9 +148,7 @@ describe('Phase 9.2: Settings, Preferences & Secure Account Deletion HTTP API', 
     // Scenario 3: PATCH /profile/settings with invalid language (e.g. 'fr') -> 400
     it('Scenario 3: PATCH /api/v1/profile/settings rejects unsupported language with 400 VALIDATION_FAILED', async () => {
       const { app } = createTestApp();
-      const res = await request(app)
-        .patch('/api/v1/profile/settings')
-        .send({ language: 'fr' });
+      const res = await request(app).patch('/api/v1/profile/settings').send({ language: 'fr' });
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_FAILED');
@@ -161,13 +157,11 @@ describe('Phase 9.2: Settings, Preferences & Secure Account Deletion HTTP API', 
     // Scenario 4: PATCH /profile/settings with privacy fields persists correctly
     it('Scenario 4: PATCH /api/v1/profile/settings updates privacy fields correctly', async () => {
       const { app, profileUseCases } = createTestApp();
-      const res = await request(app)
-        .patch('/api/v1/profile/settings')
-        .send({
-          privacyAnalytics: false,
-          privacyPhotoRetention: false,
-          privacyCoachSharing: true,
-        });
+      const res = await request(app).patch('/api/v1/profile/settings').send({
+        privacyAnalytics: false,
+        privacyPhotoRetention: false,
+        privacyCoachSharing: true,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -220,13 +214,11 @@ describe('Phase 9.2: Settings, Preferences & Secure Account Deletion HTTP API', 
     // Scenario 7: Backward compatibility - existing fields work without new fields
     it('Scenario 7: PATCH /api/v1/profile/settings preserves backward compatibility for existing fields', async () => {
       const { app, profileUseCases } = createTestApp();
-      const res = await request(app)
-        .patch('/api/v1/profile/settings')
-        .send({
-          themeMode: 'dark',
-          unitSystem: 'imperial',
-          healthConnectEnabled: true,
-        });
+      const res = await request(app).patch('/api/v1/profile/settings').send({
+        themeMode: 'dark',
+        unitSystem: 'imperial',
+        healthConnectEnabled: true,
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -257,9 +249,7 @@ describe('Phase 9.2: Settings, Preferences & Secure Account Deletion HTTP API', 
     // Scenario 8: DELETE /users/me — unauthenticated -> 401
     it('Scenario 8: DELETE /api/v1/users/me rejects unauthenticated request with 401', async () => {
       const { app } = createTestApp({ authenticated: false });
-      const res = await request(app)
-        .delete('/api/v1/users/me')
-        .send({ password: 'correct-password' });
+      const res = await request(app).delete('/api/v1/users/me').send({ password: 'correct-password' });
 
       expect(res.status).toBe(401);
       expect(res.body.error.code).toBe('UNAUTHENTICATED');
@@ -268,9 +258,7 @@ describe('Phase 9.2: Settings, Preferences & Secure Account Deletion HTTP API', 
     // Scenario 9: DELETE /users/me — wrong password -> 422 INVALID_CREDENTIALS
     it('Scenario 9: DELETE /api/v1/users/me rejects invalid password with 422 INVALID_CREDENTIALS', async () => {
       const { app } = createTestApp();
-      const res = await request(app)
-        .delete('/api/v1/users/me')
-        .send({ password: 'wrong-password' });
+      const res = await request(app).delete('/api/v1/users/me').send({ password: 'wrong-password' });
 
       expect(res.status).toBe(422);
       expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
@@ -280,26 +268,21 @@ describe('Phase 9.2: Settings, Preferences & Secure Account Deletion HTTP API', 
     // Scenario 10: DELETE /users/me — correct password -> 200 + { deletedUserId }
     it('Scenario 10: DELETE /api/v1/users/me deletes account with 200 and returns deletedUserId', async () => {
       const { app, usersUseCases } = createTestApp();
-      const res = await request(app)
-        .delete('/api/v1/users/me')
-        .send({ password: 'correct-password' });
+      const res = await request(app).delete('/api/v1/users/me').send({ password: 'correct-password' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toEqual({ deletedUserId: userId });
       expect(res.body.message).toBe('Account and all associated personal data permanently deleted.');
-      expect(usersUseCases.deleteAccount.execute).toHaveBeenCalledWith(
-        expect.objectContaining({ userId }),
-        { password: 'correct-password' },
-      );
+      expect(usersUseCases.deleteAccount.execute).toHaveBeenCalledWith(expect.objectContaining({ userId }), {
+        password: 'correct-password',
+      });
     });
 
     // Scenario 11: DELETE /users/me — cannot delete another user's account
     it('Scenario 11: DELETE /api/v1/users/me uses JWT actor context exclusively', async () => {
       const { app, usersUseCases } = createTestApp({ actorUserId: otherUserId });
-      const res = await request(app)
-        .delete('/api/v1/users/me')
-        .send({ password: 'correct-password' });
+      const res = await request(app).delete('/api/v1/users/me').send({ password: 'correct-password' });
 
       expect(res.status).toBe(200);
       expect(res.body.data.deletedUserId).toBe(otherUserId);
@@ -314,16 +297,14 @@ describe('Phase 9.2: Settings, Preferences & Secure Account Deletion HTTP API', 
       const { app } = createTestApp({
         usersOverrides: {
           deleteAccount: {
-            execute: vi.fn().mockRejectedValue(
-              new AppError('not_found', 'USER_NOT_FOUND', 'User account not found.'),
-            ),
+            execute: vi
+              .fn()
+              .mockRejectedValue(new AppError('not_found', 'USER_NOT_FOUND', 'User account not found.')),
           } as any,
         },
       });
 
-      const res = await request(app)
-        .delete('/api/v1/users/me')
-        .send({ password: 'correct-password' });
+      const res = await request(app).delete('/api/v1/users/me').send({ password: 'correct-password' });
 
       expect(res.status).toBe(404);
       expect(res.body.error.code).toBe('USER_NOT_FOUND');

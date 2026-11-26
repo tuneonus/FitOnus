@@ -35,12 +35,14 @@ from onusfit_ai.shared.llm.ports import LlmResult, LlmUsage, TextGenerator
 
 class MockLlm(TextGenerator):
     def __init__(self, reply_text: str | None = None) -> None:
-        self.reply_text = reply_text or json.dumps({
-            "text": "Great job on completing your 3 workouts and hitting 2000 calories!",
-            "follow_ups": ["How can I build more strength?", "Show next workout"],
-            "sources": ["Workouts", "Nutrition"],
-            "medical_note": False,
-        })
+        self.reply_text = reply_text or json.dumps(
+            {
+                "text": "Great job on completing your 3 workouts and hitting 2000 calories!",
+                "follow_ups": ["How can I build more strength?", "Show next workout"],
+                "sources": ["Workouts", "Nutrition"],
+                "medical_note": False,
+            }
+        )
         self.last_prompt = ""
         self.call_count = 0
 
@@ -128,7 +130,12 @@ async def test_workflow_multitool_progress_analysis() -> None:
         if name == "get_recent_workouts":
             return {
                 "workouts": [
-                    {"name": "Upper Body", "durationMinutes": 45, "volumeKg": 3200, "caloriesBurned": 350}
+                    {
+                        "name": "Upper Body",
+                        "durationMinutes": 45,
+                        "volumeKg": 3200,
+                        "caloriesBurned": 350,
+                    }
                 ]
             }
         elif name == "get_nutrition_summary":
@@ -177,7 +184,12 @@ async def test_workflow_adaptive_replanning_on_empty_data() -> None:
                 # Expanded window returns earlier activity
                 return {
                     "workouts": [
-                        {"name": "Leg Day", "durationMinutes": 50, "volumeKg": 4000, "caloriesBurned": 420}
+                        {
+                            "name": "Leg Day",
+                            "durationMinutes": 50,
+                            "volumeKg": 4000,
+                            "caloriesBurned": 420,
+                        }
                     ]
                 }
         return {}

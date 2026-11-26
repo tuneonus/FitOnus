@@ -151,12 +151,16 @@ def create_fitonus_tool_registry(
     registry = McpToolRegistry()
 
     # --- Tool 1: get_fitness_profile ---
-    async def _handle_get_fitness_profile(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_get_fitness_profile(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         client = tools_client_getter() if tools_client_getter else None
         if client:
             return cast(
                 dict[str, Any],
-                await client.execute_tool(TOOL_GET_FITNESS_PROFILE, args, user_id=user_id, request_id=request_id),
+                await client.execute_tool(
+                    TOOL_GET_FITNESS_PROFILE, args, user_id=user_id, request_id=request_id
+                ),
             )
         return {
             "profile": {
@@ -181,12 +185,16 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 2: get_recent_workouts ---
-    async def _handle_get_recent_workouts(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_get_recent_workouts(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         client = tools_client_getter() if tools_client_getter else None
         if client:
             return cast(
                 dict[str, Any],
-                await client.execute_tool(TOOL_GET_RECENT_WORKOUTS, args, user_id=user_id, request_id=request_id),
+                await client.execute_tool(
+                    TOOL_GET_RECENT_WORKOUTS, args, user_id=user_id, request_id=request_id
+                ),
             )
         return {"sessions": [], "recentPersonalRecords": [], "totalSessions": 0}
 
@@ -202,12 +210,16 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 3: search_exercises ---
-    async def _handle_search_exercises(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_search_exercises(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         client = tools_client_getter() if tools_client_getter else None
         if client:
             return cast(
                 dict[str, Any],
-                await client.execute_tool(TOOL_SEARCH_EXERCISES, args, user_id=user_id, request_id=request_id),
+                await client.execute_tool(
+                    TOOL_SEARCH_EXERCISES, args, user_id=user_id, request_id=request_id
+                ),
             )
         if catalog_index:
             query = args.get("query", "")
@@ -234,12 +246,16 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 4: get_exercise_details ---
-    async def _handle_get_exercise_details(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_get_exercise_details(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         client = tools_client_getter() if tools_client_getter else None
         if client:
             return cast(
                 dict[str, Any],
-                await client.execute_tool(TOOL_GET_EXERCISE_DETAILS, args, user_id=user_id, request_id=request_id),
+                await client.execute_tool(
+                    TOOL_GET_EXERCISE_DETAILS, args, user_id=user_id, request_id=request_id
+                ),
             )
         return {"exercise": None, "message": "Exercise details unavailable offline"}
 
@@ -255,23 +271,42 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 5: preview_workout_plan ---
-    async def _handle_preview_workout_plan(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_preview_workout_plan(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         primary_goal = args.get("primary_goal", "general_fitness")
         days = args.get("days_per_week", 3)
         duration = args.get("duration_minutes", 60)
         sessions = []
         days_names = ["Monday", "Wednesday", "Friday", "Sunday"][:days]
         for idx, d_name in enumerate(days_names):
-            sessions.append({
-                "day_name": d_name,
-                "focus": f"Day {idx + 1} - {primary_goal.capitalize()} Session",
-                "estimated_duration_min": duration,
-                "exercises": [
-                    {"name": "Barbell Squat", "sets": 3, "target_reps": "8-10", "rest_seconds": 90},
-                    {"name": "Bench Press", "sets": 3, "target_reps": "8-10", "rest_seconds": 90},
-                    {"name": "Bent-Over Row", "sets": 3, "target_reps": "10-12", "rest_seconds": 60},
-                ],
-            })
+            sessions.append(
+                {
+                    "day_name": d_name,
+                    "focus": f"Day {idx + 1} - {primary_goal.capitalize()} Session",
+                    "estimated_duration_min": duration,
+                    "exercises": [
+                        {
+                            "name": "Barbell Squat",
+                            "sets": 3,
+                            "target_reps": "8-10",
+                            "rest_seconds": 90,
+                        },
+                        {
+                            "name": "Bench Press",
+                            "sets": 3,
+                            "target_reps": "8-10",
+                            "rest_seconds": 90,
+                        },
+                        {
+                            "name": "Bent-Over Row",
+                            "sets": 3,
+                            "target_reps": "10-12",
+                            "rest_seconds": 60,
+                        },
+                    ],
+                }
+            )
         return {
             "plan": {
                 "name": f"Grounded {primary_goal.capitalize()} {days}-Day Split",
@@ -295,7 +330,9 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 5b: preview_workout_adaptation ---
-    async def _handle_preview_workout_adaptation(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_preview_workout_adaptation(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         existing_plan = args.get("current_plan") or args.get("existing_plan") or {}
         reason = args.get("feedback") or args.get("reason") or "fatigue"
         deload = args.get("deload", False)
@@ -337,7 +374,9 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 6: validate_workout_plan ---
-    async def _handle_validate_workout_plan(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_validate_workout_plan(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         plan = args.get("plan", {})
         sessions = plan.get("sessions", [])
         violations: list[str] = []
@@ -348,8 +387,10 @@ def create_fitonus_tool_registry(
             exercises = session.get("exercises", [])
             total_exercises += len(exercises)
             if len(exercises) > 8:
-                violations.append(f"Session {s_idx + 1} ({session.get('day_name', 'Unknown')}) exceeds maximum of 8 exercises.")
-            
+                violations.append(
+                    f"Session {s_idx + 1} ({session.get('day_name', 'Unknown')}) exceeds maximum of 8 exercises."
+                )
+
             # Check duplicate exercises in same session
             names = [e.get("name", "").strip().lower() for e in exercises if e.get("name")]
             if len(names) != len(set(names)):
@@ -376,7 +417,9 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 7: persist_workout_plan (WRITE TOOL - requires confirmation) ---
-    async def _handle_persist_workout_plan(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_persist_workout_plan(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         confirmed = args.get("confirmed", False)
         plan = args.get("plan", {})
         name = args.get("name", "Custom AI Plan")
@@ -413,14 +456,21 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 8: get_nutrition_summary ---
-    async def _handle_get_nutrition_summary(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_get_nutrition_summary(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         client = tools_client_getter() if tools_client_getter else None
         if client:
             return cast(
                 dict[str, Any],
-                await client.execute_tool(TOOL_GET_NUTRITION_SUMMARY, args, user_id=user_id, request_id=request_id),
+                await client.execute_tool(
+                    TOOL_GET_NUTRITION_SUMMARY, args, user_id=user_id, request_id=request_id
+                ),
             )
-        return {"days": [], "dailyTarget": {"calories": 2200, "proteinG": 140, "carbsG": 240, "fatG": 70}}
+        return {
+            "days": [],
+            "dailyTarget": {"calories": 2200, "proteinG": 140, "carbsG": 240, "fatG": 70},
+        }
 
     registry.register_tool(
         McpToolDefinition(
@@ -434,7 +484,9 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 9: preview_nutrition_plan ---
-    async def _handle_preview_nutrition_plan(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_preview_nutrition_plan(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         goal = args.get("goal", "maintenance")
         weight_kg = args.get("weight_kg", 75.0) or 75.0
         custom_calories = args.get("target_calories")
@@ -480,14 +532,21 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 10: get_weight_trend ---
-    async def _handle_get_weight_trend(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_get_weight_trend(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         client = tools_client_getter() if tools_client_getter else None
         if client:
             return cast(
                 dict[str, Any],
-                await client.execute_tool(TOOL_GET_WEIGHT_TREND, args, user_id=user_id, request_id=request_id),
+                await client.execute_tool(
+                    TOOL_GET_WEIGHT_TREND, args, user_id=user_id, request_id=request_id
+                ),
             )
-        return {"logs": [], "summary": {"startingWeight": 75.0, "currentWeight": 75.0, "totalChange": 0.0}}
+        return {
+            "logs": [],
+            "summary": {"startingWeight": 75.0, "currentWeight": 75.0, "totalChange": 0.0},
+        }
 
     registry.register_tool(
         McpToolDefinition(
@@ -501,12 +560,16 @@ def create_fitonus_tool_registry(
     )
 
     # --- Tool 11 (bonus): retrieve_fitness_knowledge ---
-    async def _handle_retrieve_knowledge(args: dict[str, Any], user_id: str, request_id: str) -> dict[str, Any]:
+    async def _handle_retrieve_knowledge(
+        args: dict[str, Any], user_id: str, request_id: str
+    ) -> dict[str, Any]:
         client = tools_client_getter() if tools_client_getter else None
         if client:
             return cast(
                 dict[str, Any],
-                await client.execute_tool(TOOL_RETRIEVE_FITNESS_KNOWLEDGE, args, user_id=user_id, request_id=request_id),
+                await client.execute_tool(
+                    TOOL_RETRIEVE_FITNESS_KNOWLEDGE, args, user_id=user_id, request_id=request_id
+                ),
             )
         return {"chunks": []}
 
@@ -529,8 +592,22 @@ def create_fitonus_tool_registry(
         summary = {
             "total_verified_exercises": len(all_ex) if all_ex else 45,
             "categories": ["strength", "hypertrophy", "cardio", "mobility"],
-            "supported_equipment": ["barbell", "dumbbell", "cable", "machine", "bodyweight", "resistance_band"],
-            "compound_exercises": ["Barbell Squat", "Deadlift", "Bench Press", "Overhead Press", "Pull-Up", "Barbell Row"],
+            "supported_equipment": [
+                "barbell",
+                "dumbbell",
+                "cable",
+                "machine",
+                "bodyweight",
+                "resistance_band",
+            ],
+            "compound_exercises": [
+                "Barbell Squat",
+                "Deadlift",
+                "Bench Press",
+                "Overhead Press",
+                "Pull-Up",
+                "Barbell Row",
+            ],
         }
         return json.dumps(summary, indent=2)
 
@@ -590,7 +667,9 @@ def create_fitonus_tool_registry(
     # =========================================================================
     # Prompts Registration
     # =========================================================================
-    def _prompt_progress_analysis(athlete_goal: str = "general_fitness", time_window_days: int = 7) -> str:
+    def _prompt_progress_analysis(
+        athlete_goal: str = "general_fitness", time_window_days: int = 7
+    ) -> str:
         return (
             f"You are the FitOnus Senior AI Coach analyzing progress for an athlete with primary goal '{athlete_goal}'.\n"
             f"Time window: Past {time_window_days} days.\n"
@@ -606,8 +685,16 @@ def create_fitonus_tool_registry(
             name="fitness_progress_analysis",
             description="Template for synthesizing overall fitness progression from workouts, nutrition, and weight trends.",
             arguments=[
-                McpPromptArgument(name="athlete_goal", description="Athlete's primary fitness goal", required=False),
-                McpPromptArgument(name="time_window_days", description="Number of past days to inspect", required=False),
+                McpPromptArgument(
+                    name="athlete_goal",
+                    description="Athlete's primary fitness goal",
+                    required=False,
+                ),
+                McpPromptArgument(
+                    name="time_window_days",
+                    description="Number of past days to inspect",
+                    required=False,
+                ),
             ],
         ),
         _prompt_progress_analysis,
@@ -628,14 +715,22 @@ def create_fitonus_tool_registry(
             name="workout_planning",
             description="Template for structuring a balanced weekly workout split.",
             arguments=[
-                McpPromptArgument(name="target_goal", description="Target fitness goal", required=False),
-                McpPromptArgument(name="training_days", description="Weekly training frequency (2-6)", required=False),
+                McpPromptArgument(
+                    name="target_goal", description="Target fitness goal", required=False
+                ),
+                McpPromptArgument(
+                    name="training_days",
+                    description="Weekly training frequency (2-6)",
+                    required=False,
+                ),
             ],
         ),
         _prompt_workout_planning,
     )
 
-    def _prompt_nutrition_guidance(athlete_goal: str = "fat_loss", dietary_preferences: str = "none") -> str:
+    def _prompt_nutrition_guidance(
+        athlete_goal: str = "fat_loss", dietary_preferences: str = "none"
+    ) -> str:
         return (
             f"You are the FitOnus Sports Nutritionist advising an athlete on '{athlete_goal}'.\n"
             f"Dietary preferences: {dietary_preferences}.\n"
@@ -651,8 +746,16 @@ def create_fitonus_tool_registry(
             name="nutrition_guidance",
             description="Template for synthesizing nutritional advice and calculating macronutrient targets.",
             arguments=[
-                McpPromptArgument(name="athlete_goal", description="Athlete's primary nutrition goal", required=False),
-                McpPromptArgument(name="dietary_preferences", description="Dietary restrictions or preferences", required=False),
+                McpPromptArgument(
+                    name="athlete_goal",
+                    description="Athlete's primary nutrition goal",
+                    required=False,
+                ),
+                McpPromptArgument(
+                    name="dietary_preferences",
+                    description="Dietary restrictions or preferences",
+                    required=False,
+                ),
             ],
         ),
         _prompt_nutrition_guidance,

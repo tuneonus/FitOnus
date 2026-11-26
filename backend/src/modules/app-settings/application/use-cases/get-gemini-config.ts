@@ -25,8 +25,8 @@ export class GetGeminiConfigUseCase {
     const effectiveKeyMask = hasDbKey
       ? config.keyMask!
       : hasEnvKey
-      ? `${maskApiKey(this.deps.fallbackApiKey)} (from ENV)`
-      : 'Not Configured';
+        ? `${maskApiKey(this.deps.fallbackApiKey)} (from ENV)`
+        : 'Not Configured';
 
     const defaultModel = config.defaultModel || this.deps.fallbackModel || 'gemini-3.5-flash-lite';
     const fallbackModel = config.fallbackModel || 'gemini-3.1-flash-lite';

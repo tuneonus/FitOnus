@@ -62,6 +62,7 @@ async def coach_chat(
     multi_agent_on = is_multi_agent_enabled()
 
     if is_coach_chat_tools_enabled() or is_mcp_enabled() or multi_agent_on:
+
         async def _native_tool_handler(name: str, args: dict[str, Any]) -> dict[str, Any]:
             return await tools_client.execute_tool(
                 name=name,

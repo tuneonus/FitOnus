@@ -10,8 +10,7 @@ export function createDashboardRoutes(basePath: string, controller: DashboardCon
         method: 'get',
         path: '/summary',
         summary: 'Get consolidated user daily home dashboard summary',
-        description:
-          'Aggregates real workout, nutrition, water, weight, and activity metrics for today.',
+        description: 'Aggregates real workout, nutrition, water, weight, and activity metrics for today.',
         tags: ['Dashboard'],
         access: { kind: 'authenticated' },
         request: getDashboardSummaryRequest,

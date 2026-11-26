@@ -36,18 +36,9 @@ import {
   waterIntakeViewSchema,
   waterTargetViewSchema,
 } from './nutrition.schemas.js';
-import {
-  analyzeMealPhotoRequest,
-  mealPhotoResponseSchema,
-} from './meal-photo.schemas.js';
-import {
-  analyzeMultimodalMealRequest,
-  multimodalMealResponseSchema,
-} from './multimodal-meal.schemas.js';
-import {
-  parseVoiceMealRequest,
-  voiceMealResponseSchema,
-} from './voice-meal.schemas.js';
+import { analyzeMealPhotoRequest, mealPhotoResponseSchema } from './meal-photo.schemas.js';
+import { analyzeMultimodalMealRequest, multimodalMealResponseSchema } from './multimodal-meal.schemas.js';
+import { parseVoiceMealRequest, voiceMealResponseSchema } from './voice-meal.schemas.js';
 
 const tags = ['Nutrition'];
 
@@ -318,7 +309,7 @@ export function createNutritionMemberRoutes(
         path: '/water-target',
         summary: 'Set or clear the daily water target',
         description:
-          'Saves the member\'s own daily water target in ml (500-8000). null clears it, so the 35 ml/kg estimate from ' +
+          "Saves the member's own daily water target in ml (500-8000). null clears it, so the 35 ml/kg estimate from " +
           'their weight applies again. Replies with the target now in effect.',
         tags,
         access: { kind: 'authenticated' },

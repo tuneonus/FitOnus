@@ -26,7 +26,10 @@ export const analyzeMultimodalMealRequest = {
   body: z
     .object({
       image: z.string().min(1).optional(),
-      imageMimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/heic']).default('image/jpeg').optional(),
+      imageMimeType: z
+        .enum(['image/jpeg', 'image/png', 'image/webp', 'image/heic'])
+        .default('image/jpeg')
+        .optional(),
       audio: z.string().min(1).optional(),
       audioMimeType: z.string().max(100).optional(),
       transcript: z.string().max(AI_ESTIMATE_LIMITS.transcriptLength).optional(),
@@ -41,8 +44,8 @@ export const analyzeMultimodalMealRequest = {
       (data) =>
         Boolean(
           (data.image && data.image.trim()) ||
-            (data.audio && data.audio.trim()) ||
-            (data.transcript && data.transcript.trim()),
+          (data.audio && data.audio.trim()) ||
+          (data.transcript && data.transcript.trim()),
         ),
       {
         message: 'At least one of image, audio, or transcript must be provided.',

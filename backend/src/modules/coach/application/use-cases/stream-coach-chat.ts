@@ -88,16 +88,9 @@ export class StreamCoachChatUseCase {
     });
   }
 
-  async execute(
-    input: StreamCoachChatInput,
-    callbacks: StreamCoachChatCallbacks,
-  ): Promise<void> {
+  async execute(input: StreamCoachChatInput, callbacks: StreamCoachChatCallbacks): Promise<void> {
     if (!this.deps.streamingEnabled) {
-      throw new AppError(
-        'unprocessable',
-        'FEATURE_DISABLED',
-        'Streaming AI Coach is currently disabled.',
-      );
+      throw new AppError('unprocessable', 'FEATURE_DISABLED', 'Streaming AI Coach is currently disabled.');
     }
 
     const trimmedMessage = input.message.trim();
@@ -146,7 +139,14 @@ export class StreamCoachChatUseCase {
 
     try {
       await this.deps.aiUsageGate.run({ userId, action: 'coach_chat' }, () =>
-        this.streamInsideGate(userId, trimmedMessage, input, callbacks, idemKey ? `${userId}:idem:${idemKey}` : null, digest),
+        this.streamInsideGate(
+          userId,
+          trimmedMessage,
+          input,
+          callbacks,
+          idemKey ? `${userId}:idem:${idemKey}` : null,
+          digest,
+        ),
       );
     } finally {
       if (dedupKey) {
@@ -267,9 +267,7 @@ export class StreamCoachChatUseCase {
           }
 
           if (event.type === 'complete') {
-            const safeText = redactUnsafeStreamText(
-              event.response.text || accumulatedText,
-            );
+            const safeText = redactUnsafeStreamText(event.response.text || accumulatedText);
             const enrichedResponse: CoachResponse & { conversationId?: string } = {
               ...event.response,
               text: safeText,
@@ -365,7 +363,7 @@ export class StreamCoachChatUseCase {
       if (!streamStarted) {
         const errorCode =
           err instanceof PythonAiError
-            ? err.info.code ?? err.kind
+            ? (err.info.code ?? err.kind)
             : isAppError(err)
               ? err.code
               : 'INTERNAL_ERROR';
@@ -376,28 +374,22 @@ export class StreamCoachChatUseCase {
           errorCode,
         );
         if (err instanceof PythonAiError) {
-          throw toPublicAiError(
-            err,
-            'The AI Coach is temporarily unavailable. Please try again shortly.',
-          );
+          throw toPublicAiError(err, 'The AI Coach is temporarily unavailable. Please try again shortly.');
         }
         throw err;
       }
       const rawCode =
         err instanceof PythonAiError
-          ? err.info.code ?? err.kind
+          ? (err.info.code ?? err.kind)
           : isAppError(err)
             ? err.code
             : err instanceof Error
               ? err.name
               : 'INTERNAL_ERROR';
-      const mappedCode =
-        rawCode === 'Error' || rawCode === 'PythonAiError' ? 'AI_UNAVAILABLE' : rawCode;
+      const mappedCode = rawCode === 'Error' || rawCode === 'PythonAiError' ? 'AI_UNAVAILABLE' : rawCode;
       const safeErr = sanitizeStreamError(mappedCode);
       tracker.finish(
-        safeErr.code === 'PROVIDER_TIMEOUT' || safeErr.code === 'DEADLINE_EXCEEDED'
-          ? 'timeout'
-          : 'error',
+        safeErr.code === 'PROVIDER_TIMEOUT' || safeErr.code === 'DEADLINE_EXCEEDED' ? 'timeout' : 'error',
         safeErr.code,
       );
       await callbacks.onEvent({

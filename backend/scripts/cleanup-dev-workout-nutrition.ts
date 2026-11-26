@@ -18,11 +18,15 @@ if (dbUrl.includes('ep-gentle-bar-b3ywek03') || dbUrl.includes('br-icy-term-b3lb
 }
 
 if (!dbUrl.includes('ep-shy-art-b3sxwfkd') && !dbUrl.includes('b35lwkjg')) {
-  console.error('CRITICAL ERROR: Connection string is NOT the approved DEV endpoint (ep-shy-art-b3sxwfkd)! Aborting.');
+  console.error(
+    'CRITICAL ERROR: Connection string is NOT the approved DEV endpoint (ep-shy-art-b3sxwfkd)! Aborting.',
+  );
   process.exit(1);
 }
 
-console.log('✓ Safety Guard Passed: Confirmed DEV endpoint (ep-shy-art-b3sxwfkd, branch br-fragrant-morning-b35lwkjg)');
+console.log(
+  '✓ Safety Guard Passed: Confirmed DEV endpoint (ep-shy-art-b3sxwfkd, branch br-fragrant-morning-b35lwkjg)',
+);
 
 // 2. VERIFY BACKUP AVAILABILITY
 const backupDir = path.resolve(process.cwd(), 'backups/dev-reset-backup-20261114');
@@ -49,12 +53,15 @@ async function main() {
 
     // Pre-cleanup counts
     const preWorkouts = (await client.query('SELECT count(*)::int as c FROM public.workouts')).rows[0].c;
-    const preWorkoutExercises = (await client.query('SELECT count(*)::int as c FROM public.workout_exercises')).rows[0].c;
+    const preWorkoutExercises = (
+      await client.query('SELECT count(*)::int as c FROM public.workout_exercises')
+    ).rows[0].c;
     const preExercises = (await client.query('SELECT count(*)::int as c FROM public.exercises')).rows[0].c;
     const preFoods = (await client.query('SELECT count(*)::int as c FROM public.foods')).rows[0].c;
     const preMeals = (await client.query('SELECT count(*)::int as c FROM public.meals')).rows[0].c;
     const preMealItems = (await client.query('SELECT count(*)::int as c FROM public.meal_items')).rows[0].c;
-    const preFavorites = (await client.query('SELECT count(*)::int as c FROM public.food_favorites')).rows[0].c;
+    const preFavorites = (await client.query('SELECT count(*)::int as c FROM public.food_favorites')).rows[0]
+      .c;
 
     console.log('\n--- PRE-CLEANUP TARGET ROW COUNTS ---');
     console.log({
@@ -98,15 +105,19 @@ async function main() {
     // 6. Post-cleanup assertions INSIDE transaction
     console.log('\nAsserting post-cleanup target states inside transaction...');
     const postWorkouts = (await client.query('SELECT count(*)::int as c FROM public.workouts')).rows[0].c;
-    const postWorkoutExercises = (await client.query('SELECT count(*)::int as c FROM public.workout_exercises')).rows[0].c;
+    const postWorkoutExercises = (
+      await client.query('SELECT count(*)::int as c FROM public.workout_exercises')
+    ).rows[0].c;
     const postExercises = (await client.query('SELECT count(*)::int as c FROM public.exercises')).rows[0].c;
     const postFoods = (await client.query('SELECT count(*)::int as c FROM public.foods')).rows[0].c;
     const postMeals = (await client.query('SELECT count(*)::int as c FROM public.meals')).rows[0].c;
     const postMealItems = (await client.query('SELECT count(*)::int as c FROM public.meal_items')).rows[0].c;
-    const postFavorites = (await client.query('SELECT count(*)::int as c FROM public.food_favorites')).rows[0].c;
+    const postFavorites = (await client.query('SELECT count(*)::int as c FROM public.food_favorites')).rows[0]
+      .c;
 
     if (postWorkouts !== 0) throw new Error(`workouts is ${postWorkouts}, expected 0`);
-    if (postWorkoutExercises !== 0) throw new Error(`workout_exercises is ${postWorkoutExercises}, expected 0`);
+    if (postWorkoutExercises !== 0)
+      throw new Error(`workout_exercises is ${postWorkoutExercises}, expected 0`);
     if (postExercises !== 0) throw new Error(`exercises is ${postExercises}, expected 0`);
     if (postFoods !== 0) throw new Error(`foods is ${postFoods}, expected 0`);
     if (postMeals !== 0) throw new Error(`meals is ${postMeals}, expected 0`);
@@ -114,12 +125,20 @@ async function main() {
     if (postFavorites !== 0) throw new Error(`food_favorites is ${postFavorites}, expected 0`);
 
     // Verify preserved system invariants
-    const adminCheck = (await client.query("SELECT count(*)::int as c FROM public.users WHERE role = 'admin' AND email = 'admin@fitonus.com'")).rows[0].c;
-    const geminiConfigCheck = (await client.query("SELECT count(*)::int as c FROM public.gemini_config")).rows[0].c;
-    const appSettingsCheck = (await client.query("SELECT count(*)::int as c FROM public.app_settings")).rows[0].c;
-    const geminiPricingCheck = (await client.query("SELECT count(*)::int as c FROM public.gemini_pricing")).rows[0].c;
-    const migrationsCheck = (await client.query("SELECT count(*)::int as c FROM public.schema_migrations")).rows[0].c;
-    const badgesCheck = (await client.query("SELECT count(*)::int as c FROM public.badges")).rows[0].c;
+    const adminCheck = (
+      await client.query(
+        "SELECT count(*)::int as c FROM public.users WHERE role = 'admin' AND email = 'admin@fitonus.com'",
+      )
+    ).rows[0].c;
+    const geminiConfigCheck = (await client.query('SELECT count(*)::int as c FROM public.gemini_config'))
+      .rows[0].c;
+    const appSettingsCheck = (await client.query('SELECT count(*)::int as c FROM public.app_settings'))
+      .rows[0].c;
+    const geminiPricingCheck = (await client.query('SELECT count(*)::int as c FROM public.gemini_pricing'))
+      .rows[0].c;
+    const migrationsCheck = (await client.query('SELECT count(*)::int as c FROM public.schema_migrations'))
+      .rows[0].c;
+    const badgesCheck = (await client.query('SELECT count(*)::int as c FROM public.badges')).rows[0].c;
 
     if (adminCheck !== 1) throw new Error(`admin user check failed (${adminCheck})`);
     if (geminiConfigCheck !== 1) throw new Error(`gemini_config check failed (${geminiConfigCheck})`);
@@ -146,7 +165,6 @@ async function main() {
     console.log(`  - gemini_pricing: ${geminiPricingCheck} model pricing tiers intact`);
     console.log(`  - badges: ${badgesCheck} badges intact`);
     console.log(`  - schema_migrations: ${migrationsCheck} migrations intact`);
-
   } catch (err) {
     await client.query('ROLLBACK;');
     console.error('CRITICAL: Cleanup failed and rolled back:', err);
@@ -157,7 +175,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

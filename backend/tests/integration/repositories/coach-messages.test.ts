@@ -5,10 +5,7 @@ import {
   CheckAndRecordAiQuotaUseCase,
   PgAppSettingsRepository,
 } from '../../../src/modules/app-settings/index.js';
-import type {
-  GeminiService,
-  UserContextRepository,
-} from '../../../src/modules/coach/application/ports.js';
+import type { GeminiService, UserContextRepository } from '../../../src/modules/coach/application/ports.js';
 import { ChatWithCoachUseCase } from '../../../src/modules/coach/application/use-cases/chat-with-coach.js';
 import type { UserFitnessContext } from '../../../src/modules/coach/domain/coach.types.js';
 import { PgConversationRepository } from '../../../src/modules/coach/infrastructure/pg-conversation-repository.js';
@@ -63,8 +60,9 @@ describe('Coach message ownership against real PostgreSQL', () => {
   const count = async () =>
     Number((await db.pool.query<{ n: string }>('SELECT count(*) AS n FROM coach_messages')).rows[0]!.n);
   const convoUpdatedAt = async (id: string) =>
-    (await db.pool.query<{ u: Date }>('SELECT updated_at AS u FROM coach_conversations WHERE id = $1', [id]))
-      .rows[0]!.u.getTime();
+    (
+      await db.pool.query<{ u: Date }>('SELECT updated_at AS u FROM coach_conversations WHERE id = $1', [id])
+    ).rows[0]!.u.getTime();
 
   beforeAll(async () => {
     db = await createTestDatabase();
@@ -87,7 +85,12 @@ describe('Coach message ownership against real PostgreSQL', () => {
 
       const rows = await rowsById(SHARED_ID);
       expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatchObject({ user_id: userA, conversation_id: convoA, role: 'user', text: A_SECRET });
+      expect(rows[0]).toMatchObject({
+        user_id: userA,
+        conversation_id: convoA,
+        role: 'user',
+        text: A_SECRET,
+      });
     });
 
     it('user A retrying the same message is idempotent: one row, same content, no error', async () => {
@@ -181,7 +184,11 @@ describe('Coach message ownership against real PostgreSQL', () => {
     });
 
     it('a user message cannot overwrite a stored assistant answer by reusing its ID', async () => {
-      await repo.addMessage(userA, convoA, message({ id: 'msg-assistant-1', role: 'assistant', text: 'AI answer' }));
+      await repo.addMessage(
+        userA,
+        convoA,
+        message({ id: 'msg-assistant-1', role: 'assistant', text: 'AI answer' }),
+      );
 
       await expect(
         repo.addMessage(userA, convoA, message({ id: 'msg-assistant-1', role: 'user', text: 'forged' })),
@@ -201,7 +208,11 @@ describe('Coach message ownership against real PostgreSQL', () => {
       for (let round = 0; round < 25; round += 1) {
         const id = `msg-race-${round}`;
         const results = await Promise.allSettled([
-          repo.addMessage(userA, convoA, message({ id, text: `A-${round}`, sources: ['A'], followUps: ['A'] })),
+          repo.addMessage(
+            userA,
+            convoA,
+            message({ id, text: `A-${round}`, sources: ['A'], followUps: ['A'] }),
+          ),
           repo.addMessage(
             userB,
             convoB,
@@ -309,7 +320,9 @@ describe('Coach message ownership against real PostgreSQL', () => {
       );
     const messagesOf = async (userId: string) =>
       (
-        await db.pool.query<Row>('SELECT * FROM coach_messages WHERE user_id = $1 ORDER BY created_at', [userId])
+        await db.pool.query<Row>('SELECT * FROM coach_messages WHERE user_id = $1 ORDER BY created_at', [
+          userId,
+        ])
       ).rows;
 
     beforeAll(async () => {
@@ -379,7 +392,10 @@ describe('Coach message ownership against real PostgreSQL', () => {
         B_ATTACK,
         `reply to: ${B_ATTACK}`,
       ]);
-      expect((await repo.getMessages(userA, a.conversationId!))[0]).toMatchObject({ id: SHARED_ID, text: A_SECRET });
+      expect((await repo.getMessages(userA, a.conversationId!))[0]).toMatchObject({
+        id: SHARED_ID,
+        text: A_SECRET,
+      });
     });
 
     it('a colliding ID is charged exactly one quota unit and calls the provider exactly once', async () => {
@@ -428,7 +444,9 @@ describe('Coach message ownership against real PostgreSQL', () => {
           const history = await repo.getMessages(userId, result.conversationId!);
           expect(history.map((m) => m.role)).toEqual(['user', 'assistant']);
         }
-        const ids = (await db.pool.query<{ id: string }>('SELECT id FROM coach_messages')).rows.map((r) => r.id);
+        const ids = (await db.pool.query<{ id: string }>('SELECT id FROM coach_messages')).rows.map(
+          (r) => r.id,
+        );
         expect(new Set(ids).size).toBe(ids.length);
         expect(ids).toHaveLength(4);
       } finally {

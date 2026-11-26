@@ -194,9 +194,7 @@ class MultiAgentMcpGateway:
         role_allowlist = AGENT_TOOL_ALLOWLISTS.get(agent_role, frozenset())
         return sorted(role_allowlist & self._discovered_tools)
 
-    def _has_capability_for_tool(
-        self, tool_name: str, capabilities: list[AgentCapability]
-    ) -> bool:
+    def _has_capability_for_tool(self, tool_name: str, capabilities: list[AgentCapability]) -> bool:
         cap_set = set(capabilities)
         if tool_name == TOOL_GET_FITNESS_PROFILE:
             return bool(cap_set & _PROFILE_CAPABILITIES)
@@ -254,8 +252,7 @@ class MultiAgentMcpGateway:
         if tool_name not in self._discovered_tools or tool_name not in role_allowlist:
             return {
                 "error": (
-                    f"Authorization denied: agent '{agent_role.value}' "
-                    f"cannot call '{tool_name}'"
+                    f"Authorization denied: agent '{agent_role.value}' cannot call '{tool_name}'"
                 )
             }
         if not self._has_capability_for_tool(tool_name, agent_capabilities):

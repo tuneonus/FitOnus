@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DeleteAccountUseCase } from '../../../src/modules/users/application/use-cases/delete-account.js';
-import {
-  actorFor,
-  FakePasswordHasher,
-  FakeUnitOfWork,
-  InMemoryUserRepository,
-} from '../../helpers/fakes.js';
+import { actorFor, FakePasswordHasher, FakeUnitOfWork, InMemoryUserRepository } from '../../helpers/fakes.js';
 
 describe('DeleteAccountUseCase', () => {
   let users: InMemoryUserRepository;

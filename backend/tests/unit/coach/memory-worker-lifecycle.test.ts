@@ -49,9 +49,9 @@ describe('MemoryExtractionWorker Lifecycle & Background Execution', () => {
       updateConversation: vi.fn(),
       deleteConversation: vi.fn(),
       addMessage: vi.fn(),
-      getMessages: vi.fn().mockResolvedValue([
-        { id: 'msg-1', role: 'user', text: 'I prefer morning workouts.' },
-      ]),
+      getMessages: vi
+        .fn()
+        .mockResolvedValue([{ id: 'msg-1', role: 'user', text: 'I prefer morning workouts.' }]),
       setMessageFeedback: vi.fn(),
     };
 

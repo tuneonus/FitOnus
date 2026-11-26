@@ -54,7 +54,9 @@ def _get_orchestrator() -> AgentToolOrchestrator:
     global _shared_orchestrator, _shared_server_id
     server = get_fitonus_mcp_server()
     if _shared_orchestrator is None or _shared_server_id != id(server):
-        _shared_orchestrator = AgentToolOrchestrator(registry=server.get_registry(), config=server.config)
+        _shared_orchestrator = AgentToolOrchestrator(
+            registry=server.get_registry(), config=server.config
+        )
         _shared_server_id = id(server)
     return _shared_orchestrator
 

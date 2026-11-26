@@ -61,7 +61,9 @@ class McpTelemetry:
         self.cache_hits = 0
         self.fallbacks_triggered = 0
 
-    def record_call(self, tool_name: str, duration_ms: float, success: bool, request_id: str = "") -> None:
+    def record_call(
+        self, tool_name: str, duration_ms: float, success: bool, request_id: str = ""
+    ) -> None:
         self.total_invocations += 1
         self.total_latency_ms += duration_ms
         if success:
@@ -153,20 +155,24 @@ class McpClientAdapter:
         if server and hasattr(server, "get_registry"):
             registry = server.get_registry()
             for t in registry.list_tools(filter_read_only=not self.include_write_tools):
-                tool_dicts.append({
-                    "name": t.name,
-                    "description": t.description,
-                    "input_schema": t.input_schema,
-                })
+                tool_dicts.append(
+                    {
+                        "name": t.name,
+                        "description": t.description,
+                        "input_schema": t.input_schema,
+                    }
+                )
         else:
             for t_name, s_cls in TOOL_ARG_SCHEMAS.items():
                 if not self.include_write_tools and t_name == "persist_workout_plan":
                     continue
-                tool_dicts.append({
-                    "name": t_name,
-                    "description": f"FitOnus tool: {t_name}",
-                    "input_schema": s_cls.model_json_schema(),
-                })
+                tool_dicts.append(
+                    {
+                        "name": t_name,
+                        "description": f"FitOnus tool: {t_name}",
+                        "input_schema": s_cls.model_json_schema(),
+                    }
+                )
 
         self.cache.set_tools(tool_dicts)
         return create_gemini_tools_from_schemas(tool_dicts)
@@ -178,9 +184,7 @@ class McpClientAdapter:
             await self.get_gemini_tools()
             cached = self.cache.get_tools() or []
         return [
-            str(entry["name"])
-            for entry in cached
-            if isinstance(entry, dict) and entry.get("name")
+            str(entry["name"]) for entry in cached if isinstance(entry, dict) and entry.get("name")
         ]
 
     def create_tool_handler(
@@ -189,6 +193,7 @@ class McpClientAdapter:
         request_id: str,
     ) -> Callable[[str, dict[str, Any]], Any]:
         """Create tool execution callback bound to authenticated request context."""
+
         async def _handler(name: str, args: dict[str, Any]) -> dict[str, Any]:
             # Anti-confused deputy guard: never forward caller/LLM-supplied user identifiers
             for forbidden_key in ("userId", "targetUserId", "user_id"):
@@ -211,7 +216,9 @@ class McpClientAdapter:
                         request_id=request_id,
                     )
                     elapsed_ms = (time.perf_counter() - start) * 1000.0
-                    self.telemetry.record_call(name, elapsed_ms, success=not result.is_error, request_id=request_id)
+                    self.telemetry.record_call(
+                        name, elapsed_ms, success=not result.is_error, request_id=request_id
+                    )
                     if not result.is_error:
                         return result.structured_data or {"result": result.content}
                     err_text = result.error_message or "mcp_error"
@@ -219,13 +226,22 @@ class McpClientAdapter:
                     lowered = err_text.lower()
                     if any(
                         token in lowered
-                        for token in ("security", "forbidden", "allowlist", "validation", "approval", "unauthorized")
+                        for token in (
+                            "security",
+                            "forbidden",
+                            "allowlist",
+                            "validation",
+                            "approval",
+                            "unauthorized",
+                        )
                     ):
                         return {"error": err_text}
                     self.telemetry.record_fallback(name, err_text, request_id=request_id)
                 except Exception as exc:
                     elapsed_ms = (time.perf_counter() - start) * 1000.0
-                    self.telemetry.record_call(name, elapsed_ms, success=False, request_id=request_id)
+                    self.telemetry.record_call(
+                        name, elapsed_ms, success=False, request_id=request_id
+                    )
                     self.telemetry.record_fallback(name, str(exc), request_id=request_id)
 
             # Native InternalToolsClient fallback

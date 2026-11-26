@@ -203,9 +203,7 @@ class SupervisorRouter:
                     )
                 )
             mode = (
-                OrchestrationMode.SEQUENTIAL
-                if len(tasks) > 1
-                else OrchestrationMode.SINGLE_AGENT
+                OrchestrationMode.SEQUENTIAL if len(tasks) > 1 else OrchestrationMode.SINGLE_AGENT
             )
             return self._finalize_decision(
                 mode=mode,
@@ -337,11 +335,7 @@ class SupervisorRouter:
                         priority=2,
                     )
                 )
-            mode = (
-                OrchestrationMode.PARALLEL
-                if len(tasks) > 1
-                else OrchestrationMode.SINGLE_AGENT
-            )
+            mode = OrchestrationMode.PARALLEL if len(tasks) > 1 else OrchestrationMode.SINGLE_AGENT
             return self._finalize_decision(
                 mode=mode,
                 goal_type="workout_nutrition_consistency",
@@ -377,11 +371,7 @@ class SupervisorRouter:
                         priority=2,
                     )
                 )
-            mode = (
-                OrchestrationMode.PARALLEL
-                if len(tasks) > 1
-                else OrchestrationMode.SINGLE_AGENT
-            )
+            mode = OrchestrationMode.PARALLEL if len(tasks) > 1 else OrchestrationMode.SINGLE_AGENT
             return self._finalize_decision(
                 mode=mode,
                 goal_type="weekly_fitness_progress",

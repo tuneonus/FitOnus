@@ -31,7 +31,8 @@ export function createAdminAppSettingsRoutes(
         method: 'get',
         path: '/',
         summary: 'Get All Application Settings and AI Usage Analytics',
-        description: 'Returns all system application settings and live AI quota usage analytics for administrators.',
+        description:
+          'Returns all system application settings and live AI quota usage analytics for administrators.',
         tags: ['Admin Settings'],
         access: { kind: 'permission', permission: 'admin:access' },
         response: {
@@ -47,7 +48,8 @@ export function createAdminAppSettingsRoutes(
         method: 'patch',
         path: '/',
         summary: 'Batch Update Application Settings with Concurrency Lock',
-        description: 'Updates one or more application settings with strict validation, optimistic locking, and audit trail.',
+        description:
+          'Updates one or more application settings with strict validation, optimistic locking, and audit trail.',
         tags: ['Admin Settings'],
         access: { kind: 'permission', permission: 'admin:access' },
         request: updateAppSettingsRequest,
@@ -64,10 +66,7 @@ export function createAdminAppSettingsRoutes(
   };
 }
 
-export function createAdminAiRoutes(
-  basePath: string,
-  controller: AppSettingsController,
-): RouteGroup {
+export function createAdminAiRoutes(basePath: string, controller: AppSettingsController): RouteGroup {
   return {
     basePath,
     routes: [
@@ -91,7 +90,8 @@ export function createAdminAiRoutes(
         method: 'patch',
         path: '/configuration',
         summary: 'Update Gemini Models and API Key',
-        description: 'Updates default model, per-feature overrides, or rotates encrypted Gemini API key with optimistic locking.',
+        description:
+          'Updates default model, per-feature overrides, or rotates encrypted Gemini API key with optimistic locking.',
         tags: ['Admin AI'],
         access: { kind: 'permission', permission: 'admin:access' },
         request: updateGeminiConfigRequest,
@@ -108,7 +108,8 @@ export function createAdminAiRoutes(
         method: 'post',
         path: '/test-connection',
         summary: 'Test Gemini API Key Connection',
-        description: 'Sends a lightweight ping to the Gemini API using the specified or active API key to verify connectivity.',
+        description:
+          'Sends a lightweight ping to the Gemini API using the specified or active API key to verify connectivity.',
         tags: ['Admin AI'],
         access: { kind: 'permission', permission: 'admin:access' },
         request: testGeminiConnectionRequest,
@@ -142,7 +143,8 @@ export function createAdminAiRoutes(
         method: 'get',
         path: '/models',
         summary: 'Get Supported Gemini Models and Pricing',
-        description: 'Lists supported Gemini models, capabilities (vision, audio), and pricing per million tokens.',
+        description:
+          'Lists supported Gemini models, capabilities (vision, audio), and pricing per million tokens.',
         tags: ['Admin AI'],
         access: { kind: 'permission', permission: 'admin:access' },
         response: {
@@ -158,7 +160,8 @@ export function createAdminAiRoutes(
         method: 'get',
         path: '/usage/summary',
         summary: 'Get High-Level AI Usage Summary',
-        description: 'Returns aggregated KPI metrics: today and monthly requests, token totals, estimated cost, and error counts.',
+        description:
+          'Returns aggregated KPI metrics: today and monthly requests, token totals, estimated cost, and error counts.',
         tags: ['Admin AI'],
         access: { kind: 'permission', permission: 'admin:access' },
         response: {
@@ -174,7 +177,8 @@ export function createAdminAiRoutes(
         method: 'get',
         path: '/usage/by-feature',
         summary: 'Get AI Token Usage Grouped by Feature',
-        description: 'Returns token consumption and cost breakdown across AI Coach, Meal Scanner, Voice Meal, etc.',
+        description:
+          'Returns token consumption and cost breakdown across AI Coach, Meal Scanner, Voice Meal, etc.',
         tags: ['Admin AI'],
         access: { kind: 'permission', permission: 'admin:access' },
         response: {
@@ -222,7 +226,8 @@ export function createAdminAiRoutes(
         method: 'get',
         path: '/usage',
         summary: 'Get Paginated Gemini API Usage Events',
-        description: 'Returns granular request-level telemetry logs with token counts, latency, and estimated cost.',
+        description:
+          'Returns granular request-level telemetry logs with token counts, latency, and estimated cost.',
         tags: ['Admin AI'],
         access: { kind: 'permission', permission: 'admin:access' },
         request: getGeminiUsageEventsRequest,
@@ -239,10 +244,7 @@ export function createAdminAiRoutes(
   };
 }
 
-export function createPublicAppConfigRoutes(
-  basePath: string,
-  controller: AppSettingsController,
-): RouteGroup {
+export function createPublicAppConfigRoutes(basePath: string, controller: AppSettingsController): RouteGroup {
   return {
     basePath,
     routes: [
@@ -250,7 +252,8 @@ export function createPublicAppConfigRoutes(
         method: 'get',
         path: '/config',
         summary: 'Get Public Mobile Application Configuration',
-        description: 'Returns mobile-safe remote application configuration, maintenance state, minimum version, and feature toggles.',
+        description:
+          'Returns mobile-safe remote application configuration, maintenance state, minimum version, and feature toggles.',
         tags: ['App Config'],
         access: { kind: 'public' },
         response: {

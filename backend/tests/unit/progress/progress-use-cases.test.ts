@@ -407,7 +407,11 @@ describe('Progress Application Use Cases', () => {
       // The default stub's profile summary says current 80 kg / starting 85 kg, but nothing was ever logged.
       const weightRepo = createMockWeightRepo();
 
-      const res = await new GetWeightHistoryUseCase(weightRepo).execute({ userId, range: 'W', timezone: 'UTC' });
+      const res = await new GetWeightHistoryUseCase(weightRepo).execute({
+        userId,
+        range: 'W',
+        timezone: 'UTC',
+      });
 
       expect(res.points).toEqual([]);
       expect(res.entries).toEqual([]);
@@ -424,7 +428,11 @@ describe('Progress Application Use Cases', () => {
         weighIn('w3', 78, midpointOf(days[6]!)),
       ]);
 
-      const res = await new GetWeightHistoryUseCase(weightRepo).execute({ userId, range: 'D', timezone: 'UTC' });
+      const res = await new GetWeightHistoryUseCase(weightRepo).execute({
+        userId,
+        range: 'D',
+        timezone: 'UTC',
+      });
 
       expect(res.points.map((p) => p.label)).toEqual(days.slice(2).map((d) => d.label));
       expect(res.points.map((p) => p.value)).toEqual([80, 80, 79.9, 79.8, 79.6]);
@@ -440,7 +448,11 @@ describe('Progress Application Use Cases', () => {
         weighIn('new', 79, midpointOf(days[5]!)),
       ]);
 
-      const res = await new GetWeightHistoryUseCase(weightRepo).execute({ userId, range: 'D', timezone: 'UTC' });
+      const res = await new GetWeightHistoryUseCase(weightRepo).execute({
+        userId,
+        range: 'D',
+        timezone: 'UTC',
+      });
 
       expect(res.points).toHaveLength(7);
       expect(res.points[0]?.value).toBe(82);
@@ -511,8 +523,7 @@ describe('Progress Application Use Cases', () => {
     };
     const statOf = (report: { stats: { label: string }[] }, label: string) =>
       report.stats.find((s) => s.label === label) as
-        | { label: string; value: string; unit: string; note?: string; good?: boolean }
-        | undefined;
+        { label: string; value: string; unit: string; note?: string; good?: boolean } | undefined;
 
     it('a user with no goals and no activity gets no invented targets, advice or praise', async () => {
       const telemetryPort = createMockTelemetryPort();
@@ -658,7 +669,10 @@ describe('Progress Application Use Cases', () => {
 
       const twoWeighIns = createMockWeightRepo();
       vi.mocked(twoWeighIns.listForUser).mockResolvedValueOnce({
-        logs: [weighIn('latest', 80.0, new Date()), weighIn('earliest', 81.2, new Date(Date.now() - 86_400_000))],
+        logs: [
+          weighIn('latest', 80.0, new Date()),
+          weighIn('earliest', 81.2, new Date(Date.now() - 86_400_000)),
+        ],
         total: 2,
       });
       const pair = await new GetProgressReportsUseCase(twoWeighIns, createMockTelemetryPort()).execute({
@@ -666,7 +680,12 @@ describe('Progress Application Use Cases', () => {
         type: 'weekly',
         timezone: 'UTC',
       });
-      expect(statOf(pair, 'Weight')).toMatchObject({ value: '−1.2', unit: 'kg', note: '81.2 → 80.0', good: true });
+      expect(statOf(pair, 'Weight')).toMatchObject({
+        value: '−1.2',
+        unit: 'kg',
+        note: '81.2 → 80.0',
+        good: true,
+      });
     });
   });
 });

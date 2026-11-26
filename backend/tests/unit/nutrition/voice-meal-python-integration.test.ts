@@ -27,7 +27,13 @@ import {
 
 const SECRET = 'unit-test-secret-unit-test-secret-1234';
 const USER = '11111111-1111-4111-8111-111111111111';
-const LIMITS = { dailyGlobalLimit: 50, coachChatDailyLimit: 20, mealPhotoDailyLimit: 10, voiceMealDailyLimit: 10, workoutGeneratorDailyLimit: 10 };
+const LIMITS = {
+  dailyGlobalLimit: 50,
+  coachChatDailyLimit: 20,
+  mealPhotoDailyLimit: 10,
+  voiceMealDailyLimit: 10,
+  workoutGeneratorDailyLimit: 10,
+};
 
 class Settings {
   readonly store = new InMemoryAiUsageStore();
@@ -37,12 +43,19 @@ class Settings {
       key,
       value:
         key === 'features.flags'
-          ? { aiCoach: true, mealPhotoScanner: true, voiceMealEntry: this.voiceEnabled, workoutGenerator: true }
+          ? {
+              aiCoach: true,
+              mealPhotoScanner: true,
+              voiceMealEntry: this.voiceEnabled,
+              workoutGenerator: true,
+            }
           : LIMITS,
     };
   }
-  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) => this.store.reserveAiUsage(input);
-  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) => this.store.releaseAiUsage(input);
+  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) =>
+    this.store.reserveAiUsage(input);
+  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) =>
+    this.store.releaseAiUsage(input);
 }
 
 describe('Voice meal parsing served only by Python (full use case + quota gate)', () => {
@@ -58,8 +71,11 @@ describe('Voice meal parsing served only by Python (full use case + quota gate)'
       }),
       new AiUsageGateService(new CheckAndRecordAiQuotaUseCase(settings as unknown as AppSettingsRepository)),
     );
-  const parse = (input: Partial<Parameters<ParseVoiceMealUseCase['execute']>[0]> = {}, url = server.url, timeoutMs?: number) =>
-    useCaseFor(url, timeoutMs).execute({ userId: USER, transcript: 'rendu dosai sambar', ...input });
+  const parse = (
+    input: Partial<Parameters<ParseVoiceMealUseCase['execute']>[0]> = {},
+    url = server.url,
+    timeoutMs?: number,
+  ) => useCaseFor(url, timeoutMs).execute({ userId: USER, transcript: 'rendu dosai sambar', ...input });
   const failure = (promise: Promise<unknown>) => promise.catch((e: unknown) => e);
 
   beforeEach(async () => {
@@ -89,7 +105,10 @@ describe('Voice meal parsing served only by Python (full use case + quota gate)'
 
   it('audio plus transcript are both sent', async () => {
     await parse({ audioBase64: 'AAEC', mimeType: 'audio/webm' });
-    expect(server.requests[0]!.body).toMatchObject({ transcript: 'rendu dosai sambar', audio: { mimeType: 'audio/webm' } });
+    expect(server.requests[0]!.body).toMatchObject({
+      transcript: 'rendu dosai sambar',
+      audio: { mimeType: 'audio/webm' },
+    });
   });
 
   it('Python unavailable: controlled 503 and the quota unit is refunded', async () => {
@@ -108,14 +127,18 @@ describe('Voice meal parsing served only by Python (full use case + quota gate)'
   });
 
   it('invalid service token (Python 401): controlled 503, unit refunded', async () => {
-    server.respond((_r, res) => json(res, 401, pythonError('AUTH_INVALID_TOKEN', 'x', { dispatched: false })));
+    server.respond((_r, res) =>
+      json(res, 401, pythonError('AUTH_INVALID_TOKEN', 'x', { dispatched: false })),
+    );
     const error = await failure(parse());
     expect(isAppError(error) && error.code).toBe('SERVICE_UNAVAILABLE');
     expect(settings.store.actionCount(USER, 'voice_meal')).toBe(0);
   });
 
   it('Gemini rate limit from Python: 429 with retry hint, unit consumed', async () => {
-    server.respond((_r, res) => json(res, 429, pythonError('PROVIDER_RATE_LIMITED', 'Busy', { retryAfterSeconds: 25 })));
+    server.respond((_r, res) =>
+      json(res, 429, pythonError('PROVIDER_RATE_LIMITED', 'Busy', { retryAfterSeconds: 25 })),
+    );
     const error = await failure(parse());
     expect(isAppError(error) && [error.kind, error.code, error.details]).toEqual([
       'rate_limited',
@@ -137,7 +160,10 @@ describe('Voice meal parsing served only by Python (full use case + quota gate)'
       ['no transcript and no audio', { transcript: undefined }],
       ['blank transcript and no audio', { transcript: '   ' }],
       ['unsupported audio format', { transcript: undefined, audioBase64: 'AAEC', mimeType: 'audio/flac' }],
-      ['audio over 15 MB', { transcript: undefined, audioBase64: 'A'.repeat(15 * 1024 * 1024 + 1), mimeType: 'audio/m4a' }],
+      [
+        'audio over 15 MB',
+        { transcript: undefined, audioBase64: 'A'.repeat(15 * 1024 * 1024 + 1), mimeType: 'audio/m4a' },
+      ],
     ])('%s: rejected before any charge or Python call', async (_name, input) => {
       const error = await failure(parse(input as never));
       expect(isAppError(error)).toBe(true);

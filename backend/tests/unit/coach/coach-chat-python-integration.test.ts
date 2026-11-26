@@ -34,7 +34,13 @@ import {
 
 const SECRET = 'unit-test-secret-unit-test-secret-1234';
 const USER = '11111111-1111-4111-8111-111111111111';
-const LIMITS = { dailyGlobalLimit: 50, coachChatDailyLimit: 20, mealPhotoDailyLimit: 10, voiceMealDailyLimit: 10, workoutGeneratorDailyLimit: 10 };
+const LIMITS = {
+  dailyGlobalLimit: 50,
+  coachChatDailyLimit: 20,
+  mealPhotoDailyLimit: 10,
+  voiceMealDailyLimit: 10,
+  workoutGeneratorDailyLimit: 10,
+};
 
 class Settings {
   readonly store = new InMemoryAiUsageStore();
@@ -44,12 +50,19 @@ class Settings {
       key,
       value:
         key === 'features.flags'
-          ? { aiCoach: this.coachEnabled, mealPhotoScanner: true, voiceMealEntry: true, workoutGenerator: true }
+          ? {
+              aiCoach: this.coachEnabled,
+              mealPhotoScanner: true,
+              voiceMealEntry: true,
+              workoutGenerator: true,
+            }
           : LIMITS,
     };
   }
-  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) => this.store.reserveAiUsage(input);
-  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) => this.store.releaseAiUsage(input);
+  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) =>
+    this.store.reserveAiUsage(input);
+  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) =>
+    this.store.releaseAiUsage(input);
 }
 
 const context = {
@@ -75,8 +88,13 @@ describe('AI Coach chat served only by Python (full use case + quota gate)', () 
       usageRecorder: recorder as unknown as AiUsageRecorder,
       pythonTimeoutMs,
     });
-    const geminiService = { generateCoachResponse: chat.generateCoachResponse.bind(chat), generateInsights: vi.fn() };
-    const gate = new AiUsageGateService(new CheckAndRecordAiQuotaUseCase(settings as unknown as AppSettingsRepository));
+    const geminiService = {
+      generateCoachResponse: chat.generateCoachResponse.bind(chat),
+      generateInsights: vi.fn(),
+    };
+    const gate = new AiUsageGateService(
+      new CheckAndRecordAiQuotaUseCase(settings as unknown as AppSettingsRepository),
+    );
     return new ChatWithCoachUseCase(
       { getUserFitnessContext: vi.fn().mockResolvedValue(context) } as unknown as UserContextRepository,
       geminiService as unknown as GeminiService,
@@ -126,7 +144,13 @@ describe('AI Coach chat served only by Python (full use case + quota gate)', () 
 
     it('keeps the public mobile response contract (same keys as before)', async () => {
       const parsed = coachResponseSchema.parse(await chat());
-      expect(Object.keys(parsed).sort()).toEqual(['conversationId', 'followUps', 'medicalNote', 'sources', 'text']);
+      expect(Object.keys(parsed).sort()).toEqual([
+        'conversationId',
+        'followUps',
+        'medicalNote',
+        'sources',
+        'text',
+      ]);
     });
 
     it('stores the assistant message with the Python text, sources and follow-ups', async () => {

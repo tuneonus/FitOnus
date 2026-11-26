@@ -89,7 +89,9 @@ async function main() {
   const meRes = await apiRequest('/users/me', { token: accessToken });
   assert.equal(meRes.status, 200);
   const userId = meRes.body.data.id;
-  console.log(`✓ User profile identity: ID ${userId}, Name: ${meRes.body.data.displayName}, Email: ${meRes.body.data.email}`);
+  console.log(
+    `✓ User profile identity: ID ${userId}, Name: ${meRes.body.data.displayName}, Email: ${meRes.body.data.email}`,
+  );
 
   // Check initial profile state
   const initialProfileRes = await apiRequest('/profile/me', { token: accessToken });
@@ -132,8 +134,12 @@ async function main() {
   });
   assert.equal(completeRes.status, 200, `Complete onboarding failed: ${JSON.stringify(completeRes.body)}`);
   assert.equal(completeRes.body.data.onboardingCompleted, true);
-  console.log(`✓ Onboarding completed! Daily calorie target: ${completeRes.body.data.calculatedPlan.dailyCalorieTarget} kcal`);
-  console.log(`✓ Protein target: ${completeRes.body.data.calculatedPlan.dailyProteinGrams} g, Workouts/week: ${completeRes.body.data.calculatedPlan.workoutsPerWeek}, Milestone: ${completeRes.body.data.calculatedPlan.projectedMilestone}`);
+  console.log(
+    `✓ Onboarding completed! Daily calorie target: ${completeRes.body.data.calculatedPlan.dailyCalorieTarget} kcal`,
+  );
+  console.log(
+    `✓ Protein target: ${completeRes.body.data.calculatedPlan.dailyProteinGrams} g, Workouts/week: ${completeRes.body.data.calculatedPlan.workoutsPerWeek}, Milestone: ${completeRes.body.data.calculatedPlan.projectedMilestone}`,
+  );
 
   console.log(`\n--- Journey 3: First-Time User Navigation & Empty States ---`);
   // Dashboard
@@ -141,11 +147,17 @@ async function main() {
   assert.equal(dashRes.status, 200, `Dashboard failed: ${JSON.stringify(dashRes.body)}`);
   console.log('Dashboard initial state:');
   console.log(`  - Calories consumed: ${dashRes.body.data.summary.caloriesConsumed}`);
-  console.log(`  - Water consumed: ${dashRes.body.data.summary.waterIntakeMl ?? dashRes.body.data.summary.waterIntake} ml`);
+  console.log(
+    `  - Water consumed: ${dashRes.body.data.summary.waterIntakeMl ?? dashRes.body.data.summary.waterIntake} ml`,
+  );
   console.log(`  - Active minutes: ${dashRes.body.data.summary.activeMinutes}`);
   console.log(`  - Recent activities: ${dashRes.body.data.recentActivity.length}`);
   assert.equal(dashRes.body.data.summary.caloriesConsumed, 0, 'Must have 0 initial calories');
-  assert.equal(dashRes.body.data.summary.waterIntakeMl ?? dashRes.body.data.summary.waterIntake, 0, 'Must have 0 initial water');
+  assert.equal(
+    dashRes.body.data.summary.waterIntakeMl ?? dashRes.body.data.summary.waterIntake,
+    0,
+    'Must have 0 initial water',
+  );
   assert.equal(dashRes.body.data.recentActivity.length, 0, 'Must have 0 initial activities');
 
   // Nutrition Daily
@@ -253,14 +265,20 @@ async function main() {
       mealType: 'lunch',
     },
   });
-  assert.equal(photoAnalysisRes.status, 200, `Photo analysis failed: ${JSON.stringify(photoAnalysisRes.body)}`);
+  assert.equal(
+    photoAnalysisRes.status,
+    200,
+    `Photo analysis failed: ${JSON.stringify(photoAnalysisRes.body)}`,
+  );
   const photoData = photoAnalysisRes.body.data;
   console.log(`✓ Gemini AI Photo Analysis Result:`);
   console.log(`  - Is food detected: ${photoData.isFood}`);
   console.log(`  - Overall confidence: ${(photoData.overallConfidence * 100).toFixed(0)}%`);
   console.log(`  - Detected items count: ${photoData.items.length}`);
   for (const item of photoData.items) {
-    console.log(`    * ${item.name} (${item.serving}): ${item.kcal} kcal, P:${item.protein}g, C:${item.carbs}g, F:${item.fat}g [AI estimate: ${item.isAiEstimated}]`);
+    console.log(
+      `    * ${item.name} (${item.serving}): ${item.kcal} kcal, P:${item.protein}g, C:${item.carbs}g, F:${item.fat}g [AI estimate: ${item.isAiEstimated}]`,
+    );
   }
   assert.ok(photoData.items.length > 0, 'Should detect at least 1 food item from real food photo');
 
@@ -282,7 +300,9 @@ async function main() {
   console.log(`  - Confidence: ${voiceData.confidence}`);
   console.log(`  - Items parsed: ${voiceData.items.length}`);
   for (const item of voiceData.items) {
-    console.log(`    * ${item.name} (${item.servingSize ?? 1} ${item.servingUnit ?? item.serving}): ${item.kcal} kcal, P:${item.protein}g, C:${item.carbs}g, F:${item.fat}g`);
+    console.log(
+      `    * ${item.name} (${item.servingSize ?? 1} ${item.servingUnit ?? item.serving}): ${item.kcal} kcal, P:${item.protein}g, C:${item.carbs}g, F:${item.fat}g`,
+    );
   }
   assert.ok(voiceData.items.length >= 2, 'Should parse multiple items from voice description');
 
@@ -344,11 +364,23 @@ async function main() {
   assert.equal(refetchedDash.status, 200);
   console.log('Updated Dashboard:');
   console.log(`  - Calories consumed: ${refetchedDash.body.data.summary.caloriesConsumed} (must be > 0)`);
-  console.log(`  - Water consumed: ${refetchedDash.body.data.summary.waterIntakeMl ?? refetchedDash.body.data.summary.waterIntake} ml (must be 500)`);
+  console.log(
+    `  - Water consumed: ${refetchedDash.body.data.summary.waterIntakeMl ?? refetchedDash.body.data.summary.waterIntake} ml (must be 500)`,
+  );
   console.log(`  - Recent activities: ${refetchedDash.body.data.recentActivity.length} (must be >= 2)`);
-  assert.ok(refetchedDash.body.data.summary.caloriesConsumed > 0, 'Dashboard calories must reflect logged meal');
-  assert.equal(refetchedDash.body.data.summary.waterIntakeMl ?? refetchedDash.body.data.summary.waterIntake, 500, 'Dashboard water must reflect logged water');
-  assert.ok(refetchedDash.body.data.recentActivity.length >= 2, 'Dashboard recent activities must reflect logged session & meal');
+  assert.ok(
+    refetchedDash.body.data.summary.caloriesConsumed > 0,
+    'Dashboard calories must reflect logged meal',
+  );
+  assert.equal(
+    refetchedDash.body.data.summary.waterIntakeMl ?? refetchedDash.body.data.summary.waterIntake,
+    500,
+    'Dashboard water must reflect logged water',
+  );
+  assert.ok(
+    refetchedDash.body.data.recentActivity.length >= 2,
+    'Dashboard recent activities must reflect logged session & meal',
+  );
 
   // Refetch Nutrition Daily
   const refetchedDaily = await apiRequest(`/nutrition/daily?date=${todayStr}`, { token: accessToken });
@@ -383,7 +415,8 @@ async function main() {
 
   // Coach Live Chat
   console.log('\nTesting live AI Coach Chat...');
-  const chatQuestion = 'I just finished my first workout (45 mins upper body) and had my breakfast. How am I progressing toward my goal to build muscle today?';
+  const chatQuestion =
+    'I just finished my first workout (45 mins upper body) and had my breakfast. How am I progressing toward my goal to build muscle today?';
   console.log(`User prompt: "${chatQuestion}"`);
   const chatRes = await apiRequest('/coach/chat', {
     method: 'POST',

@@ -1,9 +1,4 @@
-export type ExtractionJobStatus =
-  | 'pending'
-  | 'processing'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+export type ExtractionJobStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
 export interface MemoryExtractionJob {
   id: string;

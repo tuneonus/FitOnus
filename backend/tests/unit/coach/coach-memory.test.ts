@@ -55,9 +55,9 @@ describe('AI Coach Memory Use Case', () => {
       clearAll: vi.fn().mockResolvedValue(undefined),
       isMemoryEnabled: vi.fn().mockResolvedValue(true),
       setMemoryEnabled: vi.fn().mockResolvedValue(undefined),
-      getActiveMemoriesForContext: vi.fn().mockResolvedValue([
-        '[FOOD]: Eggetarian — eats eggs and dairy, no meat or fish.',
-      ]),
+      getActiveMemoriesForContext: vi
+        .fn()
+        .mockResolvedValue(['[FOOD]: Eggetarian — eats eggs and dairy, no meat or fish.']),
       getDismissedTexts: vi.fn().mockResolvedValue([]),
     };
     useCase = new ManageMemoriesUseCase(mockMemoryRepo);
@@ -167,7 +167,10 @@ describe('AI Coach Memory Use Case', () => {
       message: 'What should I eat for dinner?',
     });
 
-    expect(mockMemoryRepo.getActiveMemoriesForContext).toHaveBeenCalledWith('user-1', 'What should I eat for dinner?');
+    expect(mockMemoryRepo.getActiveMemoriesForContext).toHaveBeenCalledWith(
+      'user-1',
+      'What should I eat for dinner?',
+    );
     expect(mockGeminiService.generateCoachResponse).toHaveBeenCalledWith(
       'What should I eat for dinner?',
       expect.anything(),
@@ -191,11 +194,15 @@ describe('AI Coach Memory Use Case', () => {
     expect(await repo.isMemoryEnabled('user-unconsented')).toBe(false);
 
     // 3. ai_memory_enabled is false -> false
-    mockQuery.mockResolvedValueOnce({ rows: [{ ai_memory_enabled: false, ai_memory_consented_at: new Date() }] });
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ ai_memory_enabled: false, ai_memory_consented_at: new Date() }],
+    });
     expect(await repo.isMemoryEnabled('user-disabled')).toBe(false);
 
     // 4. ai_memory_enabled is true AND consented_at is present -> true
-    mockQuery.mockResolvedValueOnce({ rows: [{ ai_memory_enabled: true, ai_memory_consented_at: new Date() }] });
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ ai_memory_enabled: true, ai_memory_consented_at: new Date() }],
+    });
     expect(await repo.isMemoryEnabled('user-opted-in')).toBe(true);
   });
 
@@ -241,7 +248,9 @@ describe('AI Coach Memory Use Case', () => {
     const repo = new PgMemoryRepository(mockDb);
 
     // user_settings says false
-    mockQuery.mockResolvedValueOnce({ rows: [{ ai_memory_enabled: false, ai_memory_consented_at: new Date() }] });
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ ai_memory_enabled: false, ai_memory_consented_at: new Date() }],
+    });
 
     const result = await repo.getActiveMemoriesForContext('user-1', 'What should I eat?');
     expect(result).toEqual([]);
@@ -271,7 +280,10 @@ describe('AI Coach Memory Use Case', () => {
       ],
     });
 
-    const result = await repo.getActiveMemoriesForContext('user-1', 'Can I do heavy bench press with my shoulder pain?');
+    const result = await repo.getActiveMemoriesForContext(
+      'user-1',
+      'Can I do heavy bench press with my shoulder pain?',
+    );
 
     // Should prioritize injury first (score +10 + keyword overlap)
     expect(result.length).toBeLessThanOrEqual(5);

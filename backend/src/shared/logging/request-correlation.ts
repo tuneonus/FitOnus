@@ -73,7 +73,9 @@ export function createRootTraceContext(incomingTraceparent?: unknown): TraceCont
   );
 }
 
-export function createChildTraceContext(parent: TraceContext | undefined = currentTraceContext()): TraceContext {
+export function createChildTraceContext(
+  parent: TraceContext | undefined = currentTraceContext(),
+): TraceContext {
   if (!parent) {
     return createRootTraceContext();
   }

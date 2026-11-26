@@ -102,7 +102,9 @@ describe('text-extractor', () => {
 
   describe('isPrintableText', () => {
     it('accepts standard English and whitespace', () => {
-      expect(isPrintableText(Buffer.from('Daily protein requirements for athletes: 1.6-2.2 g/kg.\n\t'))).toBe(true);
+      expect(isPrintableText(Buffer.from('Daily protein requirements for athletes: 1.6-2.2 g/kg.\n\t'))).toBe(
+        true,
+      );
     });
 
     it('accepts Unicode and Tamil text', () => {
@@ -153,23 +155,23 @@ describe('text-extractor', () => {
     });
 
     it('rejects empty buffer with clear validation error', async () => {
-      await expect(
-        extractTextFromFile({ buffer: Buffer.alloc(0), fileName: 'empty.txt' }),
-      ).rejects.toThrow(/empty \(0 bytes\)/);
+      await expect(extractTextFromFile({ buffer: Buffer.alloc(0), fileName: 'empty.txt' })).rejects.toThrow(
+        /empty \(0 bytes\)/,
+      );
     });
 
     it('rejects text below minimum length', async () => {
       const shortBuffer = Buffer.from('Too short', 'utf-8');
-      await expect(
-        extractTextFromFile({ buffer: shortBuffer, fileName: 'short.txt' }),
-      ).rejects.toThrow(new RegExp(`too short.*At least ${MIN_EXTRACTED_TEXT_LENGTH} characters`));
+      await expect(extractTextFromFile({ buffer: shortBuffer, fileName: 'short.txt' })).rejects.toThrow(
+        new RegExp(`too short.*At least ${MIN_EXTRACTED_TEXT_LENGTH} characters`),
+      );
     });
 
     it('rejects files exceeding maximum size limit', async () => {
       const bigBuffer = { length: MAX_DOCUMENT_UPLOAD_BYTES + 1 } as unknown as Buffer;
-      await expect(
-        extractTextFromFile({ buffer: bigBuffer, fileName: 'large.pdf' }),
-      ).rejects.toThrow(/exceeds maximum size/);
+      await expect(extractTextFromFile({ buffer: bigBuffer, fileName: 'large.pdf' })).rejects.toThrow(
+        /exceeds maximum size/,
+      );
     });
   });
 

@@ -65,7 +65,11 @@ async def test_extract_coach_memories_service(fake_llm: FakeLlm) -> None:
     fake_llm.parsed = GeminiMemoryExtractionOutput(candidates=[mock_candidate])
 
     request = MemoryExtractionRequest(
-        turns=[ChatTurn(role="user", text="I cannot do overhead press because my right shoulder aches.")],
+        turns=[
+            ChatTurn(
+                role="user", text="I cannot do overhead press because my right shoulder aches."
+            )
+        ],
         existing_memories=[],
         model=ModelSelection(primary="gemini-2.5-flash-lite", fallback="gemini-2.5-flash"),
         deadline_ms=15000,

@@ -40,7 +40,10 @@ export type GetRecentWorkoutsResponseDto = z.infer<typeof getRecentWorkoutsRespo
 // ============================================================================
 
 export const getNutritionSummaryInputSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format').optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+    .optional(),
   days: z.number().int().min(1).max(30).default(7),
 });
 
@@ -213,5 +216,3 @@ export const retrieveFitnessKnowledgeResponseSchema = z.object({
 });
 
 export type RetrieveFitnessKnowledgeResponseDto = z.infer<typeof retrieveFitnessKnowledgeResponseSchema>;
-
-

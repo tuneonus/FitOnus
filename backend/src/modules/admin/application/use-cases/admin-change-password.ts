@@ -57,10 +57,7 @@ export class AdminChangePasswordUseCase {
     }
 
     // 3. Verify current password
-    const matchesCurrent = await this.deps.passwordHasher.verify(
-      account.passwordHash,
-      input.currentPassword,
-    );
+    const matchesCurrent = await this.deps.passwordHasher.verify(account.passwordHash, input.currentPassword);
     if (!matchesCurrent) {
       throw unprocessable('INVALID_CREDENTIALS', 'The current password is incorrect.');
     }
@@ -84,13 +81,9 @@ export class AdminChangePasswordUseCase {
     await this.deps.accounts.updatePasswordHash(actor.userId, newHash);
 
     // 8. Invalidate all other active sessions for this administrator
-    const revokedSessions = await this.deps.sessions.revokeAllForUser(
-      actor.userId,
-      'password_change',
-      {
-        exceptSessionId: actor.sessionId,
-      },
-    );
+    const revokedSessions = await this.deps.sessions.revokeAllForUser(actor.userId, 'password_change', {
+      exceptSessionId: actor.sessionId,
+    });
 
     // 9. Record security audit event without sensitive values
     await this.deps.adminRepo.recordAuditLog({

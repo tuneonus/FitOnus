@@ -43,7 +43,13 @@ import {
 const SECRET = 'unit-test-secret-unit-test-secret-1234';
 const USER = '11111111-1111-4111-8111-111111111111';
 const PHOTO = '/9j/4AAQSkZJRg=='; // the start of a JPEG, base64
-const LIMITS = { dailyGlobalLimit: 50, coachChatDailyLimit: 20, mealPhotoDailyLimit: 10, voiceMealDailyLimit: 10, workoutGeneratorDailyLimit: 10 };
+const LIMITS = {
+  dailyGlobalLimit: 50,
+  coachChatDailyLimit: 20,
+  mealPhotoDailyLimit: 10,
+  voiceMealDailyLimit: 10,
+  workoutGeneratorDailyLimit: 10,
+};
 
 class Settings {
   readonly store = new InMemoryAiUsageStore();
@@ -53,12 +59,19 @@ class Settings {
       key,
       value:
         key === 'features.flags'
-          ? { aiCoach: true, mealPhotoScanner: this.photoEnabled, voiceMealEntry: true, workoutGenerator: true }
+          ? {
+              aiCoach: true,
+              mealPhotoScanner: this.photoEnabled,
+              voiceMealEntry: true,
+              workoutGenerator: true,
+            }
           : LIMITS,
     };
   }
-  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) => this.store.reserveAiUsage(input);
-  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) => this.store.releaseAiUsage(input);
+  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) =>
+    this.store.reserveAiUsage(input);
+  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) =>
+    this.store.releaseAiUsage(input);
 }
 
 describe('Meal photo analysis served only by Python (full use case + quota gate)', () => {
@@ -78,8 +91,17 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
       serviceFor(url, timeoutMs),
       new AiUsageGateService(new CheckAndRecordAiQuotaUseCase(settings as unknown as AppSettingsRepository)),
     );
-  const analyze = (input: Partial<Parameters<AnalyzeMealPhotoUseCase['execute']>[0]> = {}, url = server.url, timeoutMs?: number) =>
-    useCaseFor(url, timeoutMs).execute({ userId: USER, imageBase64: PHOTO, mimeType: 'image/jpeg', ...input });
+  const analyze = (
+    input: Partial<Parameters<AnalyzeMealPhotoUseCase['execute']>[0]> = {},
+    url = server.url,
+    timeoutMs?: number,
+  ) =>
+    useCaseFor(url, timeoutMs).execute({
+      userId: USER,
+      imageBase64: PHOTO,
+      mimeType: 'image/jpeg',
+      ...input,
+    });
   const failure = (promise: Promise<unknown>) => promise.catch((e: unknown) => e);
 
   beforeEach(async () => {
@@ -96,8 +118,19 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
       const result = await analyze({ mealType: 'breakfast', notes: 'no sugar' });
 
       expect(() => mealPhotoResponseSchema.parse(result)).not.toThrow();
-      expect(result).toMatchObject({ isFood: true, summary: 'Dosa with sambar', overallConfidence: 0.9, totalKcal: 260, totalFiberGrams: 2 });
-      expect(result.items[0]).toMatchObject({ name: 'Dosa', brand: 'AI Estimate', kcal: 260, isAiEstimated: true });
+      expect(result).toMatchObject({
+        isFood: true,
+        summary: 'Dosa with sambar',
+        overallConfidence: 0.9,
+        totalKcal: 260,
+        totalFiberGrams: 2,
+      });
+      expect(result.items[0]).toMatchObject({
+        name: 'Dosa',
+        brand: 'AI Estimate',
+        kcal: 260,
+        isAiEstimated: true,
+      });
       expect('unclearReason' in result).toBe(false); // absent, never null: the app has always seen it that way
       expect(server.requests).toHaveLength(1);
       expect(settings.store.actionCount(USER, 'meal_photo')).toBe(1);
@@ -137,16 +170,27 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
     });
 
     it('stays inside the mobile deadline: never more than 27 s HTTP / 25.5 s Gemini, even if configured higher', async () => {
-      await useCaseFor(server.url, 28_000).execute({ userId: USER, imageBase64: PHOTO, mimeType: 'image/jpeg' });
+      await useCaseFor(server.url, 28_000).execute({
+        userId: USER,
+        imageBase64: PHOTO,
+        mimeType: 'image/jpeg',
+      });
       expect(MEAL_PHOTO_MAX_TIMEOUT_MS).toBeLessThan(30_000); // the app waits 30 s
-      expect((server.requests[0]!.body as { deadlineMs: number }).deadlineMs).toBe(MEAL_PHOTO_MAX_TIMEOUT_MS - 1_500);
+      expect((server.requests[0]!.body as { deadlineMs: number }).deadlineMs).toBe(
+        MEAL_PHOTO_MAX_TIMEOUT_MS - 1_500,
+      );
     });
 
     it('records the tokens once under meal_photo, attributed to the user', async () => {
       await analyze();
       expect(recorder.recordExternalUsage).toHaveBeenCalledTimes(1);
       expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: USER, feature: 'meal_photo', model: 'gemini-3.5-flash-lite', totalTokens: 1370 }),
+        expect.objectContaining({
+          userId: USER,
+          feature: 'meal_photo',
+          model: 'gemini-3.5-flash-lite',
+          totalTokens: 1370,
+        }),
       );
     });
 
@@ -156,9 +200,19 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
     });
 
     it('reports a backup-model answer like any other (the app cannot tell)', async () => {
-      server.respond((_r, res) => json(res, 200, okMealPhotoReply({ usage: { ...(okMealPhotoReply().usage as object), model: 'photo-backup', isFallback: true } })));
+      server.respond((_r, res) =>
+        json(
+          res,
+          200,
+          okMealPhotoReply({
+            usage: { ...(okMealPhotoReply().usage as object), model: 'photo-backup', isFallback: true },
+          }),
+        ),
+      );
       await expect(analyze()).resolves.toMatchObject({ isFood: true });
-      expect(recorder.recordExternalUsage).toHaveBeenCalledWith(expect.objectContaining({ model: 'photo-backup', isFallback: true }));
+      expect(recorder.recordExternalUsage).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'photo-backup', isFallback: true }),
+      );
     });
   });
 
@@ -171,8 +225,17 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
           okMealPhotoReply({
             outcome: 'no_food',
             result: {
-              isFood: false, summary: 'No food detected', items: [], overallConfidence: 0, totalKcal: 0, totalProteinGrams: 0,
-              totalCarbsGrams: 0, totalFatGrams: 0, totalFiberGrams: 0, unclearReason: 'A desk.', analyzedAt: '2026-11-19T10:00:00.000Z',
+              isFood: false,
+              summary: 'No food detected',
+              items: [],
+              overallConfidence: 0,
+              totalKcal: 0,
+              totalProteinGrams: 0,
+              totalCarbsGrams: 0,
+              totalFatGrams: 0,
+              totalFiberGrams: 0,
+              unclearReason: 'A desk.',
+              analyzedAt: '2026-11-19T10:00:00.000Z',
             },
           }),
         ),
@@ -191,9 +254,17 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
           okMealPhotoReply({
             outcome: 'parse_failed',
             result: {
-              isFood: false, summary: 'Unable to parse food analysis', items: [], overallConfidence: 0, totalKcal: 0,
-              totalProteinGrams: 0, totalCarbsGrams: 0, totalFatGrams: 0, totalFiberGrams: 0,
-              unclearReason: 'AI response was not formatted correctly. Please try again.', analyzedAt: '2026-11-19T10:00:00.000Z',
+              isFood: false,
+              summary: 'Unable to parse food analysis',
+              items: [],
+              overallConfidence: 0,
+              totalKcal: 0,
+              totalProteinGrams: 0,
+              totalCarbsGrams: 0,
+              totalFatGrams: 0,
+              totalFiberGrams: 0,
+              unclearReason: 'AI response was not formatted correctly. Please try again.',
+              analyzedAt: '2026-11-19T10:00:00.000Z',
             },
           }),
         ),
@@ -207,7 +278,11 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
   describe('failures: one controlled error, never a second AI call', () => {
     it('Python unavailable: controlled 503 with the existing message and the unit is refunded', async () => {
       const error = await failure(analyze({}, await closedPortUrl()));
-      expect(isAppError(error) && [error.kind, error.code, error.message]).toEqual(['unavailable', 'SERVICE_UNAVAILABLE', MEAL_PHOTO_UNAVAILABLE_MESSAGE]);
+      expect(isAppError(error) && [error.kind, error.code, error.message]).toEqual([
+        'unavailable',
+        'SERVICE_UNAVAILABLE',
+        MEAL_PHOTO_UNAVAILABLE_MESSAGE,
+      ]);
       expect(settings.store.actionCount(USER, 'meal_photo')).toBe(0);
       expect(settings.store.reserveCalls).toBe(1);
     });
@@ -221,46 +296,79 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
     });
 
     it('wrong or missing service token (Python 401): controlled 503, unit refunded, no internals leaked', async () => {
-      server.respond((_r, res) => json(res, 401, pythonError('AUTH_INVALID_TOKEN', 'Invalid service token.', { dispatched: false })));
+      server.respond((_r, res) =>
+        json(res, 401, pythonError('AUTH_INVALID_TOKEN', 'Invalid service token.', { dispatched: false })),
+      );
       const error = await failure(analyze());
-      expect(isAppError(error) && [error.code, error.message]).toEqual(['SERVICE_UNAVAILABLE', MEAL_PHOTO_UNAVAILABLE_MESSAGE]);
+      expect(isAppError(error) && [error.code, error.message]).toEqual([
+        'SERVICE_UNAVAILABLE',
+        MEAL_PHOTO_UNAVAILABLE_MESSAGE,
+      ]);
       expect(settings.store.actionCount(USER, 'meal_photo')).toBe(0);
     });
 
     it('Python refuses a corrupt image (422, Gemini never called): controlled 503 and the unit is refunded', async () => {
       server.respond((_r, res) =>
-        json(res, 422, pythonError('INVALID_REQUEST', 'Image data is not a valid JPEG, PNG, WebP or HEIC image.', { dispatched: false })),
+        json(
+          res,
+          422,
+          pythonError('INVALID_REQUEST', 'Image data is not a valid JPEG, PNG, WebP or HEIC image.', {
+            dispatched: false,
+          }),
+        ),
       );
       const error = await failure(analyze());
-      expect(isAppError(error) && [error.code, error.message]).toEqual(['SERVICE_UNAVAILABLE', MEAL_PHOTO_UNAVAILABLE_MESSAGE]);
+      expect(isAppError(error) && [error.code, error.message]).toEqual([
+        'SERVICE_UNAVAILABLE',
+        MEAL_PHOTO_UNAVAILABLE_MESSAGE,
+      ]);
       expect(settings.store.actionCount(USER, 'meal_photo')).toBe(0);
     });
 
     it('Gemini rate limit: 429 with retry hint, unit consumed', async () => {
-      server.respond((_r, res) => json(res, 429, pythonError('PROVIDER_RATE_LIMITED', 'Busy', { retryAfterSeconds: 25 })));
+      server.respond((_r, res) =>
+        json(res, 429, pythonError('PROVIDER_RATE_LIMITED', 'Busy', { retryAfterSeconds: 25 })),
+      );
       const error = await failure(analyze());
-      expect(isAppError(error) && [error.kind, error.code, error.details]).toEqual(['rate_limited', 'RATE_LIMITED', { retryAfterSeconds: 25 }]);
+      expect(isAppError(error) && [error.kind, error.code, error.details]).toEqual([
+        'rate_limited',
+        'RATE_LIMITED',
+        { retryAfterSeconds: 25 },
+      ]);
       expect(settings.store.actionCount(USER, 'meal_photo')).toBe(1);
     });
 
     it('Gemini daily project quota: AI_QUOTA_EXCEEDED, unit consumed', async () => {
-      server.respond((_r, res) => json(res, 429, pythonError('PROVIDER_QUOTA_EXHAUSTED', 'Daily capacity reached', { retryAfterSeconds: 3600 })));
+      server.respond((_r, res) =>
+        json(
+          res,
+          429,
+          pythonError('PROVIDER_QUOTA_EXHAUSTED', 'Daily capacity reached', { retryAfterSeconds: 3600 }),
+        ),
+      );
       const error = await failure(analyze());
       expect(isAppError(error) && error.code).toBe('AI_QUOTA_EXCEEDED');
       expect(settings.store.actionCount(USER, 'meal_photo')).toBe(1);
     });
 
     it('both Gemini models failing (Python AI_UNAVAILABLE): 503 AI_UNAVAILABLE, unit consumed', async () => {
-      server.respond((_r, res) => json(res, 503, pythonError('AI_UNAVAILABLE', 'High demand', { retryAfterSeconds: 20 })));
+      server.respond((_r, res) =>
+        json(res, 503, pythonError('AI_UNAVAILABLE', 'High demand', { retryAfterSeconds: 20 })),
+      );
       const error = await failure(analyze());
       expect(isAppError(error) && [error.kind, error.code]).toEqual(['unavailable', 'AI_UNAVAILABLE']);
       expect(settings.store.actionCount(USER, 'meal_photo')).toBe(1);
     });
 
     it('Gemini provider error / timeout inside Python: controlled errors, unit consumed', async () => {
-      server.respond((_r, res) => json(res, 503, pythonError('PROVIDER_ERROR', 'raw provider text must not leak')));
+      server.respond((_r, res) =>
+        json(res, 503, pythonError('PROVIDER_ERROR', 'raw provider text must not leak')),
+      );
       const error = await failure(analyze());
-      expect(isAppError(error) && [error.code, error.message]).toEqual(['SERVICE_UNAVAILABLE', MEAL_PHOTO_UNAVAILABLE_MESSAGE]);
+      expect(isAppError(error) && [error.code, error.message]).toEqual([
+        'SERVICE_UNAVAILABLE',
+        MEAL_PHOTO_UNAVAILABLE_MESSAGE,
+      ]);
       expect(settings.store.actionCount(USER, 'meal_photo')).toBe(1);
 
       server.respond((_r, res) => json(res, 504, pythonError('PROVIDER_TIMEOUT', 'x')));
@@ -315,7 +423,9 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
 
   describe('through the real route and controller: the public mobile contract', () => {
     const appFor = () => {
-      const controller = createNutritionMemberController({ analyzeMealPhoto: useCaseFor(server.url) } as never);
+      const controller = createNutritionMemberController({
+        analyzeMealPhoto: useCaseFor(server.url),
+      } as never);
       const group = createNutritionMemberRoutes('/api/v1/nutrition', controller);
       const app = express();
       app.use(requestContext(createLogger({ level: 'silent', pretty: false })));
@@ -336,11 +446,34 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ success: true, message: 'Meal photo analyzed successfully' });
       expect(Object.keys(res.body.data).sort()).toEqual(
-        ['analyzedAt', 'isFood', 'items', 'overallConfidence', 'summary', 'totalCarbsGrams', 'totalFatGrams', 'totalFiberGrams', 'totalKcal', 'totalProteinGrams'].sort(),
+        [
+          'analyzedAt',
+          'isFood',
+          'items',
+          'overallConfidence',
+          'summary',
+          'totalCarbsGrams',
+          'totalFatGrams',
+          'totalFiberGrams',
+          'totalKcal',
+          'totalProteinGrams',
+        ].sort(),
       );
       expect(res.body.data.items[0]).toEqual({
-        id: 'ai-food-1700000000000-0', name: 'Dosa', brand: 'AI Estimate', serving: '2 pieces', servingWeightG: 160,
-        servingUnit: 'piece', servingSize: 2, kcal: 260, protein: 6, carbs: 44, fat: 7, fiber: 2, confidence: 'high', isAiEstimated: true,
+        id: 'ai-food-1700000000000-0',
+        name: 'Dosa',
+        brand: 'AI Estimate',
+        serving: '2 pieces',
+        servingWeightG: 160,
+        servingUnit: 'piece',
+        servingSize: 2,
+        kcal: 260,
+        protein: 6,
+        carbs: 44,
+        fat: 7,
+        fiber: 2,
+        confidence: 'high',
+        isAiEstimated: true,
       });
     });
 
@@ -364,16 +497,29 @@ describe('Meal photo analysis served only by Python (full use case + quota gate)
     });
 
     it('Python unavailable: 503 envelope, existing message, nothing internal in the body', async () => {
-      const controller = createNutritionMemberController({ analyzeMealPhoto: useCaseFor(await closedPortUrl()) } as never);
+      const controller = createNutritionMemberController({
+        analyzeMealPhoto: useCaseFor(await closedPortUrl()),
+      } as never);
       const group = createNutritionMemberRoutes('/api/v1/nutrition', controller);
       const app = express();
       app.use(requestContext(createLogger({ level: 'silent', pretty: false })));
       app.use(express.json());
-      app.use(group.basePath, buildRouter(group.routes, { authenticate: (req, _res, next) => { req.actor = createActor({ userId: USER, sessionId: 's1', role: 'member' }); next(); } }));
+      app.use(
+        group.basePath,
+        buildRouter(group.routes, {
+          authenticate: (req, _res, next) => {
+            req.actor = createActor({ userId: USER, sessionId: 's1', role: 'member' });
+            next();
+          },
+        }),
+      );
       app.use(errorHandler);
       const res = await request(app).post('/api/v1/nutrition/meal-photo/analyze').send({ image: PHOTO });
       expect(res.status).toBe(503);
-      expect(res.body).toMatchObject({ success: false, error: { code: 'SERVICE_UNAVAILABLE', message: MEAL_PHOTO_UNAVAILABLE_MESSAGE } });
+      expect(res.body).toMatchObject({
+        success: false,
+        error: { code: 'SERVICE_UNAVAILABLE', message: MEAL_PHOTO_UNAVAILABLE_MESSAGE },
+      });
       expect(JSON.stringify(res.body)).not.toMatch(/127\.0\.0\.1|ECONNREFUSED|secret|token/i);
     });
   });

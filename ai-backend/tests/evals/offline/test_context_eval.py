@@ -33,15 +33,15 @@ def test_context_engineering_evaluator_evaluates_all_benchmark_cases() -> None:
             expected_outcome=case.expected_outcome,
         )
 
-        assert (
-            result.passed
-        ), f"Case {case.case_id} failed context eval: {result.failure_reasons}"
+        assert result.passed, f"Case {case.case_id} failed context eval: {result.failure_reasons}"
         assert result.score >= 0.75, f"Case {case.case_id} score too low: {result.score}"
 
 
 def test_intent_routing_skips_rag_for_greetings() -> None:
     cases = load_benchmark_dataset("context")
-    greeting_cases = [c for c in cases if c.offline_candidate and c.offline_candidate.get("intent") == "greeting"]
+    greeting_cases = [
+        c for c in cases if c.offline_candidate and c.offline_candidate.get("intent") == "greeting"
+    ]
 
     assert len(greeting_cases) >= 3, "Expected at least 3 greeting cases across En, Ta, Tanglish"
     for case in greeting_cases:

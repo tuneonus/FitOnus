@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppError } from '../../../src/shared/errors/app-error.js';
 import type { PythonAiClient } from '../../../src/shared/ai/python-ai-client.js';
 import { KnowledgeService } from '../../../src/modules/knowledge/application/knowledge-service.js';
-import type { KnowledgeDocument, KnowledgeRepository } from '../../../src/modules/knowledge/domain/knowledge.types.js';
+import type {
+  KnowledgeDocument,
+  KnowledgeRepository,
+} from '../../../src/modules/knowledge/domain/knowledge.types.js';
 
 describe('KnowledgeService', () => {
   const fake768Vector = new Array(768).fill(0.01);
@@ -216,7 +219,9 @@ describe('KnowledgeService', () => {
         failDocumentReindex: vi.fn(),
         replaceDocumentChunks: vi.fn().mockResolvedValue(undefined),
         getDocumentById: vi.fn().mockResolvedValue({ ...sampleDoc, version: 2, reindexStatus: 'completed' }),
-        getDocumentBySlug: vi.fn().mockResolvedValue({ ...sampleDoc, version: 2, reindexStatus: 'completed' }),
+        getDocumentBySlug: vi
+          .fn()
+          .mockResolvedValue({ ...sampleDoc, version: 2, reindexStatus: 'completed' }),
       } as unknown as KnowledgeRepository;
 
       const reindexService = new KnowledgeService(reindexRepo, mockPythonAi);
@@ -241,7 +246,9 @@ describe('KnowledgeService', () => {
       } as unknown as PythonAiClient;
       const reindexRepo = {
         startDocumentReindex: vi.fn().mockResolvedValue(sampleDoc),
-        failDocumentReindex: vi.fn().mockResolvedValue({ ...sampleDoc, reindexStatus: 'failed', reindexError: 'Quota exceeded' }),
+        failDocumentReindex: vi
+          .fn()
+          .mockResolvedValue({ ...sampleDoc, reindexStatus: 'failed', reindexError: 'Quota exceeded' }),
         replaceDocumentChunks: vi.fn(),
       } as unknown as KnowledgeRepository;
 
@@ -290,8 +297,12 @@ describe('KnowledgeService', () => {
         startDocumentReindex: vi.fn().mockResolvedValue(disabledDoc),
         failDocumentReindex: vi.fn(),
         replaceDocumentChunks: vi.fn().mockResolvedValue(undefined),
-        getDocumentById: vi.fn().mockResolvedValue({ ...disabledDoc, version: 2, reindexStatus: 'completed' }),
-        getDocumentBySlug: vi.fn().mockResolvedValue({ ...disabledDoc, version: 2, reindexStatus: 'completed' }),
+        getDocumentById: vi
+          .fn()
+          .mockResolvedValue({ ...disabledDoc, version: 2, reindexStatus: 'completed' }),
+        getDocumentBySlug: vi
+          .fn()
+          .mockResolvedValue({ ...disabledDoc, version: 2, reindexStatus: 'completed' }),
       } as unknown as KnowledgeRepository;
 
       const reindexService = new KnowledgeService(reindexRepo, mockPythonAi);
@@ -306,9 +317,11 @@ describe('KnowledgeService', () => {
         embed: vi.fn(),
       } as unknown as PythonAiClient;
       const busyRepo = {
-        startDocumentReindex: vi.fn().mockRejectedValue(
-          new AppError('conflict', 'CONFLICT', "Document 'acsm-squat' is already undergoing reindexing."),
-        ),
+        startDocumentReindex: vi
+          .fn()
+          .mockRejectedValue(
+            new AppError('conflict', 'CONFLICT', "Document 'acsm-squat' is already undergoing reindexing."),
+          ),
         failDocumentReindex: vi.fn(),
         replaceDocumentChunks: vi.fn(),
       } as unknown as KnowledgeRepository;

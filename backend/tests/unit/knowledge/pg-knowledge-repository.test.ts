@@ -251,10 +251,7 @@ describe('PgKnowledgeRepository', () => {
     });
 
     it('throws 404 Not Found when document does not exist for startDocumentReindex', async () => {
-      const mockQuery = vi
-        .fn()
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({ rows: [] });
+      const mockQuery = vi.fn().mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] });
 
       const mockDb = { query: mockQuery } as unknown as Database;
       const repo = new PgKnowledgeRepository(mockDb);

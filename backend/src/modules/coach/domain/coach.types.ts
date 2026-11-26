@@ -59,14 +59,7 @@ export interface KnowledgeContextPayloadItem {
   citation: string;
 }
 
-export type BlockType =
-  | 'metrics'
-  | 'workout'
-  | 'nutrition'
-  | 'chart'
-  | 'comparison'
-  | 'action'
-  | 'link';
+export type BlockType = 'metrics' | 'workout' | 'nutrition' | 'chart' | 'comparison' | 'action' | 'link';
 
 export interface MetricItem {
   label: string;
@@ -117,7 +110,19 @@ export interface ActionSummaryItem {
 }
 
 export type ActionPayload =
-  | { kind: 'logMeal'; meal: 'breakfast' | 'lunch' | 'dinner' | 'snack'; items: Array<{ id: string; name: string; serving: string; kcal: number; protein: number; carbs: number; fat: number }> }
+  | {
+      kind: 'logMeal';
+      meal: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+      items: Array<{
+        id: string;
+        name: string;
+        serving: string;
+        kcal: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+      }>;
+    }
   | { kind: 'logWorkout'; exercise: string; sets: Array<{ weight: number; reps: number }> }
   | { kind: 'updateWeight'; value: number }
   | { kind: 'createPlan' }
@@ -206,5 +211,3 @@ export interface CoachInsightsResponse {
   generatedAt: string;
   hasSufficientData: boolean;
 }
-
-

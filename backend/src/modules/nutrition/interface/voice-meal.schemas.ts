@@ -25,8 +25,11 @@ export const parseVoiceMealRequest = {
       lang: aiHintSchema.optional(),
       mealType: aiHintSchema.optional(),
     })
-    .refine((data) => Boolean((data.transcript && data.transcript.trim()) || (data.audio && data.audio.trim())), {
-      message: 'Either spoken audio or transcript text must be provided.',
-      path: ['transcript'],
-    }),
+    .refine(
+      (data) => Boolean((data.transcript && data.transcript.trim()) || (data.audio && data.audio.trim())),
+      {
+        message: 'Either spoken audio or transcript text must be provided.',
+        path: ['transcript'],
+      },
+    ),
 };

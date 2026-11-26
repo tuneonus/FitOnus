@@ -193,7 +193,12 @@ export class PgKnowledgeRepository implements KnowledgeRepository {
         docRow = insertRes.rows[0]!;
       } catch (err: unknown) {
         // Catch postgres 23505 unique constraint violation
-        if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === '23505') {
+        if (
+          typeof err === 'object' &&
+          err !== null &&
+          'code' in err &&
+          (err as { code: string }).code === '23505'
+        ) {
           throw new AppError(
             'conflict',
             'CONFLICT',

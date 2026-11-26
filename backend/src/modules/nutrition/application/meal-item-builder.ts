@@ -39,7 +39,9 @@ export interface BuildMealItemParams {
 }
 
 /** The portion fields every requested meal line must carry, checked before the line is priced or reused. */
-export function assertPortionInput(item: Pick<LogMealItemInput, 'servingMultiplier' | 'loggedWeightG'>): void {
+export function assertPortionInput(
+  item: Pick<LogMealItemInput, 'servingMultiplier' | 'loggedWeightG'>,
+): void {
   if (item.servingMultiplier <= 0) {
     throw new AppError('bad_request', 'VALIDATION_FAILED', 'Item serving multiplier must be greater than 0');
   }

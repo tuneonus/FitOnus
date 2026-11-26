@@ -93,4 +93,3 @@ describe('PythonAiClient.embed', () => {
     ).rejects.toThrow(PythonAiError);
   });
 });
-

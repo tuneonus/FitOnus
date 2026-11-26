@@ -63,8 +63,10 @@ class Settings {
           : LIMITS,
     };
   }
-  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) => this.store.reserveAiUsage(input);
-  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) => this.store.releaseAiUsage(input);
+  reserveAiUsage = (input: Parameters<InMemoryAiUsageStore['reserveAiUsage']>[0]) =>
+    this.store.reserveAiUsage(input);
+  releaseAiUsage = (input: Parameters<InMemoryAiUsageStore['releaseAiUsage']>[0]) =>
+    this.store.releaseAiUsage(input);
 }
 
 describe('Multimodal meal analysis (HTTP route -> use case -> quota gate -> PythonAiClient)', () => {
@@ -75,7 +77,8 @@ describe('Multimodal meal analysis (HTTP route -> use case -> quota gate -> Pyth
   const serviceFor = (url: string, timeoutMs = 5_000) =>
     new PythonMultimodalMealService({
       client: new PythonAiClient({ baseUrl: url, serviceSecret: SECRET }),
-      resolveModels: (feature) => Promise.resolve({ primary: `${feature}-primary`, fallback: `${feature}-fallback` }),
+      resolveModels: (feature) =>
+        Promise.resolve({ primary: `${feature}-primary`, fallback: `${feature}-fallback` }),
       usageRecorder: recorder as unknown as AiUsageRecorder,
       pythonTimeoutMs: timeoutMs,
     });

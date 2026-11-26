@@ -105,9 +105,7 @@ describe('Dashboard REST API HTTP Integration', () => {
 
   it('returns 200 and expected payload structure when authenticated', async () => {
     const { app, mockUseCase } = createTestApp(true);
-    const res = await request(app)
-      .get('/api/v1/dashboard/summary')
-      .query({ timezone: 'America/New_York' });
+    const res = await request(app).get('/api/v1/dashboard/summary').query({ timezone: 'America/New_York' });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);

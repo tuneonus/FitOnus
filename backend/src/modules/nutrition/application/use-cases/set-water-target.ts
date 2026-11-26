@@ -29,7 +29,11 @@ export class SetWaterTargetUseCase {
     if (targetMl !== null) {
       const { min, max } = WATER_LIMITS.targetMl;
       if (!Number.isInteger(targetMl) || targetMl < min || targetMl > max) {
-        throw new AppError('validation', 'VALIDATION_FAILED', `Water target must be a whole number between ${min} and ${max} ml`);
+        throw new AppError(
+          'validation',
+          'VALIDATION_FAILED',
+          `Water target must be a whole number between ${min} and ${max} ml`,
+        );
       }
     }
     await this.settingsRepo.saveWaterTarget(input.userId, targetMl);

@@ -194,4 +194,3 @@ def test_mcp_api_blocks_direct_confirmed_and_empty_subject_and_cross_user_confir
         headers=mcp_auth_headers(sub="22222222-2222-2222-2222-222222222222"),
     )
     assert attacker_res.status_code == 403
-

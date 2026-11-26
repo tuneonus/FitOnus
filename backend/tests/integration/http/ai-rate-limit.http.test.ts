@@ -30,7 +30,8 @@ describe('AI rate limiting over HTTP (per user, not per token or IP)', () => {
   const ENDPOINTS = {
     mealPhoto: {
       limit: 10,
-      call: (auth: LoggedIn['auth']) => api().post('/api/v1/nutrition/meal-photo/analyze').set(auth).send(photo),
+      call: (auth: LoggedIn['auth']) =>
+        api().post('/api/v1/nutrition/meal-photo/analyze').set(auth).send(photo),
     },
     voiceMeal: {
       limit: 10,
@@ -39,7 +40,8 @@ describe('AI rate limiting over HTTP (per user, not per token or IP)', () => {
     },
     coachChat: {
       limit: 30,
-      call: (auth: LoggedIn['auth']) => api().post('/api/v1/coach/chat').set(auth).send({ message: 'hello coach' }),
+      call: (auth: LoggedIn['auth']) =>
+        api().post('/api/v1/coach/chat').set(auth).send({ message: 'hello coach' }),
     },
   } as const;
 
@@ -54,8 +56,7 @@ describe('AI rate limiting over HTTP (per user, not per token or IP)', () => {
     expect(res.status).toBe(200);
     return { Authorization: `Bearer ${res.body.data.accessToken as string}` };
   };
-  const count = async (sql: string) =>
-    Number((await ctx.db.pool.query<{ n: string }>(sql)).rows[0]!.n);
+  const count = async (sql: string) => Number((await ctx.db.pool.query<{ n: string }>(sql)).rows[0]!.n);
 
   beforeAll(async () => {
     ctx = await createTestContext();
@@ -78,57 +79,60 @@ describe('AI rate limiting over HTTP (per user, not per token or IP)', () => {
   });
   afterAll(() => ctx.close());
 
-  describe.each(Object.entries(ENDPOINTS).filter(([name]) => name !== 'coachChat'))('%s', (_name, endpoint) => {
-    it('admits the budget, then answers 429 with the standard envelope; nothing is charged for the rejected call', async () => {
-      const { session } = await newUser('limit');
+  describe.each(Object.entries(ENDPOINTS).filter(([name]) => name !== 'coachChat'))(
+    '%s',
+    (_name, endpoint) => {
+      it('admits the budget, then answers 429 with the standard envelope; nothing is charged for the rejected call', async () => {
+        const { session } = await newUser('limit');
 
-      for (let i = 0; i < endpoint.limit; i += 1) {
-        const admitted = await endpoint.call(session.auth);
-        expect(admitted.status).toBe(503); // reached the (unconfigured) provider stage
-      }
-      const limited = await endpoint.call(session.auth);
+        for (let i = 0; i < endpoint.limit; i += 1) {
+          const admitted = await endpoint.call(session.auth);
+          expect(admitted.status).toBe(503); // reached the (unconfigured) provider stage
+        }
+        const limited = await endpoint.call(session.auth);
 
-      expect(limited.status).toBe(429);
-      expect(limited.body).toMatchObject({
-        success: false,
-        error: { code: 'RATE_LIMITED', message: 'Too many requests. Try again later.' },
+        expect(limited.status).toBe(429);
+        expect(limited.body).toMatchObject({
+          success: false,
+          error: { code: 'RATE_LIMITED', message: 'Too many requests. Try again later.' },
+        });
+        expect(typeof limited.body.error.requestId).toBe('string');
+        expect(limited.body.error.details.retryAfterSeconds).toBeGreaterThan(0);
+        expect(limited.body.error.details.retryAfterSeconds).toBeLessThanOrEqual(15 * 60);
+        expect(JSON.stringify(limited.body)).not.toMatch(/gemini|api key|token/i);
       });
-      expect(typeof limited.body.error.requestId).toBe('string');
-      expect(limited.body.error.details.retryAfterSeconds).toBeGreaterThan(0);
-      expect(limited.body.error.details.retryAfterSeconds).toBeLessThanOrEqual(15 * 60);
-      expect(JSON.stringify(limited.body)).not.toMatch(/gemini|api key|token/i);
-    });
 
-    it('refreshing or re-issuing tokens does NOT reset the budget', async () => {
-      const { user, session } = await newUser('refresh');
-      for (let i = 0; i < endpoint.limit; i += 1) await endpoint.call(session.auth);
-      expect((await endpoint.call(session.auth)).status).toBe(429);
+      it('refreshing or re-issuing tokens does NOT reset the budget', async () => {
+        const { user, session } = await newUser('refresh');
+        for (let i = 0; i < endpoint.limit; i += 1) await endpoint.call(session.auth);
+        expect((await endpoint.call(session.auth)).status).toBe(429);
 
-      const rotated = await refreshedToken(session);
-      const secondLogin = await freshToken(user);
-      const thirdLogin = await freshToken(user);
+        const rotated = await refreshedToken(session);
+        const secondLogin = await freshToken(user);
+        const thirdLogin = await freshToken(user);
 
-      // Genuinely different tokens, different suffixes (the old limiter keyed on the last 24 characters).
-      const suffixes = new Set(
-        [session.auth, rotated, secondLogin, thirdLogin].map((a) => a.Authorization.slice(-24)),
-      );
-      expect(suffixes.size).toBe(4);
-      for (const auth of [rotated, secondLogin, thirdLogin]) {
-        expect((await endpoint.call(auth)).status).toBe(429);
-      }
-    });
+        // Genuinely different tokens, different suffixes (the old limiter keyed on the last 24 characters).
+        const suffixes = new Set(
+          [session.auth, rotated, secondLogin, thirdLogin].map((a) => a.Authorization.slice(-24)),
+        );
+        expect(suffixes.size).toBe(4);
+        for (const auth of [rotated, secondLogin, thirdLogin]) {
+          expect((await endpoint.call(auth)).status).toBe(429);
+        }
+      });
 
-    it('an unrelated user on the same IP is not blocked behind a limited user', async () => {
-      const heavy = await newUser('heavy');
-      const bystander = await newUser('bystander');
-      for (let i = 0; i < endpoint.limit; i += 1) await endpoint.call(heavy.session.auth);
-      expect((await endpoint.call(heavy.session.auth)).status).toBe(429);
+      it('an unrelated user on the same IP is not blocked behind a limited user', async () => {
+        const heavy = await newUser('heavy');
+        const bystander = await newUser('bystander');
+        for (let i = 0; i < endpoint.limit; i += 1) await endpoint.call(heavy.session.auth);
+        expect((await endpoint.call(heavy.session.auth)).status).toBe(429);
 
-      for (let i = 0; i < endpoint.limit; i += 1) {
-        expect((await endpoint.call(bystander.session.auth)).status).toBe(503);
-      }
-    });
-  });
+        for (let i = 0; i < endpoint.limit; i += 1) {
+          expect((await endpoint.call(bystander.session.auth)).status).toBe(503);
+        }
+      });
+    },
+  );
 
   describe('coach chat (also exercises the legacy per-token limiter that stays in place)', () => {
     const { limit, call } = ENDPOINTS.coachChat;
@@ -164,7 +168,9 @@ describe('AI rate limiting over HTTP (per user, not per token or IP)', () => {
 
   describe('coach insights', () => {
     const insights = (auth: LoggedIn['auth'], refresh: boolean) =>
-      api().get(`/api/v1/coach/insights${refresh ? '?refresh=true' : ''}`).set(auth);
+      api()
+        .get(`/api/v1/coach/insights${refresh ? '?refresh=true' : ''}`)
+        .set(auth);
 
     it('regeneration is limited per user across refreshed tokens (shares the coach budget)', async () => {
       const { user, session } = await newUser('insights');

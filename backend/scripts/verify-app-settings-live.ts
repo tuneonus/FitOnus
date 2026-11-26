@@ -13,7 +13,11 @@ async function main() {
   const config = loadConfig();
   console.log('Database target:', config.database.url.split('@')[1] || 'DEV DB');
 
-  if (!config.database.url.includes('neon.tech') && !config.database.url.includes('localhost') && !config.database.url.includes('127.0.0.1')) {
+  if (
+    !config.database.url.includes('neon.tech') &&
+    !config.database.url.includes('localhost') &&
+    !config.database.url.includes('127.0.0.1')
+  ) {
     throw new Error('Safety assertion failed: Database URL does not match DEV environment');
   }
 
@@ -93,7 +97,7 @@ async function main() {
           },
         ],
       },
-      { ip: '127.0.0.1', userAgent: 'Verification-Script/1.0' }
+      { ip: '127.0.0.1', userAgent: 'Verification-Script/1.0' },
     );
 
     console.log(`Updated app.support in Neon DEV. New version: ${updated[0]!.version}`);
@@ -120,7 +124,7 @@ async function main() {
             },
           ],
         },
-        { ip: '127.0.0.1', userAgent: 'Verification-Script/1.0' }
+        { ip: '127.0.0.1', userAgent: 'Verification-Script/1.0' },
       );
     } catch (err: any) {
       if (err.code === 'VERSION_CONFLICT') {
@@ -148,7 +152,7 @@ async function main() {
           },
         ],
       },
-      { ip: '127.0.0.1', userAgent: 'Verification-Script/1.0' }
+      { ip: '127.0.0.1', userAgent: 'Verification-Script/1.0' },
     );
     console.log(`Restored app.support to original content. Current version: ${restored[0]!.version}`);
 
@@ -176,9 +180,15 @@ async function main() {
 
     // Clean up or restore test usage row
     if (initialUsage === 0) {
-      await pool.query('DELETE FROM user_ai_usage WHERE user_id = $1 AND action_type = $2', [testUserId, 'coach_chat']);
+      await pool.query('DELETE FROM user_ai_usage WHERE user_id = $1 AND action_type = $2', [
+        testUserId,
+        'coach_chat',
+      ]);
     } else {
-      await pool.query('UPDATE user_ai_usage SET request_count = $1 WHERE user_id = $2 AND action_type = $3', [initialUsage, testUserId, 'coach_chat']);
+      await pool.query(
+        'UPDATE user_ai_usage SET request_count = $1 WHERE user_id = $2 AND action_type = $3',
+        [initialUsage, testUserId, 'coach_chat'],
+      );
     }
     console.log('✓ Restored test user AI usage records');
 

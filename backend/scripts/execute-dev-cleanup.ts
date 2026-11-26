@@ -1,7 +1,7 @@
 /**
  * FITONUS DEV DATABASE CLEANUP SCRIPT
  * Target: Neon DEV (ep-shy-art-b3sxwfkd, branch br-fragrant-morning-b35lwkjg)
- * 
+ *
  * Safety:
  * - Refuses to run if connected to production endpoint.
  * - Wraps all operations in an atomic transaction.
@@ -32,7 +32,9 @@ if (dbUrl.includes('ep-gentle-bar-b3ywek03') || dbUrl.includes('br-icy-term-b3lb
 }
 
 if (!dbUrl.includes('ep-shy-art-b3sxwfkd') && !dbUrl.includes('b35lwkjg')) {
-  console.error('CRITICAL ERROR: Connection string is NOT the approved DEV endpoint (ep-shy-art-b3sxwfkd)! Aborting.');
+  console.error(
+    'CRITICAL ERROR: Connection string is NOT the approved DEV endpoint (ep-shy-art-b3sxwfkd)! Aborting.',
+  );
   process.exit(1);
 }
 
@@ -54,10 +56,12 @@ export async function executeCleanup(): Promise<void> {
     // 1. Guard check: Admin exists
     const adminCheck = await client.query(
       `SELECT count(*)::int as c FROM public.users WHERE id = $1 AND email = $2 AND role = 'admin'`,
-      [ADMIN_ID, ADMIN_EMAIL]
+      [ADMIN_ID, ADMIN_EMAIL],
     );
     if (adminCheck.rows[0].c !== 1) {
-      throw new Error(`Safety Guard Triggered: Admin user ${ADMIN_EMAIL} (${ADMIN_ID}) not found in database!`);
+      throw new Error(
+        `Safety Guard Triggered: Admin user ${ADMIN_EMAIL} (${ADMIN_ID}) not found in database!`,
+      );
     }
 
     console.log('Starting atomic transaction for DEV database cleanup...');
@@ -110,12 +114,16 @@ export async function executeCleanup(): Promise<void> {
     console.log('6. Cleaning workout sessions, sets, and user custom workouts/exercises...');
     await client.query('DELETE FROM public.workout_session_sets;');
     await client.query('DELETE FROM public.workout_sessions;');
-    await client.query('DELETE FROM public.workout_exercises WHERE workout_id IN (SELECT id FROM public.workouts WHERE is_template = false);');
+    await client.query(
+      'DELETE FROM public.workout_exercises WHERE workout_id IN (SELECT id FROM public.workouts WHERE is_template = false);',
+    );
     await client.query('DELETE FROM public.workouts WHERE is_template = false;');
     await client.query('DELETE FROM public.exercises WHERE is_system = false OR created_by IS NOT NULL;');
 
     // Step 7: Auth, Audit, Tokens & Idempotency
-    console.log('7. Cleaning idempotency keys, password reset tokens, admin audit logs, and auth sessions...');
+    console.log(
+      '7. Cleaning idempotency keys, password reset tokens, admin audit logs, and auth sessions...',
+    );
     await client.query('DELETE FROM public.idempotency_keys;');
     await client.query('DELETE FROM public.password_reset_tokens;');
     await client.query('DELETE FROM public.admin_audit_logs;');
@@ -128,8 +136,12 @@ export async function executeCleanup(): Promise<void> {
 
     // Step 9: Users (Preserving admin@fitonus.com)
     console.log('9. Nullifying FK references and deleting non-admin users...');
-    await client.query(`UPDATE public.app_settings SET updated_by = NULL WHERE updated_by IS NOT NULL AND updated_by != '${ADMIN_ID}'::uuid;`);
-    await client.query(`UPDATE public.gemini_config SET updated_by = NULL WHERE updated_by IS NOT NULL AND updated_by != '${ADMIN_ID}'::uuid;`);
+    await client.query(
+      `UPDATE public.app_settings SET updated_by = NULL WHERE updated_by IS NOT NULL AND updated_by != '${ADMIN_ID}'::uuid;`,
+    );
+    await client.query(
+      `UPDATE public.gemini_config SET updated_by = NULL WHERE updated_by IS NOT NULL AND updated_by != '${ADMIN_ID}'::uuid;`,
+    );
     await client.query(`DELETE FROM public.users WHERE id != '${ADMIN_ID}'::uuid;`);
 
     // Verification Assertions before COMMIT
@@ -149,15 +161,20 @@ export async function executeCleanup(): Promise<void> {
       postTotal += c.rows[0].c;
     }
 
-    if (postCounts['schema_migrations'] !== 19) throw new Error(`schema_migrations mismatch: ${postCounts['schema_migrations']}`);
-    if (postCounts['app_settings'] !== 7) throw new Error(`app_settings mismatch: ${postCounts['app_settings']}`);
-    if (postCounts['gemini_config'] !== 1) throw new Error(`gemini_config mismatch: ${postCounts['gemini_config']}`);
-    if (postCounts['gemini_pricing'] !== 8) throw new Error(`gemini_pricing mismatch: ${postCounts['gemini_pricing']}`);
+    if (postCounts['schema_migrations'] !== 19)
+      throw new Error(`schema_migrations mismatch: ${postCounts['schema_migrations']}`);
+    if (postCounts['app_settings'] !== 7)
+      throw new Error(`app_settings mismatch: ${postCounts['app_settings']}`);
+    if (postCounts['gemini_config'] !== 1)
+      throw new Error(`gemini_config mismatch: ${postCounts['gemini_config']}`);
+    if (postCounts['gemini_pricing'] !== 8)
+      throw new Error(`gemini_pricing mismatch: ${postCounts['gemini_pricing']}`);
     if (postCounts['badges'] !== 7) throw new Error(`badges mismatch: ${postCounts['badges']}`);
     if (postCounts['exercises'] !== 14) throw new Error(`exercises mismatch: ${postCounts['exercises']}`);
     if (postCounts['foods'] !== 25) throw new Error(`foods mismatch: ${postCounts['foods']}`);
     if (postCounts['workouts'] !== 3) throw new Error(`workouts mismatch: ${postCounts['workouts']}`);
-    if (postCounts['workout_exercises'] !== 13) throw new Error(`workout_exercises mismatch: ${postCounts['workout_exercises']}`);
+    if (postCounts['workout_exercises'] !== 13)
+      throw new Error(`workout_exercises mismatch: ${postCounts['workout_exercises']}`);
     if (postCounts['users'] !== 1) throw new Error(`users mismatch: ${postCounts['users']}`);
 
     if (postTotal !== 98) {
@@ -167,7 +184,6 @@ export async function executeCleanup(): Promise<void> {
     await client.query('COMMIT;');
     console.log('✓ TRANSACTION COMMITTED SUCCESSFULLY! DEV database has been reset.');
     console.log('✓ Exactly 98 system reference rows preserved. 517 test rows cleanly deleted.');
-
   } catch (err) {
     await client.query('ROLLBACK;');
     console.error('CRITICAL: Cleanup failed and was rolled back:', err);
@@ -180,9 +196,8 @@ export async function executeCleanup(): Promise<void> {
 
 // Only execute when run directly
 if (process.argv.includes('--execute-now')) {
-  executeCleanup().catch(err => {
+  executeCleanup().catch((err) => {
     console.error(err);
     process.exit(1);
   });
 }
-

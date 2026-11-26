@@ -420,12 +420,12 @@ async def aggregate_results_node(
     has_failed = any(
         r.status in (DelegatedTaskStatus.FAILED, DelegatedTaskStatus.REFUSED) for r in results
     )
-    has_partial_flag = any(
-        r.partial or r.status == DelegatedTaskStatus.PARTIAL for r in results
+    has_partial_flag = any(r.partial or r.status == DelegatedTaskStatus.PARTIAL for r in results)
+    medical_halted = (
+        bool(state.get("medical_halted"))
+        or any(bool(r.output_data.get("medical_halted")) for r in results)
+        or any("medical_red_flag_halt" in rec.constraints_applied for rec in resolved_recs)
     )
-    medical_halted = bool(state.get("medical_halted")) or any(
-        bool(r.output_data.get("medical_halted")) for r in results
-    ) or any("medical_red_flag_halt" in rec.constraints_applied for rec in resolved_recs)
 
     updated_shared = state["shared_context"].model_copy(
         update={
@@ -474,8 +474,7 @@ async def validate_results_node(
 
     # Check circular delegation error from A2A mediator
     if any(
-        r.error_message and "circular delegation" in r.error_message.lower()
-        for r in failed_results
+        r.error_message and "circular delegation" in r.error_message.lower() for r in failed_results
     ):
         return {
             "needs_replan": False,
@@ -596,9 +595,7 @@ async def final_synthesis_node(
                 if state.get("partial_results")
                 else MultiAgentWorkflowStatus.COMPLETED
             )
-        term_reason = (
-            state.get("termination_reason") or MultiAgentTerminationReason.GOAL_SATISFIED
-        )
+        term_reason = state.get("termination_reason") or MultiAgentTerminationReason.GOAL_SATISFIED
         if state.get("medical_halted"):
             term_reason = MultiAgentTerminationReason.MEDICAL_RED_FLAG_HALT
 

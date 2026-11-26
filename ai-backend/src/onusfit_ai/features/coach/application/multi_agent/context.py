@@ -49,9 +49,7 @@ def _deduplicate_memories(
 ) -> list[str]:
     """Remove memories that duplicate static profile attributes, keeping safety notes."""
     profile_values = {
-        str(v).strip().lower()
-        for v in profile_summary.values()
-        if v is not None and str(v).strip()
+        str(v).strip().lower() for v in profile_summary.values() if v is not None and str(v).strip()
     }
     seen: set[str] = set()
     cleaned: list[str] = []

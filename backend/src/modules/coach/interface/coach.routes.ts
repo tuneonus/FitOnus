@@ -40,7 +40,8 @@ export function createCoachRoutes(
         method: 'post',
         path: '/chat',
         summary: 'Send message to personal AI fitness coach',
-        description: 'Receives user inquiry, retrieves personal fitness context, and generates grounded guidance.',
+        description:
+          'Receives user inquiry, retrieves personal fitness context, and generates grounded guidance.',
         tags: ['Coach'],
         access: { kind: 'authenticated' },
         middleware: authMiddleware,

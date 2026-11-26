@@ -1,9 +1,6 @@
 import { AppError } from '../../../../shared/errors/app-error.js';
 import type { ConversationRepository } from '../ports.js';
-import type {
-  ConversationDetail,
-  ConversationSummary,
-} from '../../domain/coach-history.types.js';
+import type { ConversationDetail, ConversationSummary } from '../../domain/coach-history.types.js';
 
 export class ManageConversationsUseCase {
   constructor(private readonly conversationRepo: ConversationRepository) {}
@@ -79,11 +76,7 @@ export class ManageConversationsUseCase {
     }
   }
 
-  async setFeedback(
-    userId: string,
-    messageId: string,
-    feedback: 'like' | 'dislike' | 'none',
-  ): Promise<void> {
+  async setFeedback(userId: string, messageId: string, feedback: 'like' | 'dislike' | 'none'): Promise<void> {
     if (!userId?.trim()) {
       throw new AppError('unauthorized', 'UNAUTHENTICATED', 'Authentication is required.');
     }
@@ -93,4 +86,3 @@ export class ManageConversationsUseCase {
     await this.conversationRepo.setMessageFeedback(userId, messageId, feedback);
   }
 }
-
