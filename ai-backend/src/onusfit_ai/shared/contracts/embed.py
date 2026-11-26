@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import Field
 
 from onusfit_ai.shared.contracts._base import ContractModel
+from onusfit_ai.shared.contracts.common import Usage
 
 EmbedTaskType = Literal[
     "RETRIEVAL_DOCUMENT",
@@ -28,7 +29,10 @@ class EmbedRequest(ContractModel):
 class EmbedResponse(ContractModel):
     """Response returned by POST /internal/v1/ai/embed."""
 
+    outcome: Literal["ok"] = "ok"
     embeddings: list[list[float]]
     model: str
     dimensions: int
     count: int
+    usage: Usage
+    trace_id: str

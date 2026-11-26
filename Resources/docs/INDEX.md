@@ -42,6 +42,7 @@ Keep the context needed to maintain the application: agent instructions, product
 - [Phase 15: Multimodal AI Engineering](ai-learning/phase-15-multimodal-ai-engineering.md)
 - [Phase 16: AI Security & Guardrails](ai-learning/phase-16-ai-security-guardrails.md)
 - [Phase 18: Advanced AI Evaluation](ai-learning/phase-18-advanced-ai-evaluation.md)
+- [Phase 20: Production AI Architecture](ai-learning/phase-20-production-ai-architecture.md)
 
 The architecture proposal and roadmap describe planned work. They do not indicate that the proposed services or integrations exist.
 

@@ -18,10 +18,26 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-// In-memory cache isolated per user and language
+// In-memory cache isolated per user and language (bounded to prevent unbounded RSS growth)
 const insightsCache = new Map<string, CacheEntry>();
 const inFlightRequests = new Map<string, Promise<CoachInsightsResponse>>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_INSIGHTS_CACHE_ENTRIES = 1_000;
+
+function storeInsightsCacheEntry(key: string, entry: CacheEntry, now: number): void {
+  if (insightsCache.size >= MAX_INSIGHTS_CACHE_ENTRIES) {
+    for (const [k, existing] of insightsCache.entries()) {
+      if (existing.expiresAt <= now) insightsCache.delete(k);
+    }
+    while (insightsCache.size >= MAX_INSIGHTS_CACHE_ENTRIES) {
+      const oldest = insightsCache.keys().next().value;
+      if (oldest === undefined) break;
+      insightsCache.delete(oldest);
+    }
+  }
+  insightsCache.delete(key);
+  insightsCache.set(key, entry);
+}
 
 export class GetCoachInsightsUseCase {
   constructor(
@@ -32,7 +48,10 @@ export class GetCoachInsightsUseCase {
     private readonly logger?: Pick<Logger, 'info'>,
   ) {}
 
-  private logCache(fields: Omit<Parameters<typeof insightsCacheFields>[0], 'correlationId'>, message: string): void {
+  private logCache(
+    fields: Omit<Parameters<typeof insightsCacheFields>[0], 'correlationId'>,
+    message: string,
+  ): void {
     this.logger?.info(insightsCacheFields({ ...fields, correlationId: currentCorrelationId() }), message);
   }
 
@@ -48,7 +67,7 @@ export class GetCoachInsightsUseCase {
     }
 
     const userId = input.userId.trim();
-    const lang = (input.lang?.trim().toLowerCase() || 'en');
+    const lang = input.lang?.trim().toLowerCase() || 'en';
     const timezone = input.timezone || 'UTC';
     const cacheKey = `${userId}:${lang}`;
 
@@ -94,10 +113,15 @@ export class GetCoachInsightsUseCase {
         });
 
         // Store in cache
-        insightsCache.set(cacheKey, {
-          data: insights,
-          expiresAt: Date.now() + CACHE_TTL_MS,
-        });
+        const now = Date.now();
+        storeInsightsCacheEntry(
+          cacheKey,
+          {
+            data: insights,
+            expiresAt: now + CACHE_TTL_MS,
+          },
+          now,
+        );
         this.logCache({ cache: 'stored', servedFrom: responseSourceOf(insights) }, 'Coach insights cached');
 
         return insights;
@@ -110,4 +134,3 @@ export class GetCoachInsightsUseCase {
     return await generatePromise;
   }
 }
-

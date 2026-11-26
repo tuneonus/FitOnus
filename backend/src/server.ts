@@ -92,7 +92,9 @@ function main(): void {
   // Starts background memory extraction worker loop.
   container.coach?.memoryWorker?.start();
   const server = http.createServer(app);
-  server.requestTimeout = 30_000;
+  // Allow up to 65s at the socket layer so 25-28s AI calls and SSE streams do not race a 30s cutoff;
+  // per-route AI calls and database queries still enforce their own shorter timeouts (15-28s / 10s).
+  server.requestTimeout = 65_000;
   server.headersTimeout = 20_000;
   server.keepAliveTimeout = 5_000;
 

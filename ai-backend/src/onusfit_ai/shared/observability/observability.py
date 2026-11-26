@@ -85,6 +85,7 @@ _CATEGORY_BY_GEMINI_KIND: Final[dict[str, AiErrorCategory]] = {
 # belongs to. tests/test_observability.py fails if a new internal route is missing here.
 FEATURE_BY_PATH: Final[dict[str, str]] = {
     "/internal/v1/ai/coach/chat": "coach_chat",
+    "/internal/v1/ai/coach/chat/stream": "coach_chat",
     "/internal/v1/ai/coach/insights": "coach_insights",
     "/internal/v1/ai/coach/memories/extract": "coach_memory_extract",
     "/internal/v1/ai/meals/parse-voice": "voice_meal",

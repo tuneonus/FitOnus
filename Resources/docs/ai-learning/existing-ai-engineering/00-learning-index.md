@@ -184,3 +184,13 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 | Stage | Guide | Status | Core Implementation Files | Tests |
 |:---|:---|:---|:---|:---|
 | **P18-All** | [**Phase 18: Advanced AI Evaluation**](../phase-18-advanced-ai-evaluation.md) | **COMPLETED** | `ai-backend/tests/evals/{schemas,gates,reporter,runner}.py`<br>`ai-backend/tests/evals/datasets/loader.py`<br>`ai-backend/tests/evals/evaluators/{rag,agent_advanced,multimodal_advanced,security,performance,judge}.py`<br>`ai-backend/tests/evals/datasets/{rag_evaluation,agent_advanced,multimodal_advanced,security_adversarial,performance}_benchmark.json`<br>`ai-backend/tests/evals/datasets/baseline_offline.json` | `ai-backend/tests/evals/runner.py` (401/401 offline passed)<br>`ai-backend/tests/evals/{test_runner,test_phase18_*}.py` (`178 passed` across Phase 18, core evals, and arch tests excluding concurrent Phase 14/16 WIP) |
+
+---
+
+## Phase 20: Production AI Architecture
+
+| Stage | Guide | Status | Core Implementation Files | Tests |
+|:---|:---|:---|:---|:---|
+| **P20-All** | [**Phase 20: Production AI Architecture**](../phase-20-production-ai-architecture.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/shared/{contracts/embed,health/router,llm/gemini,observability/observability,tools/client}.py`<br>`ai-backend/src/onusfit_ai/{main,features/knowledge/presentation/embed,features/coach/presentation/coach_chat_stream}.py`<br>`backend/src/{server,container}.ts`<br>`backend/src/modules/{coach/interface/internal-tools.routes,coach/application/use-cases/get-coach-insights,knowledge/application/knowledge-service,workouts/index,workouts/application/use-cases/*-ai-workout-plan,workouts/infrastructure/python-workout-planner-service}.ts` | `ai-backend/tests/test_production_architecture.py`<br>`ai-backend/tests/evals/runner.py` (467/467 offline passed)<br>`backend/tests/unit/ai/production-architecture.test.ts` |
+
+

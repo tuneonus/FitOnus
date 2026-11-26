@@ -68,9 +68,11 @@ class ReplayCache:
 
     FastAPI runs the (sync) auth dependency on worker threads, so two requests can be here at once:
     the lock keeps "is it new? then remember it" a single step, or one token could pass twice.
+    Bounded to ``max_entries`` so memory cannot grow unbounded under high-rate bursts.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, max_entries: int = 10_000) -> None:
+        self._max_entries = max(1, max_entries)
         self._seen: dict[str, float] = {}
         self._lock = threading.Lock()
 
@@ -78,9 +80,14 @@ class ReplayCache:
         """Return True if `jti` is new (and remember it); False if it was already used."""
         now = time.time() if now is None else now
         with self._lock:
-            self._seen = {k: exp for k, exp in self._seen.items() if exp > now}
+            expired = [k for k, exp in self._seen.items() if exp <= now]
+            for k in expired:
+                del self._seen[k]
             if jti in self._seen:
                 return False
+            while len(self._seen) >= self._max_entries:
+                oldest_key = next(iter(self._seen))
+                del self._seen[oldest_key]
             self._seen[jti] = expires_at
             return True
 

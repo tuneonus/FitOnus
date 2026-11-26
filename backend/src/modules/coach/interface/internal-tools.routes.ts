@@ -30,11 +30,22 @@ const CLOCK_SKEW_SECONDS = 5;
 export class ToolReplayCache {
   private seen = new Map<string, number>();
 
+  constructor(private readonly maxEntries = 10_000) {}
+
   checkAndStore(jti: string, expiresAt: number, now: number = Date.now() / 1000): boolean {
-    for (const [k, exp] of this.seen.entries()) {
-      if (exp <= now) this.seen.delete(k);
+    const existing = this.seen.get(jti);
+    if (existing !== undefined && existing > now) return false;
+    if (this.seen.size >= this.maxEntries) {
+      for (const [k, exp] of this.seen.entries()) {
+        if (exp <= now) this.seen.delete(k);
+      }
+      while (this.seen.size >= this.maxEntries) {
+        const oldest = this.seen.keys().next().value;
+        if (oldest === undefined) break;
+        this.seen.delete(oldest);
+      }
     }
-    if (this.seen.has(jti)) return false;
+    this.seen.delete(jti);
     this.seen.set(jti, expiresAt);
     return true;
   }
@@ -266,4 +277,3 @@ export function createInternalToolsRoutes(
     ],
   };
 }
-

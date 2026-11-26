@@ -135,14 +135,18 @@ export class KnowledgeService {
     });
 
     if (chunks.length === 0) {
-      throw new AppError('validation', 'VALIDATION_FAILED', 'Document content resulted in zero valid chunks.');
+      throw new AppError(
+        'validation',
+        'VALIDATION_FAILED',
+        'Document content resulted in zero valid chunks.',
+      );
     }
 
     // 2. Generate 768-d embeddings for all chunks via Python AI backend
     const texts = chunks.map((c) => c.content);
     const embedResult = await this.pythonAi.embed({
       userId: 'system',
-      requestId: `ingest-${slug}-${Date.now()}`,
+      requestId: `ingest-${slug}-${crypto.randomUUID()}`,
       texts,
       taskType: 'RETRIEVAL_DOCUMENT',
       title,
@@ -227,7 +231,7 @@ export class KnowledgeService {
       const texts = chunks.map((c) => c.content);
       const embedResult = await this.pythonAi.embed({
         userId: 'system',
-        requestId: `reindex-${doc.slug}-${Date.now()}`,
+        requestId: `reindex-${doc.slug}-${crypto.randomUUID()}`,
         texts,
         taskType: 'RETRIEVAL_DOCUMENT',
         title: doc.title,
@@ -236,7 +240,9 @@ export class KnowledgeService {
       });
 
       if (embedResult.embeddings.length !== chunks.length) {
-        throw new Error(`Embedding count mismatch: expected ${chunks.length}, received ${embedResult.embeddings.length}`);
+        throw new Error(
+          `Embedding count mismatch: expected ${chunks.length}, received ${embedResult.embeddings.length}`,
+        );
       }
 
       saveChunks = chunks.map((c, idx) => ({
@@ -250,7 +256,11 @@ export class KnowledgeService {
       const errorMsg = err instanceof Error ? err.message : String(err);
       // Mark reindex failed, but document remains ACTIVE and READY with all original chunks intact!
       await this.repository.failDocumentReindex(doc.id, errorMsg);
-      throw new AppError('internal', 'INTERNAL_ERROR', `Reindexing failed during embedding generation: ${errorMsg}`);
+      throw new AppError(
+        'internal',
+        'INTERNAL_ERROR',
+        `Reindexing failed during embedding generation: ${errorMsg}`,
+      );
     }
 
     // Replace chunks atomically only after complete embedding success
@@ -303,7 +313,7 @@ export class KnowledgeService {
         // 1. Embed query with RETRIEVAL_QUERY task type
         const embedResult = await this.pythonAi.embed({
           userId: 'system',
-          requestId: `query-${Date.now()}`,
+          requestId: `query-${crypto.randomUUID()}`,
           texts: [cleanQuery],
           taskType: 'RETRIEVAL_QUERY',
           dimensions: 768,
@@ -403,8 +413,7 @@ export class KnowledgeService {
         const durationMs = performance.now() - startedAt;
         const ranks = results.map((r) => r.rank).filter((s) => Number.isFinite(s));
         const topScore = ranks.length > 0 ? Math.max(...ranks) : undefined;
-        const avgScore =
-          ranks.length > 0 ? ranks.reduce((acc, s) => acc + s, 0) / ranks.length : undefined;
+        const avgScore = ranks.length > 0 ? ranks.reduce((acc, s) => acc + s, 0) / ranks.length : undefined;
         span.setAttribute('returnedCount', results.length);
         try {
           defaultAiMetrics.recordRagRetrieval({
@@ -464,7 +473,7 @@ export class KnowledgeService {
         // 1. Embed query with RETRIEVAL_QUERY task type via Python AI / Gemini
         const embedResult = await this.pythonAi.embed({
           userId: 'system',
-          requestId: `hybrid-${Date.now()}`,
+          requestId: `hybrid-${crypto.randomUUID()}`,
           texts: [cleanQuery],
           taskType: 'RETRIEVAL_QUERY',
           dimensions: 768,

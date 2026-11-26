@@ -207,17 +207,6 @@ export function createContainer(
   const { aiBackend } = assertAiBackendConfigured(config);
   const pythonAi = new PythonAiClient({ baseUrl: aiBackend.url, serviceSecret: aiBackend.serviceSecret });
 
-  const workouts = createWorkoutsModule({
-    memberBasePath: `${API_PREFIX}/workouts`,
-    adminBasePath: `${API_PREFIX}/admin/workouts`,
-    db: database,
-    uow,
-    idempotency,
-    images: publicImages,
-    limiters: { adminImageUploads: rateLimiters.adminImageUploads },
-    logger,
-    pythonAi,
-  });
   const appSettings = createAppSettingsModule({
     adminBasePath: `${API_PREFIX}/admin/application-settings`,
     adminAiBasePath: `${API_PREFIX}/admin/ai`,
@@ -230,9 +219,24 @@ export function createContainer(
     fallbackModel: config.gemini.fallbackModel,
   });
 
+  const workouts = createWorkoutsModule({
+    memberBasePath: `${API_PREFIX}/workouts`,
+    adminBasePath: `${API_PREFIX}/admin/workouts`,
+    db: database,
+    uow,
+    idempotency,
+    images: publicImages,
+    limiters: { adminImageUploads: rateLimiters.adminImageUploads },
+    logger,
+    pythonAi,
+    aiTimeoutMs: aiBackend.timeoutMs,
+    aiUsageGate: appSettings.aiUsageGate,
+  });
+
   /** Admin-configured primary/fallback model names for a feature; Python applies the fallback itself. */
   const resolveModelsFor =
-    (feature: 'coach_chat' | 'voice_meal' | 'meal_photo' | 'coach_insights') => async (): Promise<{ primary: string; fallback: string | null }> => {
+    (feature: 'coach_chat' | 'voice_meal' | 'meal_photo' | 'coach_insights') =>
+    async (): Promise<{ primary: string; fallback: string | null }> => {
       try {
         const names = await appSettings.runtimeService.resolveModelNames(feature);
         return { primary: names.primaryModel, fallback: names.fallbackModel || null };

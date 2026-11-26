@@ -35,11 +35,16 @@ from onusfit_ai.shared.config import Settings, configuration_problems, get_setti
 from onusfit_ai.shared.contracts.common import AudioInput, ImageInput, ModelSelection
 from onusfit_ai.shared.errors import register_error_handlers
 from onusfit_ai.shared.health import router as health_router
+from onusfit_ai.shared.health import set_shutting_down
 from onusfit_ai.shared.logging import configure_logging, log_event
 from onusfit_ai.shared.observability import RequestObservabilityMiddleware
 from onusfit_ai.shared.observability.router import router as observability_router
 from onusfit_ai.shared.request_limits import MAX_REQUEST_BODY_BYTES, RequestBodyLimitMiddleware
-from onusfit_ai.shared.tools import set_multi_agent_providers, set_shared_mcp_server
+from onusfit_ai.shared.tools import (
+    close_shared_http_client,
+    set_multi_agent_providers,
+    set_shared_mcp_server,
+)
 
 logger = logging.getLogger("onusfit_ai.main")
 
@@ -241,8 +246,13 @@ def run_startup_checks() -> None:
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Runs when uvicorn starts the app (a plain `TestClient(app)` does not run it)."""
+    set_shutting_down(False)
     run_startup_checks()
-    yield
+    try:
+        yield
+    finally:
+        set_shutting_down(True)
+        await close_shared_http_client()
 
 
 def create_app() -> FastAPI:

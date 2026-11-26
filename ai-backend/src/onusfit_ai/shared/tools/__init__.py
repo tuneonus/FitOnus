@@ -1,6 +1,11 @@
 """Shared internal tools client, MCP adapters, and dependencies."""
 
-from onusfit_ai.shared.tools.client import InternalToolsClient, get_tools_client
+from onusfit_ai.shared.tools.client import (
+    InternalToolsClient,
+    close_shared_http_client,
+    get_shared_http_client,
+    get_tools_client,
+)
 from onusfit_ai.shared.tools.mcp import (
     McpClientAdapter,
     McpDiscoveryCache,
@@ -22,10 +27,12 @@ __all__ = [
     "McpClientAdapter",
     "McpDiscoveryCache",
     "McpTelemetry",
+    "close_shared_http_client",
     "create_a2a_mediator",
     "create_multimodal_meal_port",
     "create_workout_planner_port",
     "get_mcp_client_adapter",
+    "get_shared_http_client",
     "get_shared_mcp_server",
     "get_tools_client",
     "is_mcp_enabled",

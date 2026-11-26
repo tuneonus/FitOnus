@@ -1113,11 +1113,13 @@ class GeminiClient:
         output_dimensionality: int = 768,
         task_type: str = "RETRIEVAL_DOCUMENT",
         title: str | None = None,
+        timeout_s: float = 14.0,
     ) -> list[EmbeddingResult]:
         """Generate vector embeddings using Google Gemini gemini-embedding-001.
 
         Uses output_dimensionality=768 (Matryoshka Representation Learning)
-        and semantic task_type for asymmetric retrieval.
+        and semantic task_type for asymmetric retrieval. Enforces a hard timeout
+        inside Python so hung embedding calls fail before Node's HTTP deadline.
         """
         if not contents:
             return []
@@ -1133,11 +1135,12 @@ class GeminiClient:
         config = types.EmbedContentConfig(**config_kwargs)
 
         try:
-            response = await sdk.aio.models.embed_content(
-                model=model,
-                contents=contents,
-                config=config,
-            )
+            async with asyncio.timeout(max(0.5, timeout_s)):
+                response = await sdk.aio.models.embed_content(
+                    model=model,
+                    contents=contents,
+                    config=config,
+                )
             raw_embeddings = getattr(response, "embeddings", None) or []
             return [
                 EmbeddingResult(values=list(getattr(emb, "values", []))) for emb in raw_embeddings

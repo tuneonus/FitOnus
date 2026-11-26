@@ -4,6 +4,7 @@ Dispatches validated tool requests with machine-to-machine JWT authentication,
 applies tool argument validation, and sanitizes all errors returned to the LLM.
 """
 
+import asyncio
 import logging
 import time
 from collections.abc import Callable
@@ -19,6 +20,41 @@ from onusfit_ai.shared.llm.ports import sanitize_tool_error
 from onusfit_ai.shared.logging import build_propagation_headers, start_async_span
 
 logger = logging.getLogger("onusfit_ai.tools_client")
+
+_DEFAULT_LIMITS = httpx.Limits(
+    max_connections=50,
+    max_keepalive_connections=20,
+    keepalive_expiry=30.0,
+)
+_shared_http_client: httpx.AsyncClient | None = None
+_shared_client_lock: asyncio.Lock | None = None
+
+
+def _get_client_lock() -> asyncio.Lock:
+    global _shared_client_lock
+    if _shared_client_lock is None:
+        _shared_client_lock = asyncio.Lock()
+    return _shared_client_lock
+
+
+async def get_shared_http_client() -> httpx.AsyncClient:
+    """Return a process-wide pooled httpx.AsyncClient for internal tool calls."""
+    global _shared_http_client
+    if _shared_http_client is not None and not _shared_http_client.is_closed:
+        return _shared_http_client
+    async with _get_client_lock():
+        if _shared_http_client is None or _shared_http_client.is_closed:
+            _shared_http_client = httpx.AsyncClient(limits=_DEFAULT_LIMITS)
+        return _shared_http_client
+
+
+async def close_shared_http_client() -> None:
+    """Close the process-wide pooled httpx.AsyncClient cleanly on shutdown."""
+    global _shared_http_client
+    client = _shared_http_client
+    _shared_http_client = None
+    if client is not None and not client.is_closed:
+        await client.aclose()
 
 
 class InternalToolsClient:
@@ -88,20 +124,15 @@ class InternalToolsClient:
                 f"tools.http.{name}",
                 attributes={"tool": name, "endpoint": endpoint_path},
             ) as span:
-                if self._client:
-                    response = await self._client.post(
-                        url,
-                        json=payload,
-                        headers=headers,
-                        timeout=self._timeout_s,
-                    )
-                else:
-                    async with httpx.AsyncClient(timeout=self._timeout_s) as client:
-                        response = await client.post(
-                            url,
-                            json=payload,
-                            headers=headers,
-                        )
+                client = (
+                    self._client if self._client is not None else await get_shared_http_client()
+                )
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers=headers,
+                    timeout=self._timeout_s,
+                )
                 span.set_attribute("httpStatus", response.status_code)
                 if response.status_code != 200:
                     span.mark_error(f"http_{response.status_code}")

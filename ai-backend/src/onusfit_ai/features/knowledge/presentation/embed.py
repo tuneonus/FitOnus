@@ -7,6 +7,7 @@ import uuid
 from fastapi import APIRouter, Depends, Header
 
 from onusfit_ai.shared.auth import ServiceClaims, require_scope
+from onusfit_ai.shared.contracts.common import Usage
 from onusfit_ai.shared.contracts.embed import EmbedRequest, EmbedResponse
 from onusfit_ai.shared.llm.dependencies import get_embeddings_generator
 from onusfit_ai.shared.llm.ports import EmbeddingsGenerator
@@ -45,6 +46,8 @@ async def generate_embeddings(
         title=body.title,
     )
     embeddings = [r.values for r in results]
+    duration_ms = int((time.monotonic() - started) * 1000)
+    estimated_input_tokens = sum(max(1, (len(t) + 3) // 4) for t in body.texts)
 
     logger.info(
         "ai.embed.completed traceId=%s model=%s count=%d dimensions=%d taskType=%s durationMs=%d",
@@ -53,12 +56,24 @@ async def generate_embeddings(
         len(embeddings),
         body.dimensions,
         body.task_type,
-        int((time.monotonic() - started) * 1000),
+        duration_ms,
     )
 
     return EmbedResponse(
+        outcome="ok",
         embeddings=embeddings,
         model=body.model,
         dimensions=body.dimensions,
         count=len(embeddings),
+        usage=Usage(
+            model=body.model,
+            is_fallback=False,
+            input_tokens=estimated_input_tokens,
+            output_tokens=0,
+            cached_tokens=0,
+            thinking_tokens=0,
+            total_tokens=estimated_input_tokens,
+            duration_ms=duration_ms,
+        ),
+        trace_id=trace_id,
     )

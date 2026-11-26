@@ -44,7 +44,7 @@ require_chat_scope = require_scope(SCOPE)
 router = APIRouter(prefix="/internal/v1/ai/coach", tags=["coach"])
 
 
-@router.post("/chat/stream", include_in_schema=False)
+@router.post("/chat/stream")
 async def coach_chat_stream(
     request: Request,
     body: CoachChatRequest,
@@ -53,12 +53,7 @@ async def coach_chat_stream(
     tools_client: InternalToolsClient = Depends(get_tools_client),
     x_request_id: str | None = Header(default=None),
 ) -> Response:
-    """Stream an AI Coach response as Server-Sent Events (`text/event-stream`).
-
-    Deferred Phase 17 integration: `include_in_schema=False` avoids touching
-    `shared/observability/observability.py` `FEATURE_BY_PATH` while concurrent
-    observability edits stabilize.
-    """
+    """Stream an AI Coach response as Server-Sent Events (`text/event-stream`)."""
     if not is_coach_streaming_enabled():
         return JSONResponse(
             status_code=503,

@@ -1,7 +1,10 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
+import { markAiRequestDispatched } from '../../../shared/ai/ai-usage.js';
+import { PythonAiError, type PythonAiClient } from '../../../shared/ai/python-ai-client.js';
+import { toPublicAiError } from '../../../shared/ai/python-ai-errors.js';
 import { AppError } from '../../../shared/errors/app-error.js';
-import type { PythonAiClient } from '../../../shared/ai/python-ai-client.js';
+import { currentCorrelationId } from '../../../shared/logging/request-correlation.js';
 import type {
   AdaptAiWorkoutPlanInput,
   AiWorkoutPlanResult,
@@ -91,7 +94,7 @@ export class PythonWorkoutPlannerService implements IAiWorkoutPlanner {
   private readonly timeoutMs: number;
 
   constructor(private readonly deps: PythonWorkoutPlannerDeps) {
-    this.timeoutMs = deps.timeoutMs ?? 30_000;
+    this.timeoutMs = Math.min(deps.timeoutMs ?? 25_000, 28_000);
   }
 
   async generatePlan(input: GenerateAiWorkoutPlanInput): Promise<AiWorkoutPlanResult> {
@@ -117,9 +120,11 @@ export class PythonWorkoutPlannerService implements IAiWorkoutPlanner {
         scope: WORKOUT_PLANNER_SCOPE,
         userId: input.userId,
         requestId,
+        correlationId: currentCorrelationId(),
         body: payload,
         timeoutMs: this.timeoutMs,
       });
+      markAiRequestDispatched();
 
       const parsed = pythonWorkoutPlanResponseSchema.parse(rawResponse);
       return {
@@ -135,7 +140,12 @@ export class PythonWorkoutPlannerService implements IAiWorkoutPlanner {
         traceId: parsed.trace_id,
       };
     } catch (err: unknown) {
+      if (err instanceof PythonAiError) {
+        if (err.dispatched) markAiRequestDispatched();
+        throw toPublicAiError(err, 'Unable to generate workout plan right now. Please try again shortly.');
+      }
       if (err instanceof z.ZodError) {
+        markAiRequestDispatched();
         throw new AppError(
           'internal',
           'INTERNAL_ERROR',
@@ -167,9 +177,11 @@ export class PythonWorkoutPlannerService implements IAiWorkoutPlanner {
         scope: WORKOUT_PLANNER_SCOPE,
         userId: input.userId,
         requestId,
+        correlationId: currentCorrelationId(),
         body: payload,
         timeoutMs: this.timeoutMs,
       });
+      markAiRequestDispatched();
 
       const parsed = pythonWorkoutPlanResponseSchema.parse(rawResponse);
       return {
@@ -185,13 +197,15 @@ export class PythonWorkoutPlannerService implements IAiWorkoutPlanner {
         traceId: parsed.trace_id,
       };
     } catch (err: unknown) {
+      if (err instanceof PythonAiError) {
+        if (err.dispatched) markAiRequestDispatched();
+        throw toPublicAiError(err, 'Unable to adapt workout plan right now. Please try again shortly.');
+      }
       if (err instanceof z.ZodError) {
-        throw new AppError(
-          'internal',
-          'INTERNAL_ERROR',
-          'Adapted workout plan failed contract validation.',
-          { issues: err.issues },
-        );
+        markAiRequestDispatched();
+        throw new AppError('internal', 'INTERNAL_ERROR', 'Adapted workout plan failed contract validation.', {
+          issues: err.issues,
+        });
       }
       throw err;
     }

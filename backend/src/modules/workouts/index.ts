@@ -26,7 +26,13 @@ import { UpdateWorkoutPlanUseCase } from './application/use-cases/update-workout
 import { GenerateAiWorkoutPlanUseCase } from './application/use-cases/generate-ai-workout-plan.js';
 import { AdaptAiWorkoutPlanUseCase } from './application/use-cases/adapt-ai-workout-plan.js';
 import { PythonWorkoutPlannerService } from './infrastructure/python-workout-planner-service.js';
-import type { IAiWorkoutPlanner, GenerateAiWorkoutPlanInput, AdaptAiWorkoutPlanInput, AiWorkoutPlanResult } from './application/ports.js';
+import type {
+  IAiWorkoutPlanner,
+  GenerateAiWorkoutPlanInput,
+  AdaptAiWorkoutPlanInput,
+  AiWorkoutPlanResult,
+} from './application/ports.js';
+import type { AiUsageGate } from '../../shared/ai/ai-usage.js';
 import type { PythonAiClient } from '../../shared/ai/python-ai-client.js';
 import { PgExerciseRepository } from './infrastructure/pg-exercise-repository.js';
 import { PgPersonalRecordRepository } from './infrastructure/pg-personal-record-repository.js';
@@ -78,6 +84,8 @@ export function createWorkoutsModule(deps: {
   limiters?: { adminImageUploads: RequestHandler };
   logger?: ImageLogger | undefined;
   pythonAi?: PythonAiClient;
+  aiTimeoutMs?: number;
+  aiUsageGate?: AiUsageGate;
   aiPlanner?: IAiWorkoutPlanner;
 }): WorkoutsModule {
   const exerciseRepo = new PgExerciseRepository(deps.db);
@@ -132,7 +140,12 @@ export function createWorkoutsModule(deps: {
 
   const aiPlanner: IAiWorkoutPlanner =
     deps.aiPlanner ??
-    (deps.pythonAi ? new PythonWorkoutPlannerService({ client: deps.pythonAi }) : new DefaultFallbackWorkoutPlanner());
+    (deps.pythonAi
+      ? new PythonWorkoutPlannerService({
+          client: deps.pythonAi,
+          ...(deps.aiTimeoutMs !== undefined ? { timeoutMs: deps.aiTimeoutMs } : {}),
+        })
+      : new DefaultFallbackWorkoutPlanner());
 
   // Uploaded exercise images: the URL is only ever built from the trusted media origin and a canonical key.
   const resolveImageUrl = createFeatureImageUrlResolver(deps.images?.publicBaseUrl ?? null, 'exercises');
@@ -156,8 +169,8 @@ export function createWorkoutsModule(deps: {
     createWorkoutPlan: new CreateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
     updateWorkoutPlan: new UpdateWorkoutPlanUseCase(workoutRepo, exerciseRepo),
     deleteWorkoutPlan: new DeleteWorkoutPlanUseCase(workoutRepo),
-    generateAiWorkoutPlan: new GenerateAiWorkoutPlanUseCase(aiPlanner),
-    adaptAiWorkoutPlan: new AdaptAiWorkoutPlanUseCase(aiPlanner),
+    generateAiWorkoutPlan: new GenerateAiWorkoutPlanUseCase(aiPlanner, deps.aiUsageGate),
+    adaptAiWorkoutPlan: new AdaptAiWorkoutPlanUseCase(aiPlanner, deps.aiUsageGate),
     logWorkoutSession: new LogWorkoutSessionUseCase(sessionRepo, prRepo, exerciseRepo, deps.idempotency),
     listWorkoutSessions: new ListWorkoutSessionsUseCase(sessionRepo),
     getWorkoutSession: new GetWorkoutSessionUseCase(sessionRepo),
