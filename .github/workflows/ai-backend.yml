@@ -178,7 +178,9 @@ jobs:
             -e AI_SERVICE_JWT_SECRET="$(openssl rand -hex 24)" \
             -e GEMINI_API_KEY="$(openssl rand -hex 16)" \
             onusfit-ai-backend:ci
-          body="$(curl --silent --show-error --fail --retry 20 --retry-delay 1 --retry-connrefused \
+          # Docker can reset connections to its published port before Uvicorn is listening.
+          body="$(curl --silent --show-error --fail --retry 20 --retry-delay 1 --retry-all-errors \
+            --retry-max-time 45 --connect-timeout 2 --max-time 5 \
             http://127.0.0.1:18080/health/live)"
           echo "$body"
           echo "$body" | grep -q '"environment":"production"'
