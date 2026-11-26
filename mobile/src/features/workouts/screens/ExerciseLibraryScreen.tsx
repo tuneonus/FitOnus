@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Dumbbell, Plus, Search, SearchX } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation, useRouteParams } from '@/app/navigation/NavigationContext';
@@ -16,6 +16,7 @@ import { workoutApi } from '../api/workout-api';
 import { filterExercises } from '../utils/premium-workout';
 import { useTheme } from '@/hooks/use-theme';
 import { premium } from '@/shared/theme/premium';
+import { ExerciseImage } from '../components/exercise-image';
 
 const muscles = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Full body'];
 export function ExerciseLibraryScreen() {
@@ -166,13 +167,15 @@ export function ExerciseLibraryScreen() {
                 onPress={() => navigate('exerciseDetail', { id: exercise.id })}
                 style={styles.main}
               >
-                {exercise.image ? (
-                  <Image source={{ uri: exercise.image }} style={styles.thumb} />
-                ) : (
-                  <View style={[styles.thumb, { backgroundColor: colors.surface2 }]}>
-                    <Dumbbell size={23} color={colors.accentStrong} />
-                  </View>
-                )}
+                <ExerciseImage
+                  variant="thumbnail"
+                  exerciseId={exercise.id}
+                  uri={exercise.imageUrl || (typeof exercise.image === 'string' ? exercise.image : null)}
+                  localSource={typeof exercise.image !== 'string' ? exercise.image : undefined}
+                  imageKey={exercise.imageKey}
+                  updatedAt={exercise.updatedAt}
+                  alt={exercise.name}
+                />
                 <View style={styles.copy}>
                   <Text style={[premium.type.label, { color: colors.ink }]}>{exercise.name}</Text>
                   <Text style={[premium.type.caption, { color: colors.muted }]}>

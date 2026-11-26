@@ -20,7 +20,9 @@ export type Exercise = {
   tips?: string[];
   videoUrl?: string | null;
   imageUrl?: string | null;
+  imageKey?: string | null;
   isCustom?: boolean;
+  updatedAt?: string;
 };
 
 export type PlannedExercise = {

@@ -5,10 +5,10 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { StatusBanner } from '@/shared/components/ui/StatusBanner';
 import { premium } from '@/shared/theme/premium';
 import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Dumbbell, Sparkles } from 'lucide-react-native';
 import { useNavigation, useRouteParams } from '../../../app/navigation/NavigationContext';
-import { FeatureScreen as Screen } from '@/shared/components/ui/FeatureScreen';
+import { Screen } from '../../../shared/components/ui/Screen';
 import { Badge } from '../../../shared/components/ui/Badge';
 import { Button } from '../../../shared/components/ui/Button';
 import { LineChart } from '../../../shared/components/charts/LineChart';
@@ -16,6 +16,8 @@ import { useWorkoutStore } from '../store/workoutStore';
 import { WorkoutService } from '../services/workout-service';
 import type { PersonalRecordView } from '../types/workout';
 import { useTheme } from '@/hooks/use-theme';
+import { ExerciseImage } from '../components/exercise-image';
+import { exerciseById as getMockExercise } from '../data/workoutsMock';
 
 export function ExerciseDetailScreen() {
   const { colors } = useTheme();
@@ -23,13 +25,15 @@ export function ExerciseDetailScreen() {
   const { navigate } = useNavigation();
   const catalog = useWorkoutStore((state) => state.catalog);
   const cached = catalog.find((exercise) => exercise.id === id || exercise.slug === id);
+  const mock = id ? getMockExercise(id) : null;
+  const mockFallback = mock && mock.name !== 'Exercise' ? mock : undefined;
   const details = useQuery({
     queryKey: ['exercises', 'detail', id],
     queryFn: () => workoutApi.getExerciseById(id!),
     enabled: Boolean(id && /^[0-9a-f-]{36}$/i.test(id)),
     retry: 1,
   });
-  const ex = details.data ?? cached;
+  const ex = details.data ?? cached ?? mockFallback;
   const [prRecords, setPrRecords] = React.useState<PersonalRecordView[]>([]);
 
   const exerciseId = ex?.id;
@@ -62,7 +66,7 @@ export function ExerciseDetailScreen() {
     );
 
   return (
-    <Screen title={ex.name}>
+    <Screen title={ex.name} contentContainerStyle={styles.screenScroll}>
       {details.isError ? (
         <StatusBanner
           tone="warning"
@@ -71,15 +75,18 @@ export function ExerciseDetailScreen() {
           onAction={() => {
             void details.refetch();
           }}
+          style={styles.statusBanner}
         />
       ) : null}
-      {ex.image ? (
-        <Image source={{ uri: ex.image }} style={styles.heroImage} />
-      ) : (
-        <View style={[styles.placeholderHero, { backgroundColor: colors.surface2 }]}>
-          <Dumbbell size={40} color={colors.muted} />
-        </View>
-      )}
+      <ExerciseImage
+        exerciseId={ex.id || id}
+        uri={ex.imageUrl || (typeof ex.image === 'string' ? ex.image : null)}
+        localSource={typeof ex.image !== 'string' ? ex.image : undefined}
+        imageKey={ex.imageKey}
+        updatedAt={ex.updatedAt}
+        alt={ex.name}
+        fullBleed
+      />
 
       <View style={styles.body}>
         <View style={styles.badgesRow}>
@@ -174,21 +181,18 @@ export function ExerciseDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  heroImage: {
-    width: '100%',
-    height: 240,
-    resizeMode: 'cover',
+  // The infographic runs edge to edge, so the screen's own side padding is removed; the
+  // content below the image restores the gutter itself (see `body` / `statusBanner`).
+  screenScroll: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
   },
-  placeholderHero: {
-    marginHorizontal: 0,
-    height: 100,
-    borderRadius: premium.radius.card,
-    alignItems: 'center',
-    justifyContent: 'center',
+  statusBanner: {
+    marginHorizontal: premium.layout.gutter,
   },
   body: {
-    paddingHorizontal: 0,
-    paddingTop: 8,
+    paddingHorizontal: premium.layout.gutter,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   title: {

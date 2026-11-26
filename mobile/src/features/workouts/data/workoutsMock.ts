@@ -9,7 +9,6 @@ export const exercises: Exercise[] = [
   equipment: 'Barbell',
   level: 'Intermediate',
   secondary: ['Front delts', 'Triceps'],
-  image: images.benchPress,
   instructions: [
   'Lie on the bench with eyes under the bar and feet planted.',
   'Grip slightly wider than shoulders, squeeze shoulder blades together.',
@@ -54,6 +53,23 @@ export const exerciseById = (id: string): Exercise => {
   const resolvedId = SEED_UUID_TO_SLUG[id] ?? id;
   const match = exercises.find((e) => e.id === resolvedId || (e as any).uuid === id);
   if (match) return match;
+  if (resolvedId === 'push-up') {
+    return {
+      id: 'push-up',
+      name: 'Push-Up',
+      muscle: 'Chest',
+      equipment: 'Bodyweight',
+      level: 'Beginner',
+      secondary: ['Front delts', 'Triceps'],
+      image: images.pushUp,
+      instructions: [
+        'Place hands shoulder-width apart on the floor in a high plank.',
+        'Lower chest toward the floor keeping core braced and elbows at 45 degrees.',
+        'Press firmly through palms to return to full lockout.',
+      ],
+      cues: ['Keep hips level with shoulders', 'Squeeze glutes and core', 'Control the descent'],
+    };
+  }
   return {
     id: id || 'unknown',
     name: 'Exercise',
