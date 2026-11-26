@@ -30,7 +30,7 @@ e1db0c8a5e0db26dbad13f8846f143739ba1f0f3:backend/tests/unit/coach/coach-streamin
 # ai-backend/tests/test_phase17_observability.py - Truncated public jwt.io sample token used to test JWT redaction
 78b01659100f181b67c18556bd5e9ea03d6eea89:ai-backend/tests/test_phase17_observability.py:jwt:794
 
-# Resources/docs/architecture/PROJECT_STRUCTURE.md - Architecture prose ("authentication, quotas/billing ledger"), not a key
+# Resources/docs/architecture/PROJECT_STRUCTURE.md - Architecture prose listing Node responsibilities, not a key
 0d4da1b9b0235264e3385c1d60cd7d494ec26283:Resources/docs/architecture/PROJECT_STRUCTURE.md:generic-api-key:170
 
 # backend/tests/unit/notifications/fcm-config.test.ts - Fake PEM; body is base64 of "fake-key-material-for-unit-tests"
@@ -55,3 +55,6 @@ a5f47fb725a20092c0bd68ba190bbc0cc3d76a9b:backend/tests/integration/http/notifica
 3378bc11354fcc714b3c568d1176c94afe78f047:backend/tests/unit/app-settings/gemini-ai-management.test.ts:generic-api-key:332
 3378bc11354fcc714b3c568d1176c94afe78f047:backend/tests/unit/app-settings/gemini-ai-management.test.ts:generic-api-key:400
 3378bc11354fcc714b3c568d1176c94afe78f047:backend/tests/unit/app-settings/gemini-ai-management.test.ts:generic-api-key:405
+
+# .gitleaksignore (commit c2126ea) - earlier comment quoted the PROJECT_STRUCTURE.md prose above, not a key
+c2126ea2b579627194d89c767d58ecf3f790ddcf:.gitleaksignore:generic-api-key:33
