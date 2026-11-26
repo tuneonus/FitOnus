@@ -35,10 +35,9 @@ async function main() {
   const masterSecret = config.security.hmacSecret;
 
   try {
-    const userRes = await pool.query<{ id: string }>(
-      "SELECT id FROM users WHERE role = 'admin' LIMIT 1",
-    );
-    const validUserId = userRes.rows[0]?.id || (await pool.query<{ id: string }>("SELECT id FROM users LIMIT 1")).rows[0]?.id;
+    const userRes = await pool.query<{ id: string }>("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+    const validUserId =
+      userRes.rows[0]?.id || (await pool.query<{ id: string }>('SELECT id FROM users LIMIT 1')).rows[0]?.id;
     if (!validUserId) {
       throw new Error('No user found in Neon DEV users table!');
     }
@@ -114,19 +113,18 @@ async function main() {
     // 4. Test Key Rotation & Optimistic Concurrency on Neon DEV
     console.log('\n4. Testing Gemini Key Update with Optimistic Locking on Neon DEV...');
     const testKey1 = 'AIzaSy_DEV_ROTATION_KEY_ALPHA_99999999';
-    const updated1 = await updateGeminiConfig.execute(
-      adminActor,
-      {
-        apiKey: testKey1,
-        expectedVersion: initialConfig.version,
-      },
-    );
+    const updated1 = await updateGeminiConfig.execute(adminActor, {
+      apiKey: testKey1,
+      expectedVersion: initialConfig.version,
+    });
     console.log(' - Updated Config Version:', updated1.version);
     console.log(' - New Key Mask:', updated1.keyMask);
     console.log(' - Can Rollback Key:', updated1.canRollbackKey);
 
     // Verify raw DB column is encrypted and not plaintext
-    const rawDbRow = await pool.query("SELECT encrypted_api_key, key_mask, version FROM gemini_config WHERE provider = 'google_gemini'");
+    const rawDbRow = await pool.query(
+      "SELECT encrypted_api_key, key_mask, version FROM gemini_config WHERE provider = 'google_gemini'",
+    );
     const rawEncrypted = rawDbRow.rows[0].encrypted_api_key;
     if (rawEncrypted.includes(testKey1)) {
       throw new Error('CRITICAL SECURITY VIOLATION: Raw API key found in PostgreSQL database!');
@@ -136,27 +134,21 @@ async function main() {
     // Test Optimistic Version Conflict (expect 409)
     console.log('\n5. Testing Optimistic Concurrency Conflict Detection...');
     try {
-      await updateGeminiConfig.execute(
-        adminActor,
-        {
-          defaultModel: 'gemini-2.5-pro',
-          expectedVersion: initialConfig.version, // Stale version!
-        },
-      );
+      await updateGeminiConfig.execute(adminActor, {
+        defaultModel: 'gemini-2.5-pro',
+        expectedVersion: initialConfig.version, // Stale version!
+      });
       throw new Error('Expected version conflict error but succeeded!');
     } catch (err: any) {
       console.log(' - Version conflict caught successfully:', err.code, err.message);
       if (err.code !== 'VERSION_CONFLICT') {
-        throw new Error(`Expected VERSION_CONFLICT, received ${err.code}`);
+        throw new Error(`Expected VERSION_CONFLICT, received ${err.code}`, { cause: err });
       }
     }
 
     // 6. Test Rollback to Previous Key on Neon DEV
     console.log('\n6. Testing Rollback to Previous API Key on Neon DEV...');
-    const rolledBack = await rollbackGeminiKey.execute(
-      adminActor,
-      updated1.version,
-    );
+    const rolledBack = await rollbackGeminiKey.execute(adminActor, updated1.version);
     console.log(' - Rolled back successfully to version:', rolledBack.version);
     console.log(' - Active Key Mask after rollback:', rolledBack.keyMask);
     console.log(' - Can Rollback Key:', rolledBack.canRollbackKey);
@@ -164,17 +156,14 @@ async function main() {
     // 7. Test Runtime Model Resolution
     console.log('\n7. Testing Dynamic Model Resolution via GeminiRuntimeService...');
     // Set custom per-feature model overrides
-    await updateGeminiConfig.execute(
-      adminActor,
-      {
-        featureModels: {
-          aiCoach: 'gemini-2.5-flash',
-          mealPhotoScanner: 'gemini-2.5-flash',
-          workoutGenerator: 'gemini-2.5-pro',
-        },
-        expectedVersion: rolledBack.version,
+    await updateGeminiConfig.execute(adminActor, {
+      featureModels: {
+        aiCoach: 'gemini-2.5-flash',
+        mealPhotoScanner: 'gemini-2.5-flash',
+        workoutGenerator: 'gemini-2.5-pro',
       },
-    );
+      expectedVersion: rolledBack.version,
+    });
     await runtimeService.refreshCache();
 
     const resolvedCoach = (await runtimeService.resolveExecutionTarget('coach_chat')).model;
@@ -212,7 +201,10 @@ async function main() {
     console.log(' - Summary Month Requests:', summary.monthlyRequests);
     console.log(' - Summary Total Tokens:', summary.totalTokens);
     console.log(' - Summary Estimated Cost (USD):', `$${summary.estimatedMonthlyCostUsd.toFixed(5)}`);
-    console.log(' - Summary Estimated Cost (INR):', `₹${(summary.estimatedMonthlyCostUsd * 86.5).toFixed(3)}`);
+    console.log(
+      ' - Summary Estimated Cost (INR):',
+      `₹${(summary.estimatedMonthlyCostUsd * 86.5).toFixed(3)}`,
+    );
 
     const byFeature = await analytics.getByFeature(adminActor);
     console.log(' - Breakdown by Feature:', byFeature);
@@ -224,7 +216,9 @@ async function main() {
     console.log(` - Daily trends retrieved (${trends.length} days)`);
 
     const eventsResult = await analytics.getEvents(adminActor, { limit: 5 });
-    console.log(` - Telemetry events table retrieved (${eventsResult.total} total events, showing ${eventsResult.items.length})`);
+    console.log(
+      ` - Telemetry events table retrieved (${eventsResult.total} total events, showing ${eventsResult.items.length})`,
+    );
 
     // 10. Clean up Test Usage Event and Restore Config
     console.log('\n10. Cleaning up test telemetry data and restoring initial config...');
@@ -232,7 +226,9 @@ async function main() {
     console.log(' - Test usage event cleaned up.');
 
     // Restore original state
-    const currentVer = (await pool.query("SELECT version FROM gemini_config WHERE provider = 'google_gemini'")).rows[0].version;
+    const currentVer = (
+      await pool.query("SELECT version FROM gemini_config WHERE provider = 'google_gemini'")
+    ).rows[0].version;
     await pool.query(
       `UPDATE gemini_config
        SET encrypted_api_key = NULL,

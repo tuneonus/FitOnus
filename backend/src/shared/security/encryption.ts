@@ -41,19 +41,21 @@ export function encryptSecret(plainText: string, encryptionKey: string): Encrypt
  * Decrypts an AES-256-GCM encrypted payload.
  * Verifies authenticity before returning plaintext.
  */
-export function decryptSecret(
-  payload: EncryptedPayload | string,
-  encryptionKey: string
-): string {
+export function decryptSecret(payload: EncryptedPayload | string, encryptionKey: string): string {
   const key = deriveKey(encryptionKey);
-  const obj: EncryptedPayload =
-    typeof payload === 'string' ? JSON.parse(payload) : payload;
+  const parsed: unknown = typeof payload === 'string' ? JSON.parse(payload) : payload;
+  if (
+    !parsed ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as Partial<EncryptedPayload>).iv !== 'string' ||
+    typeof (parsed as Partial<EncryptedPayload>).authTag !== 'string' ||
+    typeof (parsed as Partial<EncryptedPayload>).ciphertext !== 'string'
+  ) {
+    throw new Error('Invalid encrypted payload structure');
+  }
+  const obj = parsed as EncryptedPayload;
 
-  const decipher = crypto.createDecipheriv(
-    'aes-256-gcm',
-    key,
-    Buffer.from(obj.iv, 'hex')
-  );
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(obj.iv, 'hex'));
   decipher.setAuthTag(Buffer.from(obj.authTag, 'hex'));
 
   let plain = decipher.update(obj.ciphertext, 'hex', 'utf8');

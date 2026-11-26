@@ -1,4 +1,5 @@
 import { performance } from 'node:perf_hooks';
+import { defaultAiMetrics, type AiMetricsRegistry } from './ai-metrics.js';
 import type { Logger } from '../logging/logger.js';
 
 export type StreamOutcome = 'completed' | 'cancelled' | 'error' | 'timeout' | 'fallback';
@@ -43,9 +44,9 @@ function percentile(samples: readonly number[], p: number): number | null {
 }
 
 /**
- * Self-contained SSE streaming metrics collector for Node.js gateway telemetry.
- * Avoids touching Phase 17 shared metric files while recording TTFT, latency,
- * cancellation rate, and failure rates.
+ * SSE streaming metrics collector for Node.js gateway telemetry.
+ * Records TTFT, latency, cancellation rate, and failure rates and optionally
+ * forwards aggregate stream telemetry into the shared Phase 17 `AiMetricsRegistry`.
  */
 export class NodeStreamMetricsCollector {
   private totalStreams = 0;
@@ -59,21 +60,43 @@ export class NodeStreamMetricsCollector {
   private readonly ttftSamples: number[] = [];
   private readonly durationSamples: number[] = [];
 
+  constructor(private readonly aiMetrics?: AiMetricsRegistry) {}
+
   recordStart(): void {
     this.totalStreams += 1;
     this.activeStreams += 1;
+    try {
+      this.aiMetrics?.recordStreamStart();
+    } catch {
+      // Fail-open observability
+    }
   }
 
   recordTtft(ttftMs: number): void {
     appendSample(this.ttftSamples, ttftMs);
+    try {
+      this.aiMetrics?.recordStreamTtft(ttftMs);
+    } catch {
+      // Fail-open observability
+    }
   }
 
   recordMalformedEvent(): void {
     this.malformedEvents += 1;
+    try {
+      this.aiMetrics?.recordStreamMalformedEvent();
+    } catch {
+      // Fail-open observability
+    }
   }
 
   recordFallback(): void {
     this.fallbackCount += 1;
+    try {
+      this.aiMetrics?.recordStreamFallback();
+    } catch {
+      // Fail-open observability
+    }
   }
 
   recordFinish(outcome: StreamOutcome, durationMs: number): void {
@@ -84,11 +107,15 @@ export class NodeStreamMetricsCollector {
     else if (outcome === 'timeout') this.timeoutStreams += 1;
     else if (outcome === 'fallback') this.fallbackCount += 1;
     else this.errorStreams += 1;
+    try {
+      this.aiMetrics?.recordStreamFinish(outcome, durationMs);
+    } catch {
+      // Fail-open observability
+    }
   }
 
   snapshot(): StreamMetricSnapshot {
-    const finished =
-      this.completedStreams + this.cancelledStreams + this.errorStreams + this.timeoutStreams;
+    const finished = this.completedStreams + this.cancelledStreams + this.errorStreams + this.timeoutStreams;
     const failures = this.errorStreams + this.timeoutStreams;
     return {
       totalStreams: this.totalStreams,
@@ -108,7 +135,7 @@ export class NodeStreamMetricsCollector {
   }
 }
 
-export const nodeStreamMetrics = new NodeStreamMetricsCollector();
+export const nodeStreamMetrics = new NodeStreamMetricsCollector(defaultAiMetrics);
 
 export interface StreamTrackerOptions {
   readonly requestId: string;

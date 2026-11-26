@@ -20,7 +20,9 @@ if (dbUrl.includes('ep-gentle-bar-b3ywek03') || dbUrl.includes('br-icy-term-b3lb
 }
 
 if (!dbUrl.includes('ep-shy-art-b3sxwfkd') && !dbUrl.includes('b35lwkjg')) {
-  console.error('CRITICAL ERROR: Connection string is NOT the approved DEV endpoint (ep-shy-art-b3sxwfkd)! Aborting.');
+  console.error(
+    'CRITICAL ERROR: Connection string is NOT the approved DEV endpoint (ep-shy-art-b3sxwfkd)! Aborting.',
+  );
   process.exit(1);
 }
 
@@ -68,7 +70,7 @@ async function runDryRun() {
     const sqlContent = fs.readFileSync(sqlPath, 'utf8');
 
     console.log('\n--- 2. EXECUTING dev-fresh-start.sql (WITH ROLLBACK) ---');
-    
+
     // Capture notices
     client.on('notice', (msg) => {
       console.log(`[PG NOTICE] ${msg.message}`);
@@ -98,9 +100,8 @@ async function runDryRun() {
   }
 }
 
-runDryRun().catch((err) => {
+runDryRun().catch(async (err: unknown) => {
   console.error('FATAL REHEARSAL ERROR:', err);
-  pool.end();
+  await pool.end();
   process.exit(1);
 });
-

@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import { requireActor } from '../../../middleware/authenticate.js';
 import { getValidated } from '../../../middleware/validate.js';
-import { ADMIN_NO_CACHE_HEADERS } from '../../admin/interface/admin.controller.js';
+import { ADMIN_NO_CACHE_HEADERS } from '../../admin/index.js';
 import { parseContentLength, readBodyUpTo } from '../../../shared/http/read-upload-body.js';
 import type { RouteResult } from '../../../shared/http/route.js';
 import { IMAGE_UPLOAD_MAX_BYTES } from '../../../shared/images/image-policy.js';
@@ -115,7 +115,12 @@ export function createWorkoutAdminController(useCases: WorkoutAdminUseCases) {
       const actor = requireActor(req);
       const { params } = getValidated(req, deleteExerciseAdminRequest);
       await useCases.manageExercise.delete(actor.userId, params.id, req.ip, req.get('user-agent'));
-      return { data: { success: true }, status: 204, headers: ADMIN_NO_CACHE_HEADERS, message: 'Exercise deleted successfully' };
+      return {
+        data: { success: true },
+        status: 204,
+        headers: ADMIN_NO_CACHE_HEADERS,
+        message: 'Exercise deleted successfully',
+      };
     },
 
     listTemplates: async (req: Request): Promise<RouteResult<WorkoutPlanView[]>> => {
@@ -143,7 +148,12 @@ export function createWorkoutAdminController(useCases: WorkoutAdminUseCases) {
         ipAddress: req.ip,
         userAgent: req.get('user-agent'),
       });
-      return { data, status: 201, headers: ADMIN_NO_CACHE_HEADERS, message: 'System workout template created successfully' };
+      return {
+        data,
+        status: 201,
+        headers: ADMIN_NO_CACHE_HEADERS,
+        message: 'System workout template created successfully',
+      };
     },
 
     updateTemplate: async (req: Request): Promise<RouteResult<WorkoutPlanView>> => {
@@ -156,19 +166,32 @@ export function createWorkoutAdminController(useCases: WorkoutAdminUseCases) {
         ipAddress: req.ip,
         userAgent: req.get('user-agent'),
       });
-      return { data, headers: ADMIN_NO_CACHE_HEADERS, message: 'System workout template updated successfully' };
+      return {
+        data,
+        headers: ADMIN_NO_CACHE_HEADERS,
+        message: 'System workout template updated successfully',
+      };
     },
 
     deleteTemplate: async (req: Request): Promise<RouteResult<{ success: boolean }>> => {
       const actor = requireActor(req);
       const { params } = getValidated(req, deleteAdminTemplateRequest);
       await useCases.manageTemplate.delete(actor.userId, params.id, req.ip, req.get('user-agent'));
-      return { data: { success: true }, status: 204, headers: ADMIN_NO_CACHE_HEADERS, message: 'System template deleted successfully' };
+      return {
+        data: { success: true },
+        status: 204,
+        headers: ADMIN_NO_CACHE_HEADERS,
+        message: 'System template deleted successfully',
+      };
     },
 
     getStats: async (_req: Request): Promise<RouteResult<WorkoutStatsView>> => {
       const data = await useCases.getStats.execute();
-      return { data, headers: ADMIN_NO_CACHE_HEADERS, message: 'Workout platform statistics retrieved successfully' };
+      return {
+        data,
+        headers: ADMIN_NO_CACHE_HEADERS,
+        message: 'Workout platform statistics retrieved successfully',
+      };
     },
   };
 }

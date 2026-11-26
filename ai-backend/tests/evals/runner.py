@@ -43,6 +43,7 @@ from tests.evals.evaluators.rag import RagEvaluator
 from tests.evals.evaluators.safety import SafetyEvaluator
 from tests.evals.evaluators.schema import SchemaConformanceEvaluator
 from tests.evals.evaluators.security import SecuritySafetyEvaluator
+from tests.evals.evaluators.streaming import StreamingEvaluator
 from tests.evals.evaluators.tools import ToolSelectionEvaluator
 from tests.evals.gates import evaluate_regression_gate, load_baseline_file
 from tests.evals.reporter import generate_json_report, generate_markdown_report
@@ -94,6 +95,7 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
     mm_adv_eval = MultimodalAdvancedEvaluator()
     sec_eval = SecuritySafetyEvaluator()
     perf_eval = PerformanceEvaluator()
+    stream_eval = StreamingEvaluator()
 
     results: list[dict[str, Any]] = []
 
@@ -122,129 +124,9 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
             )
             continue
 
-        # 1. Schema conformance evaluation
-        if case.category in schema_evaluators:
-            res = schema_evaluators[case.category].evaluate(cand)
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 2. Tool selection accuracy evaluation
-        if case.category == "function_calling":
-            actual_tools = cand.get("tool_calls", [])
-            res = tool_eval.evaluate(actual_tools, case.expected_tools)
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 3. Nutrition physiological tolerance evaluation
-        if case.category in ("meal_photo", "voice_meal"):
-            actual_items = cand.get("items", [])
-            res = nutr_eval.evaluate(actual_items, case.expected_nutrition)
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 4. Multilingual transcription & dialect evaluation
-        if case.category in ("speech_transcribe", "multilingual_dialect"):
-            actual_transcript = cand.get("transcript", cand.get("text", ""))
-            det_lang = cand.get("detectedLanguage", cand.get("detected_language", ""))
-            res = lang_eval.evaluate(
-                actual_transcript=actual_transcript,
-                detected_language=det_lang,
-                expected_language=case.language,
-                expected_entities=case.input_payload.get("expected_entities"),
-            )
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5. Safety & clinical disclaimer compliance evaluation
-        if case.category == "fitness_safety" or (
-            case.category
-            not in (
-                "workout_planner",
-                "mcp_tools",
-                "multi_agent",
-                "rag_evaluation",
-                "agent_advanced",
-                "multimodal_advanced",
-                "security_adversarial",
-                "performance_eval",
-            )
-            and (
-                case.expected_safety_disclaimers
-                or case.forbidden_terms
-                or case.expected_outcome in ("refusal", "medical_escalation")
-            )
-        ):
-            text = cand.get("text", "")
-            res = safety_eval.evaluate(
-                text,
-                expected_disclaimers=case.expected_safety_disclaimers,
-                forbidden_terms=case.forbidden_terms,
-                is_medical_case=(case.expected_outcome == "medical_escalation"),
-            )
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5b. Agent Fundamentals evaluation
-        if case.category == "agent_fundamentals":
-            res = agent_eval.evaluate(
-                candidate=cand,
-                expected_goal_type=cand.get("goal_type"),
-                expected_tools=case.expected_tools,
-                expected_language=case.language,
-                requires_agent_execution=cand.get("requires_agent_execution"),
-                max_iterations=3,
-                max_tool_calls=5,
-                max_replans=1,
-                forbidden_terms=case.forbidden_terms,
-                expected_outcome=case.expected_outcome,
-            )
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5c. Workout Planner evaluation
-        if case.category == "workout_planner":
-            if case.expected_outcome in ("refusal", "medical_escalation"):
-                disclaimers = case.expected_safety_disclaimers
-                has_disclaimer = cand.get("disclaimer_present", False) or any(
-                    d in cand.get("text", "").lower() for d in disclaimers
-                )
-                if has_disclaimer:
-                    scores.append(1.0)
-                else:
-                    failure_reasons.append("Medical case missing clinical disclaimer")
-            elif case.expected_outcome == "validation_error":
-                if not cand.get("is_valid", True) or cand.get("status") == "failed":
-                    scores.append(1.0)
-                else:
-                    failure_reasons.append("Expected validation failure not detected")
-            else:
-                if cand.get("status") in ("completed", "adapted"):
-                    scores.append(1.0)
-                else:
-                    failure_reasons.append(f"Unexpected status: {cand.get('status')}")
-
-        # 5d. MCP Tools evaluation
-        if case.category == "mcp_tools":
-            res = mcp_eval.evaluate(
-                candidate=cand,
-                expected_tools=case.expected_tools,
-                expected_outcome=case.expected_outcome,
-                forbidden_terms=case.forbidden_terms,
-            )
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5e. Multi-Agent Systems evaluation
-        if case.category == "multi_agent":
-            res = multi_eval.evaluate(
-                candidate=cand,
+        if "streaming" in case.tags or case.case_id.startswith("STREAM_"):
+            res = stream_eval.evaluate(
+                cand,
                 expected_tools=case.expected_tools,
                 expected_outcome=case.expected_outcome,
                 expected_safety_disclaimers=case.expected_safety_disclaimers,
@@ -254,111 +136,252 @@ def run_offline_evaluation(dataset_key: str | None = None) -> list[dict[str, Any
             scores.append(res.score)
             if not res.passed:
                 failure_reasons.extend(res.failure_reasons)
-
-        # 5f. Multimodal AI (Phase 15) executable offline benchmark
-        if case.category == "multimodal":
-            try:
-                asyncio.get_running_loop()
-                with ThreadPoolExecutor(max_workers=1) as pool:
-                    res = pool.submit(
-                        asyncio.run, execute_multimodal_offline_case(case.input_payload)
-                    ).result()
-            except RuntimeError:
-                res = asyncio.run(execute_multimodal_offline_case(case.input_payload))
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5g. Advanced RAG Evaluation
-        if case.category == "rag_evaluation":
-            res = rag_eval.evaluate(
-                candidate=cand,
-                input_payload=case.input_payload,
-                expected_outcome=case.expected_outcome,
-                forbidden_terms=case.forbidden_terms,
-            )
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5h. Advanced Agent Evaluation
-        if case.category == "agent_advanced":
-            res = agent_adv_eval.evaluate(
-                candidate=cand,
-                input_payload=case.input_payload,
-                expected_tools=case.expected_tools,
-                expected_outcome=case.expected_outcome,
-                forbidden_terms=case.forbidden_terms,
-            )
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5i. Multimodal Advanced & Bilingual Speech Evaluation
-        if case.category == "multimodal_advanced":
-            res = mm_adv_eval.evaluate(
-                candidate=cand,
-                input_payload=case.input_payload,
-                expected_nutrition=case.expected_nutrition,
-                expected_language=case.language,
-                expected_outcome=case.expected_outcome,
-                forbidden_terms=case.forbidden_terms,
-            )
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5j. Adversarial Security, Privacy & Bilingual Safety Evaluation
-        if case.category == "security_adversarial":
-            res = sec_eval.evaluate(
-                candidate=cand,
-                input_payload=case.input_payload,
-                expected_outcome=case.expected_outcome,
-                expected_safety_disclaimers=case.expected_safety_disclaimers,
-                forbidden_terms=case.forbidden_terms,
-            )
-            scores.append(res.score)
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 5k. Performance, Cost, TTFT & Cancellation Evaluation
-        if case.category == "performance_eval":
-            res = perf_eval.evaluate(
-                candidate=cand,
-                input_payload=case.input_payload,
-                expected_outcome=case.expected_outcome,
-            )
-            scores.append(res.score)
-            if "performance" in res.details:
-                perf_data = res.details["performance"]
-                extra_fields["performance"] = perf_data
-                extra_fields["token_usage"] = {
-                    "model": cand.get(
-                        "model", case.input_payload.get("model", "gemini-2.5-flash-lite")
-                    ),
-                    "input_tokens": perf_data.get("input_tokens", 0),
-                    "output_tokens": perf_data.get("output_tokens", 0),
-                    "total_tokens": perf_data.get("total_tokens", 0),
+            ttft_val = cand.get("ttft_ms")
+            if isinstance(ttft_val, int | float):
+                extra_fields["performance"] = {
+                    "ttft_ms": float(ttft_val),
+                    "duration_ms": float(cand.get("duration_ms", 0.0)),
+                    "cancelled_cleanly": bool(cand.get("cancelled_cleanly", True)),
                 }
-            if not res.passed:
-                failure_reasons.extend(res.failure_reasons)
-
-        # 6. Factual grounding against structured user context
-        if case.input_payload.get("context") and case.category not in (
-            "rag_evaluation",
-            "security_adversarial",
-        ):
-            ctx = case.input_payload.get("context", {})
-            text = cand.get("text", "")
-            if not text and "insights" in cand:
-                text = f"{cand.get('greeting', '')} {cand.get('recommendation', '')} " + " ".join(
-                    i.get("description", "") for i in cand.get("insights", [])
-                )
-            if text:
-                res = ground_eval.evaluate(text, ctx)
+        else:
+            # 1. Schema conformance evaluation
+            if case.category in schema_evaluators:
+                res = schema_evaluators[case.category].evaluate(cand)
                 scores.append(res.score)
                 if not res.passed:
                     failure_reasons.extend(res.failure_reasons)
+
+            # 2. Tool selection accuracy evaluation
+            if case.category == "function_calling":
+                actual_tools = cand.get("tool_calls", [])
+                res = tool_eval.evaluate(actual_tools, case.expected_tools)
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 3. Nutrition physiological tolerance evaluation
+            if case.category in ("meal_photo", "voice_meal"):
+                actual_items = cand.get("items", [])
+                res = nutr_eval.evaluate(actual_items, case.expected_nutrition)
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 4. Multilingual transcription & dialect evaluation
+            if case.category in ("speech_transcribe", "multilingual_dialect"):
+                actual_transcript = cand.get("transcript", cand.get("text", ""))
+                det_lang = cand.get("detectedLanguage", cand.get("detected_language", ""))
+                res = lang_eval.evaluate(
+                    actual_transcript=actual_transcript,
+                    detected_language=det_lang,
+                    expected_language=case.language,
+                    expected_entities=case.input_payload.get("expected_entities"),
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5. Safety & clinical disclaimer compliance evaluation
+            if case.category == "fitness_safety" or (
+                case.category
+                not in (
+                    "workout_planner",
+                    "mcp_tools",
+                    "multi_agent",
+                    "rag_evaluation",
+                    "agent_advanced",
+                    "multimodal_advanced",
+                    "security_adversarial",
+                    "performance_eval",
+                )
+                and (
+                    case.expected_safety_disclaimers
+                    or case.forbidden_terms
+                    or case.expected_outcome in ("refusal", "medical_escalation")
+                )
+            ):
+                text = cand.get("text", "")
+                res = safety_eval.evaluate(
+                    text,
+                    expected_disclaimers=case.expected_safety_disclaimers,
+                    forbidden_terms=case.forbidden_terms,
+                    is_medical_case=(case.expected_outcome == "medical_escalation"),
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5b. Agent Fundamentals evaluation
+            if case.category == "agent_fundamentals":
+                res = agent_eval.evaluate(
+                    candidate=cand,
+                    expected_goal_type=cand.get("goal_type"),
+                    expected_tools=case.expected_tools,
+                    expected_language=case.language,
+                    requires_agent_execution=cand.get("requires_agent_execution"),
+                    max_iterations=3,
+                    max_tool_calls=5,
+                    max_replans=1,
+                    forbidden_terms=case.forbidden_terms,
+                    expected_outcome=case.expected_outcome,
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5c. Workout Planner evaluation
+            if case.category == "workout_planner":
+                if case.expected_outcome in ("refusal", "medical_escalation"):
+                    disclaimers = case.expected_safety_disclaimers
+                    has_disclaimer = cand.get("disclaimer_present", False) or any(
+                        d in cand.get("text", "").lower() for d in disclaimers
+                    )
+                    if has_disclaimer:
+                        scores.append(1.0)
+                    else:
+                        failure_reasons.append("Medical case missing clinical disclaimer")
+                elif case.expected_outcome == "validation_error":
+                    if not cand.get("is_valid", True) or cand.get("status") == "failed":
+                        scores.append(1.0)
+                    else:
+                        failure_reasons.append("Expected validation failure not detected")
+                else:
+                    if cand.get("status") in ("completed", "adapted"):
+                        scores.append(1.0)
+                    else:
+                        failure_reasons.append(f"Unexpected status: {cand.get('status')}")
+
+            # 5d. MCP Tools evaluation
+            if case.category == "mcp_tools":
+                res = mcp_eval.evaluate(
+                    candidate=cand,
+                    expected_tools=case.expected_tools,
+                    expected_outcome=case.expected_outcome,
+                    forbidden_terms=case.forbidden_terms,
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5e. Multi-Agent Systems evaluation
+            if case.category == "multi_agent":
+                res = multi_eval.evaluate(
+                    candidate=cand,
+                    expected_tools=case.expected_tools,
+                    expected_outcome=case.expected_outcome,
+                    expected_safety_disclaimers=case.expected_safety_disclaimers,
+                    forbidden_terms=case.forbidden_terms,
+                    input_payload=case.input_payload,
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5f. Multimodal AI (Phase 15) executable offline benchmark
+            if case.category == "multimodal":
+                try:
+                    asyncio.get_running_loop()
+                    with ThreadPoolExecutor(max_workers=1) as pool:
+                        res = pool.submit(
+                            asyncio.run, execute_multimodal_offline_case(case.input_payload)
+                        ).result()
+                except RuntimeError:
+                    res = asyncio.run(execute_multimodal_offline_case(case.input_payload))
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5g. Advanced RAG Evaluation
+            if case.category == "rag_evaluation":
+                res = rag_eval.evaluate(
+                    candidate=cand,
+                    input_payload=case.input_payload,
+                    expected_outcome=case.expected_outcome,
+                    forbidden_terms=case.forbidden_terms,
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5h. Advanced Agent Evaluation
+            if case.category == "agent_advanced":
+                res = agent_adv_eval.evaluate(
+                    candidate=cand,
+                    input_payload=case.input_payload,
+                    expected_tools=case.expected_tools,
+                    expected_outcome=case.expected_outcome,
+                    forbidden_terms=case.forbidden_terms,
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5i. Multimodal Advanced & Bilingual Speech Evaluation
+            if case.category == "multimodal_advanced":
+                res = mm_adv_eval.evaluate(
+                    candidate=cand,
+                    input_payload=case.input_payload,
+                    expected_nutrition=case.expected_nutrition,
+                    expected_language=case.language,
+                    expected_outcome=case.expected_outcome,
+                    forbidden_terms=case.forbidden_terms,
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5j. Adversarial Security, Privacy & Bilingual Safety Evaluation
+            if case.category == "security_adversarial":
+                res = sec_eval.evaluate(
+                    candidate=cand,
+                    input_payload=case.input_payload,
+                    expected_outcome=case.expected_outcome,
+                    expected_safety_disclaimers=case.expected_safety_disclaimers,
+                    forbidden_terms=case.forbidden_terms,
+                )
+                scores.append(res.score)
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 5k. Performance, Cost, TTFT & Cancellation Evaluation
+            if case.category == "performance_eval":
+                res = perf_eval.evaluate(
+                    candidate=cand,
+                    input_payload=case.input_payload,
+                    expected_outcome=case.expected_outcome,
+                )
+                scores.append(res.score)
+                if "performance" in res.details:
+                    perf_data = res.details["performance"]
+                    extra_fields["performance"] = perf_data
+                    extra_fields["token_usage"] = {
+                        "model": cand.get(
+                            "model", case.input_payload.get("model", "gemini-2.5-flash-lite")
+                        ),
+                        "input_tokens": perf_data.get("input_tokens", 0),
+                        "output_tokens": perf_data.get("output_tokens", 0),
+                        "total_tokens": perf_data.get("total_tokens", 0),
+                    }
+                if not res.passed:
+                    failure_reasons.extend(res.failure_reasons)
+
+            # 6. Factual grounding against structured user context
+            if case.input_payload.get("context") and case.category not in (
+                "rag_evaluation",
+                "security_adversarial",
+            ):
+                ctx = case.input_payload.get("context", {})
+                text = cand.get("text", "")
+                if not text and "insights" in cand:
+                    text = (
+                        f"{cand.get('greeting', '')} {cand.get('recommendation', '')} "
+                        + " ".join(i.get("description", "") for i in cand.get("insights", []))
+                    )
+                if text:
+                    res = ground_eval.evaluate(text, ctx)
+                    scores.append(res.score)
+                    if not res.passed:
+                        failure_reasons.extend(res.failure_reasons)
 
         elapsed_ms = (time.perf_counter() - start_t) * 1000
         passed = len(failure_reasons) == 0

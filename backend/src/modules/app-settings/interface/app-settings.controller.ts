@@ -12,7 +12,10 @@ import type {
   GeminiUsageEvent,
   GeminiUsageSummary,
 } from '../domain/gemini-config.js';
-import type { GetAppSettingsResult, GetAppSettingsUseCase } from '../application/use-cases/get-app-settings.js';
+import type {
+  GetAppSettingsResult,
+  GetAppSettingsUseCase,
+} from '../application/use-cases/get-app-settings.js';
 import type { UpdateAppSettingsUseCase } from '../application/use-cases/update-app-settings.js';
 import type { GetPublicAppConfigUseCase } from '../application/use-cases/get-public-app-config.js';
 import type { GetGeminiConfigUseCase } from '../application/use-cases/get-gemini-config.js';
@@ -57,9 +60,7 @@ export interface AppSettingsController {
   getGeminiUsageByFeature: (req: Request) => Promise<RouteResult<GeminiFeatureUsage[]>>;
   getGeminiUsageByModel: (req: Request) => Promise<RouteResult<GeminiModelUsage[]>>;
   getGeminiDailyTrends: (req: Request) => Promise<RouteResult<GeminiDailyTrendItem[]>>;
-  getGeminiUsageEvents: (
-    req: Request,
-  ) => Promise<
+  getGeminiUsageEvents: (req: Request) => Promise<
     RouteResult<{
       items: GeminiUsageEvent[];
       total: number;
@@ -189,7 +190,7 @@ export function createAppSettingsController(useCases: AppSettingsUseCases): AppS
 
     getGeminiDailyTrends: async (req: Request): Promise<RouteResult<GeminiDailyTrendItem[]>> => {
       const actor = requireActor(req);
-      const days = req.query.days ? parseInt(String(req.query.days), 10) : 14;
+      const days = typeof req.query.days === 'string' ? parseInt(req.query.days, 10) : 14;
       const data = await useCases.geminiUsageAnalytics.getDailyTrends(actor, days);
       return {
         data,

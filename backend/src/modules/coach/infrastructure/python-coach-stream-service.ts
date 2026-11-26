@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { defaultAiMetrics } from '../../../shared/ai/ai-metrics.js';
+import { classifyPythonAiError } from '../../../shared/ai/ai-observability.js';
+import { withAiSpan } from '../../../shared/ai/ai-tracing.js';
 import { currentAiRequestContext } from '../../../shared/ai/ai-usage.js';
 import { pythonUsageSchema, requireGateUserId } from '../../../shared/ai/python-ai-call.js';
 import {
@@ -167,15 +170,46 @@ export class PythonCoachStreamService implements CoachChatStreamService {
     const metrics = this.deps.metrics ?? nodeStreamMetrics;
 
     let usageRecorded = false;
+    let llmMetricsRecorded = false;
     let terminalSent = false;
     let firstEventReceived = false;
     let eventCounter = 0;
+    const startedAt = performance.now();
     const resolveSeq = (rawSeq?: number | null): number => {
       eventCounter += 1;
       return typeof rawSeq === 'number' ? rawSeq : eventCounter;
     };
     const resolveTimestamp = (rawTs?: string | null): string =>
       rawTs && rawTs.trim() ? rawTs : new Date().toISOString();
+
+    const recordStreamAiMetricsOnce = (input: {
+      success: boolean;
+      usage?: z.output<typeof pythonUsageSchema> | null | undefined;
+      errorCategory?: string | null | undefined;
+      timeout?: boolean;
+    }): void => {
+      if (llmMetricsRecorded) return;
+      llmMetricsRecorded = true;
+      try {
+        const u = input.usage;
+        defaultAiMetrics.recordLlmCall({
+          feature: 'coach_chat',
+          ...(u?.model ? { model: u.model } : {}),
+          durationMs: u?.durationMs ?? Math.round(performance.now() - startedAt),
+          success: input.success,
+          inputTokens: u?.inputTokens ?? 0,
+          outputTokens: u?.outputTokens ?? 0,
+          cachedTokens: u?.cachedTokens ?? 0,
+          thinkingTokens: u?.thinkingTokens ?? 0,
+          totalTokens: u?.totalTokens ?? 0,
+          isFallback: u?.isFallback ?? false,
+          errorCategory: input.errorCategory ?? null,
+          ...(input.timeout ? { timeout: true } : {}),
+        });
+      } catch {
+        // Fail-open observability
+      }
+    };
 
     const recordUsageOnce = async (
       status: 'success' | 'failed',
@@ -310,6 +344,7 @@ export class PythonCoachStreamService implements CoachChatStreamService {
         const r = parsed.data.result;
         const u = parsed.data.usage ?? undefined;
         await recordUsageOnce('success', u);
+        recordStreamAiMetricsOnce({ success: true, usage: u });
 
         await onEvent({
           type: 'complete',
@@ -363,6 +398,15 @@ export class PythonCoachStreamService implements CoachChatStreamService {
         terminalSent = true;
         const safe = sanitizeStreamError(parsed.data.code, parsed.data.message);
         await recordUsageOnce('failed', parsed.data.usage, safe.code);
+        recordStreamAiMetricsOnce({
+          success: false,
+          usage: parsed.data.usage,
+          errorCategory:
+            safe.code === 'PROVIDER_TIMEOUT' || safe.code === 'DEADLINE_EXCEEDED'
+              ? 'gemini_timeout'
+              : 'gemini_error',
+          timeout: safe.code === 'PROVIDER_TIMEOUT' || safe.code === 'DEADLINE_EXCEEDED',
+        });
         await onEvent({
           type: 'error',
           traceId: parsed.data.traceId,
@@ -379,29 +423,41 @@ export class PythonCoachStreamService implements CoachChatStreamService {
     };
 
     try {
-      await streamPythonAi(this.deps.clientConfig, {
-        path: COACH_CHAT_STREAM_PATH,
-        scope: COACH_CHAT_STREAM_SCOPE,
-        subject: userId,
-        requestId: request.requestId,
-        timeoutMs,
-        ...(request.signal ? { signal: request.signal } : {}),
-        ...(request.idempotencyKey ? { idempotencyKey: request.idempotencyKey } : {}),
-        body: {
-          message: request.message,
-          context: request.context,
-          history: request.history,
-          memories: request.memories ?? [],
-          ...(request.knowledge && request.knowledge.length > 0 ? { knowledge: request.knowledge } : {}),
-          model: { primary: models.primary, fallback: models.fallback },
-          deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
-          ...(request.conversationId ? { conversationId: request.conversationId } : {}),
-          ...(request.clientMessageId ? { clientMessageId: request.clientMessageId } : {}),
+      await withAiSpan(
+        'ai.python.stream',
+        {
+          attributes: {
+            feature: 'coach_chat',
+            endpoint: COACH_CHAT_STREAM_PATH,
+            aiRequestId: request.requestId,
+          },
         },
-        onFrame: handleFrame,
-      });
+        () =>
+          streamPythonAi(this.deps.clientConfig, {
+            path: COACH_CHAT_STREAM_PATH,
+            scope: COACH_CHAT_STREAM_SCOPE,
+            subject: userId,
+            requestId: request.requestId,
+            timeoutMs,
+            ...(request.signal ? { signal: request.signal } : {}),
+            ...(request.idempotencyKey ? { idempotencyKey: request.idempotencyKey } : {}),
+            body: {
+              message: request.message,
+              context: request.context,
+              history: request.history,
+              memories: request.memories ?? [],
+              ...(request.knowledge && request.knowledge.length > 0 ? { knowledge: request.knowledge } : {}),
+              model: { primary: models.primary, fallback: models.fallback },
+              deadlineMs: Math.max(MIN_DEADLINE_MS, timeoutMs - DEADLINE_MARGIN_MS),
+              ...(request.conversationId ? { conversationId: request.conversationId } : {}),
+              ...(request.clientMessageId ? { clientMessageId: request.clientMessageId } : {}),
+            },
+            onFrame: handleFrame,
+          }),
+      );
 
       if (!terminalSent && !request.signal?.aborted) {
+        recordStreamAiMetricsOnce({ success: false, errorCategory: 'gemini_error' });
         const safe = sanitizeStreamError('STREAM_INTERRUPTED');
         await onEvent({
           type: 'error',
@@ -416,12 +472,21 @@ export class PythonCoachStreamService implements CoachChatStreamService {
     } catch (err) {
       if (err instanceof PythonAiError) {
         const mappedCode = mapPythonErrorCodeToPublic(err);
+        const category = classifyPythonAiError(err);
+        let parsedErrUsage: z.output<typeof pythonUsageSchema> | undefined;
         if (err.info.usage) {
           const parsedUsage = pythonUsageSchema.safeParse(err.info.usage);
           if (parsedUsage.success) {
+            parsedErrUsage = parsedUsage.data;
             await recordUsageOnce('failed', parsedUsage.data, mappedCode);
           }
         }
+        recordStreamAiMetricsOnce({
+          success: false,
+          usage: parsedErrUsage,
+          errorCategory: category,
+          timeout: category === 'gemini_timeout' || category === 'python_timeout',
+        });
         if (request.signal?.aborted) {
           return;
         }

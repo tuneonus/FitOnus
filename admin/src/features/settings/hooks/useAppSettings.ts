@@ -146,7 +146,14 @@ export function useAppSettings() {
   }, [populateFromRecords, toast]);
 
   useEffect(() => {
-    loadSettings();
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active) return loadSettings();
+      return undefined;
+    });
+    return () => {
+      active = false;
+    };
   }, [loadSettings]);
 
   // Dirty state checks

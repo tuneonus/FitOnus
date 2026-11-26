@@ -1631,3 +1631,32 @@ class TestPhase15MultimodalAndDoubleCountPrevention:
         assert "multimodal_meal" not in snap["ai"]["byFeature"]
         assert snap["multimodal"]["byModality"]["audio"]["requests"] == 1
         metrics_registry.reset()
+
+    def test_streaming_telemetry_bridges_to_shared_metrics_registry(self) -> None:
+        from onusfit_ai.features.coach.application.stream_telemetry import (
+            StreamSessionTracker,
+            streaming_metrics_registry,
+        )
+        from onusfit_ai.shared.logging import metrics_registry
+
+        metrics_registry.reset()
+        streaming_metrics_registry.reset()
+        tracker = StreamSessionTracker(
+            trace_id="stream-bridge-1", mode="direct", model="gemini-3.5-flash-lite"
+        )
+        tracker.mark_started()
+        tracker.mark_delta()
+        tracker.finalize_completed(
+            model="gemini-3.5-flash-lite",
+            is_fallback=False,
+            input_tokens=50,
+            output_tokens=20,
+            total_tokens=70,
+        )
+        snap = metrics_registry.snapshot()
+        assert snap["streaming"]["totalStreams"] == 1
+        assert snap["streaming"]["completedStreams"] == 1
+        assert snap["streaming"]["chunksEmitted"] == 1
+        assert snap["streaming"]["ttftMs"]["count"] == 1
+        metrics_registry.reset()
+        streaming_metrics_registry.reset()

@@ -65,3 +65,5 @@ export function createAdminModule(deps: AdminModuleDependencies) {
     useCases,
   };
 }
+
+export { ADMIN_NO_CACHE_HEADERS } from './interface/admin.controller.js';

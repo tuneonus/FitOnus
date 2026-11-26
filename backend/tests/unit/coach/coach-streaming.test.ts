@@ -83,7 +83,13 @@ function makeFakeRepos() {
     createConversation: async (_u, title) => {
       const id = '11111111-1111-4111-8111-111111111111';
       conversations.set(id, { id, title });
-      return { id, title, preview: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      return {
+        id,
+        title,
+        preview: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
     },
     listConversations: async () => ({ conversations: [], total: 0, page: 1, limit: 20 }),
     getConversation: async (_u, id) => {
@@ -103,7 +109,8 @@ function makeFakeRepos() {
     addMessage: async (_u, conversationId, msg) => {
       storedMessages.push({ ...msg, conversationId });
     },
-    getMessages: async (_u, conversationId) => storedMessages.filter((m) => m.conversationId === conversationId),
+    getMessages: async (_u, conversationId) =>
+      storedMessages.filter((m) => m.conversationId === conversationId),
     setMessageFeedback: async () => true,
   };
 
@@ -156,7 +163,15 @@ function makeTestApp(streamUseCase: StreamCoachChatUseCase, authed = true) {
   const controller = createCoachController({
     chatWithCoach: { execute: async () => ({ text: 'ok' }) } as unknown as ChatWithCoachUseCase,
     streamCoachChat: streamUseCase,
-    getCoachInsights: { execute: async () => ({ greeting: 'hi', recommendation: null, insights: [], generatedAt: '', hasSufficientData: false }) } as unknown as GetCoachInsightsUseCase,
+    getCoachInsights: {
+      execute: async () => ({
+        greeting: 'hi',
+        recommendation: null,
+        insights: [],
+        generatedAt: '',
+        hasSufficientData: false,
+      }),
+    } as unknown as GetCoachInsightsUseCase,
   });
 
   const group = createCoachRoutes('/api/v1/coach', controller);
@@ -412,7 +427,11 @@ describe('Phase 14: Node.js Coach Streaming Gateway & Policies', () => {
     const events1: CoachStreamEvent[] = [];
     const p1 = uc.execute(
       { userId: USER_ID, message: 'Water check', idempotencyKey: 'idem-key-12345' },
-      { onEvent: async (e) => { events1.push(e); } },
+      {
+        onEvent: async (e) => {
+          events1.push(e);
+        },
+      },
     );
 
     await new Promise((r) => setTimeout(r, 15));
@@ -431,7 +450,11 @@ describe('Phase 14: Node.js Coach Streaming Gateway & Policies', () => {
     const eventsReplay: CoachStreamEvent[] = [];
     await uc.execute(
       { userId: USER_ID, message: 'Water check', idempotencyKey: 'idem-key-12345' },
-      { onEvent: async (e) => { eventsReplay.push(e); } },
+      {
+        onEvent: async (e) => {
+          eventsReplay.push(e);
+        },
+      },
     );
     assert.equal(callCount, 1);
     assert.equal(calls.length, 1);
@@ -541,7 +564,8 @@ describe('Phase 14: Node.js Coach Streaming Gateway & Policies', () => {
           type: 'delta',
           traceId: req.requestId,
           seq: 1,
-          textDelta: 'Key AIzaSyTestKey123456789012345 http://127.0.0.1:8000/secret <thought>hidden</thought> Safe advice.',
+          textDelta:
+            'Key AIzaSyTestKey123456789012345 http://127.0.0.1:8000/secret <thought>hidden</thought> Safe advice.',
           timestamp: new Date().toISOString(),
         });
         await onEvent({
@@ -564,7 +588,11 @@ describe('Phase 14: Node.js Coach Streaming Gateway & Policies', () => {
 
     await uc.execute(
       { userId: USER_ID, message: 'Test safety' },
-      { onEvent: async (e) => { emitted.push(e); } },
+      {
+        onEvent: async (e) => {
+          emitted.push(e);
+        },
+      },
     );
 
     const delta = emitted.find((e) => e.type === 'delta');
@@ -628,7 +656,15 @@ describe('Phase 14: Node.js Coach Streaming Gateway & Policies', () => {
           });
         },
       } as unknown as StreamCoachChatUseCase,
-      getCoachInsights: { execute: async () => ({ greeting: 'hi', recommendation: null, insights: [], generatedAt: '', hasSufficientData: false }) } as unknown as GetCoachInsightsUseCase,
+      getCoachInsights: {
+        execute: async () => ({
+          greeting: 'hi',
+          recommendation: null,
+          insights: [],
+          generatedAt: '',
+          hasSufficientData: false,
+        }),
+      } as unknown as GetCoachInsightsUseCase,
     });
 
     const fakeReq = {
@@ -800,5 +836,70 @@ describe('Phase 14: Node.js Coach Streaming Gateway & Policies', () => {
       assert.equal(events[1].seq, 1);
     }
     assert.equal(events[2]?.type, 'complete');
+  });
+
+  it('14. bridges Node streaming metrics, LLM usage, and trace spans into shared Phase 17 telemetry', async () => {
+    const { defaultAiMetrics } = await import('../../../src/shared/ai/ai-metrics.js');
+    const { defaultAiTracer } = await import('../../../src/shared/ai/ai-tracing.js');
+    const { nodeStreamMetrics, NodeStreamTracker } =
+      await import('../../../src/shared/ai/streaming-observability.js');
+
+    defaultAiMetrics.reset();
+    defaultAiTracer.clear();
+
+    const tracker = new NodeStreamTracker({
+      requestId: 'req-bridge-1',
+      traceId: 'trace-bridge-1',
+      userId: USER_ID,
+      feature: 'coach_chat',
+      metrics: nodeStreamMetrics,
+    });
+    tracker.markDelta(12);
+    tracker.finish('completed');
+
+    const encoder = new TextEncoder();
+    const sseBody = [
+      'id: 1\nevent: start\ndata: {"type":"start","traceId":"trace-bridge-1","model":"gemini-3.5-flash-lite","timestamp":"2026-11-25T10:00:00Z"}\n\n',
+      'id: 2\nevent: delta\ndata: {"type":"delta","textDelta":"Hello ","seq":2,"traceId":"trace-bridge-1","timestamp":"2026-11-25T10:00:00Z"}\n\n',
+      'id: 3\nevent: complete\ndata: {"type":"complete","outcome":"ok","result":{"text":"Hello ","followUps":[],"sources":[]},"usage":{"model":"gemini-3.5-flash-lite","isFallback":false,"inputTokens":15,"outputTokens":5,"cachedTokens":0,"thinkingTokens":0,"totalTokens":20,"durationMs":35},"traceId":"trace-bridge-1","partial":false}\n\n',
+    ].join('');
+
+    const fetchImpl: typeof fetch = async () =>
+      new Response(
+        new ReadableStream({
+          start(c) {
+            c.enqueue(encoder.encode(sseBody));
+            c.close();
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'text/event-stream' } },
+      );
+
+    const svc = new PythonCoachStreamService({
+      clientConfig: { baseUrl: 'http://127.0.0.1:8000', serviceSecret: SECRET, fetchImpl },
+      resolveModels: async () => ({ primary: 'gemini-3.5-flash-lite', fallback: null }),
+      pythonTimeoutMs: 10_000,
+    });
+
+    await svc.streamReply(
+      {
+        requestId: 'req-bridge-1',
+        userId: USER_ID,
+        message: 'Check bridge',
+        history: [],
+        context: sampleContext(),
+      },
+      async () => {},
+    );
+
+    const snap = defaultAiMetrics.getSnapshot();
+    assert.ok(snap.streaming.totalStreams >= 1);
+    assert.ok(snap.streaming.completedStreams >= 1);
+    assert.ok(snap.streaming.ttft.count >= 1);
+    assert.equal(snap.ai.byFeature.coach_chat?.requests, 1);
+    assert.equal(snap.ai.byFeature.coach_chat?.totalTokens, 20);
+    assert.ok(defaultAiTracer.recentSpans(undefined, 10).some((s) => s.operation === 'ai.python.stream'));
+    defaultAiMetrics.reset();
+    defaultAiTracer.clear();
   });
 });

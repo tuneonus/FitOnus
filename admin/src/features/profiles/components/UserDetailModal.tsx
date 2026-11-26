@@ -62,22 +62,26 @@ export function UserDetailModal({
 
   useEffect(() => {
     let isMounted = true;
-    if (isOpen && userDetail?.user?.id) {
-      setIsLoadingActivity(true);
-      profilesApi
-        .getUserActivity(userDetail.user.id)
-        .then((data) => {
-          if (isMounted) setActivity(data);
-        })
-        .catch(() => {
-          if (isMounted) setActivity(null);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoadingActivity(false);
-        });
-    } else {
-      setActivity(null);
-    }
+    const userId = isOpen ? userDetail?.user?.id : undefined;
+    Promise.resolve()
+      .then(() => {
+        if (!isMounted) return null;
+        if (!userId) {
+          setActivity(null);
+          return null;
+        }
+        setIsLoadingActivity(true);
+        return profilesApi.getUserActivity(userId);
+      })
+      .then((data) => {
+        if (isMounted && userId) setActivity(data);
+      })
+      .catch(() => {
+        if (isMounted) setActivity(null);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingActivity(false);
+      });
     return () => {
       isMounted = false;
     };

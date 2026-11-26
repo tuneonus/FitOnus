@@ -57,7 +57,7 @@ export interface GeminiUsageEvent {
   id: string;
   requestId: string;
   userId: string | null;
-  feature: GeminiFeature | string;
+  feature: string;
   model: string;
   status: 'success' | 'failed' | 'rate_limited' | 'timeout';
   inputTokens: number;

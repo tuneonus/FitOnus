@@ -20,11 +20,7 @@ import {
   runWithTraceContext,
 } from '../../../src/shared/logging/request-correlation.js';
 import { createCapturingLogger } from '../../helpers/capture-logger.js';
-import {
-  json,
-  okCoachReply,
-  startFakePythonServer,
-} from '../../helpers/fake-python-ai-server.js';
+import { json, okCoachReply, startFakePythonServer } from '../../helpers/fake-python-ai-server.js';
 
 // ---------------------------------------------------------------------------
 // 1  W3C `traceparent` Parsing & Formatting
@@ -97,9 +93,8 @@ describe('TraceContext creation', () => {
   });
 
   it('createChildTraceContext inherits traceId', async () => {
-    const { createRootTraceContext, createChildTraceContext, runWithTraceContext } = await import(
-      '../../../src/shared/logging/request-correlation.js'
-    );
+    const { createRootTraceContext, createChildTraceContext, runWithTraceContext } =
+      await import('../../../src/shared/logging/request-correlation.js');
     const root = createRootTraceContext();
     const child = runWithTraceContext(root, () => createChildTraceContext());
     expect(child.traceId).toBe(root.traceId);
@@ -108,9 +103,8 @@ describe('TraceContext creation', () => {
   });
 
   it('currentTraceContext reads active context', async () => {
-    const { createRootTraceContext, runWithTraceContext, currentTraceContext } = await import(
-      '../../../src/shared/logging/request-correlation.js'
-    );
+    const { createRootTraceContext, runWithTraceContext, currentTraceContext } =
+      await import('../../../src/shared/logging/request-correlation.js');
     const root = createRootTraceContext();
     const inside = runWithTraceContext(root, () => currentTraceContext());
     expect(inside).toBeDefined();
@@ -169,8 +163,13 @@ describe('AiTracer', () => {
     const { AiTracer } = await import('../../../src/shared/ai/ai-tracing.js');
     const tracer = new AiTracer();
     tracer.record({
-      traceId: 't', spanId: 's', service: 'x', operation: 'o',
-      status: 'ok', durationMs: 1, attributes: {},
+      traceId: 't',
+      spanId: 's',
+      service: 'x',
+      operation: 'o',
+      status: 'ok',
+      durationMs: 1,
+      attributes: {},
     });
     tracer.clear();
     expect(tracer.count()).toBe(0);
@@ -178,9 +177,8 @@ describe('AiTracer', () => {
 
   it('redacts sensitive span attributes', async () => {
     const { AiTracer, withAiSpan } = await import('../../../src/shared/ai/ai-tracing.js');
-    const { createRootTraceContext, runWithTraceContext } = await import(
-      '../../../src/shared/logging/request-correlation.js'
-    );
+    const { createRootTraceContext, runWithTraceContext } =
+      await import('../../../src/shared/logging/request-correlation.js');
     const tracer = new AiTracer();
     const root = createRootTraceContext();
     await runWithTraceContext(root, () =>
@@ -204,9 +202,8 @@ describe('AiTracer', () => {
 describe('withAiSpan', () => {
   it('records spans and captures errors', async () => {
     const { AiTracer, withAiSpan } = await import('../../../src/shared/ai/ai-tracing.js');
-    const { createRootTraceContext, runWithTraceContext } = await import(
-      '../../../src/shared/logging/request-correlation.js'
-    );
+    const { createRootTraceContext, runWithTraceContext } =
+      await import('../../../src/shared/logging/request-correlation.js');
     const tracer = new AiTracer();
     const root = createRootTraceContext();
     await expect(
@@ -224,14 +221,11 @@ describe('withAiSpan', () => {
 
   it('succeeds and returns value', async () => {
     const { AiTracer, withAiSpan } = await import('../../../src/shared/ai/ai-tracing.js');
-    const { createRootTraceContext, runWithTraceContext } = await import(
-      '../../../src/shared/logging/request-correlation.js'
-    );
+    const { createRootTraceContext, runWithTraceContext } =
+      await import('../../../src/shared/logging/request-correlation.js');
     const tracer = new AiTracer();
     const root = createRootTraceContext();
-    const result = await runWithTraceContext(root, () =>
-      withAiSpan('ok.op', { tracer }, async () => 42),
-    );
+    const result = await runWithTraceContext(root, () => withAiSpan('ok.op', { tracer }, async () => 42));
     expect(result).toBe(42);
     expect(tracer.recentSpans()[0]!.status).toBe('ok');
   });
@@ -244,9 +238,8 @@ describe('withAiSpan', () => {
 describe('buildOutboundTraceHeaders', () => {
   it('includes traceparent and correlation-id when active', async () => {
     const { buildOutboundTraceHeaders } = await import('../../../src/shared/ai/ai-tracing.js');
-    const { createRootTraceContext, runWithTraceContext } = await import(
-      '../../../src/shared/logging/request-correlation.js'
-    );
+    const { createRootTraceContext, runWithTraceContext } =
+      await import('../../../src/shared/logging/request-correlation.js');
     const { runWithCorrelationId } = await import('../../../src/shared/logging/request-correlation.js');
     const root = createRootTraceContext();
     const headers = runWithCorrelationId('test-corr-id', () =>
@@ -270,9 +263,25 @@ describe('buildOutboundTraceHeaders', () => {
 describe('AiMetricsRegistry LLM', () => {
   it('records success and failure counts', () => {
     const m = new AiMetricsRegistry();
-    m.recordLlmCall({ feature: 'coach_chat', model: 'gemini-2.5-flash', durationMs: 100, success: true, inputTokens: 50, outputTokens: 20, totalTokens: 70, estimatedCostUsd: 0.0005 });
+    m.recordLlmCall({
+      feature: 'coach_chat',
+      model: 'gemini-2.5-flash',
+      durationMs: 100,
+      success: true,
+      inputTokens: 50,
+      outputTokens: 20,
+      totalTokens: 70,
+      estimatedCostUsd: 0.0005,
+    });
     m.recordCostUsd('coach_chat', 'gemini-2.5-flash', 0.0005);
-    m.recordLlmCall({ feature: 'coach_chat', model: 'gemini-2.5-flash', durationMs: 200, success: false, errorCategory: 'gemini_timeout', timeout: true });
+    m.recordLlmCall({
+      feature: 'coach_chat',
+      model: 'gemini-2.5-flash',
+      durationMs: 200,
+      success: false,
+      errorCategory: 'gemini_timeout',
+      timeout: true,
+    });
     const snap = m.getSnapshot();
     expect(snap.ai.totalRequests).toBe(2);
     expect(snap.ai.successCount).toBe(1);
@@ -284,7 +293,14 @@ describe('AiMetricsRegistry LLM', () => {
 
   it('tracks fallback and retry counts', () => {
     const m = new AiMetricsRegistry();
-    m.recordLlmCall({ feature: 'coach_insights', model: 'm', durationMs: 300, success: true, isFallback: true, retries: 2 });
+    m.recordLlmCall({
+      feature: 'coach_insights',
+      model: 'm',
+      durationMs: 300,
+      success: true,
+      isFallback: true,
+      retries: 2,
+    });
     const snap = m.getSnapshot();
     expect(snap.ai.fallbackCount).toBe(1);
     expect(snap.ai.retryCount).toBe(2);
@@ -338,8 +354,15 @@ describe('AiMetricsRegistry RAG', () => {
     const { AiMetricsRegistry } = await import('../../../src/shared/ai/ai-metrics.js');
     const m = new AiMetricsRegistry();
     m.recordRagRetrieval({
-      mode: 'hybrid', durationMs: 50, candidateCount: 20, returnedCount: 5,
-      topScore: 0.92, avgScore: 0.78, reranked: true, citationsCount: 3, grounded: true,
+      mode: 'hybrid',
+      durationMs: 50,
+      candidateCount: 20,
+      returnedCount: 5,
+      topScore: 0.92,
+      avgScore: 0.78,
+      reranked: true,
+      citationsCount: 3,
+      grounded: true,
     });
     const snap = m.getSnapshot();
     const rag = snap.rag['hybrid']!;
@@ -374,9 +397,15 @@ describe('AiMetricsRegistry Agent', () => {
     const { AiMetricsRegistry } = await import('../../../src/shared/ai/ai-metrics.js');
     const m = new AiMetricsRegistry();
     m.recordAgentExecution({
-      engine: 'native', routingDecision: 'general_chat', durationMs: 2000,
-      toolCalls: 3, toolFailures: 1, iterations: 5, replans: 1,
-      limitHit: 'max_iterations', failed: false,
+      engine: 'native',
+      routingDecision: 'general_chat',
+      durationMs: 2000,
+      toolCalls: 3,
+      toolFailures: 1,
+      iterations: 5,
+      replans: 1,
+      limitHit: 'max_iterations',
+      failed: false,
     });
     const snap = m.getSnapshot();
     const eng = snap.agent.byEngine['native']!;
@@ -398,10 +427,17 @@ describe('AiMetricsRegistry Multimodal', () => {
     const { AiMetricsRegistry } = await import('../../../src/shared/ai/ai-metrics.js');
     const m = new AiMetricsRegistry();
     m.recordMultimodalProcessing({
-      modality: 'image', durationMs: 500, validationDurationMs: 50, byteSize: 102400,
+      modality: 'image',
+      durationMs: 500,
+      validationDurationMs: 50,
+      byteSize: 102400,
     });
     m.recordMultimodalProcessing({
-      modality: 'image', durationMs: 100, validationFailed: true, validationReason: 'oversize', byteSize: 5_000_000,
+      modality: 'image',
+      durationMs: 100,
+      validationFailed: true,
+      validationReason: 'oversize',
+      byteSize: 5_000_000,
     });
     const snap = m.getSnapshot();
     const img = snap.multimodal.byModality['image']!;
@@ -443,8 +479,15 @@ describe('AI event builders', () => {
   it('ragRetrievalFields includes expected fields', async () => {
     const { ragRetrievalFields, AI_EVENTS } = await import('../../../src/shared/ai/ai-observability.js');
     const fields = ragRetrievalFields({
-      mode: 'hybrid', durationMs: 42, candidateCount: 10, returnedCount: 3,
-      topScore: 0.91, reranked: true, grounded: true, citationsCount: 2, success: true,
+      mode: 'hybrid',
+      durationMs: 42,
+      candidateCount: 10,
+      returnedCount: 3,
+      topScore: 0.91,
+      reranked: true,
+      grounded: true,
+      citationsCount: 2,
+      success: true,
     });
     expect(fields.event).toBe(AI_EVENTS.ragRetrieval);
     expect(fields.feature).toBe('rag');
@@ -457,7 +500,11 @@ describe('AI event builders', () => {
   it('ragRetrievalFields marks empty result', async () => {
     const { ragRetrievalFields } = await import('../../../src/shared/ai/ai-observability.js');
     const fields = ragRetrievalFields({
-      mode: 'vector', durationMs: 10, candidateCount: 5, returnedCount: 0, success: true,
+      mode: 'vector',
+      durationMs: 10,
+      candidateCount: 5,
+      returnedCount: 0,
+      success: true,
     });
     expect(fields.emptyResult).toBe(true);
   });
@@ -465,7 +512,10 @@ describe('AI event builders', () => {
   it('ragGroundingFields tracks dropped chunks', async () => {
     const { ragGroundingFields, AI_EVENTS } = await import('../../../src/shared/ai/ai-observability.js');
     const fields = ragGroundingFields({
-      inputChunks: 10, keptChunks: 6, citationsCount: 4, totalTokens: 1200,
+      inputChunks: 10,
+      keptChunks: 6,
+      citationsCount: 4,
+      totalTokens: 1200,
     });
     expect(fields.event).toBe(AI_EVENTS.ragGrounding);
     expect(fields.droppedChunks).toBe(4);
@@ -475,10 +525,17 @@ describe('AI event builders', () => {
   it('agentExecutionFields sanitizes routing decision', async () => {
     const { agentExecutionFields, AI_EVENTS } = await import('../../../src/shared/ai/ai-observability.js');
     const fields = agentExecutionFields({
-      aiRequestId: 'req-1', engine: 'native', routingDecision: 'general_chat',
-      durationMs: 2000, toolCallsCount: 3, toolFailuresCount: 1,
-      iterations: 5, replans: 1, limitHit: 'max_iterations',
-      fallbackUsed: false, success: true,
+      aiRequestId: 'req-1',
+      engine: 'native',
+      routingDecision: 'general_chat',
+      durationMs: 2000,
+      toolCallsCount: 3,
+      toolFailuresCount: 1,
+      iterations: 5,
+      replans: 1,
+      limitHit: 'max_iterations',
+      fallbackUsed: false,
+      success: true,
     });
     expect(fields.event).toBe(AI_EVENTS.agentExecution);
     expect(fields.engine).toBe('native');
@@ -487,11 +544,18 @@ describe('AI event builders', () => {
   });
 
   it('multimodalProcessingFields includes modality and validation', async () => {
-    const { multimodalProcessingFields, AI_EVENTS } = await import('../../../src/shared/ai/ai-observability.js');
+    const { multimodalProcessingFields, AI_EVENTS } =
+      await import('../../../src/shared/ai/ai-observability.js');
     const fields = multimodalProcessingFields({
-      aiRequestId: 'req-1', modality: 'image', feature: 'meal_photo',
-      model: 'gemini-2.5-flash', durationMs: 500, validationDurationMs: 50,
-      validationFailed: false, byteSize: 102400, success: true,
+      aiRequestId: 'req-1',
+      modality: 'image',
+      feature: 'meal_photo',
+      model: 'gemini-2.5-flash',
+      durationMs: 500,
+      validationDurationMs: 50,
+      validationFailed: false,
+      byteSize: 102400,
+      success: true,
     });
     expect(fields.event).toBe(AI_EVENTS.multimodalProcessing);
     expect(fields.modality).toBe('image');
@@ -507,9 +571,8 @@ describe('AI event builders', () => {
 describe('traceMetadataFields', () => {
   it('returns IDs when trace context is active', async () => {
     const { traceMetadataFields } = await import('../../../src/shared/ai/ai-observability.js');
-    const { createRootTraceContext, runWithTraceContext } = await import(
-      '../../../src/shared/logging/request-correlation.js'
-    );
+    const { createRootTraceContext, runWithTraceContext } =
+      await import('../../../src/shared/logging/request-correlation.js');
     const root = createRootTraceContext();
     const meta = runWithTraceContext(root, () => traceMetadataFields());
     expect(meta.traceId).toBe(root.traceId);
@@ -575,8 +638,11 @@ describe('evaluateAiOperationalHealth', () => {
     const { evaluateAiOperationalHealth } = await import('../../../src/shared/ai/ai-monitoring.js');
     const m = new AiMetricsRegistry();
     m.recordLlmCall({
-      feature: 'coach_chat', model: 'm', durationMs: 10,
-      success: false, errorCategory: 'gemini_quota_exhausted',
+      feature: 'coach_chat',
+      model: 'm',
+      durationMs: 10,
+      success: false,
+      errorCategory: 'gemini_quota_exhausted',
     });
     const result = evaluateAiOperationalHealth(m.getSnapshot());
     expect(result.status).toBe('critical');
@@ -588,8 +654,11 @@ describe('evaluateAiOperationalHealth', () => {
     const { evaluateAiOperationalHealth } = await import('../../../src/shared/ai/ai-monitoring.js');
     const m = new AiMetricsRegistry();
     m.recordLlmCall({
-      feature: 'coach_chat', model: 'm', durationMs: 10,
-      success: false, errorCategory: 'auth_failure',
+      feature: 'coach_chat',
+      model: 'm',
+      durationMs: 10,
+      success: false,
+      errorCategory: 'auth_failure',
     });
     const result = evaluateAiOperationalHealth(m.getSnapshot());
     expect(result.status).toBe('critical');
@@ -598,11 +667,14 @@ describe('evaluateAiOperationalHealth', () => {
 
   it('degraded on elevated error rate', async () => {
     const { AiMetricsRegistry } = await import('../../../src/shared/ai/ai-metrics.js');
-    const { evaluateAiOperationalHealth, DEFAULT_AI_SLO_THRESHOLDS } = await import('../../../src/shared/ai/ai-monitoring.js');
+    const { evaluateAiOperationalHealth, DEFAULT_AI_SLO_THRESHOLDS } =
+      await import('../../../src/shared/ai/ai-monitoring.js');
     const m = new AiMetricsRegistry();
     for (let i = 0; i < 20; i++) {
       m.recordLlmCall({
-        feature: 'coach_chat', model: 'm', durationMs: 10,
+        feature: 'coach_chat',
+        model: 'm',
+        durationMs: 10,
         success: i < 18,
         errorCategory: i >= 18 ? 'internal_error' : undefined,
       });
@@ -611,7 +683,7 @@ describe('evaluateAiOperationalHealth', () => {
       ...DEFAULT_AI_SLO_THRESHOLDS,
       minSamples: 5,
       warnErrorRate: 0.05,
-      criticalErrorRate: 0.20,
+      criticalErrorRate: 0.2,
     });
     expect(result.status).toBe('degraded');
     expect(result.alerts.some((a) => a.code === 'ELEVATED_AI_ERROR_RATE')).toBe(true);
@@ -619,29 +691,35 @@ describe('evaluateAiOperationalHealth', () => {
 
   it('RAG empty rate critical alert', async () => {
     const { AiMetricsRegistry } = await import('../../../src/shared/ai/ai-metrics.js');
-    const { evaluateAiOperationalHealth, DEFAULT_AI_SLO_THRESHOLDS } = await import('../../../src/shared/ai/ai-monitoring.js');
+    const { evaluateAiOperationalHealth, DEFAULT_AI_SLO_THRESHOLDS } =
+      await import('../../../src/shared/ai/ai-monitoring.js');
     const m = new AiMetricsRegistry();
     for (let i = 0; i < 20; i++) {
       m.recordRagRetrieval({
-        mode: 'vector', durationMs: 10,
-        candidateCount: 5, returnedCount: i < 15 ? 0 : 3,
+        mode: 'vector',
+        durationMs: 10,
+        candidateCount: 5,
+        returnedCount: i < 15 ? 0 : 3,
       });
     }
     const result = evaluateAiOperationalHealth(m.getSnapshot(), {
       ...DEFAULT_AI_SLO_THRESHOLDS,
       minSamples: 5,
-      criticalRagEmptyRate: 0.60,
+      criticalRagEmptyRate: 0.6,
     });
     expect(result.alerts.some((a) => a.code === 'RAG_EMPTY_RATE_CRITICAL')).toBe(true);
   });
 
   it('agent limit hit rate alert', async () => {
     const { AiMetricsRegistry } = await import('../../../src/shared/ai/ai-metrics.js');
-    const { evaluateAiOperationalHealth, DEFAULT_AI_SLO_THRESHOLDS } = await import('../../../src/shared/ai/ai-monitoring.js');
+    const { evaluateAiOperationalHealth, DEFAULT_AI_SLO_THRESHOLDS } =
+      await import('../../../src/shared/ai/ai-monitoring.js');
     const m = new AiMetricsRegistry();
     for (let i = 0; i < 15; i++) {
       m.recordAgentExecution({
-        engine: 'native', routingDecision: 'chat', durationMs: 100,
+        engine: 'native',
+        routingDecision: 'chat',
+        durationMs: 100,
         limitHit: i < 6 ? 'max_iters' : undefined,
       });
     }
@@ -656,7 +734,15 @@ describe('evaluateAiOperationalHealth', () => {
   it('summary includes cost and rates', async () => {
     const { evaluateAiOperationalHealth } = await import('../../../src/shared/ai/ai-monitoring.js');
     const m = new AiMetricsRegistry();
-    m.recordLlmCall({ feature: 'coach_chat', model: 'gemini-2.5-flash', durationMs: 100, success: true, inputTokens: 1000, outputTokens: 500, estimatedCostUsd: 0.0025 });
+    m.recordLlmCall({
+      feature: 'coach_chat',
+      model: 'gemini-2.5-flash',
+      durationMs: 100,
+      success: true,
+      inputTokens: 1000,
+      outputTokens: 500,
+      estimatedCostUsd: 0.0025,
+    });
     const result = evaluateAiOperationalHealth(m.getSnapshot());
     expect(result.summary.totalRequests).toBe(1);
     expect(result.summary.estimatedCostUsd).toBeGreaterThan(0);
@@ -684,9 +770,8 @@ describe('Fail-open resilience', () => {
 
 describe('AsyncLocalStorage trace isolation', () => {
   it('concurrent requests do not cross-contaminate', async () => {
-    const { createRootTraceContext, runWithTraceContext, currentTraceContext } = await import(
-      '../../../src/shared/logging/request-correlation.js'
-    );
+    const { createRootTraceContext, runWithTraceContext, currentTraceContext } =
+      await import('../../../src/shared/logging/request-correlation.js');
 
     const results: Record<string, string> = {};
 
@@ -853,9 +938,8 @@ describe('Phase 17 Finalization: RAG Single-Counting & Multimodal Telemetry', ()
     defaultAiMetrics.reset();
     defaultAiTracer.clear();
 
-    const { CoachContextAssembler } = await import(
-      '../../../src/modules/coach/application/services/context-assembler.js'
-    );
+    const { CoachContextAssembler } =
+      await import('../../../src/modules/coach/application/services/context-assembler.js');
 
     const capture = createCapturingLogger();
     const repo = {
@@ -942,15 +1026,11 @@ describe('Phase 17 Finalization: RAG Single-Counting & Multimodal Telemetry', ()
 
   it('AnalyzeMealPhotoUseCase records pre-quota multimodal validation failures without double counting', async () => {
     defaultAiMetrics.reset();
-    const { AnalyzeMealPhotoUseCase } = await import(
-      '../../../src/modules/nutrition/application/use-cases/analyze-meal-photo.js'
-    );
+    const { AnalyzeMealPhotoUseCase } =
+      await import('../../../src/modules/nutrition/application/use-cases/analyze-meal-photo.js');
 
     const runSpy = vi.fn();
-    const useCase = new AnalyzeMealPhotoUseCase(
-      { analyzePhoto: vi.fn() },
-      { run: runSpy } as never,
-    );
+    const useCase = new AnalyzeMealPhotoUseCase({ analyzePhoto: vi.fn() }, { run: runSpy } as never);
 
     await expect(
       useCase.execute({
@@ -969,15 +1049,11 @@ describe('Phase 17 Finalization: RAG Single-Counting & Multimodal Telemetry', ()
 
   it('ParseVoiceMealUseCase records pre-quota audio validation failures without calling gate', async () => {
     defaultAiMetrics.reset();
-    const { ParseVoiceMealUseCase } = await import(
-      '../../../src/modules/nutrition/application/use-cases/parse-voice-meal.js'
-    );
+    const { ParseVoiceMealUseCase } =
+      await import('../../../src/modules/nutrition/application/use-cases/parse-voice-meal.js');
 
     const runSpy = vi.fn();
-    const useCase = new ParseVoiceMealUseCase(
-      { parseVoiceMeal: vi.fn() },
-      { run: runSpy } as never,
-    );
+    const useCase = new ParseVoiceMealUseCase({ parseVoiceMeal: vi.fn() }, { run: runSpy } as never);
 
     await expect(
       useCase.execute({
@@ -996,9 +1072,8 @@ describe('Phase 17 Finalization: RAG Single-Counting & Multimodal Telemetry', ()
 
   it('PythonSpeechTranscriber records completion and error multimodal metrics', async () => {
     defaultAiMetrics.reset();
-    const { PythonSpeechTranscriber } = await import(
-      '../../../src/modules/coach/infrastructure/python-speech-transcriber.js'
-    );
+    const { PythonSpeechTranscriber } =
+      await import('../../../src/modules/coach/infrastructure/python-speech-transcriber.js');
 
     let failNext = false;
     const capture = createCapturingLogger();

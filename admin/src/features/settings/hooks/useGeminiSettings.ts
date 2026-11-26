@@ -28,7 +28,7 @@ export function useGeminiSettings() {
   // Telemetry Events Table
   const [events, setEvents] = useState<GeminiUsageEventItem[]>([]);
   const [eventsTotal, setEventsTotal] = useState(0);
-  const [eventsLimit, setEventsLimit] = useState(15);
+  const [eventsLimit] = useState(15);
   const [eventsOffset, setEventsOffset] = useState(0);
   const [eventsFeatureFilter, setEventsFeatureFilter] = useState('');
 
@@ -75,26 +75,31 @@ export function useGeminiSettings() {
 
       setConfig(cfg);
 
-      const normalizedModels = (mdls || []).map((m: any) => ({
+      const normalizedModels: GeminiModelInfo[] = (mdls || []).map((m: GeminiModelInfo) => ({
         ...m,
-        id: m.model || m.id,
-        model: m.model || m.id,
+        id: m.model || m.id || '',
+        model: m.model || m.id || '',
       }));
       setModels(normalizedModels);
 
+      const monthlyCost = summary?.estimatedMonthlyCostUsd ?? summary?.estimatedCostUsd ?? 0;
+      const monthlyReqs = summary?.monthlyRequests ?? summary?.monthRequests ?? 0;
+      const inTokens = summary?.inputTokens ?? summary?.promptTokens ?? 0;
+      const outTokens = summary?.outputTokens ?? summary?.completionTokens ?? 0;
+
       const normalizedSummary: GeminiUsageSummaryResponse = {
         todayRequests: summary?.todayRequests ?? 0,
-        monthlyRequests: summary?.monthlyRequests ?? (summary as any)?.monthRequests ?? 0,
-        monthRequests: summary?.monthlyRequests ?? (summary as any)?.monthRequests ?? 0,
+        monthlyRequests: monthlyReqs,
+        monthRequests: monthlyReqs,
         totalTokens: summary?.totalTokens ?? 0,
-        inputTokens: summary?.inputTokens ?? (summary as any)?.promptTokens ?? 0,
-        outputTokens: summary?.outputTokens ?? (summary as any)?.completionTokens ?? 0,
-        promptTokens: summary?.inputTokens ?? (summary as any)?.promptTokens ?? 0,
-        completionTokens: summary?.outputTokens ?? (summary as any)?.completionTokens ?? 0,
+        inputTokens: inTokens,
+        outputTokens: outTokens,
+        promptTokens: inTokens,
+        completionTokens: outTokens,
         cachedTokens: summary?.cachedTokens ?? 0,
-        estimatedMonthlyCostUsd: summary?.estimatedMonthlyCostUsd ?? (summary as any)?.estimatedCostUsd ?? 0,
-        estimatedCostUsd: summary?.estimatedMonthlyCostUsd ?? (summary as any)?.estimatedCostUsd ?? 0,
-        estimatedCostInr: (summary as any)?.estimatedCostInr ?? ((summary?.estimatedMonthlyCostUsd ?? (summary as any)?.estimatedCostUsd ?? 0) * 86.5),
+        estimatedMonthlyCostUsd: monthlyCost,
+        estimatedCostUsd: monthlyCost,
+        estimatedCostInr: summary?.estimatedCostInr ?? monthlyCost * 86.5,
         failedRequests: summary?.failedRequests ?? 0,
         avgDurationMs: summary?.avgDurationMs ?? 0,
         fallbackCount: summary?.fallbackCount ?? 0,
@@ -127,7 +132,14 @@ export function useGeminiSettings() {
   }, [toast, eventsLimit, eventsOffset, eventsFeatureFilter]);
 
   useEffect(() => {
-    fetchAll();
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active) return fetchAll();
+      return undefined;
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchAll]);
 
   // Fetch only telemetry events when pagination or filter changes

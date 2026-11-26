@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from onusfit_ai.shared.logging.logging import log_event
+from onusfit_ai.shared.logging.metrics import metrics_registry
 
 logger = logging.getLogger("onusfit_ai.coach_chat.stream")
 
@@ -86,6 +87,18 @@ class StreamingMetricsRegistry:
                 self._ttft_samples.append(ttft_ms)
             if math.isfinite(duration_ms) and duration_ms >= 0:
                 self._latency_samples.append(duration_ms)
+        try:
+            metrics_registry.record_stream(
+                outcome=outcome,
+                duration_ms=duration_ms,
+                ttft_ms=ttft_ms,
+                chunks=chunks,
+                heartbeats=heartbeats,
+                fallback_used=fallback_used,
+                error_code=error_code,
+            )
+        except Exception:  # noqa: BLE001 - fail-open observability
+            pass
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:

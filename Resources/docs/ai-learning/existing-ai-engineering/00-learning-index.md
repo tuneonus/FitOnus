@@ -193,4 +193,12 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 |:---|:---|:---|:---|:---|
 | **P20-All** | [**Phase 20: Production AI Architecture**](../phase-20-production-ai-architecture.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/shared/{contracts/embed,health/router,llm/gemini,observability/observability,tools/client}.py`<br>`ai-backend/src/onusfit_ai/{main,features/knowledge/presentation/embed,features/coach/presentation/coach_chat_stream}.py`<br>`backend/src/{server,container}.ts`<br>`backend/src/modules/{coach/interface/internal-tools.routes,coach/application/use-cases/get-coach-insights,knowledge/application/knowledge-service,workouts/index,workouts/application/use-cases/*-ai-workout-plan,workouts/infrastructure/python-workout-planner-service}.ts` | `ai-backend/tests/test_production_architecture.py`<br>`ai-backend/tests/evals/runner.py` (467/467 offline passed)<br>`backend/tests/unit/ai/production-architecture.test.ts` |
 
+---
+
+## Phase 26: Integrated Production Validation
+
+| Stage | Guide | Status | Core Scope | Tests |
+|:---|:---|:---|:---|:---|
+| **P26-All** | [**Phase 26: Production Validation**](../phase-26-production-validation.md) | **LOCAL PASS / RELEASE NO-GO** | `.github/workflows/ai-backend.yml`<br>`ai-backend/tests/evals/{datasets/loader,datasets/baseline_offline,runner,test_runner}.*`<br>`ai-backend/src/onusfit_ai/{features/coach/application/stream_telemetry,shared/logging/metrics}.py`<br>`backend/src/shared/ai/{ai-metrics,streaming-observability}.ts`<br>`backend` & `admin` ESLint remediation | `ai-backend` `1294` passed (`467/467` offline evals)<br>`backend` `3005` passed (`0` lint errors)<br>`admin` `299` passed (`0` lint errors)<br>`mobile` `883` passed (`0` lint errors)<br>Docker/pgvector/live Gemini/CI **PENDING** |
+
 

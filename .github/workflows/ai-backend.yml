@@ -88,7 +88,7 @@ jobs:
       - name: Run offline evaluation pytest suites
         run: python -m pytest tests/evals -q
       - name: Run deterministic offline benchmark runner
-        run: python tests/evals/runner.py --output-json tests/evals/results/ci_report.json --output-md tests/evals/results/ci_report.md
+        run: python tests/evals/runner.py --baseline tests/evals/datasets/baseline_offline.json --output-json tests/evals/results/ci_report.json --output-md tests/evals/results/ci_report.md
       - name: Assert offline-only execution and 100% pass gate
         run: |
           python - <<'PY'
@@ -102,6 +102,10 @@ jobs:
           summary = report["summary"]
           assert summary["total_cases"] > 0, "Expected non-empty benchmark suite"
           assert summary["failed_cases"] == 0, f"Eval failures: {summary['failed_cases']}"
+          gate = report.get("regression_gate") or {}
+          assert gate.get("passed") is True, f"Regression gate failed: {gate}"
+          assert gate.get("baseline_compared") is True, "Expected baseline comparison in CI gate"
+          assert gate.get("critical_safety_failed") is False, f"Critical safety gate failed: {gate}"
           print(f"Verified offline eval gate: {summary['passed_cases']}/{summary['total_cases']} passed ({summary['pass_rate_pct']}%)")
           PY
       - name: Upload offline evaluation reports

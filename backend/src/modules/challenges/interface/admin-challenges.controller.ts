@@ -12,8 +12,8 @@ import type {
   AdminListChallengesUseCase,
 } from '../index.js';
 import type { AdminGetChallengeUseCase } from '../application/use-cases/admin-status-challenge.js';
+import type { IBadgeRepository } from '../application/ports.js';
 import type { ChallengeView } from '../application/views.js';
-import type { PgBadgeRepository } from '../infrastructure/pg-badge-repository.js';
 import {
   adminArchiveChallengeRequest,
   adminCreateBadgeRequest,
@@ -34,7 +34,7 @@ export interface ChallengesAdminUseCases {
   adminPublishChallenge: AdminPublishChallengeUseCase;
   adminArchiveChallenge: AdminArchiveChallengeUseCase;
   db?: SqlExecutor;
-  badgeRepo?: PgBadgeRepository;
+  badgeRepo?: IBadgeRepository;
 }
 
 export type ChallengesAdminController = ReturnType<typeof createChallengesAdminController>;
@@ -149,9 +149,7 @@ export function createChallengesAdminController(useCases: ChallengesAdminUseCase
         total_points_awarded: 0,
       };
       const completionRatePct =
-        row.total_enrollments > 0
-          ? Math.round((row.completed_enrollments / row.total_enrollments) * 100)
-          : 0;
+        row.total_enrollments > 0 ? Math.round((row.completed_enrollments / row.total_enrollments) * 100) : 0;
       return {
         data: {
           totalChallenges: row.total_challenges,

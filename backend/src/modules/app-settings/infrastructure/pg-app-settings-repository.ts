@@ -2,7 +2,6 @@ import type { SqlExecutor } from '../../../database/transaction.js';
 import type { UnitOfWork } from '../../../shared/application/unit-of-work.js';
 import { AppError } from '../../../shared/errors/app-error.js';
 import type {
-  AiLimitsSettingValue,
   AiUsageActionType,
   AiUsageReserveInput,
   AiUsageReserveResult,
@@ -10,13 +9,7 @@ import type {
   AppSettingKey,
   AppSettingRecord,
   AppSettingValueMap,
-  FeatureFlagsSettingValue,
-  ForceUpdateSettingValue,
-  LegalSettingValue,
-  MaintenanceSettingValue,
-  MinVersionSettingValue,
   PublicAppConfig,
-  SupportSettingValue,
 } from '../domain/app-setting.js';
 import type {
   GeminiConfigRecord,
@@ -32,11 +25,55 @@ import type { AppSettingsRepository } from '../application/ports.js';
 interface AppSettingRow {
   key: string;
   category: string;
-  value: any;
+  value: AppSettingValueMap[AppSettingKey];
   description: string | null;
   updated_by: string | null;
   updated_at: Date;
   version: number;
+}
+
+interface GeminiConfigRow {
+  provider: string;
+  encrypted_api_key: string | null;
+  key_mask: string | null;
+  previous_encrypted_api_key: string | null;
+  previous_key_mask: string | null;
+  default_model: string;
+  fallback_model: string;
+  coach_model: string;
+  meal_photo_model: string;
+  voice_meal_model: string;
+  workout_generator_model: string;
+  version: number;
+  updated_by: string | null;
+  updated_at: Date | string;
+}
+
+interface GeminiUsageEventRow {
+  id: string;
+  request_id: string;
+  user_id: string | null;
+  feature: string;
+  model: string;
+  status: 'success' | 'failed' | 'rate_limited' | 'timeout';
+  input_tokens: number;
+  output_tokens: number;
+  cached_tokens: number;
+  total_tokens: number;
+  estimated_cost_usd: string | number;
+  duration_ms: number;
+  error_category: string | null;
+  provider_request_id: string | null;
+  created_at: Date | string;
+}
+
+function getTypedSetting<K extends AppSettingKey>(
+  map: Map<string, AppSettingValueMap[AppSettingKey]>,
+  key: K,
+  fallback: AppSettingValueMap[K],
+): AppSettingValueMap[K] {
+  const found = map.get(key);
+  return (found as AppSettingValueMap[K] | undefined) ?? fallback;
 }
 
 export class PgAppSettingsRepository implements AppSettingsRepository {
@@ -131,49 +168,49 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
 
   async getPublicConfig(): Promise<PublicAppConfig> {
     const all = await this.getAllSettings();
-    const map = new Map<string, any>(all.map((s) => [s.key, s.value]));
+    const map = new Map<string, AppSettingValueMap[AppSettingKey]>(all.map((s) => [s.key, s.value]));
 
-    const maintenance: MaintenanceSettingValue = map.get('app.maintenance') ?? {
+    const maintenance = getTypedSetting(map, 'app.maintenance', {
       enabled: false,
       message: 'OnusFit is currently undergoing scheduled maintenance. Please check back shortly.',
       expectedEndTime: null,
-    };
+    });
 
-    const minVersion: MinVersionSettingValue = map.get('app.min_version') ?? {
+    const minVersion = getTypedSetting(map, 'app.min_version', {
       androidMinVersion: '1.0.0',
-    };
+    });
 
-    const forceUpdate: ForceUpdateSettingValue = map.get('app.force_update') ?? {
+    const forceUpdate = getTypedSetting(map, 'app.force_update', {
       enabled: false,
       updateMessage: 'A new version of OnusFit is required to continue.',
       storeUrl: '',
-    };
+    });
 
-    const support: SupportSettingValue = map.get('app.support') ?? {
+    const support = getTypedSetting(map, 'app.support', {
       email: '',
       website: '',
       contactInfo: '',
-    };
+    });
 
-    const legal: LegalSettingValue = map.get('app.legal') ?? {
+    const legal = getTypedSetting(map, 'app.legal', {
       privacyPolicyUrl: '',
       termsOfServiceUrl: '',
-    };
+    });
 
-    const features: FeatureFlagsSettingValue = map.get('features.flags') ?? {
+    const features = getTypedSetting(map, 'features.flags', {
       aiCoach: true,
       mealPhotoScanner: true,
       voiceMealEntry: true,
       workoutGenerator: true,
-    };
+    });
 
-    const aiLimits: AiLimitsSettingValue = map.get('ai.limits') ?? {
+    const aiLimits = getTypedSetting(map, 'ai.limits', {
       dailyGlobalLimit: 50,
       coachChatDailyLimit: 20,
       mealPhotoDailyLimit: 10,
       voiceMealDailyLimit: 10,
       workoutGeneratorDailyLimit: 10,
-    };
+    });
 
     return {
       maintenance,
@@ -304,7 +341,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
   // GEMINI CONFIGURATION & MODEL MANAGEMENT
   // =========================================================================
 
-  private mapGeminiConfigRow(row: any): GeminiConfigRecord {
+  private mapGeminiConfigRow(row: GeminiConfigRow): GeminiConfigRecord {
     return {
       provider: row.provider,
       encryptedApiKey: row.encrypted_api_key ?? null,
@@ -324,7 +361,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
   }
 
   async getGeminiConfig(): Promise<GeminiConfigRecord> {
-    const res = await this.db.query(
+    const res = await this.db.query<GeminiConfigRow>(
       `SELECT provider, encrypted_api_key, key_mask, previous_encrypted_api_key, previous_key_mask,
               default_model, fallback_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model,
               version, updated_by, updated_at
@@ -333,7 +370,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
     );
 
     if (res.rows.length === 0) {
-      const inserted = await this.db.query(
+      const inserted = await this.db.query<GeminiConfigRow>(
         `INSERT INTO gemini_config (provider, default_model, fallback_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model, version)
          VALUES ('google_gemini', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash-lite', 1)
          ON CONFLICT (provider) DO UPDATE SET updated_at = NOW()
@@ -341,10 +378,10 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
                    default_model, fallback_model, coach_model, meal_photo_model, voice_meal_model, workout_generator_model,
                    version, updated_by, updated_at`,
       );
-      return this.mapGeminiConfigRow(inserted.rows[0]);
+      return this.mapGeminiConfigRow(inserted.rows[0]!);
     }
 
-    return this.mapGeminiConfigRow(res.rows[0]);
+    return this.mapGeminiConfigRow(res.rows[0]!);
   }
 
   async updateGeminiConfig(
@@ -353,7 +390,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
     updatedBy?: string,
   ): Promise<GeminiConfigRecord> {
     const setClauses: string[] = ['updated_at = NOW()', 'version = version + 1'];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let idx = 1;
 
     if (updates.encryptedApiKey !== undefined) {
@@ -403,7 +440,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
 
     let whereClause = `WHERE provider = 'google_gemini'`;
     if (expectedVersion !== undefined) {
-      whereClause += ` AND version = $${idx++}`;
+      whereClause += ` AND version = $${idx}`;
       values.push(expectedVersion);
     }
 
@@ -416,7 +453,7 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
                 version, updated_by, updated_at
     `;
 
-    const res = await this.db.query(query, values);
+    const res = await this.db.query<GeminiConfigRow>(query, values);
     if (res.rows.length === 0) {
       throw new AppError(
         'conflict',
@@ -425,13 +462,10 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
       );
     }
 
-    return this.mapGeminiConfigRow(res.rows[0]);
+    return this.mapGeminiConfigRow(res.rows[0]!);
   }
 
-  async rollbackGeminiApiKey(
-    expectedVersion?: number,
-    updatedBy?: string,
-  ): Promise<GeminiConfigRecord> {
+  async rollbackGeminiApiKey(expectedVersion?: number, updatedBy?: string): Promise<GeminiConfigRecord> {
     const current = await this.getGeminiConfig();
     if (!current.previousEncryptedApiKey) {
       throw new AppError(
@@ -534,28 +568,27 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
     offset: number;
   }): Promise<{ items: GeminiUsageEvent[]; total: number }> {
     const conditions: string[] = ['1=1'];
-    const values: any[] = [];
-    let idx = 1;
+    const values: unknown[] = [];
 
     if (filters.feature) {
-      conditions.push(`feature = $${idx++}`);
       values.push(filters.feature);
+      conditions.push(`feature = $${values.length}`);
     }
     if (filters.model) {
-      conditions.push(`model = $${idx++}`);
       values.push(filters.model);
+      conditions.push(`model = $${values.length}`);
     }
     if (filters.status) {
-      conditions.push(`status = $${idx++}`);
       values.push(filters.status);
+      conditions.push(`status = $${values.length}`);
     }
     if (filters.from) {
-      conditions.push(`created_at >= $${idx++}`);
       values.push(new Date(filters.from));
+      conditions.push(`created_at >= $${values.length}`);
     }
     if (filters.to) {
-      conditions.push(`created_at <= $${idx++}`);
       values.push(new Date(filters.to));
+      conditions.push(`created_at <= $${values.length}`);
     }
 
     const where = conditions.join(' AND ');
@@ -566,6 +599,8 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
     );
     const total = parseInt(countRes.rows[0]?.total ?? '0', 10);
 
+    const limitParam = values.length + 1;
+    const offsetParam = values.length + 2;
     const itemsQuery = `
       SELECT id, request_id, user_id, feature, model, status,
              input_tokens, output_tokens, cached_tokens, total_tokens,
@@ -573,12 +608,16 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
       FROM gemini_usage_events
       WHERE ${where}
       ORDER BY created_at DESC
-      LIMIT $${idx++} OFFSET $${idx++}
+      LIMIT $${limitParam} OFFSET $${offsetParam}
     `;
 
-    const itemsRes = await this.db.query(itemsQuery, [...values, filters.limit, filters.offset]);
+    const itemsRes = await this.db.query<GeminiUsageEventRow>(itemsQuery, [
+      ...values,
+      filters.limit,
+      filters.offset,
+    ]);
 
-    const items: GeminiUsageEvent[] = itemsRes.rows.map((r: any) => ({
+    const items: GeminiUsageEvent[] = itemsRes.rows.map((r) => ({
       id: r.id,
       requestId: r.request_id,
       userId: r.user_id,
@@ -646,16 +685,15 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
 
   async getGeminiUsageByFeature(from?: string, to?: string): Promise<GeminiFeatureUsage[]> {
     const conditions: string[] = ['1=1'];
-    const values: any[] = [];
-    let idx = 1;
+    const values: unknown[] = [];
 
     if (from) {
-      conditions.push(`created_at >= $${idx++}`);
       values.push(new Date(from));
+      conditions.push(`created_at >= $${values.length}`);
     }
     if (to) {
-      conditions.push(`created_at <= $${idx++}`);
       values.push(new Date(to));
+      conditions.push(`created_at <= $${values.length}`);
     }
 
     const res = await this.db.query<{
@@ -686,16 +724,15 @@ export class PgAppSettingsRepository implements AppSettingsRepository {
 
   async getGeminiUsageByModel(from?: string, to?: string): Promise<GeminiModelUsage[]> {
     const conditions: string[] = ['1=1'];
-    const values: any[] = [];
-    let idx = 1;
+    const values: unknown[] = [];
 
     if (from) {
-      conditions.push(`created_at >= $${idx++}`);
       values.push(new Date(from));
+      conditions.push(`created_at >= $${values.length}`);
     }
     if (to) {
-      conditions.push(`created_at <= $${idx++}`);
       values.push(new Date(to));
+      conditions.push(`created_at <= $${values.length}`);
     }
 
     const res = await this.db.query<{

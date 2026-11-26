@@ -35,7 +35,11 @@ const ALLOWED_MEDIA_FAILURE_REASONS = new Set([
   'other',
 ]);
 
-function boundClosed(value: string | undefined, allowed: ReadonlySet<string>, fallback = OVERFLOW_LABEL): string {
+function boundClosed(
+  value: string | undefined,
+  allowed: ReadonlySet<string>,
+  fallback = OVERFLOW_LABEL,
+): string {
   if (!value) return fallback;
   const norm = value.trim().toLowerCase();
   return allowed.has(norm) ? norm : fallback;
@@ -226,6 +230,18 @@ export interface MultimodalMetricsSnapshot {
   readonly validationLatency: LatencySummary;
 }
 
+export interface StreamingMetricsSummary {
+  readonly totalStreams: number;
+  readonly completedStreams: number;
+  readonly cancelledStreams: number;
+  readonly errorStreams: number;
+  readonly timeoutStreams: number;
+  readonly fallbackCount: number;
+  readonly malformedEvents: number;
+  readonly ttft: LatencySummary;
+  readonly duration: LatencySummary;
+}
+
 export interface AiMetricsSnapshot {
   readonly ai: {
     readonly totalRequests: number;
@@ -254,6 +270,7 @@ export interface AiMetricsSnapshot {
     readonly byModality: Record<string, MultimodalMetricsSnapshot>;
     readonly validationFailuresByReason: Record<string, number>;
   };
+  readonly streaming: StreamingMetricsSummary;
   readonly cardinality: {
     readonly features: number;
     readonly models: number;
@@ -275,6 +292,17 @@ export class AiMetricsRegistry {
   private agentLimits = new Map<string, number>();
   private multimodal = new Map<string, MultimodalSeries>();
   private multimodalFailureReasons = new Map<string, number>();
+  private streamStats = {
+    totalStreams: 0,
+    completedStreams: 0,
+    cancelledStreams: 0,
+    errorStreams: 0,
+    timeoutStreams: 0,
+    fallbackCount: 0,
+    malformedEvents: 0,
+    ttft: new LatencyWindow(),
+    duration: new LatencyWindow(),
+  };
 
   constructor(maxSeries = MAX_SERIES_PER_GROUP) {
     this.maxSeries = Math.max(4, maxSeries);
@@ -290,6 +318,17 @@ export class AiMetricsRegistry {
     this.agentLimits.clear();
     this.multimodal.clear();
     this.multimodalFailureReasons.clear();
+    this.streamStats = {
+      totalStreams: 0,
+      completedStreams: 0,
+      cancelledStreams: 0,
+      errorStreams: 0,
+      timeoutStreams: 0,
+      fallbackCount: 0,
+      malformedEvents: 0,
+      ttft: new LatencyWindow(),
+      duration: new LatencyWindow(),
+    };
   }
 
   recordLlmCall(input: {
@@ -357,12 +396,14 @@ export class AiMetricsRegistry {
     const featKey = boundClosed(feature, ALLOWED_FEATURES);
     const featSeries = this.features.get(featKey);
     if (featSeries) {
-      featSeries.estimatedCostUsd = Math.round((featSeries.estimatedCostUsd + costUsd) * 1_000_000) / 1_000_000;
+      featSeries.estimatedCostUsd =
+        Math.round((featSeries.estimatedCostUsd + costUsd) * 1_000_000) / 1_000_000;
     }
     const modelKey = boundDynamicKey(this.models, model, this.maxSeries);
     const modelSeries = this.models.get(modelKey);
     if (modelSeries) {
-      modelSeries.estimatedCostUsd = Math.round((modelSeries.estimatedCostUsd + costUsd) * 1_000_000) / 1_000_000;
+      modelSeries.estimatedCostUsd =
+        Math.round((modelSeries.estimatedCostUsd + costUsd) * 1_000_000) / 1_000_000;
     }
   }
 
@@ -503,6 +544,34 @@ export class AiMetricsRegistry {
     }
   }
 
+  recordStreamStart(): void {
+    this.streamStats.totalStreams += 1;
+  }
+
+  recordStreamTtft(ttftMs: number): void {
+    this.streamStats.ttft.add(ttftMs);
+  }
+
+  recordStreamMalformedEvent(): void {
+    this.streamStats.malformedEvents += 1;
+  }
+
+  recordStreamFallback(): void {
+    this.streamStats.fallbackCount += 1;
+  }
+
+  recordStreamFinish(
+    outcome: 'completed' | 'cancelled' | 'error' | 'timeout' | 'fallback',
+    durationMs: number,
+  ): void {
+    this.streamStats.duration.add(durationMs);
+    if (outcome === 'completed') this.streamStats.completedStreams += 1;
+    else if (outcome === 'cancelled') this.streamStats.cancelledStreams += 1;
+    else if (outcome === 'timeout') this.streamStats.timeoutStreams += 1;
+    else if (outcome === 'fallback') this.streamStats.fallbackCount += 1;
+    else this.streamStats.errorStreams += 1;
+  }
+
   getSnapshot(): AiMetricsSnapshot {
     let totalRequests = 0;
     let successCount = 0;
@@ -561,8 +630,10 @@ export class AiMetricsRegistry {
         avgCandidates: s.retrievals > 0 ? Math.round((s.candidatesTotal / s.retrievals) * 100) / 100 : 0,
         avgReturned: s.retrievals > 0 ? Math.round((s.returnedTotal / s.retrievals) * 100) / 100 : 0,
         citationsTotal: s.citationsTotal,
-        avgTopScore: s.topScoreSamples > 0 ? Math.round((s.topScoreSum / s.topScoreSamples) * 10_000) / 10_000 : 0,
-        avgScore: s.avgScoreSamples > 0 ? Math.round((s.avgScoreSum / s.avgScoreSamples) * 10_000) / 10_000 : 0,
+        avgTopScore:
+          s.topScoreSamples > 0 ? Math.round((s.topScoreSum / s.topScoreSamples) * 10_000) / 10_000 : 0,
+        avgScore:
+          s.avgScoreSamples > 0 ? Math.round((s.avgScoreSum / s.avgScoreSamples) * 10_000) / 10_000 : 0,
         latency: s.latency.summary(),
       };
     }
@@ -621,6 +692,17 @@ export class AiMetricsRegistry {
       multimodal: {
         byModality,
         validationFailuresByReason: Object.fromEntries(this.multimodalFailureReasons.entries()),
+      },
+      streaming: {
+        totalStreams: this.streamStats.totalStreams,
+        completedStreams: this.streamStats.completedStreams,
+        cancelledStreams: this.streamStats.cancelledStreams,
+        errorStreams: this.streamStats.errorStreams,
+        timeoutStreams: this.streamStats.timeoutStreams,
+        fallbackCount: this.streamStats.fallbackCount,
+        malformedEvents: this.streamStats.malformedEvents,
+        ttft: this.streamStats.ttft.summary(),
+        duration: this.streamStats.duration.summary(),
       },
       cardinality: {
         features: this.features.size,

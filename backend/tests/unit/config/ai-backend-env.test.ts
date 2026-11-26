@@ -8,7 +8,11 @@ const valid = {
   JWT_ISSUER: 'issuer',
   JWT_AUDIENCE: 'audience',
 };
-const withAi = { ...valid, AI_BACKEND_URL: 'http://127.0.0.1:8000', AI_BACKEND_SERVICE_SECRET: 's'.repeat(32) };
+const withAi = {
+  ...valid,
+  AI_BACKEND_URL: 'http://127.0.0.1:8000',
+  AI_BACKEND_SERVICE_SECRET: 's'.repeat(32),
+};
 
 const issuesOf = (fn: () => unknown): readonly string[] => {
   try {
@@ -23,7 +27,7 @@ const issuesOf = (fn: () => unknown): readonly string[] => {
 describe('AI backend configuration (Python is the only coach chat backend)', () => {
   it('loadConfig alone does not need the AI backend (db scripts such as seed keep working)', () => {
     const { aiBackend } = loadConfig(valid);
-    expect(aiBackend).toEqual({ timeoutMs: 25_000 });
+    expect(aiBackend).toEqual({ timeoutMs: 25_000, streamingEnabled: false });
   });
 
   it('there is no flag any more: a leftover COACH_CHAT_BACKEND value is simply ignored', () => {
@@ -37,7 +41,12 @@ describe('AI backend configuration (Python is the only coach chat backend)', () 
       AI_BACKEND_SERVICE_SECRET: ` ${'s'.repeat(32)} `,
       AI_BACKEND_TIMEOUT_MS: '12000',
     });
-    expect(aiBackend).toEqual({ url: 'http://127.0.0.1:8000', serviceSecret: 's'.repeat(32), timeoutMs: 12_000 });
+    expect(aiBackend).toEqual({
+      url: 'http://127.0.0.1:8000',
+      serviceSecret: 's'.repeat(32),
+      timeoutMs: 12_000,
+      streamingEnabled: false,
+    });
   });
 
   it('assertAiBackendConfigured passes through a fully configured config', () => {

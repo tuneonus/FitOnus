@@ -68,7 +68,6 @@ export const VERIFIED_BADGES: VerifiedBadge[] = [
 export function BadgesCatalogCard() {
   const { toast } = useToast();
   const [customBadges, setCustomBadges] = useState<AdminBadge[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -82,19 +81,23 @@ export function BadgesCatalogCard() {
   const [iconName, setIconName] = useState('medal');
 
   const fetchBadges = useCallback(async () => {
-    setIsLoading(true);
     try {
       const data = await challengesApi.listBadges();
       setCustomBadges(data);
     } catch {
       // Fallback silently if offline or initial load
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchBadges();
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active) return fetchBadges();
+      return undefined;
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchBadges]);
 
   const handleOpenModal = () => {

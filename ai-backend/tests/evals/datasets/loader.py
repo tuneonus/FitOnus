@@ -31,6 +31,7 @@ DATASET_FILES: dict[str, str] = {
     "multimodal_advanced": "multimodal_advanced_benchmark.json",
     "security_adversarial": "security_adversarial_benchmark.json",
     "performance_eval": "performance_benchmark.json",
+    "streaming": "streaming_benchmark.json",
 }
 
 

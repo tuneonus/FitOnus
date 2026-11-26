@@ -43,6 +43,7 @@ Keep the context needed to maintain the application: agent instructions, product
 - [Phase 16: AI Security & Guardrails](ai-learning/phase-16-ai-security-guardrails.md)
 - [Phase 18: Advanced AI Evaluation](ai-learning/phase-18-advanced-ai-evaluation.md)
 - [Phase 20: Production AI Architecture](ai-learning/phase-20-production-ai-architecture.md)
+- [Phase 26: Integrated Production Validation](ai-learning/phase-26-production-validation.md)
 
 The architecture proposal and roadmap describe planned work. They do not indicate that the proposed services or integrations exist.
 

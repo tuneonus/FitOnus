@@ -6,7 +6,6 @@ import type {
   GeminiModelInfo,
   GeminiUsageSummaryResponse,
   FeatureUsageBreakdown,
-  DailyUsageTrend,
 } from '../src/features/settings/types-ai';
 
 describe('Admin Gemini AI Management — Phase 8 Verification', () => {
@@ -32,8 +31,8 @@ describe('Admin Gemini AI Management — Phase 8 Verification', () => {
     assert.equal(config.hasActiveKey, true);
     assert.equal(config.keyMask?.startsWith('AIzaSy...'), true);
     assert.equal(config.keyMask?.length, 13);
-    assert.equal((config as any).apiKey, undefined);
-    assert.equal((config as any).encryptedApiKey, undefined);
+    assert.equal('apiKey' in config, false);
+    assert.equal('encryptedApiKey' in config, false);
     assert.equal(config.source, 'database');
     assert.equal(config.version, 3);
   });
@@ -214,9 +213,10 @@ describe('Admin Gemini AI Management — Phase 8 Verification', () => {
       message: 'Invalid Gemini API key. Please check the key in Google AI Studio.',
     };
 
+    const failureRecord: Record<string, unknown> = failurePayload;
     const normalizedMessage =
       failurePayload.message ||
-      (failurePayload as any).error ||
+      (typeof failureRecord.error === 'string' ? failureRecord.error : undefined) ||
       (failurePayload.success ? 'Verified' : 'Failed');
 
     assert.notEqual(normalizedMessage, undefined);
@@ -224,7 +224,10 @@ describe('Admin Gemini AI Management — Phase 8 Verification', () => {
     assert(!normalizedMessage.includes('undefined'));
     assert.equal(normalizedMessage, 'Invalid Gemini API key. Please check the key in Google AI Studio.');
 
-    const normalizedModel = failurePayload.model || (failurePayload as any).modelUsed || 'default';
+    const normalizedModel =
+      failurePayload.model ||
+      (typeof failureRecord.modelUsed === 'string' ? failureRecord.modelUsed : undefined) ||
+      'default';
     assert.equal(normalizedModel, 'gemini-3.5-flash-lite');
   });
 

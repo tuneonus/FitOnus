@@ -46,10 +46,7 @@ export interface AppSettingsRepository {
     expectedVersion?: number,
     updatedBy?: string,
   ): Promise<GeminiConfigRecord>;
-  rollbackGeminiApiKey(
-    expectedVersion?: number,
-    updatedBy?: string,
-  ): Promise<GeminiConfigRecord>;
+  rollbackGeminiApiKey(expectedVersion?: number, updatedBy?: string): Promise<GeminiConfigRecord>;
   getGeminiModelsWithPricing(): Promise<GeminiModelInfo[]>;
 
   // Gemini Usage Telemetry & Analytics
@@ -72,7 +69,11 @@ export interface AppSettingsRepository {
 export interface AdminAuditLoggerPort {
   recordAuditLog(entry: {
     adminId: string;
-    action: any;
+    action:
+      | 'admin.settings_update'
+      | 'admin.gemini_config_update'
+      | 'admin.gemini_key_update'
+      | 'admin.gemini_key_rollback';
     targetUserId?: string | null;
     details?: Record<string, unknown>;
     ipAddress?: string | null;

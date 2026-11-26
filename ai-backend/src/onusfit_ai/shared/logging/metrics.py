@@ -209,6 +209,20 @@ class _MultimodalModalitySeries:
     validation_latency: _LatencyWindow = field(default_factory=_LatencyWindow)
 
 
+@dataclass
+class _StreamingSeries:
+    total_streams: int = 0
+    completed_streams: int = 0
+    cancelled_streams: int = 0
+    failed_streams: int = 0
+    fallback_streams: int = 0
+    chunks_emitted: int = 0
+    heartbeats_emitted: int = 0
+    ttft: _LatencyWindow = field(default_factory=_LatencyWindow)
+    duration: _LatencyWindow = field(default_factory=_LatencyWindow)
+    failures_by_code: dict[str, int] = field(default_factory=dict)
+
+
 class AiMetricsRegistry:
     """Thread-safe in-memory AI observability metrics with strict cardinality caps."""
 
@@ -235,6 +249,7 @@ class AiMetricsRegistry:
         self._multimodal: dict[str, _MultimodalModalitySeries] = {}
         self._multimodal_validation_reasons: dict[str, int] = {}
         self._http_requests: dict[str, int] = {}
+        self._streaming = _StreamingSeries()
 
     def reset(self) -> None:
         with self._lock:
@@ -247,6 +262,38 @@ class AiMetricsRegistry:
         with self._lock:
             safe_key = _bound_dynamic_key(self._http_requests, key, self._max_series)
             self._http_requests[safe_key] = self._http_requests.get(safe_key, 0) + 1
+
+    def record_stream(
+        self,
+        *,
+        outcome: str,
+        duration_ms: float,
+        ttft_ms: float | None = None,
+        chunks: int = 0,
+        heartbeats: int = 0,
+        fallback_used: bool = False,
+        error_code: str | None = None,
+    ) -> None:
+        with self._lock:
+            s = self._streaming
+            s.total_streams += 1
+            if outcome == "completed":
+                s.completed_streams += 1
+            elif outcome == "cancelled":
+                s.cancelled_streams += 1
+            else:
+                s.failed_streams += 1
+                if error_code:
+                    safe_code = _bound_dynamic_key(s.failures_by_code, error_code, self._max_series)
+                    s.failures_by_code[safe_code] = s.failures_by_code.get(safe_code, 0) + 1
+            if fallback_used:
+                s.fallback_streams += 1
+            s.chunks_emitted += max(0, chunks)
+            s.heartbeats_emitted += max(0, heartbeats)
+            if ttft_ms is not None and math.isfinite(ttft_ms) and ttft_ms >= 0:
+                s.ttft.add(ttft_ms)
+            if math.isfinite(duration_ms) and duration_ms >= 0:
+                s.duration.add(duration_ms)
 
     def record_llm_call(
         self,
@@ -582,6 +629,28 @@ class AiMetricsRegistry:
                 "rag": rag_summary,
                 "agent": agent_summary,
                 "multimodal": multimodal_summary,
+                "streaming": {
+                    "totalStreams": self._streaming.total_streams,
+                    "completedStreams": self._streaming.completed_streams,
+                    "cancelledStreams": self._streaming.cancelled_streams,
+                    "failedStreams": self._streaming.failed_streams,
+                    "fallbackStreams": self._streaming.fallback_streams,
+                    "cancellationRate": (
+                        round(self._streaming.cancelled_streams / self._streaming.total_streams, 4)
+                        if self._streaming.total_streams
+                        else 0.0
+                    ),
+                    "failureRate": (
+                        round(self._streaming.failed_streams / self._streaming.total_streams, 4)
+                        if self._streaming.total_streams
+                        else 0.0
+                    ),
+                    "chunksEmitted": self._streaming.chunks_emitted,
+                    "heartbeatsEmitted": self._streaming.heartbeats_emitted,
+                    "ttftMs": self._streaming.ttft.summary(),
+                    "durationMs": self._streaming.duration.summary(),
+                    "failuresByCode": dict(self._streaming.failures_by_code),
+                },
                 "httpRequests": dict(self._http_requests),
                 "cardinality": {
                     "features": len(self._features),

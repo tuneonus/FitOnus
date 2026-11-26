@@ -68,11 +68,11 @@ beforeEach(() => {
 
 describe('meal photo analysis', () => {
   const result = { isFood: true, summary: 'ok', items: [] } as never;
-  let service: { analyzePhoto: ReturnType<typeof vi.fn> };
+  let service: { analyzePhoto: ReturnType<typeof vi.fn<MealPhotoAnalyzer['analyzePhoto']>> };
   let useCase: AnalyzeMealPhotoUseCase;
 
   beforeEach(() => {
-    service = { analyzePhoto: vi.fn().mockResolvedValue(result) };
+    service = { analyzePhoto: vi.fn<MealPhotoAnalyzer['analyzePhoto']>().mockResolvedValue(result) };
     useCase = new AnalyzeMealPhotoUseCase(service as unknown as MealPhotoAnalyzer, gate);
   });
 
@@ -200,15 +200,20 @@ describe('AI coach chat', () => {
   } as unknown as UserFitnessContext;
 
   let contextRepo: { getUserFitnessContext: ReturnType<typeof vi.fn> };
-  let gemini: { generateCoachResponse: ReturnType<typeof vi.fn>; generateInsights: ReturnType<typeof vi.fn> };
+  let gemini: {
+    generateCoachResponse: ReturnType<typeof vi.fn<GeminiService['generateCoachResponse']>>;
+    generateInsights: ReturnType<typeof vi.fn<GeminiService['generateInsights']>>;
+  };
   let conversations: Record<keyof ConversationRepository, ReturnType<typeof vi.fn>>;
   let useCase: ChatWithCoachUseCase;
 
   beforeEach(() => {
     contextRepo = { getUserFitnessContext: vi.fn().mockResolvedValue(context) };
     gemini = {
-      generateCoachResponse: vi.fn().mockResolvedValue({ text: 'hello', followUps: [], sources: [] }),
-      generateInsights: vi.fn(),
+      generateCoachResponse: vi
+        .fn<GeminiService['generateCoachResponse']>()
+        .mockResolvedValue({ text: 'hello', followUps: [], sources: [] }),
+      generateInsights: vi.fn<GeminiService['generateInsights']>(),
     };
     conversations = {
       createConversation: vi.fn().mockResolvedValue({ id: 'convo-1' }),
