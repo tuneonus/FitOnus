@@ -62,3 +62,4 @@ ai-backend/src/onusfit_ai/features/mcp/
 - **Node.js Typecheck & Tests**: 191 test files, 2917 passed in `backend`
 
 For detailed deep-dive explanations, request lifecycles, debugging patterns, and interview questions, refer to the master [PHASE_12_LEARNING_GUIDE.md](../../../PHASE_12_LEARNING_GUIDE.md).
+

@@ -143,7 +143,7 @@ This index tracks all 32 AI Engineering topics already implemented across the On
 
 | Stage | Guide | Status | Core Implementation Files | Tests |
 |:---|:---|:---|:---|:---|
-| **P12-All** | [**Phase 12: AI Agent Protocols & Tool Ecosystem**](../phase-12-ai-agent-protocols-and-tool-ecosystem.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/mcp/*`<br>`ai-backend/src/onusfit_ai/shared/tools/mcp.py`<br>`backend/src/modules/coach/interface/internal-tools.*`<br>`PHASE_12_LEARNING_GUIDE.md` | `ai-backend/tests/test_mcp_*.py` (43 passed)<br>`ai-backend/tests/evals/offline/test_mcp_eval.py` (7 passed, 32 cases)<br>`ai-backend/tests/test_architecture.py` (22 passed) |
+| **P12-All** | [**Phase 12: Model Context Protocol (MCP)**](../phase-12-model-context-protocol.md)<br>[**AI Agent Protocols & Tool Ecosystem**](../phase-12-ai-agent-protocols-and-tool-ecosystem.md) | **COMPLETED** | `ai-backend/src/onusfit_ai/features/mcp/*`<br>`ai-backend/src/onusfit_ai/shared/tools/mcp.py`<br>`backend/src/modules/coach/interface/internal-tools.*`<br>`PHASE_12_LEARNING_GUIDE.md` | `ai-backend/tests/test_mcp_*.py` (43 passed)<br>`ai-backend/tests/evals/offline/test_mcp_eval.py` (40 benchmark cases)<br>`ai-backend/tests/test_architecture.py` (22 passed)<br>`backend/tests/unit/coach/internal-tools-*.test.ts` (17 passed) |
 
 ---
 

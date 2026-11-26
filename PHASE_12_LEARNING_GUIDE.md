@@ -607,3 +607,4 @@ When a tool executes, its return payload enters the agent's context window as ob
 1. **Delimiter Escaping**: Sanitize tool outputs by escaping or neutralizing grounding delimiters (e.g. `</grounding_observations>`, `<system>`).
 2. **Token Scrubbing**: Scrub sensitive credentials (JWTs, API keys) from tool results before sending them to the LLM.
 3. **Structured Envelopes**: Present tool results inside strict, typed XML/JSON boundaries that the system prompt explicitly instructs the LLM to treat as unverified external data rather than system directives.
+
